@@ -1,0 +1,36 @@
+{
+  "enabledMcpjsonServers": [
+    "git",
+    "docker",
+    "context7",
+    "task-master",
+    "claude-task"
+  ],
+  "enableAllProjectMcpServers": true,
+  "additionalDirectories": [],
+  "permissions": {
+    "allow": [
+      "Bash(brew:*)",
+      "Bash(uv:*)",
+      "Bash(pnpm:*)",
+      "Bash(just:*)",
+      "Bash(mkdir:*)",
+      "Bash(cd:*)",
+      "Bash(find:*)",
+      "Glob(*)",
+      "Grep(*)",
+      "LS(*)",
+      "Read(*)",
+      "Write(*)",
+      "TodoRead(*)",
+      "TodoWrite(*)",
+      "WebFetch(*)",
+      "mcp__git",
+      "mcp__docker",
+      "mcp__context7",
+      "mcp__task-master",
+      "mcp__claude-task"
+    ],
+    "deny": []
+  }
+}

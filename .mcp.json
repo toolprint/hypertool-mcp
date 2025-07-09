@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "git": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-git"]
+    },
+    "docker": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-docker"],
+      "env": {}
+    },
+    "context7": {
+      "type": "sse",
+      "url": "https://mcp.context7.com/sse"
+    },
+    "task-master": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "--package=task-master-ai", "task-master-ai"],
+      "env": {}
+    },
+    "claude-task": {
+      "type": "stdio",
+      "command": "claude-task",
+      "args": ["mcp"],
+      "env": {}
+    }
+  }
+}
