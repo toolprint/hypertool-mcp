@@ -17,6 +17,14 @@ import {
 import { ConnectionPool } from "./pool";
 import { ConnectionFactory } from "./factory";
 import { HealthMonitor, HealthState } from "./health-monitor";
+import { 
+  ConnectionError, 
+  ServerUnavailableError, 
+  ConfigurationError,
+  TimeoutError 
+} from "../errors";
+import { Logger, createLogger } from "../logging";
+import { RecoveryCoordinator } from "../errors/recovery";
 
 /**
  * Connection manager orchestrates connections to multiple MCP servers
@@ -27,6 +35,8 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
   private isInitialized = false;
   private isStarted = false;
   private _healthMonitor: HealthMonitor;
+  private logger: Logger;
+  private recoveryCoordinator: RecoveryCoordinator;
 
   constructor(
     poolConfig: ConnectionPoolConfig = {},
@@ -37,6 +47,8 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
     this._healthMonitor = new HealthMonitor({
       checkInterval: poolConfig.healthCheckInterval || 30000
     });
+    this.logger = createLogger("ConnectionManager");
+    this.recoveryCoordinator = new RecoveryCoordinator();
     this.setupPoolEventForwarding();
     this.setupHealthMonitoring();
   }
@@ -67,39 +79,79 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
    */
   async initialize(servers: Record<string, ServerConfig>): Promise<void> {
     if (this.isInitialized) {
-      throw new Error("Connection manager is already initialized");
+      throw new ConfigurationError("Connection manager is already initialized");
     }
 
-    this.servers = { ...servers };
-    
-    // Validate all server configurations
-    this.validateServerConfigurations();
+    try {
+      this.servers = { ...servers };
+      
+      // Validate all server configurations
+      this.validateServerConfigurations();
 
-    // Add all servers to the pool
-    const addPromises = Object.entries(this.servers).map(
-      async ([serverName, config]) => {
-        try {
-          await this._pool.addConnection(serverName, config);
-          
-          // Add connection to health monitor
-          const connection = this._pool.getConnection(serverName);
-          if (connection) {
-            this._healthMonitor.addConnection(connection);
+      this.logger.info("Initializing connection manager", {
+        serverCount: Object.keys(servers).length,
+        servers: Object.keys(servers),
+      });
+
+      // Add all servers to the pool
+      const addPromises = Object.entries(this.servers).map(
+        async ([serverName, config]) => {
+          try {
+            await this._pool.addConnection(serverName, config);
+            
+            // Add connection to health monitor
+            const connection = this._pool.getConnection(serverName);
+            if (connection) {
+              this._healthMonitor.addConnection(connection);
+            }
+            
+            this.logger.debug("Server added to pool", { serverName });
+          } catch (error) {
+            const connectionError = new ConnectionError(
+              `Failed to add server to pool: ${error instanceof Error ? error.message : String(error)}`,
+              serverName,
+              false,
+              { originalError: error }
+            );
+            
+            this.logger.error("Failed to add server to pool", {
+              serverName,
+              error: connectionError.message,
+            }, connectionError);
+            
+            throw connectionError;
           }
-        } catch (error) {
-          console.error(`Failed to add server "${serverName}" to pool:`, error);
-          throw error;
         }
-      }
-    );
+      );
 
-    await Promise.allSettled(addPromises);
-    this.isInitialized = true;
-    
-    this.emit("initialized", {
-      serverCount: Object.keys(this.servers).length,
-      servers: Object.keys(this.servers),
-    });
+      const results = await Promise.allSettled(addPromises);
+      const failures = results.filter(result => result.status === 'rejected');
+      
+      if (failures.length > 0) {
+        this.logger.warn("Some servers failed to initialize", {
+          failureCount: failures.length,
+          totalServers: results.length,
+        });
+      }
+
+      this.isInitialized = true;
+      
+      this.logger.info("Connection manager initialized", {
+        serverCount: Object.keys(this.servers).length,
+        successfulServers: results.length - failures.length,
+        failedServers: failures.length,
+      });
+      
+      this.emit("initialized", {
+        serverCount: Object.keys(this.servers).length,
+        servers: Object.keys(this.servers),
+        successfulServers: results.length - failures.length,
+        failedServers: failures.length,
+      });
+    } catch (error) {
+      this.logger.error("Failed to initialize connection manager", {}, error as Error);
+      throw error;
+    }
   }
 
   /**
@@ -110,18 +162,43 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
     
     const connection = this._pool.getConnection(serverName);
     if (!connection) {
-      throw new Error(`Server "${serverName}" not found in pool`);
+      throw new ServerUnavailableError(
+        serverName,
+        "Server not found in connection pool",
+        { operation: "connect" }
+      );
     }
 
     if (connection.isConnected()) {
+      this.logger.debug("Server already connected", { serverName });
       return;
     }
 
     try {
-      await connection.connect();
+      this.logger.info("Connecting to server", { serverName });
+      
+      await this.recoveryCoordinator.executeWithRecovery(
+        () => connection.connect(),
+        "connect",
+        `connection-${serverName}`,
+        { serverName }
+      );
+      
+      this.logger.info("Successfully connected to server", { serverName });
     } catch (error) {
-      console.error(`Failed to connect to server "${serverName}":`, error);
-      throw error;
+      const connectionError = new ConnectionError(
+        `Failed to connect to server: ${error instanceof Error ? error.message : String(error)}`,
+        serverName,
+        true,
+        { originalError: error }
+      );
+      
+      this.logger.error("Failed to connect to server", {
+        serverName,
+        error: connectionError.message,
+      }, connectionError);
+      
+      throw connectionError;
     }
   }
 
