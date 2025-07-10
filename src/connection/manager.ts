@@ -16,6 +16,7 @@ import {
 } from "./types";
 import { ConnectionPool } from "./pool";
 import { ConnectionFactory } from "./factory";
+import { HealthMonitor, HealthState } from "./health-monitor";
 
 /**
  * Connection manager orchestrates connections to multiple MCP servers
@@ -25,6 +26,7 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
   private servers: Record<string, ServerConfig> = {};
   private isInitialized = false;
   private isStarted = false;
+  private _healthMonitor: HealthMonitor;
 
   constructor(
     poolConfig: ConnectionPoolConfig = {},
@@ -32,7 +34,11 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
   ) {
     super();
     this._pool = new ConnectionPool(poolConfig, connectionFactory);
+    this._healthMonitor = new HealthMonitor({
+      checkInterval: poolConfig.healthCheckInterval || 30000
+    });
     this.setupPoolEventForwarding();
+    this.setupHealthMonitoring();
   }
 
   /**
@@ -40,6 +46,13 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
    */
   get pool(): IConnectionPool {
     return this._pool;
+  }
+
+  /**
+   * Get the health monitor
+   */
+  get healthMonitor(): HealthMonitor {
+    return this._healthMonitor;
   }
 
   /**
@@ -67,6 +80,12 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
       async ([serverName, config]) => {
         try {
           await this._pool.addConnection(serverName, config);
+          
+          // Add connection to health monitor
+          const connection = this._pool.getConnection(serverName);
+          if (connection) {
+            this._healthMonitor.addConnection(connection);
+          }
         } catch (error) {
           console.error(`Failed to add server "${serverName}" to pool:`, error);
           throw error;
@@ -169,6 +188,7 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
 
     try {
       await this._pool.start();
+      this._healthMonitor.start();
       this.isStarted = true;
       
       this.emit("started", {
@@ -192,6 +212,7 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
 
     try {
       await this._pool.stop();
+      this._healthMonitor.stop();
       this.isStarted = false;
       
       this.emit("stopped", {
@@ -217,6 +238,12 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
     this.servers[serverName] = config;
     await this._pool.addConnection(serverName, config);
     
+    // Add to health monitor
+    const connection = this._pool.getConnection(serverName);
+    if (connection) {
+      this._healthMonitor.addConnection(connection);
+    }
+    
     // Auto-connect if manager is started
     if (this.isStarted) {
       try {
@@ -240,6 +267,7 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
     }
 
     await this._pool.removeConnection(serverName);
+    this._healthMonitor.removeConnection(serverName);
     delete this.servers[serverName];
 
     this.emit("serverRemoved", { serverName });
@@ -291,6 +319,36 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
         );
       }
     }
+  }
+
+  /**
+   * Setup health monitoring integration
+   */
+  private setupHealthMonitoring(): void {
+    // Forward health state changes to tool availability events
+    this._healthMonitor.on("stateChange", (result, previousState) => {
+      this.emit("serverHealthChanged", {
+        serverName: result.serverName,
+        newState: result.state,
+        previousState,
+        lastHealthyAt: result.lastHealthyAt,
+        error: result.error,
+      });
+
+      // Emit tool availability change events
+      if (result.state !== HealthState.HEALTHY && previousState === HealthState.HEALTHY) {
+        this.emit("serverToolsUnavailable", {
+          serverName: result.serverName,
+          reason: result.state,
+          error: result.error,
+        });
+      } else if (result.state === HealthState.HEALTHY && previousState !== HealthState.HEALTHY) {
+        this.emit("serverToolsAvailable", {
+          serverName: result.serverName,
+          recoveredFrom: previousState,
+        });
+      }
+    });
   }
 
   /**

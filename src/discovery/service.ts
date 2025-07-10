@@ -517,6 +517,43 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
       this.lookupManager.clearServer(event.serverName);
     });
 
+    // Listen for health-based tool availability changes
+    this.connectionManager.on("serverToolsUnavailable" as any, (event: any) => {
+      console.log(`Server "${event.serverName}" tools unavailable due to health: ${event.reason}`);
+      
+      this.updateServerState(event.serverName, {
+        isConnected: false,
+        lastError: event.error?.message,
+      });
+      
+      // Clear tools for unhealthy server from lookup
+      this.lookupManager.clearServer(event.serverName);
+      
+      // Emit tools unavailable event
+      this.emit("toolsUnavailable", {
+        serverName: event.serverName,
+        reason: event.reason,
+        error: event.error,
+      });
+    });
+
+    this.connectionManager.on("serverToolsAvailable" as any, (event: any) => {
+      console.log(`Server "${event.serverName}" tools available again, recovered from: ${event.recoveredFrom}`);
+      
+      // Trigger tool rediscovery if auto-discovery is enabled
+      if (this.config.autoDiscovery && this.isInitialized) {
+        this.discoverTools(event.serverName).catch((error) => {
+          console.error(`Auto-discovery failed for recovered server "${event.serverName}":`, error);
+        });
+      }
+      
+      // Emit tools available event
+      this.emit("toolsAvailable", {
+        serverName: event.serverName,
+        recoveredFrom: event.recoveredFrom,
+      });
+    });
+
     // Listen for MCP tools list changed notifications
     this.setupMCPNotificationHandlers();
   }
