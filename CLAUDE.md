@@ -69,6 +69,9 @@ Create your code in logical directories under `src/`:
    # Find your base branch (usually integration, cs-setup, or main)
    git log --oneline --graph | head -10  # Look for where your branch diverged
    git merge <base-branch-name>  # e.g., git merge integration
+   
+   # IMPORTANT: All branches are LOCAL only - never pull from origin
+   # Your base branch is always a local branch, not a remote one
    ```
 4. **Commit Your Work**: Create clear commit messages describing your implementation
 5. **Mark Task Complete**: Use `mcp__task-master__set_task_status --id <your-task-id> --status completed`
@@ -99,6 +102,8 @@ else:
 
 ### ⚠️ Important Reminders
 - **NO remote pushing** - keep all work local until manual integration
+- **NO pulling from origin** - all branches (main, integration, etc.) are LOCAL only
 - **Follow dependencies** - check which tasks must complete before yours
 - **Test thoroughly** - your component will be integrated with others
 - **Document integration points** - help future tasks understand your interfaces
+- **Local-only workflow** - never use `git pull`, `git fetch`, or push to remote
