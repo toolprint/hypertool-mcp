@@ -64,10 +64,16 @@ Create your code in logical directories under `src/`:
 #### When You're Done:
 1. **Test Your Implementation**: Run tests (`npm test` or `just test`) and verify functionality
 2. **Run Code Quality**: Use `just lint` and `just format` to ensure code standards
-3. **Commit Your Work**: Create clear commit messages describing your implementation
-4. **Mark Task Complete**: Use `mcp__task-master__set_task_status --id <your-task-id> --status completed`
-5. **Document Integration**: Update task with merge notes using `mcp__task-master__update_task --id <your-task-id> --append --prompt "Work completed in local branch [branch-name]. Ready for local merge. Integration notes: [any important details]"`
-6. **Keep Work Local**: Do NOT push branches to remote - all work stays in local worktrees for manual integration
+3. **Merge Latest Changes**: Before finalizing, merge the latest changes from your base branch to avoid conflicts:
+   ```bash
+   # Find your base branch (usually integration, cs-setup, or main)
+   git log --oneline --graph | head -10  # Look for where your branch diverged
+   git merge <base-branch-name>  # e.g., git merge integration
+   ```
+4. **Commit Your Work**: Create clear commit messages describing your implementation
+5. **Mark Task Complete**: Use `mcp__task-master__set_task_status --id <your-task-id> --status completed`
+6. **Document Integration**: Update task with merge notes using `mcp__task-master__update_task --id <your-task-id> --append --prompt "Work completed in local branch [branch-name]. Merged latest changes from [base-branch]. Ready for local merge. Integration notes: [any important details]"`
+7. **Keep Work Local**: Do NOT push branches to remote - all work stays in local worktrees for manual integration
 
 #### Example Task Assignment Workflow:
 ```
