@@ -1,0 +1,86 @@
+<context>
+# Overview  
+Meta-MCP is a TypeScript-based proxy MCP server that acts as a single entry point for multiple underlying MCP servers. It dynamically exposes a configurable subset of tools from connected MCP servers, allowing users to create custom toolsets by combining tools from different servers. The proxy handles tool discovery, caching, and request routing transparently across multiple transport protocols.
+
+# Core Features  
+- **MCP Server Proxy**: Acts as a single MCP server that proxies requests to multiple underlying MCP servers
+- **Multi-Transport Support**: Supports both HTTP (Server-Sent Events) and stdio transports for client connections
+- **Dynamic Tool Discovery**: Automatically discovers and caches available tools from connected MCP servers
+- **Configurable Tool Subsets**: Users can specify which tools to expose from each underlying server
+- **Tool Request Routing**: Transparently routes tool calls to the appropriate underlying server
+- **MCP Configuration Parsing**: Reads and parses existing .mcp.json files to discover available servers
+- **Server Health Monitoring**: Tracks which underlying servers are running and accessible
+- **Toolset Management**: Allows users to create, save, and load custom toolset configurations
+- **TypeScript Implementation**: Full TypeScript type safety and modern development practices
+
+# User Experience  
+- **Primary User**: Developers using Claude Code with multiple MCP servers who want simplified tool management
+- **Key User Flows**: 
+  - Point server to existing .mcp.json file on first launch
+  - Server discovers available tools from running MCP servers
+  - User configures custom toolset (subset of available tools)
+  - Server exposes only selected tools to clients via HTTP/SSE or stdio
+  - Tool calls are transparently proxied to correct underlying servers
+- **Error Handling**: Clear warnings when underlying servers are unavailable or tools can't be loaded
+</context>
+<PRD>
+# Technical Architecture  
+- **TypeScript MCP Server**: Standard MCP server implementation following cco-mcp best practices
+- **Transport Layer**: Support for both HTTP/SSE and stdio transports for maximum compatibility
+- **Client Pool Management**: Maintains connections to multiple underlying MCP servers
+- **Tool Registry**: Dynamic registry of available tools with metadata and routing information
+- **Configuration System**: Parses .mcp.json files and manages toolset configurations
+- **Caching Layer**: Caches tool definitions and server availability status with real-time updates
+- **Request Router**: Routes incoming tool requests to appropriate underlying servers
+- **Health Monitor**: Periodically checks underlying server availability with reconnection logic
+
+# Development Roadmap  
+**Phase 1 - Core Proxy Functionality (MVP)**
+- Implement TypeScript MCP server with stdio and HTTP/SSE transport support
+- Add .mcp.json file parsing and server discovery
+- Create tool discovery and caching system with TypeScript types
+- Implement basic request proxying for tool calls
+- Add simple toolset configuration (JSON-based)
+
+**Phase 2 - Enhanced Management**
+- Implement server health monitoring and reconnection logic
+- Add toolset management commands (create, save, load, list)
+- Implement graceful error handling for unavailable servers
+- Add configuration persistence and user preferences
+- Create CLI interface for toolset management
+
+**Phase 3 - Advanced Features**
+- Add tool call middleware for logging/debugging
+- Implement tool versioning and compatibility checks
+- Add performance monitoring and caching optimizations
+- Add hot-reloading of configurations
+- Implement comprehensive testing suite
+
+# Logical Dependency Chain
+1. **TypeScript MCP Server Foundation**: Basic MCP server implementation with stdio/HTTP transport support
+2. **Configuration Parser**: Parse .mcp.json files and extract server connection details
+3. **Client Connection Manager**: Establish and maintain connections to underlying MCP servers
+4. **Tool Discovery Engine**: Query underlying servers for available tools and cache results with TypeScript types
+5. **Request Router**: Route incoming tool requests to correct underlying servers
+6. **Toolset Configuration**: Allow users to specify which tools to expose
+7. **Health Monitoring**: Track server availability and handle connection failures
+8. **Persistence Layer**: Save user preferences and toolset configurations
+
+# Risks and Mitigations  
+- **Underlying Server Failures**: Dependent servers may become unavailable
+  - Mitigation: Implement health checks, graceful degradation, and clear error messages
+- **Tool Schema Conflicts**: Different servers may have tools with same names
+  - Mitigation: Implement namespacing or conflict resolution strategies
+- **Performance Overhead**: Proxying adds latency to tool calls
+  - Mitigation: Optimize connection pooling and implement caching where appropriate
+- **Configuration Complexity**: Managing multiple server configurations can be complex
+  - Mitigation: Provide clear documentation and intuitive configuration interfaces
+
+# Appendix  
+- **Target MCP Servers**: git, docker, context7, task-master, claude-task, and others
+- **Configuration Format**: JSON-based toolset definitions with server mappings
+- **Deployment**: Single TypeScript executable that can be run as MCP server
+- **Development Language**: TypeScript with full type safety
+- **Reference Implementation**: https://github.com/toolprint/cco-mcp for best practices
+- **Transport Support**: stdio (for Claude Code) and HTTP/SSE (for web clients)
+</PRD>

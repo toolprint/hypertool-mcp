@@ -1,0 +1,165 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 13,
+        "title": "Setup TypeScript MCP Server Foundation",
+        "description": "Create the basic TypeScript MCP server implementation with stdio and HTTP/SSE transport support following cco-mcp best practices [Updated: 7/10/2025]",
+        "details": "Initialize TypeScript project with proper tsconfig.json, package.json with MCP dependencies. Implement base MCP server class with stdio transport support using @modelcontextprotocol/sdk-typescript. Add HTTP/SSE transport layer for web client compatibility. Create server initialization logic with transport selection. Follow patterns from cco-mcp reference implementation for type safety and structure.\n<info added on 2025-07-10T16:05:29.996Z>\nAssignment: claude-squad session-1 at 2025-01-09T18:30:00Z\n</info added on 2025-07-10T16:05:29.996Z>",
+        "testStrategy": "Unit tests for server initialization, transport layer tests for both stdio and HTTP/SSE, integration tests with mock MCP clients",
+        "priority": "high",
+        "dependencies": [],
+        "status": "in-progress",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Implement .mcp.json Configuration Parser",
+        "description": "Create parser to read and validate .mcp.json configuration files and extract server connection details",
+        "details": "Build TypeScript configuration parser that reads .mcp.json files, validates schema, and extracts server definitions including transport types (stdio/HTTP), command paths, and connection parameters. Create TypeScript interfaces for configuration structure. Handle file system operations with proper error handling for missing or malformed configuration files. Support both absolute and relative paths for server executables.",
+        "testStrategy": "Unit tests with various .mcp.json formats, validation tests for malformed configs, file system mock tests",
+        "priority": "high",
+        "dependencies": [
+          13
+        ],
+        "status": "in-progress",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Build Client Connection Manager",
+        "description": "Implement connection pool management system to establish and maintain connections to multiple underlying MCP servers",
+        "details": "Create connection manager that spawns and maintains connections to underlying MCP servers based on parsed configuration. Implement connection pooling with proper lifecycle management (connect, disconnect, reconnect). Support both stdio and HTTP transport protocols. Handle connection failures with retry logic and connection state tracking. Use TypeScript generics for type-safe connection handling.",
+        "testStrategy": "Integration tests with mock MCP servers, connection lifecycle tests, failure scenario tests, concurrent connection tests",
+        "priority": "high",
+        "dependencies": [
+          14
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Develop Tool Discovery Engine",
+        "description": "Create system to query underlying servers for available tools and cache results with full TypeScript type safety",
+        "details": "Implement tool discovery mechanism that queries connected MCP servers for their available tools using MCP list_tools protocol. Create TypeScript interfaces for tool metadata including schemas, descriptions, and server origins. Build caching layer with TTL and invalidation strategies. Handle tool schema conflicts with namespacing (server.tool_name format). Store tool definitions in memory with efficient lookup structures.",
+        "testStrategy": "Unit tests for tool discovery logic, caching tests with TTL validation, schema conflict resolution tests, performance tests for large tool sets",
+        "priority": "high",
+        "dependencies": [
+          15
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Create Request Router",
+        "description": "Implement routing system to transparently route incoming tool requests to appropriate underlying servers",
+        "details": "Build request router that intercepts tool calls from clients and routes them to correct underlying MCP servers. Implement tool name resolution with namespace handling. Create request/response transformation layer to maintain protocol compatibility. Handle request parameters validation and response formatting. Add request logging and error propagation from underlying servers.",
+        "testStrategy": "Integration tests with multiple mock servers, request routing accuracy tests, error handling tests, performance benchmarks",
+        "priority": "high",
+        "dependencies": [
+          16
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Implement Toolset Configuration System",
+        "description": "Create JSON-based toolset configuration allowing users to specify which tools to expose from each server",
+        "details": "Design toolset configuration schema with JSON format supporting server-specific tool inclusion/exclusion rules. Create configuration validator and loader with TypeScript type definitions. Implement toolset filtering logic that respects user preferences. Support wildcard patterns and regex for tool selection. Create default configuration generator based on available tools.",
+        "testStrategy": "Schema validation tests, configuration loading tests, tool filtering accuracy tests, wildcard pattern tests",
+        "priority": "medium",
+        "dependencies": [
+          17
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "Add Server Health Monitoring",
+        "description": "Implement health monitoring system to track underlying server availability with reconnection logic",
+        "details": "Create health monitor that periodically checks underlying server availability using MCP ping/health check mechanisms. Implement reconnection logic with exponential backoff for failed connections. Track server status (online/offline/error) and update tool availability accordingly. Add health check scheduling and connection recovery procedures. Emit health events for monitoring.",
+        "testStrategy": "Health check interval tests, reconnection logic tests, server failure simulation tests, health event emission tests",
+        "priority": "medium",
+        "dependencies": [
+          15
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "Build Configuration Persistence Layer",
+        "description": "Create system to save user preferences and toolset configurations with file-based persistence",
+        "details": "Implement file-based persistence for user toolset configurations using JSON format. Create configuration file management with atomic writes and backup strategies. Support configuration versioning and migration. Add user preference storage for default toolsets and server settings. Implement configuration validation on load with schema checking.",
+        "testStrategy": "File persistence tests, atomic write tests, configuration migration tests, concurrent access tests",
+        "priority": "medium",
+        "dependencies": [
+          18
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 21,
+        "title": "Create CLI Interface for Toolset Management",
+        "description": "Develop command-line interface for toolset management operations (create, save, load, list)",
+        "details": "Build CLI using commander.js or similar framework with commands for toolset management. Implement 'create', 'save', 'load', 'list', and 'delete' commands for toolset configurations. Add interactive toolset builder with server and tool selection menus. Create configuration import/export functionality. Include help documentation and command validation.",
+        "testStrategy": "CLI command tests, interactive menu tests, configuration import/export tests, help system tests",
+        "priority": "medium",
+        "dependencies": [
+          20
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 22,
+        "title": "Implement Error Handling and Logging",
+        "description": "Add comprehensive error handling with clear warnings for unavailable servers and failed tool calls",
+        "details": "Create structured error handling system with custom error classes for different failure scenarios. Implement logging framework with configurable log levels and output formatting. Add user-friendly error messages for common issues (server unavailable, tool not found, configuration errors). Create error recovery mechanisms and graceful degradation strategies.",
+        "testStrategy": "Error scenario tests, logging output tests, error recovery tests, graceful degradation tests",
+        "priority": "medium",
+        "dependencies": [
+          19
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 23,
+        "title": "Add Tool Call Middleware and Debugging",
+        "description": "Implement middleware system for tool call logging, debugging, and request/response transformation",
+        "details": "Create middleware architecture for tool call interception and processing. Add request/response logging middleware with configurable verbosity. Implement debugging middleware with request tracing and performance metrics. Create tool call analytics middleware for usage tracking. Support middleware chaining and conditional execution based on configuration.",
+        "testStrategy": "Middleware execution tests, logging middleware tests, debugging output tests, performance metrics tests",
+        "priority": "low",
+        "dependencies": [
+          17
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 24,
+        "title": "Create Comprehensive Testing Suite",
+        "description": "Develop full testing suite including unit tests, integration tests, and end-to-end testing scenarios",
+        "details": "Build comprehensive test suite using Jest or similar framework. Create unit tests for all core components with high coverage. Implement integration tests with mock MCP servers and real protocol interactions. Add end-to-end tests simulating complete user workflows. Create test utilities for mock server generation and configuration fixtures. Include performance benchmarks and load testing.",
+        "testStrategy": "Test coverage analysis, CI/CD pipeline integration, automated test execution, performance benchmark validation",
+        "priority": "medium",
+        "dependencies": [
+          22
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-09T21:55:09.811Z",
+      "updated": "2025-07-10T16:03:33.214Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
