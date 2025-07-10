@@ -12,7 +12,8 @@
     "tsc",
     "jest",
     "eslint",
-    "prettier"
+    "prettier",
+    "task-"
   ]
 }
 EOF < /dev/null

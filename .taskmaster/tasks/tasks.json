@@ -62,7 +62,17 @@
           16
         ],
         "status": "done",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update HTTP transport to use Streamable HTTP instead of SSE",
+            "description": "Replace deprecated SSE transport with modern Streamable HTTP transport using /mcp endpoint",
+            "details": "Update the HTTP server implementation to support the new Streamable HTTP transport that supersedes SSE. Use cco-mcp or @modelcontextprotocol/sdk official examples. Key changes: 1) Replace /sse endpoint with /mcp endpoint, 2) Support single endpoint for both GET and POST, 3) Add session ID management with Mcp-Session-Id header, 4) Implement automatic connection upgrades to SSE when needed, 5) Support bi-directional communication, 6) Update transport creation to use StreamableHttpServerTransport instead of SSEServerTransport",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 17
+          }
+        ]
       },
       {
         "id": 18,
