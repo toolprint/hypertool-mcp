@@ -1,36 +1,18 @@
 {
-  "enabledMcpjsonServers": [
-    "git",
-    "docker",
-    "context7",
-    "task-master",
-    "claude-task"
-  ],
-  "enableAllProjectMcpServers": true,
-  "additionalDirectories": [],
-  "permissions": {
-    "allow": [
-      "Bash(brew:*)",
-      "Bash(uv:*)",
-      "Bash(pnpm:*)",
-      "Bash(just:*)",
-      "Bash(mkdir:*)",
-      "Bash(cd:*)",
-      "Bash(find:*)",
-      "Glob(*)",
-      "Grep(*)",
-      "LS(*)",
-      "Read(*)",
-      "Write(*)",
-      "TodoRead(*)",
-      "TodoWrite(*)",
-      "WebFetch(*)",
-      "mcp__git",
-      "mcp__docker",
-      "mcp__context7",
-      "mcp__task-master",
-      "mcp__claude-task"
-    ],
-    "deny": []
-  }
+  "allowedCommands": [
+    "npm test",
+    "npm run test",
+    "npm run build", 
+    "npm run lint",
+    "npm run format",
+    "npm start",
+    "npm run start:dev",
+    "npm run start:http",
+    "npm install",
+    "tsc",
+    "jest",
+    "eslint",
+    "prettier"
+  ]
 }
+EOF < /dev/null
