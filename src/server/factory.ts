@@ -3,6 +3,7 @@
  */
 
 import { MetaMCPServer } from "./base";
+import { EnhancedMetaMCPServer } from "./enhanced";
 import {
   MetaMCPServerConfig,
   ServerInitOptions,
@@ -23,7 +24,7 @@ export class MetaMCPServerFactory {
   /**
    * Create server with default configuration
    */
-  static createDefaultServer(transport: TransportConfig): MetaMCPServer {
+  static createDefaultServer(transport: TransportConfig): EnhancedMetaMCPServer {
     const config: MetaMCPServerConfig = {
       name: "meta-mcp",
       version: "1.0.0",
@@ -32,7 +33,7 @@ export class MetaMCPServerFactory {
       transport,
     };
 
-    return MetaMCPServerFactory.createServer(config);
+    return new EnhancedMetaMCPServer(config);
   }
 
   /**
