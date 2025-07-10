@@ -86,7 +86,7 @@ export class MetaMCPServer extends EventEmitter {
    * Handle tool call requests
    * To be implemented by subclasses
    */
-  protected async handleToolCall(name: string, args?: any): Promise<any> {
+  protected async handleToolCall(name: string, _args?: any): Promise<any> {
     throw new Error(`Tool "${name}" not implemented`);
   }
 
