@@ -17,6 +17,7 @@ async function main(): Promise<void> {
       ? parseInt(args[args.indexOf("--port") + 1])
       : 3000;
     const debug = args.includes("--debug");
+    const enableCallTool = args.includes("--enable-call-tool");
 
     const transportConfig: TransportConfig = {
       type: transportType,
@@ -40,6 +41,7 @@ async function main(): Promise<void> {
     const initOptions = MetaMCPServerFactory.createInitOptions({
       transport: transportConfig,
       debug,
+      enableCallTool,
     });
 
     await server.start(initOptions);
@@ -70,3 +72,4 @@ export { main };
 export * from "./server";
 export * from "./config";
 export * from "./types/config";
+export * from "./router";
