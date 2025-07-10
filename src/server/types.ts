@@ -1,0 +1,56 @@
+/**
+ * TypeScript interfaces for Meta-MCP server implementation
+ */
+
+import { TransportType } from "../types/config";
+
+/**
+ * Transport configuration for the Meta-MCP server
+ */
+export interface TransportConfig {
+  type: TransportType;
+  port?: number;
+  host?: string;
+}
+
+/**
+ * Meta-MCP server configuration
+ */
+export interface MetaMCPServerConfig {
+  name: string;
+  version: string;
+  description: string;
+  transport: TransportConfig;
+  configPath?: string;
+}
+
+/**
+ * Server initialization options
+ */
+export interface ServerInitOptions {
+  transport: TransportConfig;
+  configPath?: string;
+  debug?: boolean;
+}
+
+/**
+ * Server state enumeration
+ */
+export enum ServerState {
+  STOPPED = "stopped",
+  STARTING = "starting",
+  RUNNING = "running",
+  STOPPING = "stopping",
+  ERROR = "error",
+}
+
+/**
+ * Server status information
+ */
+export interface ServerStatus {
+  state: ServerState;
+  uptime?: number;
+  connectedClients?: number;
+  underlyingServers?: number;
+  lastError?: string;
+}
