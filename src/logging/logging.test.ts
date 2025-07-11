@@ -346,13 +346,10 @@ describe("Log Entry Fields", () => {
     logger.on("log", logHandler);
     logger.info("Test");
 
-    expect(logHandler).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: "Test",
-        requestId: undefined,
-        serverName: undefined,
-        toolName: undefined,
-      })
-    );
+    const call = logHandler.mock.calls[0][0];
+    expect(call.message).toBe("Test");
+    expect(call.requestId).toBeUndefined();
+    expect(call.serverName).toBeUndefined();
+    expect(call.toolName).toBeUndefined();
   });
 });
