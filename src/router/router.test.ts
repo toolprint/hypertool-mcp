@@ -39,6 +39,23 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
     return this.tools;
   }
 
+  resolveToolReference(ref: { namespacedName?: string; refId?: string }, _options?: { allowStaleRefs?: boolean }) {
+    const tool = this.tools.find(t => 
+      t.namespacedName === ref.namespacedName || t.fullHash === ref.refId
+    );
+    
+    return {
+      exists: !!tool,
+      tool,
+      serverName: tool?.serverName,
+      serverStatus: undefined,
+      namespacedNameMatch: !!tool && tool.namespacedName === ref.namespacedName,
+      refIdMatch: !!tool && tool.fullHash === ref.refId,
+      warnings: [],
+      errors: []
+    };
+  }
+
   async refreshCache() {}
   async clearCache() {}
 
