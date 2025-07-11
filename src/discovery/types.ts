@@ -190,7 +190,7 @@ export interface IToolDiscoveryEngine {
   stop(): Promise<void>;
 
   /**
-   * Resolve a tool reference and return tool + server metadata
+   * Resolve a tool reference and return tool + rich server metadata
    */
   resolveToolReference(
     ref: { namespacedName?: string; refId?: string },
@@ -199,6 +199,7 @@ export interface IToolDiscoveryEngine {
     exists: boolean;
     tool?: DiscoveredTool;
     serverName?: string;
+    serverStatus?: import("../connection/types").ConnectionStatus;
     namespacedNameMatch: boolean;
     refIdMatch: boolean;
     warnings: string[];

@@ -610,6 +610,7 @@ export class ToolDiscoveryEngine
     exists: boolean;
     tool?: DiscoveredTool;
     serverName?: string;
+    serverStatus?: import("../connection/types").ConnectionStatus;
     namespacedNameMatch: boolean;
     refIdMatch: boolean;
     warnings: string[];
@@ -627,11 +628,17 @@ export class ToolDiscoveryEngine
         namespacedNameMatch: false,
         refIdMatch: false,
         warnings: [],
-        errors: ["Tool reference must have either namespacedName or refId"]
+        errors: ["Tool reference must have either namespacedName or refId"],
+        serverStatus: undefined
       };
     }
     
     const allTools = this.getAvailableTools(true);
+    
+    // Helper function to get server status from connection manager
+    const getServerStatus = (serverName: string) => {
+      return this.connectionManager?.status?.[serverName];
+    };
     
     // Build optimized lookup maps for O(1) access
     const toolByNamespacedName = new Map<string, DiscoveredTool>();
@@ -654,7 +661,8 @@ export class ToolDiscoveryEngine
         namespacedNameMatch: false,
         refIdMatch: false,
         warnings: [],
-        errors: [`Tool not found by any identifier: namespacedName='${ref.namespacedName}', refId='${ref.refId}'`]
+        errors: [`Tool not found by any identifier: namespacedName='${ref.namespacedName}', refId='${ref.refId}'`],
+        serverStatus: undefined
       };
     }
     
@@ -666,6 +674,7 @@ export class ToolDiscoveryEngine
           exists: true,
           tool: toolByName,
           serverName: toolByName.serverName,
+          serverStatus: getServerStatus(toolByName.serverName),
           namespacedNameMatch: true,
           refIdMatch: true,
           warnings: [],
@@ -682,6 +691,7 @@ export class ToolDiscoveryEngine
             exists: true,
             tool: toolByRef,
             serverName: toolByRef.serverName,
+            serverStatus: getServerStatus(toolByRef.serverName),
             namespacedNameMatch: false,
             refIdMatch: true,
             warnings,
@@ -695,7 +705,8 @@ export class ToolDiscoveryEngine
             namespacedNameMatch: false,
             refIdMatch: false,
             warnings: [],
-            errors
+            errors,
+            serverStatus: undefined
           };
         }
       }
@@ -714,6 +725,7 @@ export class ToolDiscoveryEngine
             exists: true,
             tool: toolByRef,
             serverName: toolByRef.serverName,
+            serverStatus: getServerStatus(toolByRef.serverName),
             namespacedNameMatch: false,
             refIdMatch: true,
             warnings,
@@ -727,7 +739,8 @@ export class ToolDiscoveryEngine
             namespacedNameMatch: false,
             refIdMatch: false,
             warnings: [],
-            errors
+            errors,
+            serverStatus: undefined
           };
         }
       }
@@ -737,6 +750,7 @@ export class ToolDiscoveryEngine
         exists: true,
         tool: toolByRef,
         serverName: toolByRef.serverName,
+        serverStatus: getServerStatus(toolByRef.serverName),
         namespacedNameMatch,
         refIdMatch: true,
         warnings: [],
@@ -757,6 +771,7 @@ export class ToolDiscoveryEngine
             exists: true,
             tool: toolByName,
             serverName: toolByName.serverName,
+            serverStatus: getServerStatus(toolByName.serverName),
             namespacedNameMatch: true,
             refIdMatch: false,
             warnings,
@@ -770,7 +785,8 @@ export class ToolDiscoveryEngine
             namespacedNameMatch: false,
             refIdMatch: false,
             warnings: [],
-            errors
+            errors,
+            serverStatus: undefined
           };
         }
       }
@@ -780,6 +796,7 @@ export class ToolDiscoveryEngine
         exists: true,
         tool: toolByName,
         serverName: toolByName.serverName,
+        serverStatus: getServerStatus(toolByName.serverName),
         namespacedNameMatch: true,
         refIdMatch,
         warnings: [],
@@ -793,7 +810,8 @@ export class ToolDiscoveryEngine
       namespacedNameMatch: false,
       refIdMatch: false,
       warnings: [],
-      errors: ["Unexpected error in tool resolution"]
+      errors: ["Unexpected error in tool resolution"],
+      serverStatus: undefined
     };
   }
 
