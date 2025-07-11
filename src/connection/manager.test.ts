@@ -30,7 +30,9 @@ class MockConnection implements Connection {
 
   get status() {
     return {
-      state: this.isConnectedState ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED,
+      state: this.isConnectedState
+        ? ConnectionState.CONNECTED
+        : ConnectionState.DISCONNECTED,
       serverId: this.id,
       serverName: this.serverName,
       retryCount: 0,
@@ -92,7 +94,7 @@ class MockConnection implements Connection {
   emit(event: ConnectionEventType, payload: Partial<ConnectionEvent>): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
-      listeners.forEach(listener => listener(payload));
+      listeners.forEach((listener) => listener(payload));
     }
   }
 }
@@ -144,14 +146,14 @@ describe("ConnectionManager", () => {
   describe("initialization", () => {
     it("should initialize with server configurations", async () => {
       await manager.initialize(testServers);
-      
+
       expect(manager.getServerNames()).toEqual(["git-server", "docker-server"]);
       expect(manager.pool.size).toBe(2);
     });
 
     it("should reject double initialization", async () => {
       await manager.initialize(testServers);
-      
+
       await expect(manager.initialize(testServers)).rejects.toThrow(
         "Connection manager is already initialized"
       );
@@ -175,7 +177,7 @@ describe("ConnectionManager", () => {
 
     it("should connect to a specific server", async () => {
       await manager.connect("git-server");
-      
+
       expect(manager.isServerConnected("git-server")).toBe(true);
       expect(manager.getConnectedServers()).toContain("git-server");
     });
@@ -183,19 +185,19 @@ describe("ConnectionManager", () => {
     it("should disconnect from a specific server", async () => {
       await manager.connect("git-server");
       await manager.disconnect("git-server");
-      
+
       expect(manager.isServerConnected("git-server")).toBe(false);
     });
 
     it("should reconnect to a server", async () => {
       await manager.connect("git-server");
-      
+
       const mockConnection = mockFactory.getMockConnection("git-server")!;
       const disconnectSpy = jest.spyOn(mockConnection, "disconnect");
       const connectSpy = jest.spyOn(mockConnection, "connect");
-      
+
       await manager.reconnect("git-server");
-      
+
       expect(disconnectSpy).toHaveBeenCalled();
       expect(connectSpy).toHaveBeenCalled();
     });
@@ -214,23 +216,23 @@ describe("ConnectionManager", () => {
 
     it("should start the connection manager", async () => {
       const startPromise = manager.start();
-      
+
       await startPromise;
-      
+
       expect(manager.getConnectedServers().length).toBe(2);
     });
 
     it("should stop the connection manager", async () => {
       await manager.start();
       await manager.stop();
-      
+
       expect(manager.getConnectedServers().length).toBe(0);
     });
 
     it("should handle multiple start calls gracefully", async () => {
       await manager.start();
       await manager.start(); // Should not throw
-      
+
       expect(manager.getConnectedServers().length).toBe(2);
     });
   });
@@ -247,14 +249,14 @@ describe("ConnectionManager", () => {
       };
 
       await manager.addServer("new-server", newServer);
-      
+
       expect(manager.getServerNames()).toContain("new-server");
       expect(manager.getServerConfig("new-server")).toEqual(newServer);
     });
 
     it("should remove a server", async () => {
       await manager.removeServer("git-server");
-      
+
       expect(manager.getServerNames()).not.toContain("git-server");
       expect(manager.pool.size).toBe(1);
     });
@@ -265,9 +267,9 @@ describe("ConnectionManager", () => {
         command: "duplicate",
       };
 
-      await expect(manager.addServer("git-server", duplicateServer)).rejects.toThrow(
-        'Server "git-server" already exists'
-      );
+      await expect(
+        manager.addServer("git-server", duplicateServer)
+      ).rejects.toThrow('Server name conflict detected: "git-server" already exists');
     });
   });
 
@@ -283,7 +285,7 @@ describe("ConnectionManager", () => {
       });
 
       await manager.connect("git-server");
-      
+
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe("connected");
       expect(events[0].serverName).toBe("git-server");
@@ -296,7 +298,7 @@ describe("ConnectionManager", () => {
       });
 
       await manager.start();
-      
+
       expect(events).toHaveLength(1);
       expect(events[0].serverCount).toBe(2);
     });
@@ -309,9 +311,9 @@ describe("ConnectionManager", () => {
 
     it("should provide connection statistics", async () => {
       await manager.connect("git-server");
-      
+
       const stats = manager.getStats();
-      
+
       expect(stats.totalServers).toBe(2);
       expect(stats.connectedServers).toBe(1);
       expect(stats.disconnectedServers).toBe(1);
@@ -323,7 +325,7 @@ describe("ConnectionManager", () => {
     it("should handle empty connection pool", () => {
       const emptyManager = new ConnectionManager();
       const stats = emptyManager.getStats();
-      
+
       expect(stats.totalServers).toBe(0);
       expect(stats.connectionRate).toBe(0);
     });
@@ -336,15 +338,19 @@ describe("ConnectionManager", () => {
 
     it("should handle connection failures gracefully", async () => {
       const mockConnection = mockFactory.getMockConnection("git-server")!;
-      mockConnection.connectPromise = Promise.reject(new Error("Connection failed"));
+      mockConnection.connectPromise = Promise.reject(
+        new Error("Connection failed")
+      );
 
-      await expect(manager.connect("git-server")).rejects.toThrow("Connection failed");
+      await expect(manager.connect("git-server")).rejects.toThrow(
+        "Connection failed"
+      );
       expect(manager.isServerConnected("git-server")).toBe(false);
     });
 
     it("should handle operations before initialization", async () => {
       const uninitializedManager = new ConnectionManager();
-      
+
       await expect(uninitializedManager.connect("test")).rejects.toThrow(
         "Connection manager not initialized"
       );
@@ -379,7 +385,7 @@ describe("ConnectionManager", () => {
 
     it("should reject invalid configuration", async () => {
       const invalidServer = {
-        "invalid": null as any,
+        invalid: null as any,
       };
 
       await expect(manager.initialize(invalidServer)).rejects.toThrow(

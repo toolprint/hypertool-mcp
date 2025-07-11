@@ -44,7 +44,7 @@ export class ConnectionPool extends EventEmitter implements IConnectionPool {
    * Get the number of active connections
    */
   get activeConnections(): number {
-    return Array.from(this.connections.values()).filter(conn => 
+    return Array.from(this.connections.values()).filter((conn) =>
       conn.isConnected()
     ).length;
   }
@@ -63,9 +63,18 @@ export class ConnectionPool extends EventEmitter implements IConnectionPool {
   /**
    * Add a new connection to the pool
    */
-  async addConnection(serverName: string, config: ServerConfig): Promise<Connection> {
+  async addConnection(
+    serverName: string,
+    config: ServerConfig
+  ): Promise<Connection> {
     if (this.connections.has(serverName)) {
-      throw new Error(`Connection for server "${serverName}" already exists`);
+      const existingServers = Array.from(this.connections.keys());
+      throw new Error(
+        `❌ Server name conflict: Connection for server "${serverName}" already exists.\n` +
+        `💡 Each server must have a unique name.\n` +
+        `📋 Active servers: [${existingServers.join(', ')}]\n` +
+        `🚫 Cannot create duplicate connections for the same server name.`
+      );
     }
 
     if (this.size >= this.config.maxConcurrentConnections) {
@@ -196,7 +205,10 @@ export class ConnectionPool extends EventEmitter implements IConnectionPool {
         try {
           await connection.disconnect();
         } catch (error) {
-          console.warn(`Error disconnecting from server "${serverName}":`, error);
+          console.warn(
+            `Error disconnecting from server "${serverName}":`,
+            error
+          );
         }
       }
     );
@@ -213,13 +225,13 @@ export class ConnectionPool extends EventEmitter implements IConnectionPool {
     const eventTypes: ConnectionEventType[] = [
       "connecting",
       "connected",
-      "disconnected", 
+      "disconnected",
       "reconnecting",
       "failed",
-      "error"
+      "error",
     ];
 
-    eventTypes.forEach(eventType => {
+    eventTypes.forEach((eventType) => {
       connection.on(eventType, (event: ConnectionEvent) => {
         this.emit(eventType, event);
       });
@@ -232,12 +244,18 @@ export class ConnectionPool extends EventEmitter implements IConnectionPool {
   private setupEventHandlers(): void {
     // Handle connection failures
     this.on("failed", (event: ConnectionEvent) => {
-      console.error(`Connection to server "${event.serverName}" failed:`, event.error);
+      console.error(
+        `Connection to server "${event.serverName}" failed:`,
+        event.error
+      );
     });
 
     // Handle connection errors
     this.on("error", (event: ConnectionEvent) => {
-      console.error(`Connection error for server "${event.serverName}":`, event.error);
+      console.error(
+        `Connection error for server "${event.serverName}":`,
+        event.error
+      );
     });
   }
 

@@ -67,14 +67,14 @@
       {
         "id": 18,
         "title": "Implement Toolset Configuration System",
-        "description": "Create JSON-based toolset configuration allowing users to specify which tools to expose from each server",
-        "details": "Design toolset configuration schema with JSON format supporting server-specific tool inclusion/exclusion rules. Create configuration validator and loader with TypeScript type definitions. Implement toolset filtering logic that respects user preferences. Support wildcard patterns and regex for tool selection. Create default configuration generator based on available tools.",
+        "description": "Create JSON-based toolset configuration allowing users to specify which tools to expose from each server [Updated: 7/10/2025]",
+        "details": "Design toolset configuration schema with JSON format supporting server-specific tool inclusion/exclusion rules. Create configuration validator and loader with TypeScript type definitions. Implement toolset filtering logic that respects user preferences. Support wildcard patterns and regex for tool selection. Create default configuration generator based on available tools.\n<info added on 2025-07-10T20:38:15.385Z>\nAssigned to claude-squad session-1736487412\n</info added on 2025-07-10T20:38:15.385Z>",
         "testStrategy": "Schema validation tests, configuration loading tests, tool filtering accuracy tests, wildcard pattern tests",
         "priority": "medium",
         "dependencies": [
           17
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -158,7 +158,7 @@
     ],
     "metadata": {
       "created": "2025-07-09T21:55:09.811Z",
-      "updated": "2025-07-10T19:51:58.684Z",
+      "updated": "2025-07-10T21:07:32.665Z",
       "description": "Tasks for master context"
     }
   }
