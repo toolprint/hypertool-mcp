@@ -631,9 +631,9 @@ export class ToolDiscoveryEngine
       toolByRefId.set(tool.fullHash, tool);
     }
     
-    // Attempt resolution by both methods
-    const toolByName = ref.namespacedName ? toolByNamespacedName.get(ref.namespacedName) : undefined;
+    // Attempt resolution by both methods (refId is more reliable)
     const toolByRef = ref.refId ? toolByRefId.get(ref.refId) : undefined;
+    const toolByName = ref.namespacedName ? toolByNamespacedName.get(ref.namespacedName) : undefined;
     
     // Handle different resolution scenarios
     if (!toolByName && !toolByRef) {
@@ -659,37 +659,21 @@ export class ToolDiscoveryEngine
           warnings: []
         };
       } else {
-        // Conflict - identifiers point to different tools
-        warnings.push(`Tool reference conflict: namespacedName '${ref.namespacedName}' points to tool with refId '${toolByName.fullHash}', but refId '${ref.refId}' points to tool '${toolByRef.namespacedName}'. Using namespacedName match.`);
+        // Conflict - identifiers point to different tools, prefer refId (more reliable)
+        warnings.push(`Tool reference conflict: refId '${ref.refId}' points to tool '${toolByRef.namespacedName}', but namespacedName '${ref.namespacedName}' points to different tool. Using refId match (more reliable).`);
         return {
           exists: true,
-          tool: toolByName,
-          serverName: toolByName.serverName,
-          namespacedNameMatch: true,
-          refIdMatch: false,
+          tool: toolByRef,
+          serverName: toolByRef.serverName,
+          namespacedNameMatch: false,
+          refIdMatch: true,
           warnings
         };
       }
     }
     
-    if (toolByName) {
-      // Found by namespacedName but not by refId
-      const refIdMatch = ref.refId ? toolByName.fullHash === ref.refId : true;
-      if (!refIdMatch) {
-        warnings.push(`Tool refId mismatch: '${ref.namespacedName}' found but refId changed from '${ref.refId}' to '${toolByName.fullHash}' (tool schema may have been updated)`);
-      }
-      return {
-        exists: true,
-        tool: toolByName,
-        serverName: toolByName.serverName,
-        namespacedNameMatch: true,
-        refIdMatch,
-        warnings
-      };
-    }
-    
     if (toolByRef) {
-      // Found by refId but not by namespacedName
+      // Found by refId but not by namespacedName (prefer refId - more reliable)
       const namespacedNameMatch = ref.namespacedName ? toolByRef.namespacedName === ref.namespacedName : true;
       if (!namespacedNameMatch) {
         warnings.push(`Tool name changed: refId '${ref.refId}' found but namespacedName changed from '${ref.namespacedName}' to '${toolByRef.namespacedName}' (tool may have been renamed or moved)`);
@@ -700,6 +684,22 @@ export class ToolDiscoveryEngine
         serverName: toolByRef.serverName,
         namespacedNameMatch,
         refIdMatch: true,
+        warnings
+      };
+    }
+    
+    if (toolByName) {
+      // Found by namespacedName but not by refId (fallback - less reliable)
+      const refIdMatch = ref.refId ? toolByName.fullHash === ref.refId : true;
+      if (!refIdMatch) {
+        warnings.push(`Tool refId mismatch: '${ref.namespacedName}' found but refId changed from '${ref.refId}' to '${toolByName.fullHash}' (tool schema may have been updated)`);
+      }
+      return {
+        exists: true,
+        tool: toolByName,
+        serverName: toolByName.serverName,
+        namespacedNameMatch: true,
+        refIdMatch,
         warnings
       };
     }
