@@ -107,7 +107,7 @@ function filterServerTools(
   tools: DiscoveredTool[],
   pattern: any
 ): DiscoveredTool[] {
-  return tools.filter((tool) => matchesToolPattern(tool.name, pattern));
+  return tools.filter((tool) => matchesToolPattern(tool, pattern));
 }
 
 /**
@@ -354,7 +354,7 @@ export function previewToolsetConfig(
 
     if (serverConfig.enabled) {
       const matchedTools = serverTools
-        .filter((tool) => matchesToolPattern(tool.name, serverConfig.tools))
+        .filter((tool) => matchesToolPattern(tool, serverConfig.tools))
         .map((t) => t.name);
 
       const excludedTools = availableTools.filter(

@@ -597,6 +597,123 @@ export class ToolDiscoveryEngine
   }
 
   /**
+   * Resolve a tool reference and return tool + server metadata
+   * Uses optimized lookup maps and intelligent conflict resolution
+   */
+  resolveToolReference(ref: { namespacedName?: string; refId?: string }): {
+    exists: boolean;
+    tool?: DiscoveredTool;
+    serverName?: string;
+    namespacedNameMatch: boolean;
+    refIdMatch: boolean;
+    warnings: string[];
+  } {
+    this.ensureInitialized();
+    
+    if (!ref.namespacedName && !ref.refId) {
+      return {
+        exists: false,
+        namespacedNameMatch: false,
+        refIdMatch: false,
+        warnings: ["Tool reference must have either namespacedName or refId"]
+      };
+    }
+    
+    const allTools = this.getAvailableTools(true);
+    const warnings: string[] = [];
+    
+    // Build optimized lookup maps for O(1) access
+    const toolByNamespacedName = new Map<string, DiscoveredTool>();
+    const toolByRefId = new Map<string, DiscoveredTool>();
+    
+    for (const tool of allTools) {
+      toolByNamespacedName.set(tool.namespacedName, tool);
+      toolByRefId.set(tool.fullHash, tool);
+    }
+    
+    // Attempt resolution by both methods
+    const toolByName = ref.namespacedName ? toolByNamespacedName.get(ref.namespacedName) : undefined;
+    const toolByRef = ref.refId ? toolByRefId.get(ref.refId) : undefined;
+    
+    // Handle different resolution scenarios
+    if (!toolByName && !toolByRef) {
+      // Neither identifier found the tool
+      return {
+        exists: false,
+        namespacedNameMatch: false,
+        refIdMatch: false,
+        warnings: [`Tool not found by any identifier: namespacedName='${ref.namespacedName}', refId='${ref.refId}'`]
+      };
+    }
+    
+    if (toolByName && toolByRef) {
+      // Both identifiers found tools - check if they're the same
+      if (toolByName.namespacedName === toolByRef.namespacedName && toolByName.fullHash === toolByRef.fullHash) {
+        // Perfect match - both identifiers point to same tool
+        return {
+          exists: true,
+          tool: toolByName,
+          serverName: toolByName.serverName,
+          namespacedNameMatch: true,
+          refIdMatch: true,
+          warnings: []
+        };
+      } else {
+        // Conflict - identifiers point to different tools
+        warnings.push(`Tool reference conflict: namespacedName '${ref.namespacedName}' points to tool with refId '${toolByName.fullHash}', but refId '${ref.refId}' points to tool '${toolByRef.namespacedName}'. Using namespacedName match.`);
+        return {
+          exists: true,
+          tool: toolByName,
+          serverName: toolByName.serverName,
+          namespacedNameMatch: true,
+          refIdMatch: false,
+          warnings
+        };
+      }
+    }
+    
+    if (toolByName) {
+      // Found by namespacedName but not by refId
+      const refIdMatch = ref.refId ? toolByName.fullHash === ref.refId : true;
+      if (!refIdMatch) {
+        warnings.push(`Tool refId mismatch: '${ref.namespacedName}' found but refId changed from '${ref.refId}' to '${toolByName.fullHash}' (tool schema may have been updated)`);
+      }
+      return {
+        exists: true,
+        tool: toolByName,
+        serverName: toolByName.serverName,
+        namespacedNameMatch: true,
+        refIdMatch,
+        warnings
+      };
+    }
+    
+    if (toolByRef) {
+      // Found by refId but not by namespacedName
+      const namespacedNameMatch = ref.namespacedName ? toolByRef.namespacedName === ref.namespacedName : true;
+      if (!namespacedNameMatch) {
+        warnings.push(`Tool name changed: refId '${ref.refId}' found but namespacedName changed from '${ref.namespacedName}' to '${toolByRef.namespacedName}' (tool may have been renamed or moved)`);
+      }
+      return {
+        exists: true,
+        tool: toolByRef,
+        serverName: toolByRef.serverName,
+        namespacedNameMatch,
+        refIdMatch: true,
+        warnings
+      };
+    }
+    
+    // Should never reach here, but safety fallback
+    return {
+      exists: false,
+      namespacedNameMatch: false,
+      refIdMatch: false,
+      warnings: ["Unexpected error in tool resolution"]
+    };
+  }
+
+  /**
    * Ensure the engine is initialized
    */
   private ensureInitialized(): void {

@@ -9,8 +9,9 @@ import { DiscoveredTool } from "../discovery/types";
 import { 
   ToolsetManager, 
   ToolsetConfig, 
-  generateDefaultToolsetConfig,
-  validateToolsetConfig 
+  validateToolsetConfig,
+  DynamicToolReference,
+  resolveToolReference
 } from "./index";
 
 // Configuration directory for storing toolsets
@@ -243,27 +244,14 @@ export async function listAvailableTools(
 }
 
 /**
- * MCP Tool: Generate Toolset
+ * MCP Tool: Build Toolset
  */
-export async function generateToolset(
+export async function buildToolset(
   args: {
     name: string;
-    toolReferences?: string[];
-    serverConfigs?: Array<{
-      serverName: string;
-      enabled?: boolean;
-      tools?: {
-        include?: string[];
-        exclude?: string[];
-        includePattern?: string;
-        excludePattern?: string;
-        includeAll?: boolean;
-      };
-    }>;
-    options?: {
-      enableNamespacing?: boolean;
-      conflictResolution?: "namespace" | "prefix-server" | "error";
-    };
+    tools?: DynamicToolReference[];
+    description?: string;
+    autoEquip?: boolean;
   },
   discoveredTools: DiscoveredTool[]
 ): Promise<{
@@ -273,59 +261,99 @@ export async function generateToolset(
   }>;
 }> {
   try {
+    // Validate toolset name format
+    const namePattern = /^[a-z0-9-]+$/;
+    if (!namePattern.test(args.name)) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "Invalid toolset name",
+              details: "Toolset name must contain only lowercase letters, numbers, and hyphens (a-z, 0-9, -)"
+            }),
+          },
+        ],
+      };
+    }
+
+    if (args.name.length < 2 || args.name.length > 50) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "Invalid toolset name length", 
+              details: "Toolset name must be between 2 and 50 characters"
+            }),
+          },
+        ],
+      };
+    }
+
     let config: ToolsetConfig;
 
-    if (args.toolReferences && args.toolReferences.length > 0) {
-      // Validate all tool references first
-      const validation = validateToolReferences(args.toolReferences, discoveredTools);
-      
-      if (!validation.valid) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify({
-                success: false,
-                error: "Invalid tool references",
-                invalidReferences: validation.invalidReferences,
-                validReferences: validation.validReferences,
-                suggestion: "Use list-available-tools to see all available tools and their correct names"
-              }),
-            },
-          ],
-        };
-      }
-
-      // Create toolset config from tool references
-      config = createToolsetFromReferences(args.name, validation.resolvedTools, args.options);
-    } 
-    else if (args.serverConfigs && args.serverConfigs.length > 0) {
-      // Create toolset config from server configurations
-      config = {
-        name: args.name,
-        description: `Custom toolset created with server configurations`,
-        version: "1.0.0",
-        createdAt: new Date(),
-        servers: args.serverConfigs.map(serverConfig => ({
-          serverName: serverConfig.serverName,
-          enabled: serverConfig.enabled !== false,
-          tools: serverConfig.tools || { includeAll: true },
-          enableNamespacing: args.options?.enableNamespacing !== false,
-        })),
-        options: {
-          enableNamespacing: args.options?.enableNamespacing !== false,
-          conflictResolution: args.options?.conflictResolution || "namespace",
-          autoResolveConflicts: true,
-        },
+    if (!args.tools || args.tools.length === 0) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "No tools specified",
+              details: "You must specify which tools to include in the toolset. Use list-available-tools to see available options.",
+              suggestion: "Add a 'tools' array with specific tool references, e.g., [{namespacedName: 'git.status'}, {namespacedName: 'docker.ps'}]"
+            }),
+          },
+        ],
       };
-    } 
-    else {
-      // Generate default toolset
-      config = generateDefaultToolsetConfig(discoveredTools, {
-        name: args.name,
-        description: `Auto-generated toolset including all available tools`,
-      });
     }
+
+    // Convert structured tool references to string array for validation
+    const toolReferences: string[] = [];
+    try {
+      for (const tool of args.tools) {
+        toolReferences.push(resolveToolReference(tool));
+      }
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "Invalid tool specification",
+              details: (error as Error).message
+            }),
+          },
+        ],
+      };
+    }
+    
+    // Validate all tool references
+    const validation = validateToolReferences(toolReferences, discoveredTools);
+    
+    if (!validation.valid) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: "Invalid tool references",
+              invalidReferences: validation.invalidReferences,
+              validReferences: validation.validReferences,
+              suggestion: "Use list-available-tools to see all available tools and their correct names"
+            }),
+          },
+        ],
+      };
+    }
+
+    // Create toolset config from selected tools
+    config = createToolsetFromReferences(args.name, validation.resolvedTools, args.description);
 
     // Validate the generated config
     const configValidation = validateToolsetConfig(config);
@@ -350,22 +378,34 @@ export async function generateToolset(
     await saveStoredToolsets(stored);
 
     // Create structured response
+    const totalTools = config.tools.length;
+    
+    // Group tools by server using tool resolution for accurate server names
+    const toolsByServer: Record<string, number> = {};
+    for (const toolRef of config.tools) {
+      // Use namespacedName to extract server name (first part before dot)
+      if (toolRef.namespacedName) {
+        const serverName = toolRef.namespacedName.split('.')[0];
+        toolsByServer[serverName] = (toolsByServer[serverName] || 0) + 1;
+      }
+    }
+
     const result = {
       success: true,
       toolsetName: args.name,
       location: TOOLSETS_FILE,
       configuration: {
-        totalServers: config.servers.length,
-        enabledServers: config.servers.filter(s => s.enabled !== false).length,
-        servers: config.servers.map(server => ({
-          name: server.serverName,
-          enabled: server.enabled !== false,
-          toolSelection: server.tools.includeAll ? "all" : 
-                        server.tools.include ? `specific (${server.tools.include.length})` :
-                        server.tools.includePattern ? `pattern: ${server.tools.includePattern}` : "unknown"
+        totalServers: Object.keys(toolsByServer).length,
+        enabledServers: Object.keys(toolsByServer).length,
+        totalTools,
+        servers: Object.entries(toolsByServer).map(([name, toolCount]) => ({
+          name,
+          enabled: true,
+          toolCount
         }))
       },
-      createdAt: config.createdAt
+      createdAt: config.createdAt ? config.createdAt.toISOString() : new Date().toISOString(),
+      autoEquipped: false // Will be updated if autoEquip is successful
     };
 
     return {
@@ -398,39 +438,20 @@ export async function generateToolset(
 function createToolsetFromReferences(
   name: string,
   resolvedTools: DiscoveredTool[],
-  options?: { enableNamespacing?: boolean; conflictResolution?: string }
+  description?: string
 ): ToolsetConfig {
-  // Group tools by server
-  const toolsByServer: Record<string, string[]> = {};
-  
-  for (const tool of resolvedTools) {
-    if (!toolsByServer[tool.serverName]) {
-      toolsByServer[tool.serverName] = [];
-    }
-    toolsByServer[tool.serverName].push(tool.name);
-  }
-
-  // Create server configs
-  const servers = Object.entries(toolsByServer).map(([serverName, toolNames]) => ({
-    serverName,
-    enabled: true,
-    enableNamespacing: options?.enableNamespacing !== false,
-    tools: {
-      include: toolNames,
-    },
+  // Create tool references with both namespacedName and refId for validation
+  const tools: DynamicToolReference[] = resolvedTools.map(tool => ({
+    namespacedName: tool.namespacedName,
+    refId: tool.fullHash
   }));
 
   return {
     name,
-    description: `Custom toolset with ${resolvedTools.length} selected tools`,
+    description: description || `Custom toolset with ${resolvedTools.length} selected tools`,
     version: "1.0.0",
     createdAt: new Date(),
-    servers,
-    options: {
-      enableNamespacing: options?.enableNamespacing !== false,
-      conflictResolution: (options?.conflictResolution as any) || "namespace",
-      autoResolveConflicts: true,
-    },
+    tools,
   };
 }
 
@@ -452,11 +473,22 @@ export async function listSavedToolsets(): Promise<{
       storageLocation: TOOLSETS_FILE,
       toolsets: names.sort().map(name => {
         const config = stored[name];
+        
+        // Group tools by server for display purposes
+        const toolsByServer: Record<string, number> = {};
+        config.tools.forEach(tool => {
+          if (tool.namespacedName) {
+            const serverName = tool.namespacedName.split('.')[0];
+            toolsByServer[serverName] = (toolsByServer[serverName] || 0) + 1;
+          }
+        });
+        
         return {
           name,
           description: config.description || null,
-          totalServers: config.servers.length,
-          enabledServers: config.servers.filter(s => s.enabled !== false).length,
+          totalServers: Object.keys(toolsByServer).length,
+          enabledServers: Object.keys(toolsByServer).length,
+          totalTools: config.tools.length,
           createdAt: config.createdAt ? new Date(config.createdAt).toISOString() : null,
           version: config.version || '1.0.0'
         };

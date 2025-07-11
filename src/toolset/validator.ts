@@ -124,17 +124,6 @@ function validateServerConfig(
 function validateToolPattern(pattern: ToolPattern, prefix: string): string[] {
   const errors: string[] = [];
 
-  if (pattern.include && !Array.isArray(pattern.include)) {
-    errors.push(`${prefix}: include must be an array`);
-  } else if (pattern.include) {
-    pattern.include.forEach((tool, index) => {
-      if (typeof tool !== "string") {
-        errors.push(`${prefix}: include[${index}] must be a string`);
-      } else if (tool.trim().length === 0) {
-        errors.push(`${prefix}: include[${index}] cannot be empty`);
-      }
-    });
-  }
 
   if (pattern.exclude && !Array.isArray(pattern.exclude)) {
     errors.push(`${prefix}: exclude must be an array`);
@@ -184,15 +173,36 @@ function validateToolPattern(pattern: ToolPattern, prefix: string): string[] {
   }
 
   // Logical validation
-  if (pattern.includeAll && (pattern.include || pattern.includePattern)) {
+  if (pattern.includeAll && (pattern.includeRefs || pattern.includePattern)) {
     errors.push(
-      `${prefix}: includeAll cannot be used with include or includePattern`
+      `${prefix}: includeAll cannot be used with includeRefs or includePattern`
     );
   }
 
-  if (!pattern.includeAll && !pattern.include && !pattern.includePattern) {
+  // Validate includeRefs if present
+  if (pattern.includeRefs && !Array.isArray(pattern.includeRefs)) {
+    errors.push(`${prefix}: includeRefs must be an array`);
+  } else if (pattern.includeRefs) {
+    pattern.includeRefs.forEach((ref, index) => {
+      if (!ref || typeof ref !== "object") {
+        errors.push(`${prefix}: includeRefs[${index}] must be an object`);
+      } else {
+        if (!ref.namespacedName && !ref.refId) {
+          errors.push(`${prefix}: includeRefs[${index}] must have either namespacedName or refId`);
+        }
+        if (ref.namespacedName && typeof ref.namespacedName !== "string") {
+          errors.push(`${prefix}: includeRefs[${index}].namespacedName must be a string`);
+        }
+        if (ref.refId && typeof ref.refId !== "string") {
+          errors.push(`${prefix}: includeRefs[${index}].refId must be a string`);
+        }
+      }
+    });
+  }
+
+  if (!pattern.includeAll && !pattern.includeRefs && !pattern.includePattern) {
     errors.push(
-      `${prefix}: must specify includeAll, include, or includePattern`
+      `${prefix}: must specify includeAll, includeRefs, or includePattern`
     );
   }
 
@@ -255,28 +265,49 @@ function validateToolsetOptions(options: any): string[] {
 }
 
 /**
- * Validate tool name against pattern
+ * Validate tool against pattern (requires discovered tool for refId validation)
  */
 export function matchesToolPattern(
-  toolName: string,
+  tool: { name: string; namespacedName: string; fullHash: string },
   pattern: ToolPattern
 ): boolean {
   // Check includeAll
   if (pattern.includeAll) {
-    return !isExcluded(toolName, pattern);
+    return !isExcluded(tool.name, pattern);
   }
 
-  // Check explicit includes
-  if (pattern.include && pattern.include.includes(toolName)) {
-    return !isExcluded(toolName, pattern);
+
+  // Check includeRefs with reconciliation
+  if (pattern.includeRefs) {
+    for (const ref of pattern.includeRefs) {
+      // Match by namespacedName
+      if (ref.namespacedName && ref.namespacedName === tool.namespacedName) {
+        // If refId is also present, validate consistency
+        if (ref.refId && ref.refId !== tool.fullHash) {
+          console.warn(`Tool reference inconsistency: ${ref.namespacedName} has refId mismatch. Expected: ${ref.refId}, Found: ${tool.fullHash}`);
+          // Still allow the match but log the inconsistency
+        }
+        return !isExcluded(tool.name, pattern);
+      }
+      
+      // Match by refId
+      if (ref.refId && ref.refId === tool.fullHash) {
+        // If namespacedName is also present, validate consistency
+        if (ref.namespacedName && ref.namespacedName !== tool.namespacedName) {
+          console.warn(`Tool reference inconsistency: refId ${ref.refId} points to ${tool.namespacedName}, but expected ${ref.namespacedName}`);
+          // Still allow the match but log the inconsistency
+        }
+        return !isExcluded(tool.name, pattern);
+      }
+    }
   }
 
   // Check include pattern
   if (pattern.includePattern) {
     try {
       const regex = new RegExp(pattern.includePattern);
-      if (regex.test(toolName)) {
-        return !isExcluded(toolName, pattern);
+      if (regex.test(tool.name)) {
+        return !isExcluded(tool.name, pattern);
       }
     } catch {
       // Invalid regex, skip

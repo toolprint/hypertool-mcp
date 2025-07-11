@@ -43,12 +43,10 @@ export {
 /**
  * Main toolset manager class
  */
-import { DiscoveredTool } from "../discovery/types";
-import { ToolsetConfig, ToolsetResolution, ValidationResult } from "./types";
+import { DiscoveredTool, IToolDiscoveryEngine } from "../discovery/types";
+import { ToolsetConfig, ToolsetResolution, ValidationResult, ResolvedTool } from "./types";
 import { loadToolsetConfig, saveToolsetConfig } from "./loader";
 import { validateToolsetConfig } from "./validator";
-import { applyToolsetConfig } from "./filter";
-import { generateDefaultToolsetConfig } from "./generator";
 
 export class ToolsetManager {
   private currentConfig?: ToolsetConfig;
@@ -134,10 +132,11 @@ export class ToolsetManager {
   }
 
   /**
-   * Apply current configuration to discovered tools
+   * Apply current configuration using discovery engine for tool resolution
    */
   async applyConfig(
-    discoveredTools: DiscoveredTool[]
+    discoveredTools: DiscoveredTool[],
+    discoveryEngine?: IToolDiscoveryEngine
   ): Promise<ToolsetResolution> {
     if (!this.currentConfig) {
       return {
@@ -147,7 +146,88 @@ export class ToolsetManager {
       };
     }
 
-    return applyToolsetConfig(discoveredTools, this.currentConfig);
+    const startTime = Date.now();
+    const resolvedTools: ResolvedTool[] = [];
+    const allWarnings: string[] = [];
+    const errors: string[] = [];
+
+    // Group tools by server for statistics
+    const toolsByServer: Record<string, number> = {};
+
+    // Validate and resolve each tool reference using discovery engine
+    for (const toolRef of this.currentConfig.tools) {
+      if (discoveryEngine) {
+        // Use discovery engine to resolve the tool reference
+        const resolution = discoveryEngine.resolveToolReference(toolRef);
+        
+        allWarnings.push(...resolution.warnings);
+        
+        if (!resolution.exists || !resolution.tool) {
+          continue; // Skip missing tools
+        }
+        
+        const foundTool = resolution.tool;
+        const serverName = resolution.serverName!;
+        
+        // Count tools by server
+        toolsByServer[serverName] = (toolsByServer[serverName] || 0) + 1;
+        
+        // Convert to resolved tool
+        resolvedTools.push({
+          originalName: foundTool.name,
+          resolvedName: foundTool.namespacedName,
+          serverName: serverName,
+          isNamespaced: true,
+          namespace: serverName,
+          description: foundTool.description,
+          inputSchema: foundTool.schema,
+        });
+      } else {
+        // Fallback to manual lookup if no discovery engine provided
+        let foundTool: DiscoveredTool | undefined;
+        
+        if (toolRef.namespacedName) {
+          foundTool = discoveredTools.find(tool => tool.namespacedName === toolRef.namespacedName);
+        }
+        
+        if (!foundTool && toolRef.refId) {
+          foundTool = discoveredTools.find(tool => tool.fullHash === toolRef.refId);
+        }
+        
+        if (!foundTool) {
+          allWarnings.push(`Tool reference not found: ${toolRef.namespacedName || toolRef.refId}`);
+          continue;
+        }
+        
+        // Count tools by server
+        toolsByServer[foundTool.serverName] = (toolsByServer[foundTool.serverName] || 0) + 1;
+        
+        resolvedTools.push({
+          originalName: foundTool.name,
+          resolvedName: foundTool.namespacedName,
+          serverName: foundTool.serverName,
+          isNamespaced: true,
+          namespace: foundTool.serverName,
+          description: foundTool.description,
+          inputSchema: foundTool.schema,
+        });
+      }
+    }
+
+    return {
+      success: errors.length === 0,
+      tools: resolvedTools,
+      warnings: allWarnings,
+      errors,
+      stats: {
+        totalDiscovered: discoveredTools.length,
+        totalIncluded: resolvedTools.length,
+        totalExcluded: discoveredTools.length - resolvedTools.length,
+        toolsByServer,
+        conflictsDetected: 0,
+        resolutionTime: Date.now() - startTime,
+      },
+    };
   }
 
   /**

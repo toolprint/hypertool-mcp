@@ -3,39 +3,31 @@
  */
 
 /**
- * Tool selection patterns
+ * Dynamic tool reference that can specify a tool by namespacedName, refId, or both
  */
-export type ToolPattern = {
-  /** Include specific tools by name */
-  include?: string[];
-  /** Exclude specific tools by name */
-  exclude?: string[];
-  /** Include tools matching regex pattern */
-  includePattern?: string;
-  /** Exclude tools matching regex pattern */
-  excludePattern?: string;
-  /** Include all tools (default: false) */
-  includeAll?: boolean;
+export type DynamicToolReference = {
+  /** Tool reference by namespaced name (e.g., 'git.status', 'docker.ps') */
+  namespacedName?: string;
+  /** Tool reference by unique hash identifier (e.g., 'abc123def456...') */
+  refId?: string;
 };
 
 /**
- * Server-specific tool configuration
+ * Convert a DynamicToolReference to a string for validation/lookup
+ * Prefers namespacedName over refId if both are present
  */
-export interface ServerToolConfig {
-  /** Server name as defined in .mcp.json */
-  serverName: string;
-  /** Tool selection patterns for this server */
-  tools: ToolPattern;
-  /** Whether to enable namespacing for this server's tools */
-  enableNamespacing?: boolean;
-  /** Custom namespace prefix (overrides server name) */
-  customNamespace?: string;
-  /** Whether this server is enabled in the toolset */
-  enabled?: boolean;
+export function resolveToolReference(ref: DynamicToolReference): string {
+  if (ref.namespacedName) {
+    return ref.namespacedName;
+  } else if (ref.refId) {
+    return ref.refId;
+  } else {
+    throw new Error("DynamicToolReference must have either namespacedName or refId");
+  }
 }
 
 /**
- * Complete toolset configuration
+ * Complete toolset configuration for user-generated toolsets
  */
 export interface ToolsetConfig {
   /** Configuration name/identifier */
@@ -48,10 +40,8 @@ export interface ToolsetConfig {
   createdAt?: Date;
   /** Last modified timestamp */
   lastModified?: Date;
-  /** Per-server tool configurations */
-  servers: ServerToolConfig[];
-  /** Global toolset options */
-  options?: ToolsetOptions;
+  /** Array of tool references in this toolset */
+  tools: DynamicToolReference[];
 }
 
 /**
