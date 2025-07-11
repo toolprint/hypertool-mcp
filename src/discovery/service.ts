@@ -598,29 +598,40 @@ export class ToolDiscoveryEngine
 
   /**
    * Resolve a tool reference and return tool + server metadata
-   * Uses optimized lookup maps and intelligent conflict resolution
+   * Uses optimized lookup maps and strict validation by default
+   * 
+   * @param ref Tool reference with namespacedName and/or refId
+   * @param options.allowStaleRefs If true, allows mismatched tools to continue (INSECURE)
    */
-  resolveToolReference(ref: { namespacedName?: string; refId?: string }): {
+  resolveToolReference(
+    ref: { namespacedName?: string; refId?: string },
+    options?: { allowStaleRefs?: boolean }
+  ): {
     exists: boolean;
     tool?: DiscoveredTool;
     serverName?: string;
     namespacedNameMatch: boolean;
     refIdMatch: boolean;
     warnings: string[];
+    errors: string[];
   } {
     this.ensureInitialized();
+    
+    const allowStaleRefs = options?.allowStaleRefs ?? false; // Default to secure mode
+    const warnings: string[] = [];
+    const errors: string[] = [];
     
     if (!ref.namespacedName && !ref.refId) {
       return {
         exists: false,
         namespacedNameMatch: false,
         refIdMatch: false,
-        warnings: ["Tool reference must have either namespacedName or refId"]
+        warnings: [],
+        errors: ["Tool reference must have either namespacedName or refId"]
       };
     }
     
     const allTools = this.getAvailableTools(true);
-    const warnings: string[] = [];
     
     // Build optimized lookup maps for O(1) access
     const toolByNamespacedName = new Map<string, DiscoveredTool>();
@@ -642,7 +653,8 @@ export class ToolDiscoveryEngine
         exists: false,
         namespacedNameMatch: false,
         refIdMatch: false,
-        warnings: [`Tool not found by any identifier: namespacedName='${ref.namespacedName}', refId='${ref.refId}'`]
+        warnings: [],
+        errors: [`Tool not found by any identifier: namespacedName='${ref.namespacedName}', refId='${ref.refId}'`]
       };
     }
     
@@ -656,19 +668,36 @@ export class ToolDiscoveryEngine
           serverName: toolByName.serverName,
           namespacedNameMatch: true,
           refIdMatch: true,
-          warnings: []
+          warnings: [],
+          errors: []
         };
       } else {
-        // Conflict - identifiers point to different tools, prefer refId (more reliable)
-        warnings.push(`Tool reference conflict: refId '${ref.refId}' points to tool '${toolByRef.namespacedName}', but namespacedName '${ref.namespacedName}' points to different tool. Using refId match (more reliable).`);
-        return {
-          exists: true,
-          tool: toolByRef,
-          serverName: toolByRef.serverName,
-          namespacedNameMatch: false,
-          refIdMatch: true,
-          warnings
-        };
+        // Conflict - identifiers point to different tools
+        const conflictMsg = `Tool reference conflict: refId '${ref.refId}' points to tool '${toolByRef.namespacedName}', but namespacedName '${ref.namespacedName}' points to different tool.`;
+        
+        if (allowStaleRefs) {
+          // INSECURE mode: Allow mismatch, prefer refId (more reliable)
+          warnings.push(`${conflictMsg} Using refId match (more reliable). WARNING: This is insecure mode.`);
+          return {
+            exists: true,
+            tool: toolByRef,
+            serverName: toolByRef.serverName,
+            namespacedNameMatch: false,
+            refIdMatch: true,
+            warnings,
+            errors: []
+          };
+        } else {
+          // SECURE mode: Reject mismatch
+          errors.push(`${conflictMsg} Tool reference rejected for security. Use allowStaleRefs=true to force.`);
+          return {
+            exists: false,
+            namespacedNameMatch: false,
+            refIdMatch: false,
+            warnings: [],
+            errors
+          };
+        }
       }
     }
     
@@ -676,15 +705,42 @@ export class ToolDiscoveryEngine
       // Found by refId but not by namespacedName (prefer refId - more reliable)
       const namespacedNameMatch = ref.namespacedName ? toolByRef.namespacedName === ref.namespacedName : true;
       if (!namespacedNameMatch) {
-        warnings.push(`Tool name changed: refId '${ref.refId}' found but namespacedName changed from '${ref.namespacedName}' to '${toolByRef.namespacedName}' (tool may have been renamed or moved)`);
+        const mismatchMsg = `Tool name changed: refId '${ref.refId}' found but namespacedName changed from '${ref.namespacedName}' to '${toolByRef.namespacedName}' (tool may have been renamed or moved)`;
+        
+        if (allowStaleRefs) {
+          // INSECURE mode: Allow name mismatch
+          warnings.push(`${mismatchMsg}. WARNING: This is insecure mode.`);
+          return {
+            exists: true,
+            tool: toolByRef,
+            serverName: toolByRef.serverName,
+            namespacedNameMatch: false,
+            refIdMatch: true,
+            warnings,
+            errors: []
+          };
+        } else {
+          // SECURE mode: Reject name mismatch
+          errors.push(`${mismatchMsg}. Tool reference rejected for security. Use allowStaleRefs=true to force.`);
+          return {
+            exists: false,
+            namespacedNameMatch: false,
+            refIdMatch: false,
+            warnings: [],
+            errors
+          };
+        }
       }
+      
+      // Name matches or no name provided - safe to return
       return {
         exists: true,
         tool: toolByRef,
         serverName: toolByRef.serverName,
         namespacedNameMatch,
         refIdMatch: true,
-        warnings
+        warnings: [],
+        errors: []
       };
     }
     
@@ -692,15 +748,42 @@ export class ToolDiscoveryEngine
       // Found by namespacedName but not by refId (fallback - less reliable)
       const refIdMatch = ref.refId ? toolByName.fullHash === ref.refId : true;
       if (!refIdMatch) {
-        warnings.push(`Tool refId mismatch: '${ref.namespacedName}' found but refId changed from '${ref.refId}' to '${toolByName.fullHash}' (tool schema may have been updated)`);
+        const mismatchMsg = `Tool refId mismatch: '${ref.namespacedName}' found but refId changed from '${ref.refId}' to '${toolByName.fullHash}' (tool schema may have been updated)`;
+        
+        if (allowStaleRefs) {
+          // INSECURE mode: Allow refId mismatch
+          warnings.push(`${mismatchMsg}. WARNING: This is insecure mode.`);
+          return {
+            exists: true,
+            tool: toolByName,
+            serverName: toolByName.serverName,
+            namespacedNameMatch: true,
+            refIdMatch: false,
+            warnings,
+            errors: []
+          };
+        } else {
+          // SECURE mode: Reject refId mismatch
+          errors.push(`${mismatchMsg}. Tool reference rejected for security. Use allowStaleRefs=true to force.`);
+          return {
+            exists: false,
+            namespacedNameMatch: false,
+            refIdMatch: false,
+            warnings: [],
+            errors
+          };
+        }
       }
+      
+      // RefId matches or no refId provided - safe to return
       return {
         exists: true,
         tool: toolByName,
         serverName: toolByName.serverName,
         namespacedNameMatch: true,
         refIdMatch,
-        warnings
+        warnings: [],
+        errors: []
       };
     }
     
@@ -709,7 +792,8 @@ export class ToolDiscoveryEngine
       exists: false,
       namespacedNameMatch: false,
       refIdMatch: false,
-      warnings: ["Unexpected error in tool resolution"]
+      warnings: [],
+      errors: ["Unexpected error in tool resolution"]
     };
   }
 

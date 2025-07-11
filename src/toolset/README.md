@@ -190,27 +190,56 @@ for (const toolRef of toolset.tools) {
 4. **Missing Tool**: Neither identifier resolves (server offline/tool removed) ❌
 5. **Server Migration**: Tool moved to different server (both identifiers changed) ❌
 
-### **Error Handling Strategy**
+### **Security and Error Handling Strategy**
+
+The system implements **strict validation by default** for security:
 
 ```typescript
-// Graceful degradation - continue with available tools
+// Secure by default - reject mismatched tool references
 const warnings: string[] = [];
+const errors: string[] = [];
 
 for (const toolRef of toolset.tools) {
-  const resolution = discoveryEngine.resolveToolReference(toolRef);
+  // Strict validation (secure mode)
+  const resolution = discoveryEngine.resolveToolReference(toolRef, {
+    allowStaleRefs: false // Default: secure mode
+  });
   
   if (!resolution.exists) {
-    warnings.push(`Tool not found: ${toolRef.namespacedName}`);
-    continue; // Skip missing tool, continue with others
+    if (resolution.errors.length > 0) {
+      // Security rejection - tool identifiers don't match
+      warnings.push(...resolution.errors.map(err => `SECURITY: ${err}`));
+    } else {
+      // Tool simply not found
+      warnings.push(`Tool not found: ${toolRef.namespacedName}`);
+    }
+    continue; // Skip rejected/missing tool, continue with others
   }
   
-  if (!resolution.namespacedNameMatch) {
-    warnings.push(`Tool name changed: ${toolRef.refId} now points to ${resolution.tool.namespacedName}`);
-    // Still include the tool - user can update toolset later
-  }
-  
+  // Tool passed security validation
   resolvedTools.push(convertToResolvedTool(resolution.tool));
 }
+```
+
+#### **Security Modes**
+
+1. **Secure Mode (Default)**: `allowStaleRefs: false`
+   - Rejects tools where `namespacedName` and `refId` point to different tools
+   - Rejects tools where either identifier changed unexpectedly  
+   - Only allows tools where both identifiers consistently point to the same tool
+   - Recommended for production environments
+
+2. **Insecure Mode**: `allowStaleRefs: true`
+   - Allows mismatched tool references to continue working
+   - Issues warnings about security implications
+   - Useful for development or when tools are known to be safe despite changes
+   - **Should be used with caution**
+
+```typescript
+// Insecure mode - allows mismatched references (use with caution)
+const resolution = discoveryEngine.resolveToolReference(toolRef, {
+  allowStaleRefs: true // INSECURE: allows potentially unsafe tool binding
+});
 ```
 
 ## 🔄 Integration Points

@@ -192,13 +192,17 @@ export interface IToolDiscoveryEngine {
   /**
    * Resolve a tool reference and return tool + server metadata
    */
-  resolveToolReference(ref: { namespacedName?: string; refId?: string }): {
+  resolveToolReference(
+    ref: { namespacedName?: string; refId?: string },
+    options?: { allowStaleRefs?: boolean }
+  ): {
     exists: boolean;
     tool?: DiscoveredTool;
     serverName?: string;
     namespacedNameMatch: boolean;
     refIdMatch: boolean;
     warnings: string[];
+    errors: string[];
   };
 }
 

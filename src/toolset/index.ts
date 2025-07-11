@@ -157,13 +157,27 @@ export class ToolsetManager {
     // Validate and resolve each tool reference using discovery engine
     for (const toolRef of this.currentConfig.tools) {
       if (discoveryEngine) {
-        // Use discovery engine to resolve the tool reference
-        const resolution = discoveryEngine.resolveToolReference(toolRef);
+        // Use discovery engine to resolve the tool reference with strict validation by default
+        const resolution = discoveryEngine.resolveToolReference(toolRef, { 
+          allowStaleRefs: false // Secure by default
+        });
         
-        allWarnings.push(...resolution.warnings);
+        // Handle warnings from resolution
+        if (resolution.warnings && resolution.warnings.length > 0) {
+          allWarnings.push(...resolution.warnings);
+        }
+        
+        // Handle errors from strict validation
+        if (resolution.errors && resolution.errors.length > 0) {
+          allWarnings.push(...resolution.errors.map(err => `SECURITY: ${err}`));
+        }
         
         if (!resolution.exists || !resolution.tool) {
-          continue; // Skip missing tools
+          // Tool was rejected or not found - skip and continue with others
+          if (resolution.errors.length === 0) {
+            allWarnings.push(`Tool not found: ${toolRef.namespacedName || toolRef.refId}`);
+          }
+          continue;
         }
         
         const foundTool = resolution.tool;
