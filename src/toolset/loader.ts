@@ -190,25 +190,20 @@ function normalizeToolsetConfig(rawConfig: any): ToolsetConfig {
     description: rawConfig.description,
     version: rawConfig.version || "1.0.0",
     createdAt: rawConfig.createdAt ? new Date(rawConfig.createdAt) : new Date(),
-    lastModified: rawConfig.lastModified
-      ? new Date(rawConfig.lastModified)
-      : new Date(),
-    servers: [],
-    options: rawConfig.options || {},
+    tools: [],
   };
 
-  // Normalize servers
-  if (Array.isArray(rawConfig.servers)) {
-    config.servers = rawConfig.servers.map((server: any) => ({
-      serverName: server.serverName || "",
-      tools: server.tools || { includeAll: true },
-      enabled: server.enabled !== undefined ? server.enabled : true,
-      enableNamespacing:
-        server.enableNamespacing !== undefined
-          ? server.enableNamespacing
-          : true,
-      customNamespace: server.customNamespace,
-    }));
+  // Normalize tools array - handle both old and new formats
+  if (Array.isArray(rawConfig.tools)) {
+    // New format - array of tool references
+    config.tools = rawConfig.tools.filter((tool: any) => {
+      return (tool.namespacedName && typeof tool.namespacedName === 'string') ||
+             (tool.refId && typeof tool.refId === 'string');
+    });
+  } else if (Array.isArray(rawConfig.servers)) {
+    // Legacy format - convert from servers to tools (best effort)
+    console.warn('Loading legacy toolset format - some information may be lost');
+    config.tools = []; // Cannot reliably convert without discovery engine
   }
 
   return config;
@@ -239,46 +234,27 @@ export function getDefaultConfigPath(configDir?: string): string {
  */
 export function createExampleConfig(): ToolsetConfig {
   return {
-    name: "Example Toolset",
-    description: "Example toolset configuration showing various patterns",
+    name: "example-toolset",
+    description: "Example toolset configuration with common development tools",
     version: "1.0.0",
     createdAt: new Date(),
-    servers: [
+    tools: [
       {
-        serverName: "git",
-        tools: {
-          includeAll: true,
-          exclude: ["git-internal", "git-debug"],
-        },
-        enabled: true,
-        enableNamespacing: true,
+        namespacedName: "git.status",
+        refId: "example-git-status-hash"
       },
       {
-        serverName: "docker",
-        tools: {
-          include: ["docker-ps", "docker-build", "docker-run"],
-        },
-        enabled: true,
-        enableNamespacing: true,
+        namespacedName: "git.commit",
+        refId: "example-git-commit-hash"
       },
       {
-        serverName: "context7",
-        tools: {
-          includePattern: "^search-",
-          excludePattern: ".*-internal$",
-        },
-        enabled: true,
-        enableNamespacing: false,
-        customNamespace: "ctx",
+        namespacedName: "docker.ps",
+        refId: "example-docker-ps-hash"
       },
+      {
+        namespacedName: "npm.install",
+        refId: "example-npm-install-hash"
+      }
     ],
-    options: {
-      namespaceSeparator: ".",
-      enableNamespacing: true,
-      autoResolveConflicts: true,
-      conflictResolution: "namespace",
-      enableCaching: true,
-      cacheTtl: 300000, // 5 minutes
-    },
   };
 }

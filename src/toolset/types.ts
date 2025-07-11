@@ -172,18 +172,5 @@ export const DEFAULT_TOOLSET_OPTIONS: Required<ToolsetOptions> = {
   cacheTtl: 5 * 60 * 1000, // 5 minutes
 };
 
-/**
- * Default tool pattern (includes all tools)
- */
-export const DEFAULT_TOOL_PATTERN: ToolPattern = {
-  includeAll: true,
-};
-
-/**
- * Default server tool configuration
- */
-export const DEFAULT_SERVER_TOOL_CONFIG: Partial<ServerToolConfig> = {
-  enabled: true,
-  enableNamespacing: true,
-  tools: DEFAULT_TOOL_PATTERN,
-};
+// Note: Default patterns removed in simplified toolset system
+// Users must explicitly select tools - no defaults

@@ -380,14 +380,11 @@ export async function buildToolset(
     // Create structured response
     const totalTools = config.tools.length;
     
-    // Group tools by server using tool resolution for accurate server names
+    // Group tools by server using the resolved tools information (more accurate)
     const toolsByServer: Record<string, number> = {};
-    for (const toolRef of config.tools) {
-      // Use namespacedName to extract server name (first part before dot)
-      if (toolRef.namespacedName) {
-        const serverName = toolRef.namespacedName.split('.')[0];
-        toolsByServer[serverName] = (toolsByServer[serverName] || 0) + 1;
-      }
+    for (const resolvedTool of validation.resolvedTools) {
+      const serverName = resolvedTool.serverName;
+      toolsByServer[serverName] = (toolsByServer[serverName] || 0) + 1;
     }
 
     const result = {
@@ -474,10 +471,12 @@ export async function listSavedToolsets(): Promise<{
       toolsets: names.sort().map(name => {
         const config = stored[name];
         
-        // Group tools by server for display purposes
+        // Group tools by server for display purposes (parsing namespacedName as fallback)
+        // Note: In a real application, this should use the discovery engine to resolve server names
         const toolsByServer: Record<string, number> = {};
         config.tools.forEach(tool => {
           if (tool.namespacedName) {
+            // FALLBACK: Parse namespacedName for display only (not for logic)
             const serverName = tool.namespacedName.split('.')[0];
             toolsByServer[serverName] = (toolsByServer[serverName] || 0) + 1;
           }
@@ -565,8 +564,7 @@ export async function selectToolset(
     output += `## Summary\n`;
     output += `- **Total tools available:** ${discoveredTools.length}\n`;
     output += `- **Tools in toolset:** ${resolution.tools.length}\n`;
-    output += `- **Servers configured:** ${config.servers.length}\n`;
-    output += `- **Active servers:** ${config.servers.filter(s => s.enabled !== false).length}\n\n`;
+    output += `- **Tool references:** ${config.tools.length}\n\n`;
 
     // Show active tools by server
     output += `## Active Tools\n\n`;
@@ -610,32 +608,8 @@ export async function selectToolset(
       output += `\n`;
     }
 
-    // Show disabled/unavailable servers
-    const availableServers = new Set(discoveredTools.map(t => t.serverName));
-    const disabledServers = config.servers.filter(s => s.enabled === false);
-    const unavailableServers = config.servers.filter(s => 
-      s.enabled !== false && !availableServers.has(s.serverName)
-    );
-
-    if (disabledServers.length > 0 || unavailableServers.length > 0) {
-      output += `## ℹ️ Inactive Servers\n\n`;
-      
-      if (disabledServers.length > 0) {
-        output += `**Disabled in configuration:**\n`;
-        for (const server of disabledServers) {
-          output += `- ${server.serverName} (explicitly disabled)\n`;
-        }
-        output += `\n`;
-      }
-
-      if (unavailableServers.length > 0) {
-        output += `**Not currently available:**\n`;
-        for (const server of unavailableServers) {
-          output += `- ${server.serverName} (server not connected)\n`;
-        }
-        output += `\n`;
-      }
-    }
+    // Note: In simplified toolset structure, there are no disabled servers
+    // All tools are simply included or excluded from the toolset
 
     // Show statistics if available
     if (resolution.stats) {

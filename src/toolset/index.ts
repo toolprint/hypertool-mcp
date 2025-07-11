@@ -25,7 +25,7 @@ export {
   createExampleConfig,
 } from "./loader";
 
-// Export filtering functions
+// Export filtering functions (legacy compatibility)
 export {
   applyToolsetConfig,
   getAvailableToolsForConfig,
@@ -103,13 +103,21 @@ export class ToolsetManager {
   }
 
   /**
-   * Generate and set default configuration
+   * Generate and set minimal empty configuration
+   * Note: Users should create toolsets explicitly using build-toolset
    */
   generateDefaultConfig(
-    discoveredTools: DiscoveredTool[],
+    _discoveredTools: DiscoveredTool[],
     options?: { name?: string; description?: string }
   ): ToolsetConfig {
-    this.currentConfig = generateDefaultToolsetConfig(discoveredTools, options);
+    // Return empty toolset - users must select tools explicitly
+    this.currentConfig = {
+      name: options?.name || "empty-toolset",
+      description: options?.description || "Empty toolset - add tools explicitly",
+      version: "1.0.0",
+      createdAt: new Date(),
+      tools: [], // Intentionally empty - no default tools
+    };
     return this.currentConfig;
   }
 

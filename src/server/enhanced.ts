@@ -673,12 +673,22 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             this.toolsetManager.setConfig(this.activeToolset);
             const resolution = await this.toolsetManager.applyConfig(discoveredTools);
             
-            // Count servers by status
+            // Count servers by status using discovery engine to resolve server information
             const availableServers = new Set(discoveredTools.map(t => t.serverName));
-            const configuredServers = this.activeToolset.servers;
-            const enabledServers = configuredServers.filter(s => s.enabled !== false);
+            const toolsetServers = new Set<string>();
+            
+            // Use discovery engine to resolve each tool reference and get server names
+            for (const toolRef of this.activeToolset.tools) {
+              const resolution = this.discoveryEngine?.resolveToolReference(toolRef, { allowStaleRefs: false });
+              if (resolution?.exists && resolution.serverName) {
+                toolsetServers.add(resolution.serverName);
+              }
+            }
+            
+            const configuredServers = Array.from(toolsetServers).map(name => ({ serverName: name, enabled: true }));
+            const enabledServers = configuredServers; // All servers are enabled in simplified structure
             const unavailableServers = enabledServers.filter(s => !availableServers.has(s.serverName));
-            const disabledServers = configuredServers.filter(s => s.enabled === false);
+            const disabledServers: any[] = []; // No disabled servers in simplified structure
             
             // Get tool details
             const totalConfiguredTools = resolution.tools.length;
@@ -697,7 +707,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             output += `## Toolset Information\n`;
             output += `- **Created:** ${this.activeToolset.createdAt ? new Date(this.activeToolset.createdAt).toLocaleDateString() : 'Unknown'}\n`;
             output += `- **Version:** ${this.activeToolset.version || '1.0.0'}\n`;
-            output += `- **Conflict Resolution:** ${this.activeToolset.options?.conflictResolution || 'namespace'}\n\n`;
+            output += `- **Tool Count:** ${this.activeToolset.tools.length}\n\n`;
             
             // Server status
             output += `## Server Status\n`;
@@ -762,7 +772,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
                 description: this.activeToolset.description || '',
                 version: this.activeToolset.version || '1.0.0',
                 createdAt: this.activeToolset.createdAt ? new Date(this.activeToolset.createdAt).toISOString() : '',
-                conflictResolution: this.activeToolset.options?.conflictResolution || 'namespace'
+                toolCount: this.activeToolset.tools.length
               },
               serverStatus: {
                 totalConfigured: configuredServers.length,
