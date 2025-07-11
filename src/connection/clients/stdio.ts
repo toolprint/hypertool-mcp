@@ -7,7 +7,12 @@ import { EventEmitter } from "events";
 import { StdioServerConfig } from "../../types/config";
 import { ConnectionOptions } from "../types";
 import { BaseConnection } from "./base";
-import { MCPMessage, IStdioClient, ClientOptions, DEFAULT_CLIENT_OPTIONS } from "./types";
+import {
+  MCPMessage,
+  IStdioClient,
+  ClientOptions,
+  DEFAULT_CLIENT_OPTIONS,
+} from "./types";
 
 /**
  * Stdio client for communicating with MCP servers via child process
@@ -44,16 +49,17 @@ export class StdioClient extends EventEmitter implements IStdioClient {
     return new Promise((resolve, reject) => {
       try {
         const env = { ...process.env, ...this.config.env };
-        
+
         this._process = spawn(this.config.command, this.config.args || [], {
-          stdio: ['pipe', 'pipe', 'pipe'],
+          stdio: ["pipe", "pipe", "pipe"],
           env,
         });
 
         this.setupProcessHandlers(resolve, reject);
-        
       } catch (error) {
-        reject(new Error(`Failed to spawn process: ${(error as Error).message}`));
+        reject(
+          new Error(`Failed to spawn process: ${(error as Error).message}`)
+        );
       }
     });
   }
@@ -77,13 +83,13 @@ export class StdioClient extends EventEmitter implements IStdioClient {
         return;
       }
 
-      this._process?.once('exit', cleanup);
-      this._process?.kill('SIGTERM');
-      
+      this._process?.once("exit", cleanup);
+      this._process?.kill("SIGTERM");
+
       // Force kill after timeout
       setTimeout(() => {
         if (this._process && !this._process.killed) {
-          this._process.kill('SIGKILL');
+          this._process.kill("SIGKILL");
         }
       }, 5000);
     });
@@ -94,11 +100,11 @@ export class StdioClient extends EventEmitter implements IStdioClient {
    */
   async send(message: MCPMessage): Promise<void> {
     if (!this.isRunning || !this._process?.stdin) {
-      throw new Error('Process not running or stdin not available');
+      throw new Error("Process not running or stdin not available");
     }
 
-    const messageStr = JSON.stringify(message) + '\n';
-    
+    const messageStr = JSON.stringify(message) + "\n";
+
     return new Promise((resolve, reject) => {
       if (this._process?.stdin) {
         this._process.stdin.write(messageStr, (error) => {
@@ -109,7 +115,7 @@ export class StdioClient extends EventEmitter implements IStdioClient {
           }
         });
       } else {
-        reject(new Error('Process stdin not available'));
+        reject(new Error("Process stdin not available"));
       }
     });
   }
@@ -150,7 +156,7 @@ export class StdioClient extends EventEmitter implements IStdioClient {
     let isResolved = false;
 
     // Handle process startup
-    this._process.once('spawn', () => {
+    this._process.once("spawn", () => {
       if (!isResolved) {
         isResolved = true;
         resolve();
@@ -158,33 +164,35 @@ export class StdioClient extends EventEmitter implements IStdioClient {
     });
 
     // Handle process errors
-    this._process.once('error', (error) => {
+    this._process.once("error", (error) => {
       if (!isResolved) {
         isResolved = true;
         reject(new Error(`Process error: ${error.message}`));
       } else {
-        this.emit('error', error);
+        this.emit("error", error);
       }
     });
 
     // Handle process exit
-    this._process.once('exit', (code, signal) => {
+    this._process.once("exit", (code, signal) => {
       if (!isResolved) {
         isResolved = true;
-        reject(new Error(`Process exited with code ${code} and signal ${signal}`));
+        reject(
+          new Error(`Process exited with code ${code} and signal ${signal}`)
+        );
       } else {
-        this.emit('disconnect');
+        this.emit("disconnect");
       }
       this._process = null;
     });
 
     // Handle stdout (messages from server)
-    this._process.stdout?.on('data', (data: Buffer) => {
+    this._process.stdout?.on("data", (data: Buffer) => {
       this.handleStdoutData(data.toString());
     });
 
     // Handle stderr (log messages)
-    this._process.stderr?.on('data', (data: Buffer) => {
+    this._process.stderr?.on("data", (data: Buffer) => {
       if (this.options.debug) {
         console.error(`[${this.config.command}] ${data.toString()}`);
       }
@@ -196,9 +204,9 @@ export class StdioClient extends EventEmitter implements IStdioClient {
    */
   private handleStdoutData(data: string): void {
     this.messageBuffer += data;
-    
-    const lines = this.messageBuffer.split('\n');
-    this.messageBuffer = lines.pop() || '';
+
+    const lines = this.messageBuffer.split("\n");
+    this.messageBuffer = lines.pop() || "";
 
     for (const line of lines) {
       const trimmedLine = line.trim();
@@ -208,12 +216,12 @@ export class StdioClient extends EventEmitter implements IStdioClient {
 
       try {
         const message: MCPMessage = JSON.parse(trimmedLine);
-        this.emit('message', message);
+        this.emit("message", message);
       } catch (error) {
         if (this.options.debug) {
-          console.error('Failed to parse message:', trimmedLine, error);
+          console.error("Failed to parse message:", trimmedLine, error);
         }
-        this.emit('error', new Error(`Invalid JSON message: ${trimmedLine}`));
+        this.emit("error", new Error(`Invalid JSON message: ${trimmedLine}`));
       }
     }
   }
@@ -237,21 +245,18 @@ export class StdioConnection extends BaseConnection<StdioClient> {
    * Connect to the stdio server
    */
   protected async doConnect(): Promise<void> {
-    this._client = new StdioClient(
-      this.config as StdioServerConfig,
-      {
-        timeout: this.options.connectionTimeout,
-        debug: this.options.debug,
-      }
-    );
-
-    // Forward client events
-    this._client.on('error', (error) => {
-      this.emit('error', this.createEvent('error', { error }));
+    this._client = new StdioClient(this.config as StdioServerConfig, {
+      timeout: this.options.connectionTimeout,
+      debug: this.options.debug,
     });
 
-    this._client.on('disconnect', () => {
-      this.emit('disconnected', this.createEvent('disconnected'));
+    // Forward client events
+    this._client.on("error", (error) => {
+      this.emit("error", this.createEvent("error", { error }));
+    });
+
+    this._client.on("disconnect", () => {
+      this.emit("disconnected", this.createEvent("disconnected"));
     });
 
     await this._client.start();

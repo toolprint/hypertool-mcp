@@ -24,7 +24,9 @@ export class MetaMCPServerFactory {
   /**
    * Create server with default configuration
    */
-  static createDefaultServer(transport: TransportConfig): EnhancedMetaMCPServer {
+  static createDefaultServer(
+    transport: TransportConfig
+  ): EnhancedMetaMCPServer {
     const config: MetaMCPServerConfig = {
       name: "meta-mcp",
       version: "1.0.0",

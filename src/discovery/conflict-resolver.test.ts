@@ -2,7 +2,10 @@
  * Unit tests for tool conflict resolution
  */
 
-import { ToolConflictResolver, ConflictResolutionConfig } from "./conflict-resolver";
+import {
+  ToolConflictResolver,
+  ConflictResolutionConfig,
+} from "./conflict-resolver";
 import { DiscoveredTool } from "./types";
 
 describe("ToolConflictResolver", () => {
@@ -54,7 +57,7 @@ describe("ToolConflictResolver", () => {
 
       const conflicts = resolver.detectConflicts(tools);
       expect(conflicts).toHaveLength(1);
-      
+
       const conflict = conflicts[0];
       expect(conflict.toolName).toBe("same_tool");
       expect(conflict.conflictingServers).toEqual(["server1", "server2"]);
@@ -72,8 +75,8 @@ describe("ToolConflictResolver", () => {
 
       const conflicts = resolver.detectConflicts(tools);
       expect(conflicts).toHaveLength(2);
-      
-      const toolNames = conflicts.map(c => c.toolName);
+
+      const toolNames = conflicts.map((c) => c.toolName);
       expect(toolNames).toContain("conflict1");
       expect(toolNames).toContain("conflict2");
     });
@@ -108,12 +111,14 @@ describe("ToolConflictResolver", () => {
       };
 
       const resolution = resolver.resolveConflict(conflict);
-      
+
       expect(resolution.strategy).toBe("namespace");
       expect(resolution.resolvedTools).toHaveLength(2);
       expect(resolution.discardedTools).toHaveLength(0);
-      
-      const namespaceNames = resolution.resolvedTools.map(t => t.namespacedName);
+
+      const namespaceNames = resolution.resolvedTools.map(
+        (t) => t.namespacedName
+      );
       expect(namespaceNames).toContain("server1.conflicted_tool");
       expect(namespaceNames).toContain("server2.conflicted_tool");
     });
@@ -154,11 +159,13 @@ describe("ToolConflictResolver", () => {
       };
 
       const resolution = resolver.resolveConflict(conflict);
-      
+
       expect(resolution.strategy).toBe("suffix");
       expect(resolution.resolvedTools).toHaveLength(2);
-      
-      const namespaceNames = resolution.resolvedTools.map(t => t.namespacedName);
+
+      const namespaceNames = resolution.resolvedTools.map(
+        (t) => t.namespacedName
+      );
       expect(namespaceNames).toContain("tool_server1");
       expect(namespaceNames).toContain("tool_server2");
     });
@@ -184,7 +191,7 @@ describe("ToolConflictResolver", () => {
       };
 
       const resolution = resolver.resolveConflict(conflict);
-      
+
       expect(resolution.strategy).toBe("priority");
       expect(resolution.resolvedTools).toHaveLength(1);
       expect(resolution.resolvedTools[0].serverName).toBe("server2"); // Highest priority
@@ -211,7 +218,7 @@ describe("ToolConflictResolver", () => {
       };
 
       const resolution = resolver.resolveConflict(conflict);
-      
+
       expect(resolution.strategy).toBe("priority");
       expect(resolution.resolvedTools).toHaveLength(1);
       expect(resolution.resolvedTools[0].serverName).toBe("server1"); // First discovered
@@ -230,7 +237,7 @@ describe("ToolConflictResolver", () => {
         createMockTool("tool", "server1"),
         createMockTool("tool", "server2"),
       ];
-      
+
       // Set discovery times
       tools[0].discoveredAt = new Date(2023, 0, 2); // Later
       tools[1].discoveredAt = new Date(2023, 0, 1); // Earlier
@@ -242,7 +249,7 @@ describe("ToolConflictResolver", () => {
       };
 
       const resolution = resolver.resolveConflict(conflict);
-      
+
       expect(resolution.strategy).toBe("first");
       expect(resolution.resolvedTools).toHaveLength(1);
       expect(resolution.resolvedTools[0].serverName).toBe("server2"); // Earlier discovery
@@ -290,7 +297,7 @@ describe("ToolConflictResolver", () => {
       };
 
       const resolution = resolver.resolveConflict(conflict);
-      
+
       expect(resolution.strategy).toBe("merge");
       expect(resolution.resolvedTools).toHaveLength(1);
       expect(resolution.mergedTool).toBeDefined();
@@ -311,7 +318,7 @@ describe("ToolConflictResolver", () => {
       };
 
       const resolution = resolver.resolveConflict(conflict);
-      
+
       // Should fallback to namespace strategy
       expect(resolution.strategy).toBe("namespace");
       expect(resolution.resolvedTools).toHaveLength(2);
@@ -335,7 +342,7 @@ describe("ToolConflictResolver", () => {
       };
 
       const resolution = resolver.resolveConflict(conflict);
-      
+
       // Should fallback to namespace strategy
       expect(resolution.strategy).toBe("namespace");
       expect(resolution.resolvedTools).toHaveLength(2);
@@ -376,14 +383,14 @@ describe("ToolConflictResolver", () => {
       ];
 
       const resolved = resolver.resolveConflicts(tools);
-      
+
       // Should have all tools with conflicts resolved
       expect(resolved).toHaveLength(5);
-      
+
       // All names should be unique
-      const namespacedNames = resolved.map(t => t.namespacedName);
+      const namespacedNames = resolved.map((t) => t.namespacedName);
       expect(new Set(namespacedNames).size).toBe(5);
-      
+
       // Should include the unique tool unchanged
       expect(namespacedNames).toContain("server1.unique");
     });
@@ -408,7 +415,7 @@ describe("ToolConflictResolver", () => {
       ];
 
       const stats = resolver.getConflictStats(tools);
-      
+
       expect(stats.totalConflicts).toBe(1);
       expect(stats.conflictedTools).toBe(2);
       expect(stats.conflictRate).toBeCloseTo(2 / 3);
@@ -419,7 +426,7 @@ describe("ToolConflictResolver", () => {
 
     it("should handle empty tool list", () => {
       const stats = resolver.getConflictStats([]);
-      
+
       expect(stats.totalConflicts).toBe(0);
       expect(stats.conflictedTools).toBe(0);
       expect(stats.conflictRate).toBe(0);
@@ -435,7 +442,7 @@ describe("ToolConflictResolver", () => {
       };
 
       resolver.updateConfig(newConfig);
-      
+
       const config = resolver.getConfig();
       expect(config.strategy).toBe("priority");
       expect(config.serverPriority).toEqual(["server1", "server2"]);
@@ -443,7 +450,7 @@ describe("ToolConflictResolver", () => {
 
     it("should get current configuration", () => {
       const config = resolver.getConfig();
-      
+
       expect(config).toHaveProperty("strategy");
       expect(config).toHaveProperty("separator");
       expect(config).toHaveProperty("allowMerging");
@@ -512,7 +519,7 @@ describe("ToolConflictResolver", () => {
       const resolution = resolver.resolveConflict(conflict);
       expect(resolution.strategy).toBe("merge");
       expect(resolution.mergedTool).toBeDefined();
-      
+
       // Should use the more comprehensive schema
       const mergedSchema = resolution.mergedTool!.schema;
       expect(Object.keys(mergedSchema.properties || {})).toContain("extra");

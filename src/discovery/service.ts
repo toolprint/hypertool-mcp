@@ -16,14 +16,20 @@ import {
   DEFAULT_DISCOVERY_CONFIG,
 } from "./types";
 import { ToolCache } from "./cache";
-import { ToolConflictResolver, ConflictResolutionConfig } from "./conflict-resolver";
+import {
+  ToolConflictResolver,
+  ConflictResolutionConfig,
+} from "./conflict-resolver";
 import { ToolLookupManager, SearchQuery, SearchResult } from "./lookup";
 import { ToolHashUtils, ToolHashManager } from "./hash-utils";
 
 /**
  * Tool discovery engine implementation
  */
-export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryEngine {
+export class ToolDiscoveryEngine
+  extends EventEmitter
+  implements IToolDiscoveryEngine
+{
   private connectionManager: IConnectionManager;
   private config: Required<DiscoveryConfig>;
   private cache: ToolCache;
@@ -36,7 +42,10 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
   private serverStates = new Map<string, ServerToolState>();
   private discoveryStats: DiscoveryStats;
 
-  constructor(connectionManager: IConnectionManager, conflictConfig?: ConflictResolutionConfig) {
+  constructor(
+    connectionManager: IConnectionManager,
+    conflictConfig?: ConflictResolutionConfig
+  ) {
     super();
     this.connectionManager = connectionManager;
     this.config = { ...DEFAULT_DISCOVERY_CONFIG };
@@ -45,7 +54,7 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
     this.lookupManager = new ToolLookupManager();
     this.hashManager = new ToolHashManager();
     this.discoveryStats = this.initializeStats();
-    
+
     this.setupConnectionEvents();
   }
 
@@ -74,9 +83,9 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
    */
   async discoverTools(serverName?: string): Promise<DiscoveredTool[]> {
     this.ensureInitialized();
-    
+
     const startTime = Date.now();
-    const servers = serverName 
+    const servers = serverName
       ? [serverName]
       : this.connectionManager.getConnectedServers();
 
@@ -86,7 +95,7 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
       try {
         const tools = await this.discoverServerTools(server);
         allDiscoveredTools.push(...tools);
-        
+
         this.updateServerState(server, {
           isConnected: true,
           lastDiscovery: new Date(),
@@ -94,10 +103,12 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
           tools,
           lastError: undefined,
         });
-
       } catch (error) {
-        console.error(`Failed to discover tools from server "${server}":`, error);
-        
+        console.error(
+          `Failed to discover tools from server "${server}":`,
+          error
+        );
+
         this.updateServerState(server, {
           isConnected: false,
           lastError: (error as Error).message,
@@ -106,8 +117,9 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
     }
 
     // Resolve conflicts in discovered tools
-    const resolvedTools = this.conflictResolver.resolveConflicts(allDiscoveredTools);
-    
+    const resolvedTools =
+      this.conflictResolver.resolveConflicts(allDiscoveredTools);
+
     // Detect and log conflicts
     const conflicts = this.conflictResolver.detectConflicts(allDiscoveredTools);
     if (conflicts.length > 0) {
@@ -135,7 +147,9 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
   /**
    * Discover tools from a specific server
    */
-  private async discoverServerTools(serverName: string): Promise<DiscoveredTool[]> {
+  private async discoverServerTools(
+    serverName: string
+  ): Promise<DiscoveredTool[]> {
     const connection = this.connectionManager.getConnection(serverName);
     if (!connection || !connection.isConnected()) {
       throw new Error(`Server "${serverName}" is not connected`);
@@ -149,7 +163,7 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
     };
 
     const response = await this.sendMCPRequest(connection, listToolsMessage);
-    
+
     if (response.error) {
       throw new Error(`MCP error: ${response.error.message}`);
     }
@@ -158,8 +172,11 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
     const discoveredTools: DiscoveredTool[] = [];
 
     for (const toolDef of toolDefinitions) {
-      const namespacedName = this.createNamespacedName(serverName, toolDef.name);
-      
+      const namespacedName = this.createNamespacedName(
+        serverName,
+        toolDef.name
+      );
+
       // Create tool with proper hashing
       const discoveredTool = ToolHashUtils.createHashedTool(
         toolDef,
@@ -168,13 +185,13 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
       );
 
       discoveredTools.push(discoveredTool);
-      
+
       // Add to lookup manager
       this.lookupManager.addTool(discoveredTool);
-      
+
       // Add to hash history
       this.hashManager.addToHistory(discoveredTool);
-      
+
       // Cache the tool
       await this.cache.set(namespacedName, discoveredTool);
     }
@@ -185,7 +202,10 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
   /**
    * Send an MCP request and wait for response
    */
-  private async sendMCPRequest(connection: any, message: MCPMessage): Promise<MCPMessage> {
+  private async sendMCPRequest(
+    connection: any,
+    message: MCPMessage
+  ): Promise<MCPMessage> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error("MCP request timeout"));
@@ -213,7 +233,7 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
    */
   async getToolByName(name: string): Promise<DiscoveredTool | null> {
     this.ensureInitialized();
-    
+
     // Try direct lookup first
     let tool = await this.cache.get(name);
     if (tool) {
@@ -237,48 +257,52 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
    */
   async searchTools(options: ToolLookupOptions): Promise<DiscoveredTool[]> {
     this.ensureInitialized();
-    
+
     // Use lookup manager for efficient searching
     const searchQuery: SearchQuery = {
       name: options.namePattern,
       server: options.serverName,
       fuzzy: true,
     };
-    
+
     const results = this.lookupManager.search(searchQuery);
-    
+
     // Filter by connection status if needed
     if (options.connectedOnly) {
       return results
-        .filter(result => this.connectionManager.isServerConnected(result.tool.serverName))
-        .map(result => result.tool);
+        .filter((result) =>
+          this.connectionManager.isServerConnected(result.tool.serverName)
+        )
+        .map((result) => result.tool);
     }
-    
-    return results.map(result => result.tool);
+
+    return results.map((result) => result.tool);
   }
 
   /**
    * Advanced search with relevance scoring
    */
-  searchToolsWithScoring(options: ToolLookupOptions & { keywords?: string[] }): SearchResult[] {
+  searchToolsWithScoring(
+    options: ToolLookupOptions & { keywords?: string[] }
+  ): SearchResult[] {
     this.ensureInitialized();
-    
+
     const searchQuery: SearchQuery = {
       name: options.namePattern,
       server: options.serverName,
       keywords: options.keywords,
       fuzzy: true,
     };
-    
+
     const results = this.lookupManager.search(searchQuery);
-    
+
     // Filter by connection status if needed
     if (options.connectedOnly) {
-      return results.filter(result => 
+      return results.filter((result) =>
         this.connectionManager.isServerConnected(result.tool.serverName)
       );
     }
-    
+
     return results;
   }
 
@@ -287,9 +311,9 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
    */
   getAvailableTools(connectedOnly = true): DiscoveredTool[] {
     this.ensureInitialized();
-    
+
     const allTools: DiscoveredTool[] = [];
-    
+
     for (const [, state] of this.serverStates) {
       if (connectedOnly && !state.isConnected) {
         continue;
@@ -305,13 +329,13 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
    */
   async refreshCache(serverName?: string): Promise<void> {
     this.ensureInitialized();
-    
+
     if (serverName) {
       await this.cache.clearServer(serverName);
     } else {
       await this.cache.clear();
     }
-    
+
     await this.discoverTools(serverName);
   }
 
@@ -356,7 +380,7 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
    */
   async clearCache(serverName?: string): Promise<void> {
     this.ensureInitialized();
-    
+
     if (serverName) {
       await this.cache.clearServer(serverName);
       this.serverStates.delete(serverName);
@@ -371,13 +395,13 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
    */
   async start(): Promise<void> {
     this.ensureInitialized();
-    
+
     if (this.isStarted) {
       return;
     }
 
     this.isStarted = true;
-    
+
     // Start periodic refresh
     if (this.config.refreshInterval > 0) {
       this.refreshTimer = setInterval(() => {
@@ -419,7 +443,7 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
    * Update server state
    */
   private updateServerState(
-    serverName: string, 
+    serverName: string,
     updates: Partial<ServerToolState>
   ): void {
     const currentState = this.serverStates.get(serverName) || {
@@ -439,33 +463,35 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
    * Handle MCP tools list changed notification
    */
   async handleToolsListChanged(serverName: string): Promise<void> {
-    console.log(`Received tools list changed notification from server: ${serverName}`);
-    
+    console.log(
+      `Received tools list changed notification from server: ${serverName}`
+    );
+
     try {
       // Get current tools for comparison
       const previousTools = this.getToolsByServer(serverName);
-      
+
       // Discover new tools
       const newTools = await this.discoverServerTools(serverName);
-      
+
       // Detect changes
       const changes = ToolHashUtils.detectToolChanges(previousTools, newTools);
       const summary = ToolHashUtils.summarizeChanges(changes);
-      
+
       console.log(`Tool changes detected for ${serverName}:`, summary);
-      
+
       // Update lookup manager
       this.lookupManager.clearServer(serverName);
       for (const tool of newTools) {
         this.lookupManager.addTool(tool);
       }
-      
+
       // Update cache
       await this.cache.clearServer(serverName);
       for (const tool of newTools) {
         await this.cache.set(tool.namespacedName, tool);
       }
-      
+
       // Update server state
       this.updateServerState(serverName, {
         tools: newTools,
@@ -473,7 +499,7 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
         lastDiscovery: new Date(),
         serverToolsHash: ToolHashUtils.calculateServerToolsHash(newTools),
       });
-      
+
       // Emit change event
       this.emit("toolsChanged", {
         serverName,
@@ -481,9 +507,11 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
         summary,
         newTools,
       });
-      
     } catch (error) {
-      console.error(`Failed to handle tools list changed for server "${serverName}":`, error);
+      console.error(
+        `Failed to handle tools list changed for server "${serverName}":`,
+        error
+      );
       this.emit("error", error);
     }
   }
@@ -503,7 +531,10 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
     this.connectionManager.on("connected", (event) => {
       if (this.config.autoDiscovery && this.isInitialized) {
         this.discoverTools(event.serverName).catch((error) => {
-          console.error(`Auto-discovery failed for server "${event.serverName}":`, error);
+          console.error(
+            `Auto-discovery failed for server "${event.serverName}":`,
+            error
+          );
         });
       }
     });
@@ -512,7 +543,7 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
       this.updateServerState(event.serverName, {
         isConnected: false,
       });
-      
+
       // Clear tools for disconnected server from lookup
       this.lookupManager.clearServer(event.serverName);
     });
@@ -548,7 +579,7 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
    */
   private updateDiscoveryStats(discoveryTime: number, toolCount: number): void {
     const connectedServers = this.connectionManager.getConnectedServers();
-    
+
     this.discoveryStats = {
       totalServers: this.serverStates.size,
       connectedServers: connectedServers.length,
@@ -559,7 +590,7 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
       toolsByServer: Object.fromEntries(
         Array.from(this.serverStates.entries()).map(([name, state]) => [
           name,
-          state.toolCount
+          state.toolCount,
         ])
       ),
     };
@@ -570,7 +601,9 @@ export class ToolDiscoveryEngine extends EventEmitter implements IToolDiscoveryE
    */
   private ensureInitialized(): void {
     if (!this.isInitialized) {
-      throw new Error("Tool discovery engine not initialized. Call initialize() first.");
+      throw new Error(
+        "Tool discovery engine not initialized. Call initialize() first."
+      );
     }
   }
 }

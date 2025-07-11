@@ -8,7 +8,12 @@ import { ToolCache } from "./cache";
 import { ToolConflictResolver } from "./conflict-resolver";
 import { ToolHashUtils } from "./hash-utils";
 import { DiscoveredTool, MCPToolDefinition, DiscoveryConfig } from "./types";
-import { IConnectionManager, Connection, ConnectionStatus, ConnectionState } from "../connection/types";
+import {
+  IConnectionManager,
+  Connection,
+  ConnectionStatus,
+  ConnectionState,
+} from "../connection/types";
 import { MCPMessage } from "../connection/clients/types";
 
 // Mock connection manager
@@ -16,7 +21,9 @@ class MockConnectionManager extends EventEmitter implements IConnectionManager {
   private connections = new Map<string, MockConnection>();
   private serverConfigs = new Map<string, any>();
 
-  get pool() { return null as any; }
+  get pool() {
+    return null as any;
+  }
   get status(): Record<string, ConnectionStatus> {
     const result: Record<string, ConnectionStatus> = {};
     for (const [name, conn] of this.connections) {
@@ -95,7 +102,9 @@ class MockConnection extends EventEmitter implements Connection {
 
   get status(): ConnectionStatus {
     return {
-      state: this._isConnected ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED,
+      state: this._isConnected
+        ? ConnectionState.CONNECTED
+        : ConnectionState.DISCONNECTED,
       serverId: this.id,
       serverName: this.serverName,
       retryCount: 0,
@@ -103,7 +112,9 @@ class MockConnection extends EventEmitter implements Connection {
     };
   }
 
-  get client() { return this._client; }
+  get client() {
+    return this._client;
+  }
 
   async connect() {
     this.mockConnect();
@@ -113,9 +124,13 @@ class MockConnection extends EventEmitter implements Connection {
     this.mockDisconnect();
   }
 
-  async ping() { return this._isConnected; }
+  async ping() {
+    return this._isConnected;
+  }
 
-  isConnected() { return this._isConnected; }
+  isConnected() {
+    return this._isConnected;
+  }
 
   mockConnect() {
     this._isConnected = true;
@@ -209,7 +224,7 @@ describe("ToolDiscoveryEngine", () => {
         cacheTtl: 10000,
         autoDiscovery: false,
       };
-      
+
       await discoveryEngine.initialize(config);
       expect(discoveryEngine.getStats().totalServers).toBe(0);
     });
@@ -254,8 +269,8 @@ describe("ToolDiscoveryEngine", () => {
       const tools = await discoveryEngine.discoverTools();
 
       expect(tools).toHaveLength(2);
-      expect(tools.map(t => t.namespacedName)).toContain("server1.test_tool");
-      expect(tools.map(t => t.namespacedName)).toContain("server2.tool2");
+      expect(tools.map((t) => t.namespacedName)).toContain("server1.test_tool");
+      expect(tools.map((t) => t.namespacedName)).toContain("server2.tool2");
     });
 
     it("should handle discovery errors gracefully", async () => {
@@ -409,8 +424,8 @@ describe("ToolDiscoveryEngine", () => {
       expect(conflictEvent.resolvedToolCount).toBe(2);
 
       const tools = discoveryEngine.getAvailableTools();
-      expect(tools.map(t => t.namespacedName)).toContain("server1.same_name");
-      expect(tools.map(t => t.namespacedName)).toContain("server2.same_name");
+      expect(tools.map((t) => t.namespacedName)).toContain("server1.same_name");
+      expect(tools.map((t) => t.namespacedName)).toContain("server2.same_name");
     });
   });
 
@@ -424,7 +439,7 @@ describe("ToolDiscoveryEngine", () => {
 
     it("should cache discovered tools", async () => {
       await discoveryEngine.discoverTools("test-server");
-      
+
       // Tool should be available immediately without rediscovery
       const tool = await discoveryEngine.getToolByName("test_tool");
       expect(tool).toBeDefined();
@@ -432,28 +447,28 @@ describe("ToolDiscoveryEngine", () => {
 
     it("should refresh cache when requested", async () => {
       await discoveryEngine.discoverTools("test-server");
-      
+
       // Update the mock server's tools
       const newTool: MCPToolDefinition = {
         name: "cached_tool",
         description: "A cached tool",
         inputSchema: { type: "object" },
       };
-      
+
       const mockConn = connectionManager.getMockConnection("test-server")!;
       mockConn.updateTools([mockTool, newTool]);
-      
+
       await discoveryEngine.refreshCache("test-server");
-      
+
       const tools = discoveryEngine.getAvailableTools();
       expect(tools).toHaveLength(2);
     });
 
     it("should clear cache for specific server", async () => {
       await discoveryEngine.discoverTools("test-server");
-      
+
       await discoveryEngine.clearCache("test-server");
-      
+
       const tool = await discoveryEngine.getToolByName("test_tool");
       expect(tool).toBeNull();
     });
@@ -466,7 +481,7 @@ describe("ToolDiscoveryEngine", () => {
 
     it("should provide discovery statistics", () => {
       const stats = discoveryEngine.getStats();
-      
+
       expect(stats).toHaveProperty("totalServers");
       expect(stats).toHaveProperty("connectedServers");
       expect(stats).toHaveProperty("totalTools");
@@ -477,9 +492,9 @@ describe("ToolDiscoveryEngine", () => {
     it("should provide server states", async () => {
       connectionManager.addMockServer("test-server", [mockTool]);
       connectionManager.getMockConnection("test-server")!.mockConnect();
-      
+
       await discoveryEngine.discoverTools("test-server");
-      
+
       const states = discoveryEngine.getServerStates();
       expect(states).toHaveLength(1);
       expect(states[0].serverName).toBe("test-server");
@@ -489,10 +504,18 @@ describe("ToolDiscoveryEngine", () => {
 
     it("should provide conflict statistics", async () => {
       connectionManager.addMockServer("server1", [
-        { name: "conflict", description: "Tool 1", inputSchema: { type: "object" } },
+        {
+          name: "conflict",
+          description: "Tool 1",
+          inputSchema: { type: "object" },
+        },
       ]);
       connectionManager.addMockServer("server2", [
-        { name: "conflict", description: "Tool 2", inputSchema: { type: "object" } },
+        {
+          name: "conflict",
+          description: "Tool 2",
+          inputSchema: { type: "object" },
+        },
       ]);
 
       connectionManager.getMockConnection("server1")!.mockConnect();
@@ -514,14 +537,14 @@ describe("ToolDiscoveryEngine", () => {
     it("should start and stop automatic discovery", async () => {
       await discoveryEngine.start();
       expect(discoveryEngine.getStats()).toBeDefined();
-      
+
       await discoveryEngine.stop();
       expect(discoveryEngine.getStats()).toBeDefined();
     });
 
     it("should handle connection events", async () => {
       connectionManager.addMockServer("test-server", [mockTool]);
-      
+
       const discoveryPromise = new Promise((resolve) => {
         discoveryEngine.once("toolsDiscovered", resolve);
       });
@@ -536,7 +559,7 @@ describe("ToolDiscoveryEngine", () => {
       });
 
       await discoveryPromise;
-      
+
       const tools = discoveryEngine.getAvailableTools();
       expect(tools).toHaveLength(1);
     });

@@ -19,11 +19,14 @@ import {
 /**
  * Base connection implementation providing common functionality
  */
-export abstract class BaseConnection<T = any> extends EventEmitter implements Connection<T> {
+export abstract class BaseConnection<T = any>
+  extends EventEmitter
+  implements Connection<T>
+{
   public readonly id: string;
   public readonly serverName: string;
   public readonly config: ServerConfig;
-  
+
   protected options: Required<ConnectionOptions>;
   protected connectionStatus: ConnectionStatus;
   protected retryTimer?: NodeJS.Timeout;
@@ -36,12 +39,12 @@ export abstract class BaseConnection<T = any> extends EventEmitter implements Co
     options: ConnectionOptions = {}
   ) {
     super();
-    
+
     this.id = uuidv4();
     this.serverName = serverName;
     this.config = config;
     this.options = { ...DEFAULT_CONNECTION_OPTIONS, ...options };
-    
+
     this.connectionStatus = {
       state: ConnectionState.DISCONNECTED,
       serverId: this.id,
@@ -88,27 +91,29 @@ export abstract class BaseConnection<T = any> extends EventEmitter implements Co
 
     try {
       await this.doConnect();
-      
+
       this.updateStatus(ConnectionState.CONNECTED, {
         connectedAt: new Date(),
         retryCount: 0,
         lastError: undefined,
       });
-      
+
       this.emit("connected", this.createEvent("connected"));
       this.startPing();
-      
     } catch (error) {
       this.updateStatus(ConnectionState.FAILED, {
         lastError: (error as Error).message,
       });
-      
-      this.emit("failed", this.createEvent("failed", { error: error as Error }));
-      
+
+      this.emit(
+        "failed",
+        this.createEvent("failed", { error: error as Error })
+      );
+
       if (this.connectionStatus.retryCount < this.options.maxRetries) {
         await this.scheduleReconnect();
       }
-      
+
       throw error;
     }
   }
@@ -127,7 +132,10 @@ export abstract class BaseConnection<T = any> extends EventEmitter implements Co
     try {
       await this.doDisconnect();
     } catch (error) {
-      console.warn(`Error during disconnect for server "${this.serverName}":`, error);
+      console.warn(
+        `Error during disconnect for server "${this.serverName}":`,
+        error
+      );
     }
 
     this.updateStatus(ConnectionState.DISCONNECTED);
@@ -196,13 +204,17 @@ export abstract class BaseConnection<T = any> extends EventEmitter implements Co
    */
   private async scheduleReconnect(): Promise<void> {
     this.clearRetryTimer();
-    
+
     this.connectionStatus.retryCount++;
     this.updateStatus(ConnectionState.RECONNECTING);
     this.emit("reconnecting", this.createEvent("reconnecting"));
 
     const delay = Math.min(
-      this.options.retryDelay * Math.pow(this.options.backoffMultiplier, this.connectionStatus.retryCount - 1),
+      this.options.retryDelay *
+        Math.pow(
+          this.options.backoffMultiplier,
+          this.connectionStatus.retryCount - 1
+        ),
       this.options.maxRetryDelay
     );
 
@@ -253,9 +265,12 @@ export abstract class BaseConnection<T = any> extends EventEmitter implements Co
    */
   private handlePingError(error: Error): void {
     this.emit("error", this.createEvent("error", { error }));
-    
+
     // If ping fails, consider the connection as failed and try to reconnect
-    if (this.isConnected() && this.connectionStatus.retryCount < this.options.maxRetries) {
+    if (
+      this.isConnected() &&
+      this.connectionStatus.retryCount < this.options.maxRetries
+    ) {
       this.scheduleReconnect();
     }
   }

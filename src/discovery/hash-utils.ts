@@ -37,11 +37,17 @@ export class ToolHashUtils {
   /**
    * Calculate structure hash for a tool (excludes timestamps and metadata)
    */
-  static calculateStructureHash(tool: DiscoveredTool | MCPToolDefinition, serverName?: string): string {
+  static calculateStructureHash(
+    tool: DiscoveredTool | MCPToolDefinition,
+    serverName?: string
+  ): string {
     const hashableStructure: HashableToolStructure = {
       name: tool.name,
       serverName: serverName || (tool as DiscoveredTool).serverName,
-      schema: 'inputSchema' in tool ? tool.inputSchema : (tool as DiscoveredTool).schema,
+      schema:
+        "inputSchema" in tool
+          ? tool.inputSchema
+          : (tool as DiscoveredTool).schema,
       description: tool.description,
     };
 
@@ -72,8 +78,10 @@ export class ToolHashUtils {
   static calculateServerToolsHash(tools: DiscoveredTool[]): string {
     // Sort tools by name for consistent hashing
     const sortedTools = [...tools].sort((a, b) => a.name.localeCompare(b.name));
-    const toolHashes = sortedTools.map(tool => this.calculateStructureHash(tool));
-    
+    const toolHashes = sortedTools.map((tool) =>
+      this.calculateStructureHash(tool)
+    );
+
     return this.hashObject(toolHashes);
   }
 
@@ -85,15 +93,15 @@ export class ToolHashUtils {
     currentTools: DiscoveredTool[]
   ): ToolChangeInfo[] {
     const changes: ToolChangeInfo[] = [];
-    
+
     // Create lookup maps
     const previousMap = new Map<string, DiscoveredTool>();
     const currentMap = new Map<string, DiscoveredTool>();
-    
+
     for (const tool of previousTools) {
       previousMap.set(tool.namespacedName, tool);
     }
-    
+
     for (const tool of currentTools) {
       currentMap.set(tool.namespacedName, tool);
     }
@@ -101,7 +109,7 @@ export class ToolHashUtils {
     // Check for added and updated tools
     for (const [namespacedName, currentTool] of currentMap) {
       const previousTool = previousMap.get(namespacedName);
-      
+
       if (!previousTool) {
         // Tool added
         changes.push({
@@ -112,7 +120,10 @@ export class ToolHashUtils {
       } else {
         // Check if tool updated
         if (previousTool.structureHash !== currentTool.structureHash) {
-          const changedFields = this.getChangedFields(previousTool, currentTool);
+          const changedFields = this.getChangedFields(
+            previousTool,
+            currentTool
+          );
           changes.push({
             tool: currentTool,
             changeType: "updated",
@@ -153,9 +164,9 @@ export class ToolHashUtils {
     namespacedName: string
   ): DiscoveredTool {
     const now = new Date();
-    
+
     // Create base tool object without hashes
-    const baseTool: Omit<DiscoveredTool, 'structureHash' | 'fullHash'> = {
+    const baseTool: Omit<DiscoveredTool, "structureHash" | "fullHash"> = {
       name: toolDef.name,
       serverName,
       namespacedName,
@@ -249,22 +260,25 @@ export class ToolHashUtils {
   /**
    * Get fields that changed between two tools
    */
-  private static getChangedFields(previous: DiscoveredTool, current: DiscoveredTool): string[] {
+  private static getChangedFields(
+    previous: DiscoveredTool,
+    current: DiscoveredTool
+  ): string[] {
     const changedFields: string[] = [];
 
     // Compare structure fields
     if (previous.name !== current.name) {
       changedFields.push("name");
     }
-    
+
     if (previous.description !== current.description) {
       changedFields.push("description");
     }
-    
+
     if (JSON.stringify(previous.schema) !== JSON.stringify(current.schema)) {
       changedFields.push("schema");
     }
-    
+
     if (previous.serverName !== current.serverName) {
       changedFields.push("serverName");
     }
@@ -285,14 +299,14 @@ export class ToolHashManager {
    */
   addToHistory(tool: DiscoveredTool): void {
     const key = tool.namespacedName;
-    
+
     if (!this.hashHistory.has(key)) {
       this.hashHistory.set(key, []);
     }
-    
+
     const history = this.hashHistory.get(key)!;
     history.push(tool.structureHash);
-    
+
     // Limit history size
     if (history.length > this.maxHistorySize) {
       history.shift();
@@ -314,7 +328,7 @@ export class ToolHashManager {
     if (history.length === 0) {
       return true; // New tool
     }
-    
+
     const lastHash = history[history.length - 1];
     return lastHash !== tool.structureHash;
   }
@@ -323,7 +337,7 @@ export class ToolHashManager {
    * Get tools that have changed
    */
   getChangedTools(tools: DiscoveredTool[]): DiscoveredTool[] {
-    return tools.filter(tool => this.hasChanged(tool));
+    return tools.filter((tool) => this.hasChanged(tool));
   }
 
   /**
@@ -346,9 +360,13 @@ export class ToolHashManager {
   getStats() {
     return {
       totalTools: this.hashHistory.size,
-      averageHistorySize: this.hashHistory.size > 0 
-        ? Array.from(this.hashHistory.values()).reduce((sum, hist) => sum + hist.length, 0) / this.hashHistory.size
-        : 0,
+      averageHistorySize:
+        this.hashHistory.size > 0
+          ? Array.from(this.hashHistory.values()).reduce(
+              (sum, hist) => sum + hist.length,
+              0
+            ) / this.hashHistory.size
+          : 0,
       maxHistorySize: this.maxHistorySize,
     };
   }

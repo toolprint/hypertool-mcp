@@ -26,12 +26,12 @@ export interface MCPMessage {
 export interface IStdioClient {
   readonly process: ChildProcess | null;
   readonly isRunning: boolean;
-  
+
   start(): Promise<void>;
   stop(): Promise<void>;
   send(message: MCPMessage): Promise<void>;
   ping(): Promise<boolean>;
-  
+
   on(event: "message", listener: (message: MCPMessage) => void): this;
   on(event: "error", listener: (error: Error) => void): this;
   on(event: "disconnect", listener: () => void): this;
@@ -39,17 +39,17 @@ export interface IStdioClient {
 }
 
 /**
- * SSE client interface  
+ * SSE client interface
  */
 export interface ISSEClient {
   readonly isConnected: boolean;
   readonly url: string;
-  
+
   connect(): Promise<void>;
   disconnect(): Promise<void>;
   send(message: MCPMessage): Promise<MCPMessage>;
   ping(): Promise<boolean>;
-  
+
   on(event: "message", listener: (message: MCPMessage) => void): this;
   on(event: "error", listener: (error: Error) => void): this;
   on(event: "disconnect", listener: () => void): this;

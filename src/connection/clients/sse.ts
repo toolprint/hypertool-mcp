@@ -6,7 +6,12 @@ import { EventEmitter } from "events";
 import { SSEServerConfig } from "../../types/config";
 import { ConnectionOptions } from "../types";
 import { BaseConnection } from "./base";
-import { MCPMessage, ISSEClient, ClientOptions, DEFAULT_CLIENT_OPTIONS } from "./types";
+import {
+  MCPMessage,
+  ISSEClient,
+  ClientOptions,
+  DEFAULT_CLIENT_OPTIONS,
+} from "./types";
 
 /**
  * SSE client for communicating with MCP servers via HTTP/SSE
@@ -14,11 +19,14 @@ import { MCPMessage, ISSEClient, ClientOptions, DEFAULT_CLIENT_OPTIONS } from ".
 export class SSEClient extends EventEmitter implements ISSEClient {
   private eventSource: EventSource | null = null;
   private options: Required<ClientOptions>;
-  private pendingRequests = new Map<string | number, {
-    resolve: (value: MCPMessage) => void;
-    reject: (error: Error) => void;
-    timeout: NodeJS.Timeout;
-  }>();
+  private pendingRequests = new Map<
+    string | number,
+    {
+      resolve: (value: MCPMessage) => void;
+      reject: (error: Error) => void;
+      timeout: NodeJS.Timeout;
+    }
+  >();
 
   constructor(
     private config: SSEServerConfig,
@@ -49,15 +57,16 @@ export class SSEClient extends EventEmitter implements ISSEClient {
         // Note: EventSource is not available in Node.js by default
         // This is a placeholder for where you would use a library like 'eventsource'
         // or implement your own SSE client
-        
+
         this.eventSource = new (global as any).EventSource(this.config.url, {
           headers: this.config.headers,
         });
 
         this.setupEventSourceHandlers(resolve, reject);
-        
       } catch (error) {
-        reject(new Error(`Failed to create EventSource: ${(error as Error).message}`));
+        reject(
+          new Error(`Failed to create EventSource: ${(error as Error).message}`)
+        );
       }
     });
   }
@@ -74,11 +83,11 @@ export class SSEClient extends EventEmitter implements ISSEClient {
     // Reject all pending requests
     for (const [, request] of this.pendingRequests) {
       clearTimeout(request.timeout);
-      request.reject(new Error('Connection closed'));
+      request.reject(new Error("Connection closed"));
     }
     this.pendingRequests.clear();
 
-    this.emit('disconnect');
+    this.emit("disconnect");
   }
 
   /**
@@ -86,12 +95,14 @@ export class SSEClient extends EventEmitter implements ISSEClient {
    */
   async send(message: MCPMessage): Promise<MCPMessage> {
     if (!this.isConnected) {
-      throw new Error('Not connected to server');
+      throw new Error("Not connected to server");
     }
 
     return new Promise((resolve, reject) => {
       if (!message.id) {
-        reject(new Error('Message must have an ID for request-response pattern'));
+        reject(
+          new Error("Message must have an ID for request-response pattern")
+        );
         return;
       }
 
@@ -144,9 +155,9 @@ export class SSEClient extends EventEmitter implements ISSEClient {
    */
   private async sendViaHTTP(message: MCPMessage): Promise<void> {
     const response = await fetch(this.config.url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...this.config.headers,
       },
       body: JSON.stringify(message),
@@ -178,20 +189,20 @@ export class SSEClient extends EventEmitter implements ISSEClient {
     };
 
     this.eventSource.onerror = () => {
-      const error = new Error('SSE connection error');
-      
+      const error = new Error("SSE connection error");
+
       if (!isResolved) {
         isResolved = true;
         reject(error);
       } else {
-        this.emit('error', error);
+        this.emit("error", error);
       }
     };
 
     this.eventSource.onmessage = (event) => {
       try {
         const message: MCPMessage = JSON.parse(event.data);
-        
+
         // Handle response to pending request
         if (message.id && this.pendingRequests.has(message.id)) {
           const request = this.pendingRequests.get(message.id)!;
@@ -200,13 +211,13 @@ export class SSEClient extends EventEmitter implements ISSEClient {
           request.resolve(message);
         } else {
           // Handle notification or unsolicited message
-          this.emit('message', message);
+          this.emit("message", message);
         }
       } catch (error) {
         if (this.options.debug) {
-          console.error('Failed to parse SSE message:', event.data, error);
+          console.error("Failed to parse SSE message:", event.data, error);
         }
-        this.emit('error', new Error(`Invalid JSON message: ${event.data}`));
+        this.emit("error", new Error(`Invalid JSON message: ${event.data}`));
       }
     };
   }
@@ -230,21 +241,18 @@ export class SSEConnection extends BaseConnection<SSEClient> {
    * Connect to the SSE server
    */
   protected async doConnect(): Promise<void> {
-    this._client = new SSEClient(
-      this.config as SSEServerConfig,
-      {
-        timeout: this.options.connectionTimeout,
-        debug: this.options.debug,
-      }
-    );
-
-    // Forward client events
-    this._client.on('error', (error) => {
-      this.emit('error', this.createEvent('error', { error }));
+    this._client = new SSEClient(this.config as SSEServerConfig, {
+      timeout: this.options.connectionTimeout,
+      debug: this.options.debug,
     });
 
-    this._client.on('disconnect', () => {
-      this.emit('disconnected', this.createEvent('disconnected'));
+    // Forward client events
+    this._client.on("error", (error) => {
+      this.emit("error", this.createEvent("error", { error }));
+    });
+
+    this._client.on("disconnect", () => {
+      this.emit("disconnected", this.createEvent("disconnected"));
     });
 
     await this._client.connect();

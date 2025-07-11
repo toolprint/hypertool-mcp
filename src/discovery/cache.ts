@@ -47,14 +47,14 @@ export class ToolCache extends EventEmitter implements IToolCache {
     // Check server tool limit
     const serverKey = tool.serverName;
     const serverTools = this.serverIndex.get(serverKey) || new Set();
-    
+
     if (serverTools.size >= (this.config.maxToolsPerServer || 1000)) {
       // Remove oldest tool for this server
       await this.evictOldestForServer(serverKey);
     }
 
     this.cache.set(key, entry);
-    
+
     // Update server index
     if (!this.serverIndex.has(serverKey)) {
       this.serverIndex.set(serverKey, new Set());
@@ -70,7 +70,7 @@ export class ToolCache extends EventEmitter implements IToolCache {
    */
   async get(key: string): Promise<DiscoveredTool | null> {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       this.stats.misses++;
       this.emit("miss", { key });
@@ -89,7 +89,7 @@ export class ToolCache extends EventEmitter implements IToolCache {
     entry.hitCount++;
     this.stats.hits++;
     this.emit("hit", { key, tool: entry.tool, hitCount: entry.hitCount });
-    
+
     return entry.tool;
   }
 
@@ -98,7 +98,7 @@ export class ToolCache extends EventEmitter implements IToolCache {
    */
   async has(key: string): Promise<boolean> {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return false;
     }
@@ -117,13 +117,13 @@ export class ToolCache extends EventEmitter implements IToolCache {
    */
   async delete(key: string): Promise<void> {
     const entry = this.cache.get(key);
-    
+
     if (entry) {
       const serverKey = entry.tool.serverName;
-      
+
       // Remove from cache
       this.cache.delete(key);
-      
+
       // Update server index
       const serverTools = this.serverIndex.get(serverKey);
       if (serverTools) {
@@ -143,14 +143,14 @@ export class ToolCache extends EventEmitter implements IToolCache {
    */
   async clearServer(serverName: string): Promise<void> {
     const serverTools = this.serverIndex.get(serverName);
-    
+
     if (serverTools) {
       const keys = Array.from(serverTools);
-      
+
       for (const key of keys) {
         await this.delete(key);
       }
-      
+
       this.emit("serverCleared", { serverName, toolCount: keys.length });
     }
   }
@@ -160,7 +160,7 @@ export class ToolCache extends EventEmitter implements IToolCache {
    */
   async clear(): Promise<void> {
     const toolCount = this.cache.size;
-    
+
     this.cache.clear();
     this.serverIndex.clear();
     this.stats = {
@@ -182,7 +182,7 @@ export class ToolCache extends EventEmitter implements IToolCache {
     missRate: number;
   }> {
     const totalRequests = this.stats.hits + this.stats.misses;
-    
+
     return {
       size: this.cache.size,
       hitRate: totalRequests > 0 ? this.stats.hits / totalRequests : 0,
@@ -194,11 +194,13 @@ export class ToolCache extends EventEmitter implements IToolCache {
    * Get detailed cache information
    */
   getCacheInfo() {
-    const servers = Array.from(this.serverIndex.entries()).map(([serverName, tools]) => ({
-      serverName,
-      toolCount: tools.size,
-      tools: Array.from(tools),
-    }));
+    const servers = Array.from(this.serverIndex.entries()).map(
+      ([serverName, tools]) => ({
+        serverName,
+        toolCount: tools.size,
+        tools: Array.from(tools),
+      })
+    );
 
     return {
       totalTools: this.cache.size,
@@ -249,7 +251,7 @@ export class ToolCache extends EventEmitter implements IToolCache {
    */
   async updateTTL(key: string, ttl: number): Promise<boolean> {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return false;
     }
@@ -280,7 +282,7 @@ export class ToolCache extends EventEmitter implements IToolCache {
    */
   async refreshTool(key: string): Promise<boolean> {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return false;
     }
@@ -355,7 +357,11 @@ export class ToolCache extends EventEmitter implements IToolCache {
 
     if (oldestKey) {
       await this.delete(oldestKey);
-      this.emit("evicted", { key: oldestKey, serverName, reason: "server_limit" });
+      this.emit("evicted", {
+        key: oldestKey,
+        serverName,
+        reason: "server_limit",
+      });
     }
   }
 
