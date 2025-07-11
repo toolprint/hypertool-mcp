@@ -1,5 +1,5 @@
 /**
- * Tests for toolset configuration generator
+ * Tests for simplified toolset configuration generator
  */
 
 import {
@@ -35,9 +35,9 @@ describe("ToolsetGenerator", () => {
       fullHash: "full2",
     },
     {
-      name: "debug-internal",
+      name: "build",
       serverName: "git",
-      namespacedName: "git.debug-internal",
+      namespacedName: "git.build",
       schema: { type: "object" },
       discoveredAt: new Date(),
       lastUpdated: new Date(),
@@ -68,9 +68,9 @@ describe("ToolsetGenerator", () => {
       fullHash: "full5",
     },
     {
-      name: "test-runner",
+      name: "analyze",
       serverName: "docker",
-      namespacedName: "docker.test-runner",
+      namespacedName: "docker.analyze",
       schema: { type: "object" },
       discoveredAt: new Date(),
       lastUpdated: new Date(),
@@ -103,89 +103,76 @@ describe("ToolsetGenerator", () => {
   ];
 
   describe("generateDefaultToolsetConfig", () => {
-    it("should generate basic default configuration", () => {
+    it("should generate empty default configuration", () => {
       const config = generateDefaultToolsetConfig(mockTools);
 
-      expect(config.name).toBe("Auto-generated Toolset");
-      expect(config.description).toContain("3 servers");
-      expect(config.servers).toHaveLength(3);
-
-      const gitServer = config.servers.find((s) => s.serverName === "git");
-      expect(gitServer).toBeDefined();
-      expect(gitServer!.tools.includeAll).toBe(true);
-      expect(gitServer!.enabled).toBe(true);
-      expect(gitServer!.enableNamespacing).toBe(true);
-    });
-
-    it("should exclude internal tools", () => {
-      const config = generateDefaultToolsetConfig(mockTools);
-
-      const gitServer = config.servers.find((s) => s.serverName === "git");
-      expect(gitServer!.tools.exclude).toContain("debug-internal");
-
-      const dockerServer = config.servers.find(
-        (s) => s.serverName === "docker"
-      );
-      expect(dockerServer!.tools.exclude).toContain("test-runner");
+      expect(config.name).toBe("empty-toolset");
+      expect(config.description).toContain("Empty toolset");
+      expect(config.description).toContain("3 available servers");
+      expect(config.tools).toHaveLength(0); // Empty by design
+      expect(config.version).toBe("1.0.0");
+      expect(config.createdAt).toBeInstanceOf(Date);
     });
 
     it("should accept custom options", () => {
       const config = generateDefaultToolsetConfig(mockTools, {
-        name: "Custom Name",
+        name: "custom-toolset",
         description: "Custom description",
-        enableNamespacing: false,
-        conflictResolution: "prefix-server",
       });
 
-      expect(config.name).toBe("Custom Name");
+      expect(config.name).toBe("custom-toolset");
       expect(config.description).toBe("Custom description");
-      expect(config.servers.every((s) => s.enableNamespacing === false)).toBe(
-        true
-      );
-      expect(config.options!.conflictResolution).toBe("prefix-server");
+      expect(config.tools).toHaveLength(0); // Still empty - users must select explicitly
     });
   });
 
   describe("generateMinimalToolsetConfig", () => {
-    it("should generate minimal configuration", () => {
+    it("should generate minimal configuration with limited tools per server", () => {
       const config = generateMinimalToolsetConfig(mockTools, {
         maxToolsPerServer: 2,
       });
 
       expect(config.name).toBe("Minimal Toolset");
-      expect(config.servers).toHaveLength(3);
+      expect(config.tools.length).toBeGreaterThan(0);
+      expect(config.tools.length).toBeLessThanOrEqual(6); // 2 tools per server * 3 servers
 
-      // Check that each server has at most 2 tools
-      config.servers.forEach((server) => {
-        expect(server.tools.include!.length).toBeLessThanOrEqual(2);
+      // Check that tools have both namespacedName and refId
+      config.tools.forEach((toolRef) => {
+        expect(toolRef.namespacedName).toBeDefined();
+        expect(toolRef.refId).toBeDefined();
       });
     });
 
-    it("should prioritize common tools", () => {
+    it("should respect maxToolsPerServer limit", () => {
       const config = generateMinimalToolsetConfig(mockTools, {
         maxToolsPerServer: 1,
-        priorityPatterns: ["^status$"],
       });
 
-      const gitServer = config.servers.find((s) => s.serverName === "git");
-      const dockerServer = config.servers.find(
-        (s) => s.serverName === "docker"
-      );
-
-      expect(gitServer!.tools.include).toContain("status");
-      expect(dockerServer!.tools.include).toContain("status");
+      // Should have at most 3 tools (1 per server)
+      expect(config.tools.length).toBeLessThanOrEqual(3);
+      
+      // Check that we have unique servers represented
+      const serverNames = config.tools.map(t => t.namespacedName?.split('.')[0]).filter(Boolean);
+      const uniqueServers = new Set(serverNames);
+      expect(uniqueServers.size).toBeLessThanOrEqual(3);
     });
 
-    it("should handle servers with no priority tools", () => {
+    it("should include tools sorted by name for consistency", () => {
       const config = generateMinimalToolsetConfig(mockTools, {
         maxToolsPerServer: 1,
-        priorityPatterns: ["^nonexistent"],
       });
 
-      // Should still include one tool per server alphabetically
-      config.servers.forEach((server) => {
-        expect(server.tools.include!.length).toBe(1);
+      // Should pick alphabetically first tools (build, ps, search)
+      const toolNames = config.tools.map(t => t.namespacedName?.split('.')[1]).filter(Boolean);
+      expect(toolNames).toContain("build"); // git.build (first alphabetically for git)
+    });
+
+    it("should accept custom name", () => {
+      const config = generateMinimalToolsetConfig(mockTools, {
+        name: "My Minimal Tools",
       });
+
+      expect(config.name).toBe("My Minimal Tools");
     });
   });
 
@@ -193,57 +180,40 @@ describe("ToolsetGenerator", () => {
     it("should generate development toolset", () => {
       const config = generateUseCaseToolsetConfig(mockTools, "development");
 
-      expect(config.name).toBe("Development Toolset");
-      expect(config.description).toContain("development");
+      expect(config.name).toBe("Development Tools");
+      expect(config.description).toContain("development use case");
 
-      const gitServer = config.servers.find((s) => s.serverName === "git");
-      expect(gitServer).toBeDefined();
-      expect(gitServer!.tools.includeAll).toBe(true);
-      expect(gitServer!.tools.exclude).toEqual(["git-gc", "git-fsck"]);
-    });
-
-    it("should generate deployment toolset", () => {
-      const config = generateUseCaseToolsetConfig(mockTools, "deployment");
-
-      expect(config.name).toBe("Deployment Toolset");
-
-      const gitServer = config.servers.find((s) => s.serverName === "git");
-      expect(gitServer!.tools.include).toEqual([
-        "git-push",
-        "git-tag",
-        "git-status",
-      ]);
-
-      const dockerServer = config.servers.find(
-        (s) => s.serverName === "docker"
+      // Should include build tools
+      const hasBuildTool = config.tools.some(t => 
+        t.namespacedName?.includes("build")
       );
-      expect(dockerServer!.tools.includePattern).toContain("build");
+      expect(hasBuildTool).toBe(true);
     });
 
-    it("should generate monitoring toolset", () => {
-      const config = generateUseCaseToolsetConfig(mockTools, "monitoring");
+    it("should generate administration toolset", () => {
+      const config = generateUseCaseToolsetConfig(mockTools, "administration");
 
-      expect(config.name).toBe("Monitoring Toolset");
+      expect(config.name).toBe("Administration Tools");
+      expect(config.description).toContain("administration use case");
 
-      const dockerServer = config.servers.find(
-        (s) => s.serverName === "docker"
+      // Should include status tools
+      const hasStatusTool = config.tools.some(t => 
+        t.namespacedName?.includes("status")
       );
-      expect(dockerServer!.tools.include).toEqual([
-        "docker-ps",
-        "docker-logs",
-        "docker-stats",
-      ]);
+      expect(hasStatusTool).toBe(true);
     });
 
-    it("should generate documentation toolset", () => {
-      const config = generateUseCaseToolsetConfig(mockTools, "documentation");
+    it("should generate analysis toolset", () => {
+      const config = generateUseCaseToolsetConfig(mockTools, "analysis");
 
-      expect(config.name).toBe("Documentation Toolset");
+      expect(config.name).toBe("Analysis Tools");
+      expect(config.description).toContain("analysis use case");
 
-      // Should have wildcard pattern for help/documentation tools
-      config.servers.forEach((server) => {
-        expect(server.tools.includePattern).toBeDefined();
-      });
+      // Should include analyze tools
+      const hasAnalyzeTool = config.tools.some(t => 
+        t.namespacedName?.includes("analyze")
+      );
+      expect(hasAnalyzeTool).toBe(true);
     });
 
     it("should accept custom name", () => {
@@ -253,106 +223,62 @@ describe("ToolsetGenerator", () => {
 
       expect(config.name).toBe("My Dev Tools");
     });
+
+    it("should include relevant tools based on patterns", () => {
+      const config = generateUseCaseToolsetConfig(mockTools, "development");
+      
+      // Development pattern includes "git", "build" - should match git tools and build tools
+      expect(config.tools.length).toBeGreaterThan(0);
+      
+      // Should have tools with both identifiers
+      config.tools.forEach((toolRef) => {
+        expect(toolRef.namespacedName).toBeDefined();
+        expect(toolRef.refId).toBeDefined();
+      });
+    });
   });
 
   describe("generateConflictAwareToolsetConfig", () => {
-    it("should detect and handle conflicts", () => {
+    it("should return empty toolset (simplified system)", () => {
       const config = generateConflictAwareToolsetConfig(mockTools);
 
-      expect(config.name).toBe("Conflict-Aware Toolset");
-      expect(config.description).toContain("conflicts detected");
-
-      // Should enable namespacing for servers with conflicts
-      const serversWithConflicts = config.servers.filter(
-        (s) => s.enableNamespacing === true
-      );
-      expect(serversWithConflicts.length).toBeGreaterThan(0);
-      expect(config.options!.autoResolveConflicts).toBe(true);
-      expect(config.options!.conflictResolution).toBe("namespace");
-    });
-
-    it("should exclude conflicting tools if there are many", () => {
-      // Create more conflicts
-      const conflictTools: DiscoveredTool[] = [
-        ...mockTools,
-        ...Array.from({ length: 10 }, (_, i) => ({
-          name: `conflict-tool-${i}`,
-          serverName: "git",
-          namespacedName: `git.conflict-tool-${i}`,
-          schema: { type: "object" } as const,
-          discoveredAt: new Date(),
-          lastUpdated: new Date(),
-          serverStatus: "connected" as const,
-          structureHash: `hash-conflict-${i}`,
-          fullHash: `full-conflict-${i}`,
-        })),
-        ...Array.from({ length: 10 }, (_, i) => ({
-          name: `conflict-tool-${i}`,
-          serverName: "docker",
-          namespacedName: `docker.conflict-tool-${i}`,
-          schema: { type: "object" } as const,
-          discoveredAt: new Date(),
-          lastUpdated: new Date(),
-          serverStatus: "connected" as const,
-          structureHash: `hash-conflict-docker-${i}`,
-          fullHash: `full-conflict-docker-${i}`,
-        })),
-      ];
-
-      const config = generateConflictAwareToolsetConfig(conflictTools);
-
-      // Should exclude many conflicting tools
-      config.servers.forEach((server) => {
-        if (server.tools.exclude && server.tools.exclude.length > 5) {
-          expect(server.tools.exclude.length).toBeGreaterThan(5);
-        }
-      });
-    });
-
-    it("should use custom namespaces for heavily conflicted servers", () => {
-      // Create many conflicts
-      const heavyConflictTools: DiscoveredTool[] = [
-        ...mockTools,
-        ...Array.from({ length: 5 }, (_, i) => ({
-          name: `shared-${i}`,
-          serverName: "git",
-          namespacedName: `git.shared-${i}`,
-          schema: { type: "object" } as const,
-          discoveredAt: new Date(),
-          lastUpdated: new Date(),
-          serverStatus: "connected" as const,
-          structureHash: `hash-git-${i}`,
-          fullHash: `full-git-${i}`,
-        })),
-        ...Array.from({ length: 5 }, (_, i) => ({
-          name: `shared-${i}`,
-          serverName: "docker",
-          namespacedName: `docker.shared-${i}`,
-          schema: { type: "object" } as const,
-          discoveredAt: new Date(),
-          lastUpdated: new Date(),
-          serverStatus: "connected" as const,
-          structureHash: `hash-docker-${i}`,
-          fullHash: `full-docker-${i}`,
-        })),
-      ];
-
-      const config = generateConflictAwareToolsetConfig(heavyConflictTools);
-
-      // Should have custom namespaces for heavily conflicted servers
-      config.servers.forEach((server) => {
-        if (server.customNamespace) {
-          expect(server.customNamespace).toBe(server.serverName);
-        }
-      });
+      expect(config.name).toBe("empty-toolset");
+      expect(config.tools).toHaveLength(0);
+      // In simplified system, conflicts are handled by discovery engine, not generator
     });
 
     it("should accept custom name", () => {
       const config = generateConflictAwareToolsetConfig(mockTools, {
-        name: "Custom Conflict Handler",
+        name: "custom-conflict-aware",
       });
 
-      expect(config.name).toBe("Custom Conflict Handler");
+      expect(config.name).toBe("custom-conflict-aware");
+      expect(config.tools).toHaveLength(0);
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should handle empty tools array", () => {
+      const config = generateDefaultToolsetConfig([]);
+
+      expect(config.name).toBe("empty-toolset");
+      expect(config.description).toContain("0 available servers");
+      expect(config.tools).toHaveLength(0);
+    });
+
+    it("should handle tools with same name from different servers", () => {
+      const conflictingTools = mockTools.filter(t => 
+        t.namespacedName === "git.status" || t.namespacedName === "docker.status"
+      );
+      
+      const config = generateMinimalToolsetConfig(conflictingTools, {
+        maxToolsPerServer: 1,
+      });
+
+      // Should include both status tools (from different servers)
+      expect(config.tools.length).toBe(2);
+      expect(config.tools.map(t => t.namespacedName)).toContain("git.status");
+      expect(config.tools.map(t => t.namespacedName)).toContain("docker.status");
     });
   });
 });

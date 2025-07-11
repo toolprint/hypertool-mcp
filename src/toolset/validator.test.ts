@@ -1,28 +1,28 @@
 /**
- * Tests for toolset configuration validator
+ * Tests for simplified toolset configuration validator
  */
 
-import { validateToolsetConfig, matchesToolPattern } from "./validator";
-import { ToolsetConfig, ToolPattern } from "./types";
+import { 
+  validateToolsetConfig, 
+  matchesToolPattern,
+  validateToolReferenceFormat,
+  isValidToolsetName,
+  getValidationSummary 
+} from "./validator";
+import { ToolsetConfig, DynamicToolReference } from "./types";
 
 describe("ToolsetValidator", () => {
   describe("validateToolsetConfig", () => {
     it("should validate a valid configuration", () => {
       const config: ToolsetConfig = {
-        name: "Test Toolset",
+        name: "test-toolset",
         description: "A test configuration",
         version: "1.0.0",
-        servers: [
-          {
-            serverName: "git",
-            tools: { includeAll: true },
-            enabled: true,
-          },
+        createdAt: new Date(),
+        tools: [
+          { namespacedName: "git.status", refId: "hash123456789" },
+          { namespacedName: "docker.ps", refId: "hash987654321" },
         ],
-        options: {
-          namespaceSeparator: ".",
-          enableNamespacing: true,
-        },
       };
 
       const result = validateToolsetConfig(config);
@@ -32,7 +32,7 @@ describe("ToolsetValidator", () => {
 
     it("should reject configuration without name", () => {
       const config = {
-        servers: [],
+        tools: [],
       } as unknown as ToolsetConfig;
 
       const result = validateToolsetConfig(config);
@@ -43,7 +43,9 @@ describe("ToolsetValidator", () => {
     it("should reject configuration with empty name", () => {
       const config: ToolsetConfig = {
         name: "  ",
-        servers: [],
+        tools: [],
+        version: "1.0.0",
+        createdAt: new Date(),
       };
 
       const result = validateToolsetConfig(config);
@@ -51,170 +53,232 @@ describe("ToolsetValidator", () => {
       expect(result.errors).toContain("Configuration name cannot be empty");
     });
 
-    it("should reject configuration without servers array", () => {
+    it("should reject invalid name formats", () => {
+      const config: ToolsetConfig = {
+        name: "Test_Toolset", // Invalid characters
+        tools: [],
+        version: "1.0.0", 
+        createdAt: new Date(),
+      };
+
+      const result = validateToolsetConfig(config);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain("Configuration name must contain only lowercase letters, numbers, and hyphens");
+    });
+
+    it("should reject configuration without tools array", () => {
       const config = {
-        name: "Test",
+        name: "test-toolset",
       } as ToolsetConfig;
 
       const result = validateToolsetConfig(config);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(
-        "Configuration must have a servers array"
-      );
+      expect(result.errors).toContain("Configuration must have a tools array");
     });
 
-    it("should detect duplicate server names", () => {
+    it("should reject configuration with empty tools array", () => {
       const config: ToolsetConfig = {
-        name: "Test",
-        servers: [
-          { serverName: "git", tools: { includeAll: true } },
-          { serverName: "git", tools: { includeAll: true } },
+        name: "test-toolset",
+        tools: [],
+        version: "1.0.0",
+        createdAt: new Date(),
+      };
+
+      const result = validateToolsetConfig(config);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain("Configuration must specify at least one tool");
+    });
+
+    it("should validate individual tool references", () => {
+      const config: ToolsetConfig = {
+        name: "test-toolset",
+        tools: [
+          { namespacedName: "git.status" }, // Valid - has namespacedName
+          { refId: "hash123456789" }, // Valid - has refId
+          {} as DynamicToolReference, // Invalid - has neither
+          { namespacedName: "" }, // Invalid - empty namespacedName
+          { refId: "short" }, // Invalid - refId too short
+        ],
+        version: "1.0.0",
+        createdAt: new Date(),
+      };
+
+      const result = validateToolsetConfig(config);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain("Tool reference at index 2 must have either namespacedName or refId");
+      expect(result.errors).toContain("Tool reference at index 3: namespacedName cannot be empty");
+      expect(result.errors).toContain("Tool reference at index 4: refId appears too short to be a valid hash");
+    });
+
+    it("should warn about duplicate tool references", () => {
+      const config: ToolsetConfig = {
+        name: "test-toolset",
+        tools: [
+          { namespacedName: "git.status", refId: "hash1" },
+          { namespacedName: "git.status", refId: "hash2" }, // Duplicate namespacedName
+          { namespacedName: "docker.ps", refId: "hash1" }, // Duplicate refId
+        ],
+        version: "1.0.0",
+        createdAt: new Date(),
+      };
+
+      const result = validateToolsetConfig(config);
+      expect(result.warnings).toContain("Duplicate tool references found: git.status, hash1");
+    });
+
+    it("should validate optional fields", () => {
+      const config: ToolsetConfig = {
+        name: "test-toolset",
+        description: 123 as any, // Invalid type
+        version: 456 as any, // Invalid type
+        createdAt: "not-a-date" as any, // Invalid type
+        tools: [
+          { namespacedName: "git.status" },
         ],
       };
 
       const result = validateToolsetConfig(config);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain("Duplicate server names found: git");
+      expect(result.errors).toContain("Description must be a string if provided");
+      expect(result.errors).toContain("Version must be a string if provided");
+      expect(result.errors).toContain("createdAt must be a Date object if provided");
     });
 
-    it("should validate server configurations", () => {
+    it("should provide suggestions for large toolsets", () => {
+      const manyTools = Array.from({ length: 60 }, (_, i) => ({
+        namespacedName: `server.tool${i}`,
+      }));
+
       const config: ToolsetConfig = {
-        name: "Test",
-        servers: [
-          { serverName: "", tools: { includeAll: true } },
-          { serverName: "valid", tools: {} as any },
+        name: "large-toolset",
+        tools: manyTools,
+        version: "1.0.0",
+        createdAt: new Date(),
+      };
+
+      const result = validateToolsetConfig(config);
+      expect(result.suggestions).toContain("Consider breaking large toolsets into smaller, focused ones for better maintainability");
+    });
+
+    it("should suggest adding refId values", () => {
+      const config: ToolsetConfig = {
+        name: "test-toolset",
+        tools: [
+          { namespacedName: "git.status" }, // No refId
+          { namespacedName: "docker.ps" }, // No refId
         ],
+        version: "1.0.0",
+        createdAt: new Date(),
       };
 
       const result = validateToolsetConfig(config);
-      expect(result.valid).toBe(false);
-      expect(result.errors).toContain(
-        "Server 1: serverName is required and must be a string"
-      );
-      expect(result.errors).toContain(
-        "Server 2: must specify includeAll, include, or includePattern"
-      );
+      expect(result.suggestions).toContain("Consider adding refId values to tool references for better validation and security");
+    });
+  });
+
+  describe("validateToolReferenceFormat", () => {
+    it("should validate tool reference with namespacedName", () => {
+      const ref = { namespacedName: "git.status" };
+      expect(validateToolReferenceFormat(ref)).toBe(true);
     });
 
-    it("should validate tool patterns", () => {
-      const config: ToolsetConfig = {
-        name: "Test",
-        servers: [
-          {
-            serverName: "git",
-            tools: {
-              includePattern: "[invalid-regex",
-              excludePattern: "valid.*pattern",
-            },
-          },
-        ],
-      };
-
-      const result = validateToolsetConfig(config);
-      expect(result.valid).toBe(false);
-      expect(
-        result.errors.some((e) =>
-          e.includes("includePattern is not a valid regex")
-        )
-      ).toBe(true);
+    it("should validate tool reference with refId", () => {
+      const ref = { refId: "hash123456789" };
+      expect(validateToolReferenceFormat(ref)).toBe(true);
     });
 
-    it("should validate options", () => {
-      const config: ToolsetConfig = {
-        name: "Test",
-        servers: [{ serverName: "git", tools: { includeAll: true } }],
-        options: {
-          namespaceSeparator: "",
-          conflictResolution: "invalid" as any,
-          cacheTtl: -1,
-        },
-      };
-
-      const result = validateToolsetConfig(config);
-      expect(result.valid).toBe(false);
-      expect(result.errors).toContain("namespaceSeparator cannot be empty");
-      expect(result.errors).toContain(
-        "conflictResolution must be one of: namespace, prefix-server, error"
-      );
-      expect(result.errors).toContain("cacheTtl must be non-negative");
+    it("should validate tool reference with both", () => {
+      const ref = { namespacedName: "git.status", refId: "hash123456789" };
+      expect(validateToolReferenceFormat(ref)).toBe(true);
     });
 
-    it("should provide suggestions", () => {
-      const config: ToolsetConfig = {
-        name: "Test",
-        servers: [],
-      };
+    it("should reject empty tool reference", () => {
+      const ref = {};
+      expect(validateToolReferenceFormat(ref)).toBe(false);
+    });
 
-      const result = validateToolsetConfig(config);
-      expect(result.suggestions).toContain(
-        "Add at least one server configuration"
-      );
-      expect(result.suggestions).toContain(
-        "Consider adding a description to document the toolset purpose"
-      );
+    it("should reject non-object reference", () => {
+      expect(validateToolReferenceFormat("not-an-object")).toBe(false);
+      expect(validateToolReferenceFormat(null)).toBe(false);
+      expect(validateToolReferenceFormat(undefined)).toBe(false);
+    });
+
+    it("should reject reference with empty strings", () => {
+      const ref = { namespacedName: "", refId: "" };
+      expect(validateToolReferenceFormat(ref)).toBe(false);
+    });
+  });
+
+  describe("isValidToolsetName", () => {
+    it("should accept valid names", () => {
+      expect(isValidToolsetName("test-toolset")).toBe(true);
+      expect(isValidToolsetName("my-dev-tools")).toBe(true);
+      expect(isValidToolsetName("admin123")).toBe(true);
+      expect(isValidToolsetName("ab")).toBe(true); // Minimum length
+    });
+
+    it("should reject invalid names", () => {
+      expect(isValidToolsetName("Test_Toolset")).toBe(false); // Uppercase/underscore
+      expect(isValidToolsetName("test toolset")).toBe(false); // Space
+      expect(isValidToolsetName("test.toolset")).toBe(false); // Dot
+      expect(isValidToolsetName("a")).toBe(false); // Too short
+      expect(isValidToolsetName("a".repeat(51))).toBe(false); // Too long
+      expect(isValidToolsetName("")).toBe(false); // Empty
+      expect(isValidToolsetName(undefined as any)).toBe(false); // Undefined
     });
   });
 
   describe("matchesToolPattern", () => {
-    it("should match with includeAll", () => {
-      const pattern: ToolPattern = { includeAll: true };
-      expect(matchesToolPattern("any-tool", pattern)).toBe(true);
+    it("should match exact patterns", () => {
+      expect(matchesToolPattern("git.status", "git.status")).toBe(true);
+      expect(matchesToolPattern("docker.ps", "docker.ps")).toBe(true);
     });
 
-    it("should match explicit includes", () => {
-      const pattern: ToolPattern = { include: ["tool1", "tool2"] };
-      expect(matchesToolPattern("tool1", pattern)).toBe(true);
-      expect(matchesToolPattern("tool3", pattern)).toBe(false);
+    it("should match wildcard pattern", () => {
+      expect(matchesToolPattern("git.status", "*")).toBe(true);
+      expect(matchesToolPattern("anything", "*")).toBe(true);
     });
 
-    it("should match include patterns", () => {
-      const pattern: ToolPattern = { includePattern: "^git-" };
-      expect(matchesToolPattern("git-status", pattern)).toBe(true);
-      expect(matchesToolPattern("docker-ps", pattern)).toBe(false);
+    it("should not match different patterns", () => {
+      expect(matchesToolPattern("git.status", "docker.ps")).toBe(false);
+      expect(matchesToolPattern("git.status", "git.log")).toBe(false);
+    });
+  });
+
+  describe("getValidationSummary", () => {
+    it("should return success message for valid config", () => {
+      const result = { valid: true, errors: [], warnings: [], suggestions: [] };
+      const summary = getValidationSummary(result);
+      expect(summary).toBe("✅ Configuration is valid with no issues");
     });
 
-    it("should exclude with excludes", () => {
-      const pattern: ToolPattern = {
-        includeAll: true,
-        exclude: ["internal-tool"],
+    it("should return error summary for invalid config", () => {
+      const result = { 
+        valid: false, 
+        errors: ["Missing name", "Invalid tools"], 
+        warnings: [],
+        suggestions: []
       };
-      expect(matchesToolPattern("normal-tool", pattern)).toBe(true);
-      expect(matchesToolPattern("internal-tool", pattern)).toBe(false);
+      const summary = getValidationSummary(result);
+      expect(summary).toContain("❌ Configuration has errors");
+      expect(summary).toContain("Errors (2):");
+      expect(summary).toContain("• Missing name");
+      expect(summary).toContain("• Invalid tools");
     });
 
-    it("should exclude with exclude patterns", () => {
-      const pattern: ToolPattern = {
-        includeAll: true,
-        excludePattern: ".*-debug$",
+    it("should include warnings and suggestions", () => {
+      const result = { 
+        valid: true, 
+        errors: [], 
+        warnings: ["Large toolset"],
+        suggestions: ["Add refIds"]
       };
-      expect(matchesToolPattern("normal-tool", pattern)).toBe(true);
-      expect(matchesToolPattern("tool-debug", pattern)).toBe(false);
-    });
-
-    it("should handle complex patterns", () => {
-      const pattern: ToolPattern = {
-        includePattern: "^git-",
-        exclude: ["git-internal"],
-        excludePattern: ".*-test$",
-      };
-
-      expect(matchesToolPattern("git-status", pattern)).toBe(true);
-      expect(matchesToolPattern("git-internal", pattern)).toBe(false);
-      expect(matchesToolPattern("git-merge-test", pattern)).toBe(false);
-      expect(matchesToolPattern("docker-ps", pattern)).toBe(false);
-    });
-
-    it("should handle invalid regex gracefully", () => {
-      const pattern: ToolPattern = { includePattern: "[invalid" };
-      expect(matchesToolPattern("any-tool", pattern)).toBe(false);
-    });
-
-    it("should prioritize excludes over includes", () => {
-      const pattern: ToolPattern = {
-        include: ["tool1"],
-        exclude: ["tool1"],
-      };
-      expect(matchesToolPattern("tool1", pattern)).toBe(false);
+      const summary = getValidationSummary(result);
+      expect(summary).toContain("✅ Configuration is valid");
+      expect(summary).toContain("Warnings (1):");
+      expect(summary).toContain("• Large toolset");
+      expect(summary).toContain("Suggestions (1):");
+      expect(summary).toContain("• Add refIds");
     });
   });
 });
