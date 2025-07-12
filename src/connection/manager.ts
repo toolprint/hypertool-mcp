@@ -16,6 +16,15 @@ import {
 } from "./types";
 import { ConnectionPool } from "./pool";
 import { ConnectionFactory } from "./factory";
+import { HealthMonitor, HealthState } from "./health-monitor";
+import { 
+  ConnectionError, 
+  ServerUnavailableError, 
+  ConfigurationError,
+  TimeoutError 
+} from "../errors";
+import { Logger, createLogger } from "../logging";
+import { RecoveryCoordinator } from "../errors/recovery";
 
 /**
  * Connection manager orchestrates connections to multiple MCP servers
@@ -25,6 +34,9 @@ export class ConnectionManager
   implements IConnectionManager
 {
   private _pool: IConnectionPool;
+  private _healthMonitor: HealthMonitor;
+  private _logger: Logger;
+  private _recoveryCoordinator: RecoveryCoordinator;
   private servers: Record<string, ServerConfig> = {};
   private isInitialized = false;
   private isStarted = false;
@@ -35,6 +47,9 @@ export class ConnectionManager
   ) {
     super();
     this._pool = new ConnectionPool(poolConfig, connectionFactory);
+    this._healthMonitor = new HealthMonitor();
+    this._logger = createLogger('ConnectionManager');
+    this._recoveryCoordinator = new RecoveryCoordinator();
     this.setupPoolEventForwarding();
   }
 
@@ -225,6 +240,12 @@ export class ConnectionManager
 
     this.servers[serverName] = config;
     await this._pool.addConnection(serverName, config);
+
+    // Add to health monitor
+    const connection = this._pool.getConnection(serverName);
+    if (connection) {
+      this._healthMonitor.addConnection(connection);
+    }
 
     // Auto-connect if manager is started
     if (this.isStarted) {
