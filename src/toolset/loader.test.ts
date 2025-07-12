@@ -322,7 +322,8 @@ describe("ToolsetLoader", () => {
   describe("getDefaultConfigPath", () => {
     it("should return default config path", () => {
       const defaultPath = getDefaultConfigPath();
-      expect(defaultPath).toContain("toolset-config.json");
+      expect(defaultPath).toContain("toolset.json");
+      expect(defaultPath).toContain(".meta-mcp");
       expect(typeof defaultPath).toBe("string");
     });
 
@@ -330,7 +331,7 @@ describe("ToolsetLoader", () => {
       const customDir = "/custom/dir";
       const defaultPath = getDefaultConfigPath(customDir);
       expect(defaultPath).toContain(customDir);
-      expect(defaultPath).toContain("toolset-config.json");
+      expect(defaultPath).toContain("toolset.json");
     });
   });
 
@@ -356,7 +357,7 @@ describe("ToolsetLoader", () => {
       const config = {
         name: "special-chars",
         tools: [
-          { namespacedName: "server-1.tool_with-special.chars", refId: "hash123" },
+          { namespacedName: "server-1.tool_with-special.chars", refId: "hash123456789" }, // Valid refId length
         ],
       };
 
