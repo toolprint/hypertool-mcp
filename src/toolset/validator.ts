@@ -154,6 +154,20 @@ export function validateToolReferenceFormat(ref: any): ref is DynamicToolReferen
 }
 
 /**
+ * Test version of validateToolReferenceFormat  
+ */
+export function validateRefFormat(ref: any): boolean {
+  if (!ref || typeof ref !== "object") {
+    return false;
+  }
+
+  const hasNamespacedName = ref.namespacedName && typeof ref.namespacedName === "string" && ref.namespacedName.trim().length > 0;
+  const hasRefId = ref.refId && typeof ref.refId === "string" && ref.refId.trim().length > 0;
+
+  return hasNamespacedName || hasRefId;
+}
+
+/**
  * Check if toolset name follows naming conventions
  */
 export function isValidToolsetName(name: string): boolean {

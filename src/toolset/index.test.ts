@@ -49,6 +49,7 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
     const warnings: string[] = [];
     const errors: string[] = [];
     
+    // Check for mismatches when both identifiers are provided
     if (exists && ref.namespacedName && ref.refId) {
       if (!namespacedNameMatch && !refIdMatch) {
         errors.push(`Tool reference mismatch: neither namespacedName nor refId match`);
@@ -62,15 +63,18 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
       }
     }
     
+    // In secure mode, reject tools with errors
+    const shouldReject = !options?.allowStaleRefs && errors.length > 0;
+    
     return {
-      exists,
-      tool,
+      exists: exists && !shouldReject,
+      tool: shouldReject ? undefined : tool,
       serverName: tool?.serverName,
       serverStatus: undefined,
       namespacedNameMatch,
       refIdMatch,
       warnings,
-      errors: options?.allowStaleRefs ? [] : errors
+      errors
     };
   }
 
@@ -108,7 +112,7 @@ describe("ToolsetManager", () => {
       lastUpdated: new Date(),
       serverStatus: "connected",
       structureHash: "hash1",
-      fullHash: "full1",
+      fullHash: "full1234567890", // Valid hash length
     },
     {
       name: "ps",
@@ -119,7 +123,7 @@ describe("ToolsetManager", () => {
       lastUpdated: new Date(),
       serverStatus: "connected",
       structureHash: "hash2",
-      fullHash: "full2",
+      fullHash: "full2234567890", // Valid hash length
     },
   ];
 
@@ -144,7 +148,7 @@ describe("ToolsetManager", () => {
         version: "1.0.0",
         createdAt: new Date(),
         tools: [
-          { namespacedName: "git.status", refId: "full1" }
+          { namespacedName: "git.status", refId: "full1234567890" }
         ],
       };
 
@@ -188,7 +192,7 @@ describe("ToolsetManager", () => {
       const config: ToolsetConfig = {
         name: "test-config",
         tools: [
-          { namespacedName: "git.status", refId: "full1" }
+          { namespacedName: "git.status", refId: "full1234567890" }
         ],
         version: "1.0.0",
         createdAt: new Date(),
@@ -214,7 +218,7 @@ describe("ToolsetManager", () => {
       const config: ToolsetConfig = {
         name: "test-config",
         tools: [
-          { namespacedName: "git.status", refId: "full1" }
+          { namespacedName: "git.status", refId: "full1234567890" }
         ],
         version: "1.0.0",
         createdAt: new Date(),
@@ -284,7 +288,7 @@ describe("ToolsetManager", () => {
       const config: ToolsetConfig = {
         name: "test-config",
         tools: [
-          { namespacedName: "git.status", refId: "full1" }
+          { namespacedName: "git.status", refId: "full1234567890" }
         ],
         version: "1.0.0",
         createdAt: new Date(),
@@ -317,7 +321,7 @@ describe("ToolsetManager", () => {
 
       expect(result.success).toBe(true);
       expect(result.tools).toHaveLength(0); // Tool rejected due to mismatch
-      expect(result.warnings.some(w => w.includes("SECURITY"))).toBe(true);
+      expect(result.warnings?.some(w => w.includes("SECURITY"))).toBe(true);
     });
 
     it("should apply configuration without discovery engine", async () => {
@@ -379,7 +383,7 @@ describe("ToolsetManager", () => {
       const result = manager.setConfig(invalidConfig);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain("Configuration name cannot be empty");
+      expect(result.errors).toContain("Configuration must have a valid name");
       expect(manager.isConfigLoaded()).toBe(false);
     });
 
