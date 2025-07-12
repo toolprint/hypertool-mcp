@@ -51,31 +51,19 @@ describe("ToolsetLoader", () => {
       expect(result.validation.valid).toBe(true);
     });
 
-    it("should handle legacy configuration format", async () => {
-      const legacyConfig = {
-        name: "legacy-config",
-        servers: [
-          { serverName: "git", tools: { includeAll: true } },
-          { serverName: "docker", tools: { include: ["ps"] } },
-        ],
-        options: {
-          enableNamespacing: true,
-          conflictResolution: "namespace",
-        },
+    it("should handle configuration without tools array", async () => {
+      const configWithoutTools = {
+        name: "config-without-tools",
+        description: "A config that lacks tools array",
       };
 
-      const filePath = path.join(tempDir, "legacy.json");
-      await fs.writeFile(filePath, JSON.stringify(legacyConfig));
-
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const filePath = path.join(tempDir, "no-tools.json");
+      await fs.writeFile(filePath, JSON.stringify(configWithoutTools));
 
       const result = await loadToolsetConfig(filePath);
       expect(result.config).toBeDefined();
-      expect(result.config!.name).toBe("legacy-config");
-      expect(result.config!.tools).toEqual([]); // Converted to empty - cannot reliably convert
-      expect(consoleSpy).toHaveBeenCalledWith("Loading legacy toolset format - some information may be lost");
-
-      consoleSpy.mockRestore();
+      expect(result.config!.name).toBe("config-without-tools");
+      expect(result.config!.tools).toEqual([]); // Default empty array
     });
 
     it("should handle invalid JSON", async () => {

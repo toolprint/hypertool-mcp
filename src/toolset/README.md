@@ -33,8 +33,10 @@ src/toolset/
 ├── README.md              # This file - architecture and design
 ├── types.ts               # Core type definitions
 ├── index.ts               # ToolsetManager class and main API
-├── mcp-tools.ts          # MCP tool implementations
-└── loader.ts             # Configuration file I/O operations
+├── validator.ts           # Configuration validation logic
+├── generator.ts           # Default toolset generation
+├── loader.ts             # Configuration file I/O operations
+└── filter.ts             # Minimal filtering utilities
 ```
 
 ## 🎯 Design Principles
@@ -53,11 +55,8 @@ interface ToolsetConfig {
   tools: DynamicToolReference[];  // Direct array of tool references
 }
 
-// ❌ Complex: Server-level configurations (removed)
-interface OldToolsetConfig {
-  servers: ServerToolConfig[];    // Too complex for user-generated toolsets
-  options: ToolsetOptions;        // Unnecessary configuration overhead
-}
+// Note: Previous complex server-based configurations have been removed
+// in favor of the simplified tools-only approach shown above.
 ```
 
 **Benefits**:

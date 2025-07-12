@@ -193,17 +193,12 @@ function normalizeToolsetConfig(rawConfig: any): ToolsetConfig {
     tools: [],
   };
 
-  // Normalize tools array - handle both old and new formats
+  // Normalize tools array
   if (Array.isArray(rawConfig.tools)) {
-    // New format - array of tool references
     config.tools = rawConfig.tools.filter((tool: any) => {
       return (tool.namespacedName && typeof tool.namespacedName === 'string') ||
              (tool.refId && typeof tool.refId === 'string');
     });
-  } else if (Array.isArray(rawConfig.servers)) {
-    // Legacy format - convert from servers to tools (best effort)
-    console.warn('Loading legacy toolset format - some information may be lost');
-    config.tools = []; // Cannot reliably convert without discovery engine
   }
 
   return config;

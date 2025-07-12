@@ -25,12 +25,7 @@ export {
   createExampleConfig,
 } from "./loader";
 
-// Export filtering functions (legacy compatibility)
-export {
-  applyToolsetConfig,
-  getAvailableToolsForConfig,
-  previewToolsetConfig,
-} from "./filter";
+// Note: Filtering is now handled by ToolsetManager.applyConfig()
 
 // Export generator functions
 export {
