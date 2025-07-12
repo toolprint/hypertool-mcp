@@ -3,10 +3,7 @@
  */
 
 import { RequestRouter } from "./router";
-import {
-  ToolCallRequest,
-  ROUTER_ERROR_CODES,
-} from "./types";
+import { ToolCallRequest, ROUTER_ERROR_CODES } from "./types";
 import { IToolDiscoveryEngine, DiscoveredTool } from "../discovery/types";
 import { IConnectionManager, Connection } from "../connection/types";
 
@@ -27,9 +24,11 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
   }
 
   async getToolByName(name: string): Promise<DiscoveredTool | null> {
-    return this.tools.find(tool => 
-      tool.name === name || tool.namespacedName === name
-    ) || null;
+    return (
+      this.tools.find(
+        (tool) => tool.name === name || tool.namespacedName === name
+      ) || null
+    );
   }
 
   async searchTools(): Promise<DiscoveredTool[]> {
@@ -38,6 +37,23 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
 
   getAvailableTools(): DiscoveredTool[] {
     return this.tools;
+  }
+
+  resolveToolReference(ref: { namespacedName?: string; refId?: string }, _options?: { allowStaleRefs?: boolean }) {
+    const tool = this.tools.find(t => 
+      t.namespacedName === ref.namespacedName || t.fullHash === ref.refId
+    );
+    
+    return {
+      exists: !!tool,
+      tool,
+      serverName: tool?.serverName,
+      serverStatus: undefined,
+      namespacedNameMatch: !!tool && tool.namespacedName === ref.namespacedName,
+      refIdMatch: !!tool && tool.fullHash === ref.refId,
+      warnings: [],
+      errors: []
+    };
   }
 
   async refreshCache() {}
@@ -72,16 +88,24 @@ class MockConnection implements Connection {
     this.config = {};
     this.status = {};
     this.client = {
-      callTool: jest.fn().mockResolvedValue(mockResponse || {
-        content: [{ type: "text", text: "Mock response" }],
-      }),
+      callTool: jest.fn().mockResolvedValue(
+        mockResponse || {
+          content: [{ type: "text", text: "Mock response" }],
+        }
+      ),
     };
   }
 
   async connect() {}
-  async disconnect() { this.connected = false; }
-  async ping() { return this.connected; }
-  isConnected() { return this.connected; }
+  async disconnect() {
+    this.connected = false;
+  }
+  async ping() {
+    return this.connected;
+  }
+  isConnected() {
+    return this.connected;
+  }
   on() {}
   off() {}
   emit() {}
@@ -113,7 +137,7 @@ class MockConnectionManager implements IConnectionManager {
   }
 
   getConnectedServers(): string[] {
-    return Array.from(this.connections.keys()).filter(serverName => {
+    return Array.from(this.connections.keys()).filter((serverName) => {
       const conn = this.connections.get(serverName);
       return conn?.isConnected();
     });
@@ -178,7 +202,7 @@ describe("RequestRouter", () => {
 
     it("should resolve namespaced tool names", async () => {
       const result = await router.resolveToolRoute("git.status");
-      
+
       expect(result.success).toBe(true);
       expect(result.route?.originalName).toBe("git.status");
       expect(result.route?.resolvedName).toBe("status");
@@ -187,13 +211,15 @@ describe("RequestRouter", () => {
     });
 
     it("should resolve non-namespaced tool names", async () => {
-      mockDiscovery.setMockTools([{
-        ...mockTool,
-        namespacedName: "status", // Non-namespaced
-      }]);
+      mockDiscovery.setMockTools([
+        {
+          ...mockTool,
+          namespacedName: "status", // Non-namespaced
+        },
+      ]);
 
       const result = await router.resolveToolRoute("status");
-      
+
       expect(result.success).toBe(true);
       expect(result.route?.originalName).toBe("status");
       expect(result.route?.serverName).toBe("git");
@@ -201,17 +227,19 @@ describe("RequestRouter", () => {
 
     it("should return error for unknown tools", async () => {
       const result = await router.resolveToolRoute("unknown.tool");
-      
+
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ROUTER_ERROR_CODES.TOOL_NOT_FOUND);
     });
 
     it("should return error for disconnected servers", async () => {
-      const connection = mockConnectionManager.getConnection("git") as MockConnection;
+      const connection = mockConnectionManager.getConnection(
+        "git"
+      ) as MockConnection;
       connection.setConnected(false);
 
       const result = await router.resolveToolRoute("git.status");
-      
+
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ROUTER_ERROR_CODES.SERVER_NOT_CONNECTED);
     });
@@ -222,8 +250,8 @@ describe("RequestRouter", () => {
       name: "status",
       serverName: "git",
       namespacedName: "git.status",
-      schema: { 
-        type: "object", 
+      schema: {
+        type: "object",
         properties: { path: { type: "string" } },
         required: ["path"],
       },
@@ -253,7 +281,7 @@ describe("RequestRouter", () => {
       const response = await router.routeToolCall(request);
 
       expect(response.content).toEqual([
-        { type: "text", text: "Clean working directory" }
+        { type: "text", text: "Clean working directory" },
       ]);
       expect(response.isError).toBe(false);
     });
@@ -297,7 +325,9 @@ describe("RequestRouter", () => {
       const response = await router.routeToolCall(request);
 
       expect(response.isError).toBe(true);
-      expect(response.content[0].text).toContain("Failed to resolve tool route");
+      expect(response.content[0].text).toContain(
+        "Failed to resolve tool route"
+      );
     });
   });
 
@@ -306,11 +336,11 @@ describe("RequestRouter", () => {
       name: "commit",
       serverName: "git",
       namespacedName: "git.commit",
-      schema: { 
-        type: "object", 
-        properties: { 
+      schema: {
+        type: "object",
+        properties: {
           message: { type: "string" },
-          files: { type: "array" }
+          files: { type: "array" },
         },
         required: ["message"],
       },
@@ -353,7 +383,10 @@ describe("RequestRouter", () => {
         arguments: {},
       };
 
-      const isValid = await router.validateRequest(request, toolWithoutRequired);
+      const isValid = await router.validateRequest(
+        request,
+        toolWithoutRequired
+      );
       expect(isValid).toBe(true);
     });
   });
@@ -428,9 +461,9 @@ describe("RequestRouter", () => {
   describe("logging", () => {
     it("should enable/disable logging", async () => {
       await router.initialize({ enableLogging: true });
-      
+
       // Create a spy on console.log to check if logging occurs
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
       const request: ToolCallRequest = {
         name: "unknown.tool",
@@ -446,7 +479,7 @@ describe("RequestRouter", () => {
 
       await router.routeToolCall(request);
       // Should be called less frequently or not at all for request logs
-      
+
       consoleSpy.mockRestore();
     });
   });

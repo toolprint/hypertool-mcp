@@ -105,9 +105,7 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
       // Get connection to target server
       const connection = this.connectionManager.getConnection(route.serverName);
       if (!connection || !connection.isConnected()) {
-        throw new Error(
-          `Server '${route.serverName}' is not connected`
-        );
+        throw new Error(`Server '${route.serverName}' is not connected`);
       }
 
       // Make the tool call to the underlying server
@@ -124,10 +122,15 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
 
       return response;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
       // Update statistics
-      this.updateStats(false, routeContext.route?.serverName, Date.now() - startTime);
+      this.updateStats(
+        false,
+        routeContext.route?.serverName,
+        Date.now() - startTime
+      );
 
       this.log("Tool call failed", {
         requestId,
@@ -232,7 +235,7 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
 
       // TODO: Add more sophisticated JSON schema validation
       // For now, just check that we have the required fields
-      
+
       return true;
     } catch (error) {
       this.log("Parameter validation failed", {
@@ -337,7 +340,7 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
     if (!this.config.enableMetrics) return;
 
     this.stats.totalRequests++;
-    
+
     if (success) {
       this.stats.successfulRequests++;
     } else {
@@ -347,7 +350,8 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
     // Update average request time
     if (this.stats.totalRequests > 0) {
       this.stats.averageRequestTime =
-        (this.stats.averageRequestTime * (this.stats.totalRequests - 1) + duration) /
+        (this.stats.averageRequestTime * (this.stats.totalRequests - 1) +
+          duration) /
         this.stats.totalRequests;
     }
 
@@ -369,10 +373,10 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
         message,
         ...(data && { data }),
       };
-      
+
       // Emit log event for external loggers
       this.emit("log", logEntry);
-      
+
       // Simple console logging for now
       console.log(JSON.stringify(logEntry));
     }

@@ -86,7 +86,7 @@ export class MetaMCPServer extends EventEmitter {
    * Handle tool call requests
    * To be implemented by subclasses
    */
-  protected async handleToolCall(name: string, args?: any): Promise<any> {
+  protected async handleToolCall(name: string, _args?: any): Promise<any> {
     throw new Error(`Tool "${name}" not implemented`);
   }
 
@@ -223,6 +223,21 @@ export class MetaMCPServer extends EventEmitter {
    */
   getConfig(): MetaMCPServerConfig {
     return { ...this.config };
+  }
+
+  /**
+   * Send tools list changed notification to clients
+   */
+  protected async notifyToolsChanged(): Promise<void> {
+    if (this.server && this.transport) {
+      try {
+        await this.server.notification({
+          method: "notifications/tools/list_changed",
+        });
+      } catch (error) {
+        console.error("Failed to send tools list changed notification:", error);
+      }
+    }
   }
 
   /**

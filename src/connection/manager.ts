@@ -29,14 +29,17 @@ import { RecoveryCoordinator } from "../errors/recovery";
 /**
  * Connection manager orchestrates connections to multiple MCP servers
  */
-export class ConnectionManager extends EventEmitter implements IConnectionManager {
+export class ConnectionManager
+  extends EventEmitter
+  implements IConnectionManager
+{
   private _pool: IConnectionPool;
+  private _healthMonitor: HealthMonitor;
+  private _logger: Logger;
+  private _recoveryCoordinator: RecoveryCoordinator;
   private servers: Record<string, ServerConfig> = {};
   private isInitialized = false;
   private isStarted = false;
-  private _healthMonitor: HealthMonitor;
-  private logger: Logger;
-  private recoveryCoordinator: RecoveryCoordinator;
 
   constructor(
     poolConfig: ConnectionPoolConfig = {},
@@ -44,13 +47,10 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
   ) {
     super();
     this._pool = new ConnectionPool(poolConfig, connectionFactory);
-    this._healthMonitor = new HealthMonitor({
-      checkInterval: poolConfig.healthCheckInterval || 30000
-    });
-    this.logger = createLogger("ConnectionManager");
-    this.recoveryCoordinator = new RecoveryCoordinator();
+    this._healthMonitor = new HealthMonitor();
+    this._logger = createLogger('ConnectionManager');
+    this._recoveryCoordinator = new RecoveryCoordinator();
     this.setupPoolEventForwarding();
-    this.setupHealthMonitoring();
   }
 
   /**
@@ -58,13 +58,6 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
    */
   get pool(): IConnectionPool {
     return this._pool;
-  }
-
-  /**
-   * Get the health monitor
-   */
-  get healthMonitor(): HealthMonitor {
-    return this._healthMonitor;
   }
 
   /**
@@ -79,79 +72,35 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
    */
   async initialize(servers: Record<string, ServerConfig>): Promise<void> {
     if (this.isInitialized) {
-      throw new ConfigurationError("Connection manager is already initialized");
+      throw new Error("Connection manager is already initialized");
     }
 
-    try {
-      this.servers = { ...servers };
-      
-      // Validate all server configurations
-      this.validateServerConfigurations();
+    this.servers = { ...servers };
 
-      this.logger.info("Initializing connection manager", {
-        serverCount: Object.keys(servers).length,
-        servers: Object.keys(servers),
-      });
+    // Validate all server configurations
+    this.validateServerConfigurations();
 
-      // Add all servers to the pool
-      const addPromises = Object.entries(this.servers).map(
-        async ([serverName, config]) => {
-          try {
-            await this._pool.addConnection(serverName, config);
-            
-            // Add connection to health monitor
-            const connection = this._pool.getConnection(serverName);
-            if (connection) {
-              this._healthMonitor.addConnection(connection);
-            }
-            
-            this.logger.debug("Server added to pool", { serverName });
-          } catch (error) {
-            const connectionError = new ConnectionError(
-              `Failed to add server to pool: ${error instanceof Error ? error.message : String(error)}`,
-              serverName,
-              false,
-              { originalError: error }
-            );
-            
-            this.logger.error("Failed to add server to pool", {
-              serverName,
-              error: connectionError.message,
-            }, connectionError);
-            
-            throw connectionError;
-          }
-        }
-      );
-
-      const results = await Promise.allSettled(addPromises);
-      const failures = results.filter(result => result.status === 'rejected');
-      
-      if (failures.length > 0) {
-        this.logger.warn("Some servers failed to initialize", {
-          failureCount: failures.length,
-          totalServers: results.length,
-        });
+    // Add all servers to the pool - fail fast on any error
+    const serverEntries = Object.entries(this.servers);
+    for (const [serverName, config] of serverEntries) {
+      try {
+        await this._pool.addConnection(serverName, config);
+      } catch (error) {
+        console.error(`\n❌ FATAL ERROR: Failed to initialize server "${serverName}"`);
+        console.error(`   Error: ${(error as Error).message}`);
+        console.error(`\n💡 Resolution: Please check your MCP configuration and ensure all server names are unique.`);
+        console.error(`   Configuration file: Check for duplicate server names in mcpServers section.`);
+        console.error(`\n🚫 Meta-MCP server cannot start with conflicting server configurations.`);
+        process.exit(1);
       }
-
-      this.isInitialized = true;
-      
-      this.logger.info("Connection manager initialized", {
-        serverCount: Object.keys(this.servers).length,
-        successfulServers: results.length - failures.length,
-        failedServers: failures.length,
-      });
-      
-      this.emit("initialized", {
-        serverCount: Object.keys(this.servers).length,
-        servers: Object.keys(this.servers),
-        successfulServers: results.length - failures.length,
-        failedServers: failures.length,
-      });
-    } catch (error) {
-      this.logger.error("Failed to initialize connection manager", {}, error as Error);
-      throw error;
     }
+
+    this.isInitialized = true;
+
+    this.emit("initialized", {
+      serverCount: Object.keys(this.servers).length,
+      servers: Object.keys(this.servers),
+    });
   }
 
   /**
@@ -159,46 +108,21 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
    */
   async connect(serverName: string): Promise<void> {
     this.ensureInitialized();
-    
+
     const connection = this._pool.getConnection(serverName);
     if (!connection) {
-      throw new ServerUnavailableError(
-        serverName,
-        "Server not found in connection pool",
-        { operation: "connect" }
-      );
+      throw new Error(`Server "${serverName}" not found in pool`);
     }
 
     if (connection.isConnected()) {
-      this.logger.debug("Server already connected", { serverName });
       return;
     }
 
     try {
-      this.logger.info("Connecting to server", { serverName });
-      
-      await this.recoveryCoordinator.executeWithRecovery(
-        () => connection.connect(),
-        "connect",
-        `connection-${serverName}`,
-        { serverName }
-      );
-      
-      this.logger.info("Successfully connected to server", { serverName });
+      await connection.connect();
     } catch (error) {
-      const connectionError = new ConnectionError(
-        `Failed to connect to server: ${error instanceof Error ? error.message : String(error)}`,
-        serverName,
-        true,
-        { originalError: error }
-      );
-      
-      this.logger.error("Failed to connect to server", {
-        serverName,
-        error: connectionError.message,
-      }, connectionError);
-      
-      throw connectionError;
+      console.error(`Failed to connect to server "${serverName}":`, error);
+      throw error;
     }
   }
 
@@ -207,7 +131,7 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
    */
   async disconnect(serverName: string): Promise<void> {
     this.ensureInitialized();
-    
+
     const connection = this._pool.getConnection(serverName);
     if (!connection) {
       return;
@@ -226,7 +150,7 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
    */
   async reconnect(serverName: string): Promise<void> {
     this.ensureInitialized();
-    
+
     await this.disconnect(serverName);
     await this.connect(serverName);
   }
@@ -258,21 +182,19 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
    */
   async start(): Promise<void> {
     this.ensureInitialized();
-    
+
     if (this.isStarted) {
       return;
     }
 
     try {
       await this._pool.start();
-      this._healthMonitor.start();
       this.isStarted = true;
-      
+
       this.emit("started", {
         serverCount: Object.keys(this.servers).length,
         connectedServers: this.getConnectedServers(),
       });
-      
     } catch (error) {
       console.error("Failed to start connection manager:", error);
       throw error;
@@ -289,13 +211,11 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
 
     try {
       await this._pool.stop();
-      this._healthMonitor.stop();
       this.isStarted = false;
-      
+
       this.emit("stopped", {
         serverCount: Object.keys(this.servers).length,
       });
-      
     } catch (error) {
       console.error("Failed to stop connection manager:", error);
       throw error;
@@ -307,26 +227,35 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
    */
   async addServer(serverName: string, config: ServerConfig): Promise<void> {
     this.ensureInitialized();
-    
+
     if (this.servers[serverName]) {
-      throw new Error(`Server "${serverName}" already exists`);
+      const error = new Error(
+        `❌ Server name conflict detected: "${serverName}" already exists.\n` +
+        `💡 Resolution: Use a unique server name or remove the existing server first.\n` +
+        `📋 Existing servers: ${Object.keys(this.servers).join(', ')}`
+      );
+      console.error(error.message);
+      throw error;
     }
 
     this.servers[serverName] = config;
     await this._pool.addConnection(serverName, config);
-    
+
     // Add to health monitor
     const connection = this._pool.getConnection(serverName);
     if (connection) {
       this._healthMonitor.addConnection(connection);
     }
-    
+
     // Auto-connect if manager is started
     if (this.isStarted) {
       try {
         await this.connect(serverName);
       } catch (error) {
-        console.warn(`Failed to auto-connect to new server "${serverName}":`, error);
+        console.warn(
+          `Failed to auto-connect to new server "${serverName}":`,
+          error
+        );
       }
     }
 
@@ -338,13 +267,12 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
    */
   async removeServer(serverName: string): Promise<void> {
     this.ensureInitialized();
-    
+
     if (!this.servers[serverName]) {
       return;
     }
 
     await this._pool.removeConnection(serverName);
-    this._healthMonitor.removeConnection(serverName);
     delete this.servers[serverName];
 
     this.emit("serverRemoved", { serverName });
@@ -370,12 +298,15 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
   getStats() {
     const serverNames = this.getServerNames();
     const connectedServers = this.getConnectedServers();
-    
+
     return {
       totalServers: serverNames.length,
       connectedServers: connectedServers.length,
       disconnectedServers: serverNames.length - connectedServers.length,
-      connectionRate: serverNames.length > 0 ? connectedServers.length / serverNames.length : 0,
+      connectionRate:
+        serverNames.length > 0
+          ? connectedServers.length / serverNames.length
+          : 0,
       activeConnections: this._pool.activeConnections,
       poolSize: this._pool.size,
     };
@@ -386,46 +317,16 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
    */
   private validateServerConfigurations(): void {
     for (const [serverName, config] of Object.entries(this.servers)) {
-      if (!config || typeof config !== 'object') {
+      if (!config || typeof config !== "object") {
         throw new Error(`Invalid configuration for server "${serverName}"`);
       }
-      
-      if (!config.type || (config.type !== 'stdio' && config.type !== 'sse')) {
+
+      if (!config.type || (config.type !== "stdio" && config.type !== "sse")) {
         throw new Error(
           `Invalid transport type for server "${serverName}": ${(config as any).type}`
         );
       }
     }
-  }
-
-  /**
-   * Setup health monitoring integration
-   */
-  private setupHealthMonitoring(): void {
-    // Forward health state changes to tool availability events
-    this._healthMonitor.on("stateChange", (result, previousState) => {
-      this.emit("serverHealthChanged", {
-        serverName: result.serverName,
-        newState: result.state,
-        previousState,
-        lastHealthyAt: result.lastHealthyAt,
-        error: result.error,
-      });
-
-      // Emit tool availability change events
-      if (result.state !== HealthState.HEALTHY && previousState === HealthState.HEALTHY) {
-        this.emit("serverToolsUnavailable", {
-          serverName: result.serverName,
-          reason: result.state,
-          error: result.error,
-        });
-      } else if (result.state === HealthState.HEALTHY && previousState !== HealthState.HEALTHY) {
-        this.emit("serverToolsAvailable", {
-          serverName: result.serverName,
-          recoveredFrom: previousState,
-        });
-      }
-    });
   }
 
   /**
@@ -436,12 +337,12 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
       "connecting",
       "connected",
       "disconnected",
-      "reconnecting", 
+      "reconnecting",
       "failed",
-      "error"
+      "error",
     ];
 
-    eventTypes.forEach(eventType => {
+    eventTypes.forEach((eventType) => {
       this._pool.on(eventType, (event: ConnectionEvent) => {
         this.emit(eventType, event);
       });
@@ -470,7 +371,9 @@ export class ConnectionManager extends EventEmitter implements IConnectionManage
    */
   private ensureInitialized(): void {
     if (!this.isInitialized) {
-      throw new Error("Connection manager not initialized. Call initialize() first.");
+      throw new Error(
+        "Connection manager not initialized. Call initialize() first."
+      );
     }
   }
 

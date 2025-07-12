@@ -8,13 +8,13 @@ import { ToolHashUtils } from "./hash-utils";
 /**
  * Conflict resolution strategy types
  */
-export type ConflictResolutionStrategy = 
-  | "namespace"      // Prefix with server name (default)
-  | "suffix"         // Suffix with server name
-  | "merge"          // Merge tool schemas if compatible
-  | "priority"       // Use server priority order
-  | "first"          // Use first discovered tool
-  | "error";         // Throw error on conflict
+export type ConflictResolutionStrategy =
+  | "namespace" // Prefix with server name (default)
+  | "suffix" // Suffix with server name
+  | "merge" // Merge tool schemas if compatible
+  | "priority" // Use server priority order
+  | "first" // Use first discovered tool
+  | "error"; // Throw error on conflict
 
 /**
  * Conflict resolution configuration
@@ -79,7 +79,7 @@ export class ToolConflictResolver {
    */
   detectConflicts(tools: DiscoveredTool[]): ToolConflict[] {
     const toolsByName = new Map<string, DiscoveredTool[]>();
-    
+
     // Group tools by name
     for (const tool of tools) {
       const name = tool.name;
@@ -91,10 +91,10 @@ export class ToolConflictResolver {
 
     // Find conflicts (multiple tools with same name from different servers)
     const conflicts: ToolConflict[] = [];
-    
+
     for (const [toolName, toolList] of toolsByName) {
       if (toolList.length > 1) {
-        const servers = new Set(toolList.map(t => t.serverName));
+        const servers = new Set(toolList.map((t) => t.serverName));
         if (servers.size > 1) {
           conflicts.push({
             toolName,
@@ -115,26 +115,28 @@ export class ToolConflictResolver {
     switch (this.config.strategy) {
       case "namespace":
         return this.resolveWithNamespace(conflict);
-      
+
       case "suffix":
         return this.resolveWithSuffix(conflict);
-      
+
       case "merge":
         return this.resolveWithMerging(conflict);
-      
+
       case "priority":
         return this.resolveWithPriority(conflict);
-      
+
       case "first":
         return this.resolveWithFirst(conflict);
-      
+
       case "error":
         throw new Error(
           `Tool name conflict detected: "${conflict.toolName}" exists in servers: ${conflict.conflictingServers.join(", ")}`
         );
-      
+
       default:
-        throw new Error(`Unknown conflict resolution strategy: ${this.config.strategy}`);
+        throw new Error(
+          `Unknown conflict resolution strategy: ${this.config.strategy}`
+        );
     }
   }
 
@@ -143,17 +145,17 @@ export class ToolConflictResolver {
    */
   resolveConflicts(tools: DiscoveredTool[]): DiscoveredTool[] {
     const conflicts = this.detectConflicts(tools);
-    
+
     if (conflicts.length === 0) {
       return tools;
     }
 
     const resolvedTools = [...tools];
-    const conflictedToolNames = new Set(conflicts.map(c => c.toolName));
+    const conflictedToolNames = new Set(conflicts.map((c) => c.toolName));
 
     // Remove all conflicted tools first
     const nonConflictedTools = resolvedTools.filter(
-      tool => !conflictedToolNames.has(tool.name)
+      (tool) => !conflictedToolNames.has(tool.name)
     );
 
     // Resolve each conflict and add resolved tools
@@ -221,7 +223,7 @@ export class ToolConflictResolver {
 
     // Check if tools can be merged
     const canMerge = this.canMergeTools(conflict.tools);
-    
+
     if (!canMerge) {
       // Fall back to namespace strategy
       return this.resolveWithNamespace(conflict);
@@ -243,7 +245,10 @@ export class ToolConflictResolver {
    * Resolve conflict using server priority order
    */
   private resolveWithPriority(conflict: ToolConflict): ConflictResolution {
-    if (!this.config.serverPriority || this.config.serverPriority.length === 0) {
+    if (
+      !this.config.serverPriority ||
+      this.config.serverPriority.length === 0
+    ) {
       // Fall back to first strategy
       return this.resolveWithFirst(conflict);
     }
@@ -254,7 +259,10 @@ export class ToolConflictResolver {
 
     for (const tool of conflict.tools) {
       const priority = this.config.serverPriority.indexOf(tool.serverName);
-      if (priority !== -1 && (selectedTool === null || priority < highestPriority)) {
+      if (
+        priority !== -1 &&
+        (selectedTool === null || priority < highestPriority)
+      ) {
         selectedTool = tool;
         highestPriority = priority;
       }
@@ -265,7 +273,7 @@ export class ToolConflictResolver {
       selectedTool = conflict.tools[0];
     }
 
-    const discardedTools = conflict.tools.filter(t => t !== selectedTool);
+    const discardedTools = conflict.tools.filter((t) => t !== selectedTool);
 
     return {
       strategy: "priority",
@@ -340,13 +348,13 @@ export class ToolConflictResolver {
     // Check if one schema extends the other (simplified check)
     const props1 = schema1.properties || {};
     const props2 = schema2.properties || {};
-    
+
     const keys1 = Object.keys(props1);
     const keys2 = Object.keys(props2);
-    
+
     // Check if one is subset of the other
-    const isSubset = (smaller: string[], larger: string[]) => 
-      smaller.every(key => larger.includes(key));
+    const isSubset = (smaller: string[], larger: string[]) =>
+      smaller.every((key) => larger.includes(key));
 
     return isSubset(keys1, keys2) || isSubset(keys2, keys1);
   }
@@ -356,14 +364,14 @@ export class ToolConflictResolver {
    */
   private mergeTools(tools: DiscoveredTool[]): DiscoveredTool {
     const first = tools[0];
-    const serverNames = tools.map(t => t.serverName).sort();
+    const serverNames = tools.map((t) => t.serverName).sort();
 
     // Create merged schema (take the one with more properties)
     let mergedSchema = first.schema;
     for (const tool of tools.slice(1)) {
       const props1 = Object.keys(mergedSchema.properties || {});
       const props2 = Object.keys(tool.schema.properties || {});
-      
+
       if (props2.length > props1.length) {
         mergedSchema = tool.schema;
       }
@@ -375,7 +383,9 @@ export class ToolConflictResolver {
       namespacedName: first.name, // Keep original name for merged tools
       schema: mergedSchema,
       description: first.description,
-      discoveredAt: new Date(Math.min(...tools.map(t => t.discoveredAt.getTime()))),
+      discoveredAt: new Date(
+        Math.min(...tools.map((t) => t.discoveredAt.getTime()))
+      ),
       lastUpdated: new Date(),
       serverStatus: "connected",
       structureHash: "",
@@ -395,13 +405,16 @@ export class ToolConflictResolver {
   getConflictStats(tools: DiscoveredTool[]) {
     const conflicts = this.detectConflicts(tools);
     const totalConflicts = conflicts.length;
-    const conflictedTools = conflicts.reduce((sum, c) => sum + c.tools.length, 0);
-    
+    const conflictedTools = conflicts.reduce(
+      (sum, c) => sum + c.tools.length,
+      0
+    );
+
     return {
       totalConflicts,
       conflictedTools,
       conflictRate: tools.length > 0 ? conflictedTools / tools.length : 0,
-      conflicts: conflicts.map(c => ({
+      conflicts: conflicts.map((c) => ({
         toolName: c.toolName,
         serverCount: c.conflictingServers.length,
         servers: c.conflictingServers,

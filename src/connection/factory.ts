@@ -2,8 +2,16 @@
  * Connection factory for creating transport-specific connections
  */
 
-import { ServerConfig, StdioServerConfig, SSEServerConfig } from "../types/config";
-import { Connection, ConnectionOptions, ConnectionFactory as IConnectionFactory } from "./types";
+import {
+  ServerConfig,
+  StdioServerConfig,
+  SSEServerConfig,
+} from "../types/config";
+import {
+  Connection,
+  ConnectionOptions,
+  ConnectionFactory as IConnectionFactory,
+} from "./types";
 import { StdioConnection } from "./clients/stdio";
 import { SSEConnection } from "./clients/sse";
 
@@ -26,18 +34,16 @@ export class ConnectionFactory implements IConnectionFactory {
           config as StdioServerConfig,
           options
         );
-        
+
       case "sse":
         return new SSEConnection(
           serverName,
           config as SSEServerConfig,
           options
         );
-        
+
       default:
-        throw new Error(
-          `Unsupported transport type: ${(config as any).type}`
-        );
+        throw new Error(`Unsupported transport type: ${(config as any).type}`);
     }
   }
 

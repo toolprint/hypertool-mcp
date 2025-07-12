@@ -188,6 +188,23 @@ export interface IToolDiscoveryEngine {
    * Stop automatic discovery and refresh
    */
   stop(): Promise<void>;
+
+  /**
+   * Resolve a tool reference and return tool + rich server metadata
+   */
+  resolveToolReference(
+    ref: { namespacedName?: string; refId?: string },
+    options?: { allowStaleRefs?: boolean }
+  ): {
+    exists: boolean;
+    tool?: DiscoveredTool;
+    serverName?: string;
+    serverStatus?: import("../connection/types").ConnectionStatus;
+    namespacedNameMatch: boolean;
+    refIdMatch: boolean;
+    warnings: string[];
+    errors: string[];
+  };
 }
 
 /**

@@ -55,7 +55,7 @@ export interface ConnectionPoolConfig {
 /**
  * Connection event types
  */
-export type ConnectionEventType = 
+export type ConnectionEventType =
   | "connecting"
   | "connected"
   | "disconnected"
@@ -89,12 +89,12 @@ export interface Connection<T = any> {
   readonly config: ServerConfig;
   readonly status: ConnectionStatus;
   readonly client: T;
-  
+
   connect(): Promise<void>;
   disconnect(): Promise<void>;
   ping(): Promise<boolean>;
   isConnected(): boolean;
-  
+
   on(event: ConnectionEventType, callback: ConnectionEventCallback): void;
   off(event: ConnectionEventType, callback: ConnectionEventCallback): void;
   emit(event: ConnectionEventType, payload?: Partial<ConnectionEvent>): void;
@@ -118,16 +118,16 @@ export interface IConnectionPool {
   readonly size: number;
   readonly activeConnections: number;
   readonly status: Record<string, ConnectionStatus>;
-  
+
   addConnection(serverName: string, config: ServerConfig): Promise<Connection>;
   removeConnection(serverName: string): Promise<void>;
   getConnection(serverName: string): Connection | undefined;
   getConnections(): Connection[];
   getConnectedServers(): string[];
-  
+
   start(): Promise<void>;
   stop(): Promise<void>;
-  
+
   on(event: ConnectionEventType, callback: ConnectionEventCallback): void;
   off(event: ConnectionEventType, callback: ConnectionEventCallback): void;
 }
@@ -138,19 +138,19 @@ export interface IConnectionPool {
 export interface IConnectionManager {
   readonly pool: IConnectionPool;
   readonly status: Record<string, ConnectionStatus>;
-  
+
   initialize(servers: Record<string, ServerConfig>): Promise<void>;
   connect(serverName: string): Promise<void>;
   disconnect(serverName: string): Promise<void>;
   reconnect(serverName: string): Promise<void>;
-  
+
   getConnection(serverName: string): Connection | undefined;
   getConnectedServers(): string[];
   isServerConnected(serverName: string): boolean;
-  
+
   start(): Promise<void>;
   stop(): Promise<void>;
-  
+
   on(event: ConnectionEventType, callback: ConnectionEventCallback): void;
   off(event: ConnectionEventType, callback: ConnectionEventCallback): void;
 }

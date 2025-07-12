@@ -53,7 +53,7 @@ export class ToolLookupManager {
    */
   addTool(tool: DiscoveredTool): void {
     const key = this.getToolKey(tool);
-    
+
     // Remove existing tool if it exists
     if (this.tools.has(key)) {
       this.removeTool(tool);
@@ -63,7 +63,7 @@ export class ToolLookupManager {
     this.tools.set(key, tool);
 
     // Update indices
-    this.updateIndex(tool, 'add');
+    this.updateIndex(tool, "add");
   }
 
   /**
@@ -71,7 +71,7 @@ export class ToolLookupManager {
    */
   removeTool(tool: DiscoveredTool): boolean {
     const key = this.getToolKey(tool);
-    
+
     if (!this.tools.has(key)) {
       return false;
     }
@@ -80,7 +80,7 @@ export class ToolLookupManager {
     this.tools.delete(key);
 
     // Update indices
-    this.updateIndex(tool, 'remove');
+    this.updateIndex(tool, "remove");
 
     return true;
   }
@@ -145,7 +145,10 @@ export class ToolLookupManager {
     // Prefix matches
     if (query.name && query.fuzzy) {
       for (const [name, tools] of this.index.byName) {
-        if (name.toLowerCase().startsWith(query.name.toLowerCase()) && name !== query.name) {
+        if (
+          name.toLowerCase().startsWith(query.name.toLowerCase()) &&
+          name !== query.name
+        ) {
           for (const tool of tools) {
             if (!query.server || tool.serverName === query.server) {
               const score = this.calculatePrefixScore(query.name, name);
@@ -241,7 +244,7 @@ export class ToolLookupManager {
    */
   clearServer(serverName: string): void {
     const serverTools = this.index.byServer.get(serverName) || [];
-    
+
     for (const tool of serverTools) {
       this.removeTool(tool);
     }
@@ -287,10 +290,10 @@ export class ToolLookupManager {
   /**
    * Update index when adding or removing a tool
    */
-  private updateIndex(tool: DiscoveredTool, action: 'add' | 'remove'): void {
+  private updateIndex(tool: DiscoveredTool, action: "add" | "remove"): void {
     const key = this.getToolKey(tool);
 
-    if (action === 'add') {
+    if (action === "add") {
       // Add to name index
       if (!this.index.byName.has(tool.name)) {
         this.index.byName.set(tool.name, []);
@@ -317,12 +320,11 @@ export class ToolLookupManager {
       // Add to searchable text index
       const keywords = this.extractKeywords(tool);
       this.index.searchableText.set(key, keywords);
-
     } else {
       // Remove from name index
       const nameTools = this.index.byName.get(tool.name);
       if (nameTools) {
-        const index = nameTools.findIndex(t => this.getToolKey(t) === key);
+        const index = nameTools.findIndex((t) => this.getToolKey(t) === key);
         if (index !== -1) {
           nameTools.splice(index, 1);
         }
@@ -334,7 +336,7 @@ export class ToolLookupManager {
       // Remove from server index
       const serverTools = this.index.byServer.get(tool.serverName);
       if (serverTools) {
-        const index = serverTools.findIndex(t => this.getToolKey(t) === key);
+        const index = serverTools.findIndex((t) => this.getToolKey(t) === key);
         if (index !== -1) {
           serverTools.splice(index, 1);
         }
@@ -350,7 +352,7 @@ export class ToolLookupManager {
       if (tool.description) {
         const descTools = this.index.byDescription.get(tool.description);
         if (descTools) {
-          const index = descTools.findIndex(t => this.getToolKey(t) === key);
+          const index = descTools.findIndex((t) => this.getToolKey(t) === key);
           if (index !== -1) {
             descTools.splice(index, 1);
           }
@@ -370,7 +372,7 @@ export class ToolLookupManager {
    */
   private extractKeywords(tool: DiscoveredTool): string[] {
     const keywords: string[] = [];
-    
+
     // Add tool name and variations
     keywords.push(tool.name.toLowerCase());
     keywords.push(tool.namespacedName.toLowerCase());
@@ -378,10 +380,11 @@ export class ToolLookupManager {
 
     // Add description words
     if (tool.description) {
-      const words = tool.description.toLowerCase()
+      const words = tool.description
+        .toLowerCase()
         .split(/\s+/)
-        .filter(word => word.length > 2)
-        .map(word => word.replace(/[^\w]/g, ''));
+        .filter((word) => word.length > 2)
+        .map((word) => word.replace(/[^\w]/g, ""));
       keywords.push(...words);
     }
 
@@ -401,28 +404,31 @@ export class ToolLookupManager {
   private calculatePrefixScore(query: string, target: string): number {
     const queryLower = query.toLowerCase();
     const targetLower = target.toLowerCase();
-    
+
     if (targetLower.startsWith(queryLower)) {
       return 0.8 * (queryLower.length / targetLower.length);
     }
-    
+
     return 0;
   }
 
   /**
    * Calculate keyword match score
    */
-  private calculateKeywordScore(queryKeywords: string[], toolKeywords: string[]): number {
-    const queryLower = queryKeywords.map(k => k.toLowerCase());
-    const toolLower = toolKeywords.map(k => k.toLowerCase());
-    
+  private calculateKeywordScore(
+    queryKeywords: string[],
+    toolKeywords: string[]
+  ): number {
+    const queryLower = queryKeywords.map((k) => k.toLowerCase());
+    const toolLower = toolKeywords.map((k) => k.toLowerCase());
+
     let matches = 0;
     for (const queryKeyword of queryLower) {
       if (toolLower.includes(queryKeyword)) {
         matches++;
       }
     }
-    
+
     return matches / queryKeywords.length;
   }
 
@@ -432,11 +438,11 @@ export class ToolLookupManager {
   private calculateFuzzyScore(query: string, target: string): number {
     const queryLower = query.toLowerCase();
     const targetLower = target.toLowerCase();
-    
+
     if (targetLower.includes(queryLower)) {
       return 0.6 * (queryLower.length / targetLower.length);
     }
-    
+
     return 0;
   }
 
@@ -446,7 +452,7 @@ export class ToolLookupManager {
   private deduplicateResults(results: SearchResult[]): SearchResult[] {
     const seen = new Set<string>();
     const unique: SearchResult[] = [];
-    
+
     for (const result of results) {
       const key = this.getToolKey(result.tool);
       if (!seen.has(key)) {
@@ -454,7 +460,7 @@ export class ToolLookupManager {
         unique.push(result);
       }
     }
-    
+
     return unique;
   }
 }
