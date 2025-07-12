@@ -129,8 +129,8 @@ export function validateToolReferenceFormat(ref: any): ref is DynamicToolReferen
     return false;
   }
 
-  const hasNamespacedName = ref.namespacedName && typeof ref.namespacedName === "string";
-  const hasRefId = ref.refId && typeof ref.refId === "string";
+  const hasNamespacedName = ref.namespacedName && typeof ref.namespacedName === "string" && ref.namespacedName.trim().length > 0;
+  const hasRefId = ref.refId && typeof ref.refId === "string" && ref.refId.trim().length > 0;
 
   return hasNamespacedName || hasRefId;
 }

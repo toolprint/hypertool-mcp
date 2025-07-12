@@ -263,19 +263,19 @@ describe("ToolsetLoader", () => {
 
       const results = await loadToolsetConfigs(tempDir);
 
-      expect(results).toHaveLength(2);
-      expect(results.map(r => r.config?.name)).toEqual(["config-1", "config-2"]);
-      expect(results.every(r => r.validation.valid)).toBe(true);
+      expect(results.configs).toHaveLength(2);
+      expect(results.configs.map(r => r.config?.name)).toEqual(["config-1", "config-2"]);
+      expect(results.configs.every(r => r.validation.valid)).toBe(true);
     });
 
     it("should handle empty directory", async () => {
       const results = await loadToolsetConfigs(tempDir);
-      expect(results).toHaveLength(0);
+      expect(results.configs).toHaveLength(0);
     });
 
     it("should handle nonexistent directory", async () => {
       const results = await loadToolsetConfigs(path.join(tempDir, "nonexistent"));
-      expect(results).toHaveLength(0);
+      expect(results.configs).toHaveLength(0);
     });
   });
 
@@ -294,45 +294,28 @@ describe("ToolsetLoader", () => {
   });
 
   describe("createExampleConfig", () => {
-    it("should create example configuration file", async () => {
-      const filePath = path.join(tempDir, "example.json");
-      const result = await createExampleConfig(filePath);
+    it("should create example configuration", () => {
+      const config = createExampleConfig();
 
-      expect(result.success).toBe(true);
-      expect(await fileExists(filePath)).toBe(true);
-
-      const content = await fs.readFile(filePath, "utf-8");
-      const config = JSON.parse(content);
       expect(config.name).toBeDefined();
       expect(config.description).toBeDefined();
       expect(config.tools).toBeDefined();
       expect(Array.isArray(config.tools)).toBe(true);
+      expect(config.tools.length).toBeGreaterThan(0);
+      expect(config.version).toBe("1.0.0");
+      expect(config.createdAt).toBeInstanceOf(Date);
     });
 
-    it("should not overwrite existing file by default", async () => {
-      const filePath = path.join(tempDir, "existing.json");
-      await fs.writeFile(filePath, "existing content");
-
-      const result = await createExampleConfig(filePath);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("already exists");
-
-      const content = await fs.readFile(filePath, "utf-8");
-      expect(content).toBe("existing content");
-    });
-
-    it("should overwrite when forced", async () => {
-      const filePath = path.join(tempDir, "existing.json");
-      await fs.writeFile(filePath, "existing content");
-
-      const result = await createExampleConfig(filePath, { force: true });
-
-      expect(result.success).toBe(true);
-
-      const content = await fs.readFile(filePath, "utf-8");
-      const config = JSON.parse(content);
-      expect(config.name).toBeDefined();
+    it("should create valid example configuration", () => {
+      const config = createExampleConfig();
+      
+      // All tools should have namespacedName and refId
+      config.tools.forEach((tool) => {
+        expect(tool.namespacedName).toBeDefined();
+        expect(tool.refId).toBeDefined();
+        expect(typeof tool.namespacedName).toBe("string");
+        expect(typeof tool.refId).toBe("string");
+      });
     });
   });
 

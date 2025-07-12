@@ -4,10 +4,7 @@
 
 import { EventEmitter } from "events";
 import { ToolDiscoveryEngine } from "./service";
-import { ToolCache } from "./cache";
-import { ToolConflictResolver } from "./conflict-resolver";
-import { ToolHashUtils } from "./hash-utils";
-import { DiscoveredTool, MCPToolDefinition, DiscoveryConfig } from "./types";
+import { MCPToolDefinition, DiscoveryConfig } from "./types";
 import {
   IConnectionManager,
   Connection,
@@ -45,7 +42,7 @@ class MockConnectionManager extends EventEmitter implements IConnectionManager {
       conn.mockDisconnect();
     }
   }
-  async reconnect(serverName: string) {}
+  async reconnect(_serverName: string) {}
   async start() {}
   async stop() {}
 
@@ -87,17 +84,22 @@ class MockConnectionManager extends EventEmitter implements IConnectionManager {
 
 // Mock connection
 class MockConnection extends EventEmitter implements Connection {
-  public readonly id = `mock-${this.serverName}`;
-  public readonly config = { type: "stdio" as const };
+  public readonly id: string;
+  public readonly config = { 
+    type: "stdio" as const,
+    command: "mock-command",
+    args: []
+  };
   private _isConnected = false;
   private _client: MockClient;
 
   constructor(
     public readonly serverName: string,
-    private tools: MCPToolDefinition[] = []
+    private _tools: MCPToolDefinition[] = []
   ) {
     super();
-    this._client = new MockClient(tools);
+    this.id = `mock-${this.serverName}`;
+    this._client = new MockClient(this._tools);
   }
 
   get status(): ConnectionStatus {
