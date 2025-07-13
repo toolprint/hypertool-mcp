@@ -5,7 +5,6 @@
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
@@ -18,7 +17,7 @@ import {
   ServerStatus,
 } from "./types";
 import { EventEmitter } from "events";
-import { createServer } from "http";
+import { McpHttpServer } from "./http-server";
 
 /**
  * Base Meta-MCP server class
@@ -26,8 +25,8 @@ import { createServer } from "http";
  */
 export class MetaMCPServer extends EventEmitter {
   private server: Server;
-  private transport: StdioServerTransport | SSEServerTransport | null = null;
-  private httpServer?: ReturnType<typeof createServer>;
+  private transport: StdioServerTransport | null = null;
+  private httpServer?: McpHttpServer;
   private config: MetaMCPServerConfig;
   private state: ServerState = ServerState.STOPPED;
   private startTime?: Date;
@@ -86,7 +85,7 @@ export class MetaMCPServer extends EventEmitter {
    * Handle tool call requests
    * To be implemented by subclasses
    */
-  protected async handleToolCall(name: string, _args?: any): Promise<any> {
+  protected async handleToolCall(name: string, _args?: unknown): Promise<unknown> {
     throw new Error(`Tool "${name}" not implemented`);
   }
 
@@ -105,17 +104,13 @@ export class MetaMCPServer extends EventEmitter {
       // Initialize transport layer
       if (options.transport.type === "stdio") {
         this.transport = new StdioServerTransport();
-      } else if (options.transport.type === "sse") {
+        await this.server.connect(this.transport);
+      } else if (options.transport.type === "http") {
         await this.setupHttpServer(options.transport);
       } else {
         throw new Error(
           `Unsupported transport type: ${options.transport.type}`
         );
-      }
-
-      // Connect server to transport
-      if (this.transport) {
-        await this.server.connect(this.transport);
       }
 
       this.setState(ServerState.RUNNING);
@@ -134,7 +129,7 @@ export class MetaMCPServer extends EventEmitter {
   }
 
   /**
-   * Setup HTTP server for SSE transport
+   * Setup Express.js HTTP server for streamable MCP transport
    */
   private async setupHttpServer(transport: {
     host?: string;
@@ -143,31 +138,9 @@ export class MetaMCPServer extends EventEmitter {
     const host = transport.host || "localhost";
     const port = transport.port || 3000;
 
-    this.httpServer = createServer((req, res) => {
-      const url = new URL(req.url || "", `http://${host}:${port}`);
-
-      if (req.method === "GET" && url.pathname === "/sse") {
-        // SSE connection
-        this.transport = new SSEServerTransport("/message", res);
-        this.transport.start();
-        this.onClientConnected();
-      } else if (req.method === "POST" && url.pathname === "/message") {
-        // Handle POST messages
-        if (this.transport instanceof SSEServerTransport) {
-          this.transport.handlePostMessage(req, res);
-        }
-      } else {
-        res.writeHead(404);
-        res.end("Not found");
-      }
-    });
-
-    return new Promise((resolve, reject) => {
-      this.httpServer!.listen(port, host, () => {
-        resolve();
-      });
-      this.httpServer!.on("error", reject);
-    });
+    this.httpServer = new McpHttpServer(this.server, port, host);
+    await this.httpServer.start();
+    this.onClientConnected();
   }
 
   /**
@@ -187,9 +160,7 @@ export class MetaMCPServer extends EventEmitter {
       }
 
       if (this.httpServer) {
-        await new Promise<void>((resolve) => {
-          this.httpServer!.close(() => resolve());
-        });
+        await this.httpServer.stop();
         this.httpServer = undefined;
       }
 

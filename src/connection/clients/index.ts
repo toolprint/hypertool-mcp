@@ -1,4 +1,4 @@
 export { StdioClient } from "./stdio";
-export { SSEClient } from "./sse";
+export { HttpClient } from "./http";
 export { BaseConnection } from "./base";
 export * from "./types";

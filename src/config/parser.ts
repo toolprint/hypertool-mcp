@@ -4,7 +4,7 @@ import {
   MCPConfig,
   ServerConfig,
   StdioServerConfig,
-  SSEServerConfig,
+  HttpServerConfig,
   ParseResult,
   ParserOptions,
 } from "../types/config";
@@ -158,9 +158,9 @@ export class MCPConfigParser {
       return { errors };
     }
 
-    if (config.type !== "stdio" && config.type !== "sse") {
+    if (config.type !== "stdio" && config.type !== "http") {
       errors.push(
-        `Server "${name}" has invalid type "${config.type}". Must be "stdio" or "sse"`
+        `Server "${name}" has invalid type "${config.type}". Must be "stdio" or "http"`
       );
       return { errors };
     }
@@ -168,7 +168,7 @@ export class MCPConfigParser {
     if (config.type === "stdio") {
       return this.parseStdioConfig(name, config, basePath);
     } else {
-      return this.parseSSEConfig(name, config);
+      return this.parseHttpConfig(name, config);
     }
   }
 
@@ -229,23 +229,23 @@ export class MCPConfigParser {
   }
 
   /**
-   * Parse and validate SSE server configuration
+   * Parse and validate HTTP server configuration
    */
-  private parseSSEConfig(
+  private parseHttpConfig(
     name: string,
     config: any
-  ): { config?: SSEServerConfig; errors: string[] } {
+  ): { config?: HttpServerConfig; errors: string[] } {
     const errors: string[] = [];
 
     if (!config.url || typeof config.url !== "string") {
-      errors.push(`SSE server "${name}" must have a "url" string`);
+      errors.push(`HTTP server "${name}" must have a "url" string`);
       return { errors };
     }
 
     try {
       new URL(config.url);
     } catch {
-      errors.push(`SSE server "${name}" has invalid URL: ${config.url}`);
+      errors.push(`HTTP server "${name}" has invalid URL: ${config.url}`);
       return { errors };
     }
 
@@ -253,7 +253,7 @@ export class MCPConfigParser {
       config.headers &&
       (typeof config.headers !== "object" || Array.isArray(config.headers))
     ) {
-      errors.push(`SSE server "${name}" headers must be an object`);
+      errors.push(`HTTP server "${name}" headers must be an object`);
       return { errors };
     }
 
@@ -261,18 +261,18 @@ export class MCPConfigParser {
       config.env &&
       (typeof config.env !== "object" || Array.isArray(config.env))
     ) {
-      errors.push(`SSE server "${name}" env must be an object`);
+      errors.push(`HTTP server "${name}" env must be an object`);
       return { errors };
     }
 
-    const sseConfig: SSEServerConfig = {
-      type: "sse",
+    const httpConfig: HttpServerConfig = {
+      type: "http",
       url: config.url,
       headers: config.headers || {},
       env: config.env || {},
     };
 
-    return { config: sseConfig, errors };
+    return { config: httpConfig, errors };
   }
 
   /**

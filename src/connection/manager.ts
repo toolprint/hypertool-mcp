@@ -16,13 +16,7 @@ import {
 } from "./types";
 import { ConnectionPool } from "./pool";
 import { ConnectionFactory } from "./factory";
-import { HealthMonitor, HealthState } from "./health-monitor";
-import { 
-  ConnectionError, 
-  ServerUnavailableError, 
-  ConfigurationError,
-  TimeoutError 
-} from "../errors";
+import { HealthMonitor } from "./health-monitor";
 import { Logger, createLogger } from "../logging";
 import { RecoveryCoordinator } from "../errors/recovery";
 
@@ -321,7 +315,7 @@ export class ConnectionManager
         throw new Error(`Invalid configuration for server "${serverName}"`);
       }
 
-      if (!config.type || (config.type !== "stdio" && config.type !== "sse")) {
+      if (!config.type || (config.type !== "stdio" && config.type !== "http")) {
         throw new Error(
           `Invalid transport type for server "${serverName}": ${(config as any).type}`
         );

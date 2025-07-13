@@ -3,7 +3,7 @@
  * Based on the .mcp.json file format
  */
 
-export type TransportType = "stdio" | "sse";
+export type TransportType = "stdio" | "http";
 
 /**
  * Base configuration for an MCP server
@@ -23,10 +23,10 @@ export interface StdioServerConfig extends BaseServerConfig {
 }
 
 /**
- * Configuration for HTTP/SSE-based MCP servers
+ * Configuration for HTTP-based MCP servers
  */
-export interface SSEServerConfig extends BaseServerConfig {
-  type: "sse";
+export interface HttpServerConfig extends BaseServerConfig {
+  type: "http";
   url: string;
   headers?: Record<string, string>;
 }
@@ -34,7 +34,7 @@ export interface SSEServerConfig extends BaseServerConfig {
 /**
  * Union type for all server configurations
  */
-export type ServerConfig = StdioServerConfig | SSEServerConfig;
+export type ServerConfig = StdioServerConfig | HttpServerConfig;
 
 /**
  * Root configuration structure matching .mcp.json format

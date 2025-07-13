@@ -12,7 +12,7 @@ async function main(): Promise<void> {
   try {
     // Parse command line arguments for transport type
     const args = process.argv.slice(2);
-    const transportType = args.includes("--http") ? "sse" : "stdio";
+    const transportType = args.includes("--http") ? "http" : "stdio";
     const port = args.includes("--port")
       ? parseInt(args[args.indexOf("--port") + 1])
       : 3000;
@@ -21,7 +21,7 @@ async function main(): Promise<void> {
 
     const transportConfig: TransportConfig = {
       type: transportType,
-      ...(transportType === "sse" && { port, host: "localhost" }),
+      ...(transportType === "http" && { port, host: "localhost" }),
     };
 
     // Create server instance
@@ -48,8 +48,8 @@ async function main(): Promise<void> {
 
     if (debug) {
       console.log(`Meta-MCP server running on ${transportType} transport`);
-      if (transportType === "sse") {
-        console.log(`HTTP/SSE server listening on http://localhost:${port}`);
+      if (transportType === "http") {
+        console.log(`HTTP server listening on http://localhost:${port}`);
       }
     }
 
