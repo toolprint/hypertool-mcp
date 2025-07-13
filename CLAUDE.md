@@ -62,7 +62,11 @@ Create your code in logical directories under `src/`:
 
 
 #### When You're Done:
-1. **Test Your Implementation**: Run tests (`npm test` or `just test`) and verify functionality
+1. **Test Your Implementation**: 
+   - Run ALL tests (`npm test` or `just test`) and verify they pass
+   - Ensure tests specifically related to your changes are passing
+   - If you added new functionality, write tests for it and verify they pass
+   - If you modified existing functionality, ensure existing tests still pass
 2. **Run Code Quality**: Use `just lint` and `just format` to ensure code standards
 3. **Merge Latest Changes**: Before finalizing, merge the latest changes from your base branch to avoid conflicts:
    ```bash
