@@ -43,7 +43,7 @@ describe("MCPConfigParser", () => {
         mcpServers: {
           context7: {
             type: "sse",
-            url: "https://mcp.context7.com/sse",
+            url: "https://sse.context7.com/sse",
           },
         },
       });
@@ -54,7 +54,7 @@ describe("MCPConfigParser", () => {
       expect(result.config).toBeDefined();
       expect(result.config?.mcpServers.context7).toMatchObject({
         type: "sse",
-        url: "https://mcp.context7.com/sse",
+        url: "https://sse.context7.com/sse",
         headers: {},
         env: {},
       });
@@ -76,7 +76,7 @@ describe("MCPConfigParser", () => {
           },
           context7: {
             type: "sse",
-            url: "https://mcp.context7.com/sse",
+            url: "https://sse.context7.com/sse",
           },
         },
       });
@@ -151,7 +151,7 @@ describe("MCPConfigParser", () => {
 
       expect(result.success).toBe(false);
       expect(result.validationErrors).toContain(
-        'Server "git" has invalid type "invalid". Must be "stdio" or "sse"'
+        'Server "git" has invalid type "invalid". Must be "stdio", "http", or "sse"'
       );
     });
 
@@ -438,7 +438,7 @@ describe("MCPConfigParser", () => {
         mcpServers: {
           local: {
             type: "stdio",
-            command: "./bin/mcp-server",
+            command: "./bin/sse-server",
           },
         },
       });
@@ -448,7 +448,7 @@ describe("MCPConfigParser", () => {
       expect(result.success).toBe(true);
       expect(result.config?.mcpServers.local).toMatchObject({
         type: "stdio",
-        command: "./bin/mcp-server",
+        command: "./bin/sse-server",
       });
     });
   });

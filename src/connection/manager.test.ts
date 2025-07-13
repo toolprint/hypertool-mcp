@@ -4,7 +4,7 @@
 
 import { ConnectionManager } from "./manager";
 import { ConnectionFactory } from "./factory";
-import { StdioServerConfig, SSEServerConfig } from "../types/config";
+import { StdioServerConfig, HttpServerConfig } from "../types/config";
 import {
   ConnectionState,
   ConnectionEventType,
@@ -125,9 +125,9 @@ describe("ConnectionManager", () => {
       args: ["--stdio"],
     } as StdioServerConfig,
     "docker-server": {
-      type: "sse" as const,
-      url: "http://localhost:3001/sse",
-    } as SSEServerConfig,
+      type: "http" as const,
+      url: "http://localhost:3001/mcp",
+    } as HttpServerConfig,
   };
 
   beforeEach(() => {
@@ -371,16 +371,16 @@ describe("ConnectionManager", () => {
       await expect(manager.initialize(validStdioServer)).resolves.not.toThrow();
     });
 
-    it("should validate SSE server configuration", async () => {
-      const validSSEServer = {
-        "valid-sse": {
-          type: "sse" as const,
-          url: "http://localhost:3000/sse",
+    it("should validate HTTP server configuration", async () => {
+      const validHttpServer = {
+        "valid-http": {
+          type: "http" as const,
+          url: "http://localhost:3000/mcp",
           headers: { Authorization: "Bearer token" },
         },
       };
 
-      await expect(manager.initialize(validSSEServer)).resolves.not.toThrow();
+      await expect(manager.initialize(validHttpServer)).resolves.not.toThrow();
     });
 
     it("should reject invalid configuration", async () => {

@@ -56,7 +56,7 @@ export interface RouteContext {
   route?: ToolRoute;
   /** Client information (if available) */
   clientInfo?: {
-    transport: "stdio" | "sse";
+    transport: "stdio" | "http";
     remoteAddress?: string;
   };
 }

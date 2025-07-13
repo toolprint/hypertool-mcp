@@ -16,10 +16,6 @@ import {
   DEFAULT_DISCOVERY_CONFIG,
 } from "./types";
 import { ToolCache } from "./cache";
-import {
-  ToolConflictResolver,
-  ConflictResolutionConfig,
-} from "./conflict-resolver";
 import { ToolLookupManager, SearchQuery, SearchResult } from "./lookup";
 import { ToolHashUtils, ToolHashManager } from "./hash-utils";
 
@@ -33,7 +29,6 @@ export class ToolDiscoveryEngine
   private connectionManager: IConnectionManager;
   private config: Required<DiscoveryConfig>;
   private cache: ToolCache;
-  private conflictResolver: ToolConflictResolver;
   private lookupManager: ToolLookupManager;
   private hashManager: ToolHashManager;
   private isInitialized = false;
@@ -42,15 +37,11 @@ export class ToolDiscoveryEngine
   private serverStates = new Map<string, ServerToolState>();
   private discoveryStats: DiscoveryStats;
 
-  constructor(
-    connectionManager: IConnectionManager,
-    conflictConfig?: ConflictResolutionConfig
-  ) {
+  constructor(connectionManager: IConnectionManager) {
     super();
     this.connectionManager = connectionManager;
     this.config = { ...DEFAULT_DISCOVERY_CONFIG };
     this.cache = new ToolCache(this.config);
-    this.conflictResolver = new ToolConflictResolver(conflictConfig);
     this.lookupManager = new ToolLookupManager();
     this.hashManager = new ToolHashManager();
     this.discoveryStats = this.initializeStats();
@@ -116,32 +107,17 @@ export class ToolDiscoveryEngine
       }
     }
 
-    // Resolve conflicts in discovered tools
-    const resolvedTools =
-      this.conflictResolver.resolveConflicts(allDiscoveredTools);
-
-    // Detect and log conflicts
-    const conflicts = this.conflictResolver.detectConflicts(allDiscoveredTools);
-    if (conflicts.length > 0) {
-      this.emit("conflictsDetected", {
-        conflicts,
-        resolvedToolCount: resolvedTools.length,
-        originalToolCount: allDiscoveredTools.length,
-      });
-    }
-
     // Update discovery stats
     const discoveryTime = Date.now() - startTime;
-    this.updateDiscoveryStats(discoveryTime, resolvedTools.length);
+    this.updateDiscoveryStats(discoveryTime, allDiscoveredTools.length);
 
     this.emit("toolsDiscovered", {
       serverName,
-      toolCount: resolvedTools.length,
-      tools: resolvedTools,
-      conflicts,
+      toolCount: allDiscoveredTools.length,
+      tools: allDiscoveredTools,
     });
 
-    return resolvedTools;
+    return allDiscoveredTools;
   }
 
   /**
@@ -353,27 +329,6 @@ export class ToolDiscoveryEngine
     return Array.from(this.serverStates.values());
   }
 
-  /**
-   * Get conflict statistics
-   */
-  getConflictStats() {
-    const allTools = this.getAvailableTools(false);
-    return this.conflictResolver.getConflictStats(allTools);
-  }
-
-  /**
-   * Update conflict resolution configuration
-   */
-  updateConflictConfig(config: Partial<ConflictResolutionConfig>): void {
-    this.conflictResolver.updateConfig(config);
-  }
-
-  /**
-   * Get current conflict resolution configuration
-   */
-  getConflictConfig(): ConflictResolutionConfig {
-    return this.conflictResolver.getConfig();
-  }
 
   /**
    * Clear cache for a specific server or all servers
@@ -529,6 +484,18 @@ export class ToolDiscoveryEngine
    */
   private setupConnectionEvents(): void {
     this.connectionManager.on("connected", (event) => {
+      // Set up MCP notification handlers for this connection
+      const connection = this.connectionManager.getConnection(event.serverName);
+      if (connection?.client) {
+        connection.client.on("message", (message: MCPMessage) => {
+          if (message.method === "notifications/tools/list_changed") {
+            this.handleToolsListChanged(event.serverName).catch((error) => {
+              console.error(`Failed to handle tools list changed for ${event.serverName}:`, error);
+            });
+          }
+        });
+      }
+
       if (this.config.autoDiscovery && this.isInitialized) {
         this.discoverTools(event.serverName).catch((error) => {
           console.error(

@@ -2,7 +2,17 @@
  * Performance tests for large tool sets
  */
 
-import { MCPToolDefinition } from "./types";
+import { MCPToolDefinition, DiscoveredTool } from "./types";
+import { ToolCache } from "./cache";
+import { ToolLookupManager } from "./lookup";
+import { ToolHashUtils } from "./hash-utils";
+
+// Performance thresholds for tests
+const PERFORMANCE_THRESHOLDS = {
+  CACHE_ACCESS_TIME_MS: 100,
+  LOOKUP_TIME_MS: 50,
+  MEMORY_USAGE_MB: 100,
+};
 
 describe("Tool Discovery Performance Tests", () => {
   const generateMockTools = (count: number, _serverName: string = "perf-server"): MCPToolDefinition[] => {
@@ -14,7 +24,7 @@ describe("Tool Discovery Performance Tests", () => {
         properties: {
           input: { type: "string" },
           count: { type: "number" },
-          optional_param_${i % 10}: { type: "string" },
+          [`optional_param_${i % 10}`]: { type: "string" },
           array_param: {
             type: "array",
             items: { type: "string" },

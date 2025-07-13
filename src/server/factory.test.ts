@@ -37,9 +37,9 @@ describe("MetaMCPServerFactory", () => {
       expect(config.transport).toEqual(transport);
     });
 
-    it("should create server with default config for HTTP/SSE transport", () => {
+    it("should create server with default config for HTTP transport", () => {
       const transport: TransportConfig = {
-        type: "sse",
+        type: "http",
         port: 3000,
         host: "localhost",
       };
@@ -64,7 +64,7 @@ describe("MetaMCPServerFactory", () => {
 
     it("should merge provided overrides with defaults", () => {
       const overrides = {
-        transport: { type: "sse" as const, port: 4000 },
+        transport: { type: "http" as const, port: 4000 },
         debug: true,
         configPath: "/test/config.json",
       };
@@ -72,7 +72,7 @@ describe("MetaMCPServerFactory", () => {
       const options = MetaMCPServerFactory.createInitOptions(overrides);
 
       expect(options).toEqual({
-        transport: { type: "sse", port: 4000 },
+        transport: { type: "http", port: 4000 },
         debug: true,
         configPath: "/test/config.json",
       });
@@ -80,13 +80,13 @@ describe("MetaMCPServerFactory", () => {
 
     it("should partially override transport options", () => {
       const overrides = {
-        transport: { type: "sse" as const, port: 8080 },
+        transport: { type: "http" as const, port: 8080 },
       };
 
       const options = MetaMCPServerFactory.createInitOptions(overrides);
 
       expect(options.transport).toEqual({
-        type: "sse",
+        type: "http",
         port: 8080,
       });
     });

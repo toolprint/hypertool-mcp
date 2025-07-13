@@ -113,6 +113,20 @@ export class ToolLookupManager {
     const results: SearchResult[] = [];
     const { limit = 50, offset = 0 } = query;
 
+    // Server-only search - return all tools from the server
+    if (query.server && !query.name && !query.keywords) {
+      const serverTools = this.getByServer(query.server);
+      for (const tool of serverTools) {
+        results.push({
+          tool,
+          score: 1.0,
+          matchType: "exact",
+          matchedField: "name",
+        });
+      }
+      return results.slice(offset, offset + limit);
+    }
+
     // Exact name match
     if (query.name) {
       const exactMatches = this.getByName(query.name);
