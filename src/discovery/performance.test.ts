@@ -277,10 +277,10 @@ describe("Tool Discovery Performance Tests", () => {
       const toolCount = 500;
       const originalTools = generateDiscoveredTools(toolCount);
       
-      // Create modified version
+      // Create modified version - modify tools 10-19 (so they won't be removed)
       const modifiedTools = originalTools.map((tool, i) => {
-        if (i < 10) {
-          // Modify first 10 tools
+        if (i >= 10 && i < 20) {
+          // Modify tools 10-19
           return {
             ...tool,
             description: `Modified ${tool.description}`,
@@ -297,7 +297,7 @@ describe("Tool Discovery Performance Tests", () => {
       const newTools = generateDiscoveredTools(10, "new-server");
       modifiedTools.push(...newTools);
       
-      // Remove some tools
+      // Remove first 5 tools
       const finalTools = modifiedTools.slice(5);
       
       const changeDetectionStart = performance.now();
