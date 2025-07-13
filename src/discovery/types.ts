@@ -97,8 +97,6 @@ export interface DiscoveryConfig {
   autoDiscovery?: boolean;
   /** Namespace separator (default: ".") */
   namespaceSeparator?: string;
-  /** Maximum number of tools to cache per server */
-  maxToolsPerServer?: number;
   /** Enable performance monitoring */
   enableMetrics?: boolean;
 }
@@ -259,6 +257,5 @@ export const DEFAULT_DISCOVERY_CONFIG: Required<DiscoveryConfig> = {
   refreshInterval: 30 * 1000, // 30 seconds
   autoDiscovery: true,
   namespaceSeparator: ".",
-  maxToolsPerServer: 1000,
   enableMetrics: true,
 };

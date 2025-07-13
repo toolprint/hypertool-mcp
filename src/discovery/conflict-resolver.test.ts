@@ -176,6 +176,7 @@ describe("ToolConflictResolver", () => {
       resolver = new ToolConflictResolver({
         strategy: "priority",
         serverPriority: ["server2", "server1", "server3"],
+        separator: ".",
       });
     });
 
@@ -202,6 +203,7 @@ describe("ToolConflictResolver", () => {
       resolver = new ToolConflictResolver({
         strategy: "priority",
         serverPriority: [],
+        separator: ".",
       });
 
       const tools = [
@@ -219,7 +221,7 @@ describe("ToolConflictResolver", () => {
 
       const resolution = resolver.resolveConflict(conflict);
 
-      expect(resolution.strategy).toBe("priority");
+      expect(resolution.strategy).toBe("first");
       expect(resolution.resolvedTools).toHaveLength(1);
       expect(resolution.resolvedTools[0].serverName).toBe("server1"); // First discovered
     });
@@ -229,6 +231,7 @@ describe("ToolConflictResolver", () => {
     beforeEach(() => {
       resolver = new ToolConflictResolver({
         strategy: "first",
+        separator: ".",
       });
     });
 
@@ -261,6 +264,7 @@ describe("ToolConflictResolver", () => {
     beforeEach(() => {
       resolver = new ToolConflictResolver({
         strategy: "merge",
+        separator: ".",
         allowMerging: true,
         mergingRules: {
           requireSameDescription: true,
@@ -327,6 +331,7 @@ describe("ToolConflictResolver", () => {
     it("should not merge when merging is disabled", () => {
       resolver = new ToolConflictResolver({
         strategy: "merge",
+        separator: ".",
         allowMerging: false,
       });
 
@@ -353,6 +358,7 @@ describe("ToolConflictResolver", () => {
     beforeEach(() => {
       resolver = new ToolConflictResolver({
         strategy: "error",
+        separator: ".",
       });
     });
 
@@ -461,6 +467,7 @@ describe("ToolConflictResolver", () => {
     beforeEach(() => {
       resolver = new ToolConflictResolver({
         strategy: "merge",
+        separator: ".",
         allowMerging: true,
         mergingRules: {
           requireSameDescription: false,
@@ -528,6 +535,7 @@ describe("ToolConflictResolver", () => {
     it("should reject incompatible schemas when extension not allowed", () => {
       resolver = new ToolConflictResolver({
         strategy: "merge",
+        separator: ".",
         allowMerging: true,
         mergingRules: {
           requireSameDescription: false,

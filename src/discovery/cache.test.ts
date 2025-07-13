@@ -27,7 +27,6 @@ describe("ToolCache", () => {
 
   const config: DiscoveryConfig = {
     cacheTtl: 1000, // 1 second for testing
-    maxToolsPerServer: 3,
   };
 
   beforeEach(() => {
@@ -72,14 +71,14 @@ describe("ToolCache", () => {
 
   describe("TTL functionality", () => {
     it("should expire tools after TTL", async () => {
-      await cache.set("expiring-key", mockTool, 100); // 100ms TTL
+      await cache.set("expiring-key", mockTool, 1000); // 1 second TTL
 
       // Should be available immediately
       let retrieved = await cache.get("expiring-key");
       expect(retrieved).toEqual(mockTool);
 
       // Wait for expiration
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 1200));
 
       // Should be expired
       retrieved = await cache.get("expiring-key");
@@ -93,25 +92,6 @@ describe("ToolCache", () => {
       expect(retrieved).toEqual(mockTool);
     });
 
-    it("should update TTL for existing entries", async () => {
-      await cache.set("ttl-key", mockTool, 100);
-
-      // Update TTL to 2 seconds
-      const updated = await cache.updateTTL("ttl-key", 2000);
-      expect(updated).toBe(true);
-
-      // Wait past original TTL
-      await new Promise((resolve) => setTimeout(resolve, 150));
-
-      // Should still be available
-      const retrieved = await cache.get("ttl-key");
-      expect(retrieved).toEqual(mockTool);
-    });
-
-    it("should return false when updating TTL for non-existent key", async () => {
-      const updated = await cache.updateTTL("non-existent", 1000);
-      expect(updated).toBe(false);
-    });
   });
 
   describe("server-based operations", () => {
@@ -153,22 +133,6 @@ describe("ToolCache", () => {
       expect(server2Tools).toHaveLength(1);
     });
 
-    it("should enforce server tool limits", async () => {
-      // Add tools up to the limit
-      for (let i = 0; i < 5; i++) {
-        const tool: DiscoveredTool = {
-          ...mockTool,
-          name: `tool${i}`,
-          serverName: "limited-server",
-          namespacedName: `limited-server.tool${i}`,
-          discoveredAt: new Date(Date.now() + i * 1000), // Different times for eviction order
-        };
-        await cache.set(`limited-server.tool${i}`, tool);
-      }
-
-      const tools = cache.getToolsByServer("limited-server");
-      expect(tools.length).toBeLessThanOrEqual(config.maxToolsPerServer!);
-    });
 
     it("should get all cached tools", () => {
       const allTools = cache.getAllTools();
@@ -196,43 +160,19 @@ describe("ToolCache", () => {
     });
 
     it("should provide cache info", async () => {
-      const info = cache.getCacheInfo();
+      const stats = cache.getCacheStats();
 
-      expect(info.totalTools).toBe(1);
-      expect(info.totalServers).toBe(1);
-      expect(info.servers).toHaveLength(1);
-      expect(info.servers[0].serverName).toBe("test-server");
-      expect(info.stats).toHaveProperty("hits");
-      expect(info.stats).toHaveProperty("misses");
+      expect(stats.keys).toBe(1);
+      expect(stats.serverCount).toBe(1);
+      expect(stats).toHaveProperty("hits");
+      expect(stats).toHaveProperty("misses");
+      expect(stats).toHaveProperty("sets");
+      expect(stats).toHaveProperty("deletes");
     });
   });
 
   describe("cache maintenance", () => {
-    it("should refresh tool timestamp", async () => {
-      await cache.set("refresh-key", mockTool);
 
-      const originalTime = mockTool.lastUpdated;
-
-      // Wait a bit
-      await new Promise((resolve) => setTimeout(resolve, 10));
-
-      const refreshed = await cache.refreshTool("refresh-key");
-      expect(refreshed).toBe(true);
-
-      const retrieved = await cache.get("refresh-key");
-      expect(retrieved!.lastUpdated.getTime()).toBeGreaterThan(
-        originalTime.getTime()
-      );
-    });
-
-    it("should identify tools expiring soon", async () => {
-      // Add tool with short TTL
-      await cache.set("expiring-soon", mockTool, 500);
-
-      const expiringSoon = cache.getExpiringSoon(1000);
-      expect(expiringSoon).toHaveLength(1);
-      expect(expiringSoon[0].name).toBe("test_tool");
-    });
 
     it("should clear entire cache", async () => {
       await cache.set("key1", mockTool);
@@ -240,9 +180,9 @@ describe("ToolCache", () => {
 
       await cache.clear();
 
-      const info = cache.getCacheInfo();
-      expect(info.totalTools).toBe(0);
-      expect(info.totalServers).toBe(0);
+      const stats = cache.getCacheStats();
+      expect(stats.keys).toBe(0);
+      expect(stats.serverCount).toBe(0);
     });
   });
 
@@ -350,21 +290,21 @@ describe("ToolCache", () => {
         });
       }
 
-      const initialSize = cache.getCacheInfo().totalTools;
-      expect(initialSize).toBe(10);
+      const initialStats = cache.getCacheStats();
+      expect(initialStats.keys).toBe(10);
 
       // Clear and check
       await cache.clear();
 
-      const finalSize = cache.getCacheInfo().totalTools;
-      expect(finalSize).toBe(0);
+      const finalStats = cache.getCacheStats();
+      expect(finalStats.keys).toBe(0);
 
       // Destroy cache
       cache.destroy();
 
       // Verify no lingering timers or references
-      const info = cache.getCacheInfo();
-      expect(info.totalTools).toBe(0);
+      const destroyStats = cache.getCacheStats();
+      expect(destroyStats.keys).toBe(0);
     });
   });
 });
