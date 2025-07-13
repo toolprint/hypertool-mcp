@@ -102,18 +102,18 @@ Shows detailed startup information and server status.
 
 ### HTTP Transport
 
-**Start HTTP server on default port (3000):**
+**Start HTTP server with Express.js on default port (3000):**
 ```bash
 meta-mcp --transport http
 ```
-Useful for web-based MCP clients or development/testing.
+Starts an Express.js HTTP server with MCP endpoint at `/mcp` for modern MCP tooling and web-based clients.
 
 **Start HTTP server on custom port:**
 ```bash
 meta-mcp --transport http --port 8080
 ```
 
-**HTTP server with debug:**
+**HTTP server with debug (shows Express.js startup details):**
 ```bash
 meta-mcp --transport http --port 8080 --debug
 ```
