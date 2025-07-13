@@ -2,12 +2,12 @@
  * Runtime options for Meta-MCP server from CLI arguments
  */
 
-import { TransportType } from './config';
+import { ServerTransportType } from '../server/types';
 
 /**
- * Runtime transport type options (matches config TransportType)
+ * Runtime transport type options (matches server ServerTransportType)
  */
-export type RuntimeTransportType = TransportType;
+export type RuntimeTransportType = ServerTransportType;
 
 /**
  * Runtime configuration options parsed from CLI arguments

@@ -1,15 +1,16 @@
 /**
  * TypeScript interfaces for MCP configuration
  * Based on the .mcp.json file format
+ * These define how THIS server connects to downstream MCP servers (outbound client connections)
  */
 
-export type TransportType = "stdio" | "http";
+export type ClientTransportType = "stdio" | "http" | "sse";
 
 /**
  * Base configuration for an MCP server
  */
 export interface BaseServerConfig {
-  type: TransportType;
+  type: ClientTransportType;
   env?: Record<string, string>;
 }
 
@@ -32,9 +33,18 @@ export interface HttpServerConfig extends BaseServerConfig {
 }
 
 /**
+ * Configuration for SSE-based MCP servers (client connections)
+ */
+export interface SSEServerConfig extends BaseServerConfig {
+  type: "sse";
+  url: string;
+  headers?: Record<string, string>;
+}
+
+/**
  * Union type for all server configurations
  */
-export type ServerConfig = StdioServerConfig | HttpServerConfig;
+export type ServerConfig = StdioServerConfig | HttpServerConfig | SSEServerConfig;
 
 /**
  * Root configuration structure matching .mcp.json format

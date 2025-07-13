@@ -2,13 +2,16 @@
  * TypeScript interfaces for Meta-MCP server implementation
  */
 
-import { TransportType } from "../types/config";
+/**
+ * Server transport types (inbound connections TO this server)
+ */
+export type ServerTransportType = "stdio" | "http";
 
 /**
  * Transport configuration for the Meta-MCP server
  */
 export interface TransportConfig {
-  type: TransportType;
+  type: ServerTransportType;
   port?: number;
   host?: string;
 }

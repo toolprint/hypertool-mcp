@@ -5,6 +5,7 @@ import {
   ServerConfig,
   StdioServerConfig,
   HttpServerConfig,
+  SSEServerConfig,
   ParseResult,
   ParserOptions,
 } from "../types/config";
@@ -158,17 +159,19 @@ export class MCPConfigParser {
       return { errors };
     }
 
-    if (config.type !== "stdio" && config.type !== "http") {
+    if (config.type !== "stdio" && config.type !== "http" && config.type !== "sse") {
       errors.push(
-        `Server "${name}" has invalid type "${config.type}". Must be "stdio" or "http"`
+        `Server "${name}" has invalid type "${config.type}". Must be "stdio", "http", or "sse"`
       );
       return { errors };
     }
 
     if (config.type === "stdio") {
       return this.parseStdioConfig(name, config, basePath);
-    } else {
+    } else if (config.type === "http") {
       return this.parseHttpConfig(name, config);
+    } else {
+      return this.parseSSEConfig(name, config);
     }
   }
 
@@ -273,6 +276,53 @@ export class MCPConfigParser {
     };
 
     return { config: httpConfig, errors };
+  }
+
+  /**
+   * Parse and validate SSE server configuration
+   */
+  private parseSSEConfig(
+    name: string,
+    config: any
+  ): { config?: SSEServerConfig; errors: string[] } {
+    const errors: string[] = [];
+
+    if (!config.url || typeof config.url !== "string") {
+      errors.push(`SSE server "${name}" must have a "url" string`);
+      return { errors };
+    }
+
+    try {
+      new URL(config.url);
+    } catch {
+      errors.push(`SSE server "${name}" has invalid URL: ${config.url}`);
+      return { errors };
+    }
+
+    if (
+      config.headers &&
+      (typeof config.headers !== "object" || Array.isArray(config.headers))
+    ) {
+      errors.push(`SSE server "${name}" headers must be an object`);
+      return { errors };
+    }
+
+    if (
+      config.env &&
+      (typeof config.env !== "object" || Array.isArray(config.env))
+    ) {
+      errors.push(`SSE server "${name}" env must be an object`);
+      return { errors };
+    }
+
+    const sseConfig: SSEServerConfig = {
+      type: "sse",
+      url: config.url,
+      headers: config.headers || {},
+      env: config.env || {},
+    };
+
+    return { config: sseConfig, errors };
   }
 
   /**
