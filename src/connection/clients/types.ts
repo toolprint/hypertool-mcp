@@ -39,9 +39,9 @@ export interface IStdioClient {
 }
 
 /**
- * SSE client interface
+ * HTTP client interface
  */
-export interface ISSEClient {
+export interface IHttpClient {
   readonly isConnected: boolean;
   readonly url: string;
 

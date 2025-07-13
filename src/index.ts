@@ -91,7 +91,7 @@ async function main(): Promise<void> {
 
     // Create transport config from runtime options
     const transportConfig: TransportConfig = {
-      type: runtimeOptions.transport === 'http' ? 'sse' : 'stdio',
+      type: runtimeOptions.transport,
       ...(runtimeOptions.transport === 'http' && { 
         port: runtimeOptions.port || 3000, 
         host: "localhost" 
@@ -126,7 +126,7 @@ async function main(): Promise<void> {
     if (runtimeOptions.debug) {
       console.log(chalk.green(`✅ Meta-MCP server running on ${runtimeOptions.transport} transport`));
       if (runtimeOptions.transport === "http") {
-        console.log(chalk.blue(`🌐 HTTP/SSE server listening on http://localhost:${runtimeOptions.port || 3000}`));
+        console.log(chalk.blue(`🌐 HTTP server listening on http://localhost:${runtimeOptions.port || 3000}`));
       }
       if (runtimeOptions.insecure) {
         console.log(chalk.red("⚠️  INSECURE MODE: Tools with changed reference hashes are allowed"));

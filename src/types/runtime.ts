@@ -5,9 +5,9 @@
 import { TransportType } from './config';
 
 /**
- * Runtime transport type options (extended from config)
+ * Runtime transport type options (matches config TransportType)
  */
-export type RuntimeTransportType = 'http' | 'stdio';
+export type RuntimeTransportType = TransportType;
 
 /**
  * Runtime configuration options parsed from CLI arguments

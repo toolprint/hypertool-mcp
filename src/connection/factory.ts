@@ -5,7 +5,7 @@
 import {
   ServerConfig,
   StdioServerConfig,
-  SSEServerConfig,
+  HttpServerConfig,
 } from "../types/config";
 import {
   Connection,
@@ -13,7 +13,7 @@ import {
   ConnectionFactory as IConnectionFactory,
 } from "./types";
 import { StdioConnection } from "./clients/stdio";
-import { SSEConnection } from "./clients/sse";
+import { HttpConnection } from "./clients/http";
 
 /**
  * Factory for creating connections based on server configuration
@@ -35,10 +35,10 @@ export class ConnectionFactory implements IConnectionFactory {
           options
         );
 
-      case "sse":
-        return new SSEConnection(
+      case "http":
+        return new HttpConnection(
           serverName,
-          config as SSEServerConfig,
+          config as HttpServerConfig,
           options
         );
 
@@ -59,27 +59,27 @@ export class ConnectionFactory implements IConnectionFactory {
   }
 
   /**
-   * Create an SSE connection
+   * Create an HTTP connection
    */
-  createSSEConnection(
+  createHttpConnection(
     serverName: string,
-    config: SSEServerConfig,
+    config: HttpServerConfig,
     options: ConnectionOptions = {}
-  ): SSEConnection {
-    return new SSEConnection(serverName, config, options);
+  ): HttpConnection {
+    return new HttpConnection(serverName, config, options);
   }
 
   /**
    * Validate if a server configuration is supported
    */
   isConfigSupported(config: ServerConfig): boolean {
-    return config.type === "stdio" || config.type === "sse";
+    return config.type === "stdio" || config.type === "http";
   }
 
   /**
    * Get supported transport types
    */
   getSupportedTransports(): string[] {
-    return ["stdio", "sse"];
+    return ["stdio", "http"];
   }
 }

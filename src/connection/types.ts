@@ -26,7 +26,7 @@ export interface ConnectionStatus {
   lastPing?: Date;
   lastError?: string;
   retryCount: number;
-  transport: "stdio" | "sse";
+  transport: "stdio" | "http";
 }
 
 /**

@@ -39,8 +39,10 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.15.1",
     "@types/chalk": "^0.4.31",
+    "@types/express": "^5.0.3",
     "chalk": "^5.4.1",
     "commander": "^14.0.0",
+    "express": "^5.1.0",
     "uuid": "^11.0.2"
   }
 }
