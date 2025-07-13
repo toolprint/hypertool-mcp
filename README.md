@@ -82,6 +82,82 @@ npm test
 npm start
 ```
 
+## CLI Usage
+
+Meta-MCP provides a flexible command-line interface for different use cases:
+
+### Basic Usage (Most Common)
+
+**Start with stdio transport (default):**
+```bash
+meta-mcp
+```
+This is the most common usage for integrating with Claude Code or other MCP clients that use stdio transport.
+
+**Enable debug output:**
+```bash
+meta-mcp --debug
+```
+Shows detailed startup information and server status.
+
+### HTTP Transport
+
+**Start HTTP server on default port (3000):**
+```bash
+meta-mcp --transport http
+```
+Useful for web-based MCP clients or development/testing.
+
+**Start HTTP server on custom port:**
+```bash
+meta-mcp --transport http --port 8080
+```
+
+**HTTP server with debug:**
+```bash
+meta-mcp --transport http --port 8080 --debug
+```
+
+### Tool Management
+
+**Load a specific toolset on startup:**
+```bash
+meta-mcp --use-toolset "development"
+```
+Automatically loads and applies the specified toolset configuration.
+
+**Enable tool calling capabilities:**
+```bash
+meta-mcp --enable-call-tool
+```
+Required to actually execute tools from underlying servers.
+
+### Advanced Options
+
+**Enable insecure mode (allow changed tool references):**
+```bash
+meta-mcp --insecure
+```
+⚠️  **Warning**: This allows tools with changed reference hashes, which may be unsafe.
+
+**Complex configuration example:**
+```bash
+meta-mcp --transport http --port 8080 --enable-call-tool --use-toolset "production" --debug
+```
+
+### CLI Options Reference
+
+| Option | Description | Default | Notes |
+|--------|-------------|---------|--------|
+| `--transport <type>` | Transport protocol (`http` or `stdio`) | `stdio` | Most clients use stdio |
+| `--port <number>` | Port for HTTP transport | `3000` | Only valid with `--transport http` |
+| `--debug` | Enable verbose logging | `false` | Shows startup and status info |
+| `--enable-call-tool` | Enable tool execution | `false` | Required for actual tool calls |
+| `--insecure` | Allow changed tool hashes | `false` | ⚠️ Security risk |
+| `--use-toolset <name>` | Load toolset on startup | - | Auto-applies toolset config |
+| `--help` | Show help information | - | Displays all options |
+| `--version` | Show version number | - | Current Meta-MCP version |
+
 ## Architecture
 
 ### Core Components
