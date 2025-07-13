@@ -87,7 +87,7 @@
         "dependencies": [
           15
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -154,11 +154,25 @@
         ],
         "status": "pending",
         "subtasks": []
+      },
+      {
+        "id": 25,
+        "title": "Modernize HTTP Server with Express.js and Streamable Transport",
+        "description": "Replace Node.js native HTTP server with Express.js framework and implement streamable HTTP transport mode with /mcp endpoint to support modern MCP tooling.",
+        "details": "Migrate from Node's http.createServer() to Express.js framework following patterns from mcp-graphql-forge repository. Implement streamable HTTP transport mode with /mcp endpoint for bidirectional communication, replacing current SSE transport. Create transport abstraction layer supporting both stdio and HTTP modes with clean switching mechanism. Add Express middleware support for future extensibility. Implement proper request/response handling for MCP protocol over HTTP streams. Create transport factory pattern for instantiating appropriate transport based on configuration. Ensure backward compatibility with existing stdio transport for Claude Code integration. Add proper error handling and connection management for both transport modes.",
+        "testStrategy": "Unit tests for Express.js server initialization and middleware registration. Integration tests for streamable HTTP transport with mock MCP clients. End-to-end tests verifying /mcp endpoint functionality and bidirectional communication. Transport switching tests ensuring seamless mode transitions. Compatibility tests with MCP Inspector and other modern tooling. Performance tests comparing new Express implementation with previous native HTTP server. Connection handling tests for both stdio and HTTP transport modes.",
+        "status": "pending",
+        "dependencies": [
+          15,
+          17
+        ],
+        "priority": "high",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-07-09T21:55:09.811Z",
-      "updated": "2025-07-10T21:07:32.665Z",
+      "updated": "2025-07-13T16:34:23.689Z",
       "description": "Tasks for master context"
     }
   }

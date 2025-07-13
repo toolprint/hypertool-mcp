@@ -4,7 +4,7 @@ Meta-MCP is a TypeScript-based proxy MCP server that acts as a single entry poin
 
 # Core Features  
 - **MCP Server Proxy**: Acts as a single MCP server that proxies requests to multiple underlying MCP servers
-- **Multi-Transport Support**: Supports both HTTP (Server-Sent Events) and stdio transports for client connections
+- **Multi-Transport Support**: Supports both streamable HTTP and stdio transports for client connections, built on Express.js framework
 - **Dynamic Tool Discovery**: Automatically discovers and caches available tools from connected MCP servers
 - **Configurable Tool Subsets**: Users can specify which tools to expose from each underlying server
 - **Tool Request Routing**: Transparently routes tool calls to the appropriate underlying server
@@ -26,7 +26,8 @@ Meta-MCP is a TypeScript-based proxy MCP server that acts as a single entry poin
 <PRD>
 # Technical Architecture  
 - **TypeScript MCP Server**: Standard MCP server implementation following cco-mcp best practices
-- **Transport Layer**: Support for both HTTP/SSE and stdio transports for maximum compatibility
+- **Express.js Framework**: Modern HTTP server built on Express.js with middleware support for extensibility
+- **Transport Layer**: Support for both streamable HTTP (/mcp endpoint) and stdio transports for maximum compatibility
 - **Client Pool Management**: Maintains connections to multiple underlying MCP servers
 - **Tool Registry**: Dynamic registry of available tools with metadata and routing information
 - **Configuration System**: Parses .mcp.json files and manages toolset configurations
@@ -36,7 +37,8 @@ Meta-MCP is a TypeScript-based proxy MCP server that acts as a single entry poin
 
 # Development Roadmap  
 **Phase 1 - Core Proxy Functionality (MVP)**
-- Implement TypeScript MCP server with stdio and HTTP/SSE transport support
+- Implement TypeScript MCP server with Express.js framework and streamable HTTP transport
+- Support both stdio and streamable HTTP (/mcp endpoint) transport modes  
 - Add .mcp.json file parsing and server discovery
 - Create tool discovery and caching system with TypeScript types
 - Implement basic request proxying for tool calls
@@ -82,5 +84,6 @@ Meta-MCP is a TypeScript-based proxy MCP server that acts as a single entry poin
 - **Deployment**: Single TypeScript executable that can be run as MCP server
 - **Development Language**: TypeScript with full type safety
 - **Reference Implementation**: https://github.com/toolprint/cco-mcp for best practices
-- **Transport Support**: stdio (for Claude Code) and HTTP/SSE (for web clients)
+- **Transport Support**: stdio (for Claude Code) and streamable HTTP with /mcp endpoint (for modern MCP tooling)
+- **Server Framework**: Express.js with middleware architecture for extensibility
 </PRD>
