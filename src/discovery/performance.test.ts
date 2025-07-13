@@ -11,6 +11,8 @@ import { ToolHashUtils } from "./hash-utils";
 const PERFORMANCE_THRESHOLDS = {
   CACHE_ACCESS_TIME_MS: 100,
   LOOKUP_TIME_MS: 50,
+  SEARCH_TIME_MS: 200,
+  HASH_CALCULATION_TIME_MS: 100,
   MEMORY_USAGE_MB: 100,
 };
 
@@ -315,7 +317,7 @@ describe("Tool Discovery Performance Tests", () => {
   });
 
   describe("Memory Usage", () => {
-    it("should maintain reasonable memory usage with large tool sets", () => {
+    it("should maintain reasonable memory usage with large tool sets", async () => {
       if (typeof process === 'undefined' || !process.memoryUsage) {
         console.log("Memory usage test skipped (not in Node.js environment)");
         return;
