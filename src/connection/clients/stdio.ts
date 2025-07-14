@@ -2,18 +2,19 @@
  * Stdio client implementation for MCP servers using official MCP SDK
  */
 
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { ListToolsResult } from "@modelcontextprotocol/sdk/types.js";
 import { EventEmitter } from "events";
 import { StdioServerConfig } from "../../types/config";
 import { ConnectionOptions } from "../types";
 import { BaseConnection } from "./base";
-import { MCPMessage } from "./types";
 
 /**
- * Stdio client wrapper for MCP SDK StdioClientTransport
+ * Stdio client wrapper using proper MCP SDK Client
  */
 export class StdioClient extends EventEmitter {
-  private transport: StdioClientTransport | null = null;
+  private client: Client | null = null;
   private isConnected = false;
 
   constructor(private config: StdioServerConfig) {
@@ -21,11 +22,11 @@ export class StdioClient extends EventEmitter {
   }
 
   get isRunning(): boolean {
-    return this.isConnected && this.transport !== null;
+    return this.isConnected && this.client !== null;
   }
 
   /**
-   * Start the MCP server process using SDK transport
+   * Start the MCP server process using SDK Client
    */
   async start(): Promise<void> {
     if (this.isRunning) {
@@ -33,31 +34,26 @@ export class StdioClient extends EventEmitter {
     }
 
     try {
-      this.transport = new StdioClientTransport({
+      const transport = new StdioClientTransport({
         command: this.config.command,
         args: this.config.args,
         env: this.config.env,
       });
 
-      // Setup event handlers
-      this.transport.onmessage = (message) => {
-        this.emit("message", message);
-      };
+      this.client = new Client({
+        name: "meta-mcp-client",
+        version: "1.0.0",
+      }, {
+        capabilities: {
+          tools: {}
+        }
+      });
 
-      this.transport.onerror = (error) => {
-        this.emit("error", error);
-      };
-
-      this.transport.onclose = () => {
-        this.isConnected = false;
-        this.emit("disconnect");
-      };
-
-      await this.transport.start();
+      await this.client.connect(transport);
       this.isConnected = true;
     } catch (error) {
-      this.transport = null;
-      throw new Error(`Failed to start stdio transport: ${(error as Error).message}`);
+      this.client = null;
+      throw new Error(`Failed to start stdio client: ${(error as Error).message}`);
     }
   }
 
@@ -65,41 +61,29 @@ export class StdioClient extends EventEmitter {
    * Stop the MCP server process
    */
   async stop(): Promise<void> {
-    if (!this.transport) {
+    if (!this.client) {
       return;
     }
 
     try {
-      await this.transport.close();
+      await this.client.close();
     } catch (error) {
-      console.error("Error closing stdio transport:", error);
+      console.error("Error closing stdio client:", error);
     } finally {
-      this.transport = null;
+      this.client = null;
       this.isConnected = false;
     }
   }
 
   /**
-   * Send a message to the MCP server
+   * List tools from the MCP server
    */
-  async send(message: MCPMessage): Promise<void> {
-    if (!this.transport) {
-      throw new Error("Transport not initialized");
+  async listTools(): Promise<ListToolsResult> {
+    if (!this.client) {
+      throw new Error("Client not connected");
     }
 
-    // Convert MCPMessage to JSONRPCMessage format expected by the SDK
-    if (!message.method) {
-      throw new Error("Message must have a method field");
-    }
-
-    const jsonRpcMessage = {
-      jsonrpc: "2.0" as const,
-      id: message.id || Date.now(),
-      method: message.method,
-      params: message.params,
-    };
-
-    await this.transport.send(jsonRpcMessage);
+    return await this.client.listTools();
   }
 
   /**
@@ -111,17 +95,18 @@ export class StdioClient extends EventEmitter {
     }
 
     try {
-      const pingMessage: MCPMessage = {
-        jsonrpc: "2.0",
-        id: Date.now(),
-        method: "ping",
-      };
-
-      await this.send(pingMessage);
+      await this.listTools();
       return true;
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Get the SDK client instance for advanced operations
+   */
+  get sdkClient(): Client | null {
+    return this.client;
   }
 }
 

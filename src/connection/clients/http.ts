@@ -2,18 +2,19 @@
  * HTTP client implementation for MCP servers using official MCP SDK
  */
 
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { ListToolsResult } from "@modelcontextprotocol/sdk/types.js";
 import { EventEmitter } from "events";
 import { HttpServerConfig } from "../../types/config";
 import { ConnectionOptions } from "../types";
 import { BaseConnection } from "./base";
-import { MCPMessage } from "./types";
 
 /**
- * HTTP client wrapper for MCP SDK StreamableHTTPClientTransport
+ * HTTP client wrapper using proper MCP SDK Client
  */
 export class HttpClient extends EventEmitter {
-  private transport: StreamableHTTPClientTransport | null = null;
+  private client: Client | null = null;
   private isConnected = false;
 
   constructor(private config: HttpServerConfig) {
@@ -25,7 +26,7 @@ export class HttpClient extends EventEmitter {
   }
 
   /**
-   * Connect to the HTTP server using SDK transport
+   * Connect to the HTTP server using SDK Client
    */
   async connect(): Promise<void> {
     if (this.isConnected) {
@@ -33,28 +34,22 @@ export class HttpClient extends EventEmitter {
     }
 
     try {
-      this.transport = new StreamableHTTPClientTransport(new URL(this.config.url));
+      const transport = new StreamableHTTPClientTransport(new URL(this.config.url));
+      this.client = new Client({
+        name: "meta-mcp-client",
+        version: "1.0.0",
+      }, {
+        capabilities: {
+          tools: {}
+        }
+      });
 
-      // Setup event handlers
-      this.transport.onmessage = (message) => {
-        this.emit("message", message);
-      };
-
-      this.transport.onerror = (error) => {
-        this.emit("error", error);
-      };
-
-      this.transport.onclose = () => {
-        this.isConnected = false;
-        this.emit("disconnect");
-      };
-
-      await this.transport.start();
+      await this.client.connect(transport);
       this.isConnected = true;
       this.emit("connect");
     } catch (error) {
-      this.transport = null;
-      throw new Error(`Failed to start HTTP transport: ${(error as Error).message}`);
+      this.client = null;
+      throw new Error(`Failed to connect HTTP client: ${(error as Error).message}`);
     }
   }
 
@@ -62,41 +57,29 @@ export class HttpClient extends EventEmitter {
    * Disconnect from the HTTP server
    */
   async disconnect(): Promise<void> {
-    if (!this.transport) {
+    if (!this.client) {
       return;
     }
 
     try {
-      await this.transport.close();
+      await this.client.close();
     } catch (error) {
-      console.error("Error closing HTTP transport:", error);
+      console.error("Error closing HTTP client:", error);
     } finally {
-      this.transport = null;
+      this.client = null;
       this.isConnected = false;
     }
   }
 
   /**
-   * Send a message to the MCP server
+   * List tools from the MCP server
    */
-  async send(message: MCPMessage): Promise<void> {
-    if (!this.transport) {
-      throw new Error("Transport not initialized");
+  async listTools(): Promise<ListToolsResult> {
+    if (!this.client) {
+      throw new Error("Client not connected");
     }
 
-    // Convert MCPMessage to JSONRPCMessage format expected by the SDK
-    if (!message.method) {
-      throw new Error("Message must have a method field");
-    }
-
-    const jsonRpcMessage = {
-      jsonrpc: "2.0" as const,
-      id: message.id || Date.now(),
-      method: message.method,
-      params: message.params,
-    };
-
-    await this.transport.send(jsonRpcMessage);
+    return await this.client.listTools();
   }
 
   /**
@@ -108,17 +91,18 @@ export class HttpClient extends EventEmitter {
     }
 
     try {
-      const pingMessage: MCPMessage = {
-        jsonrpc: "2.0",
-        id: Date.now(),
-        method: "ping",
-      };
-
-      await this.send(pingMessage);
+      await this.listTools();
       return true;
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Get the SDK client instance for advanced operations
+   */
+  get sdkClient(): Client | null {
+    return this.client;
   }
 }
 

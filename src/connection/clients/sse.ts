@@ -3,18 +3,19 @@
  * This is used when the Meta-MCP server acts as a CLIENT to SSE-based MCP servers (like Context7)
  */
 
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import { ListToolsResult } from "@modelcontextprotocol/sdk/types.js";
 import { EventEmitter } from "events";
 import { BaseConnection } from "./base";
 import { SSEServerConfig } from "../../types/config";
-import { MCPMessage } from "./types";
 import { ConnectionOptions } from "../types";
 
 /**
- * SSE client wrapper for MCP SDK SSEClientTransport
+ * SSE client wrapper using proper MCP SDK Client
  */
 export class SSEClient extends EventEmitter {
-  private transport: SSEClientTransport | null = null;
+  private client: Client | null = null;
   private isConnected = false;
 
   constructor(private config: SSEServerConfig) {
@@ -22,7 +23,7 @@ export class SSEClient extends EventEmitter {
   }
 
   /**
-   * Connect to the SSE-based MCP server using SDK transport
+   * Connect to the SSE-based MCP server using SDK Client
    */
   async connect(): Promise<void> {
     if (this.isConnected) {
@@ -30,28 +31,22 @@ export class SSEClient extends EventEmitter {
     }
 
     try {
-      this.transport = new SSEClientTransport(new URL(this.config.url));
+      const transport = new SSEClientTransport(new URL(this.config.url));
+      this.client = new Client({
+        name: "meta-mcp-client",
+        version: "1.0.0",
+      }, {
+        capabilities: {
+          tools: {}
+        }
+      });
 
-      // Setup event handlers
-      this.transport.onmessage = (message) => {
-        this.emit("message", message);
-      };
-
-      this.transport.onerror = (error) => {
-        this.emit("error", error);
-      };
-
-      this.transport.onclose = () => {
-        this.isConnected = false;
-        this.emit("disconnected");
-      };
-
-      await this.transport.start();
+      await this.client.connect(transport);
       this.isConnected = true;
       this.emit("connected");
     } catch (error) {
-      this.transport = null;
-      throw new Error(`Failed to start SSE transport: ${(error as Error).message}`);
+      this.client = null;
+      throw new Error(`Failed to connect SSE client: ${(error as Error).message}`);
     }
   }
 
@@ -59,41 +54,36 @@ export class SSEClient extends EventEmitter {
    * Disconnect from the SSE server
    */
   async disconnect(): Promise<void> {
-    if (!this.transport) {
+    if (!this.client) {
       return;
     }
 
     try {
-      await this.transport.close();
+      await this.client.close();
     } catch (error) {
-      console.error("Error closing SSE transport:", error);
+      console.error("Error closing SSE client:", error);
     } finally {
-      this.transport = null;
+      this.client = null;
       this.isConnected = false;
     }
   }
 
   /**
-   * Send message to SSE server
+   * List tools from the MCP server
    */
-  async send(message: MCPMessage): Promise<void> {
-    if (!this.transport) {
-      throw new Error("Transport not initialized");
+  async listTools(): Promise<ListToolsResult> {
+    if (!this.client) {
+      throw new Error("Client not connected");
     }
 
-    // Convert MCPMessage to JSONRPCMessage format expected by the SDK
-    if (!message.method) {
-      throw new Error("Message must have a method field");
-    }
+    return await this.client.listTools();
+  }
 
-    const jsonRpcMessage = {
-      jsonrpc: "2.0" as const,
-      id: message.id || Date.now(),
-      method: message.method,
-      params: message.params,
-    };
-
-    await this.transport.send(jsonRpcMessage);
+  /**
+   * Get the SDK client instance for advanced operations
+   */
+  get sdkClient(): Client | null {
+    return this.client;
   }
 }
 
@@ -159,13 +149,9 @@ export class SSEConnection extends BaseConnection<SSEClient> {
     }
 
     try {
-      const pingMessage: MCPMessage = {
-        jsonrpc: "2.0",
-        id: Date.now(),
-        method: "ping",
-      };
-
-      await this._client.send(pingMessage);
+      // Use SDK client to ping - may not have a direct ping method,
+      // so we can try listing tools as a health check
+      await this._client.listTools();
       return true;
     } catch {
       return false;

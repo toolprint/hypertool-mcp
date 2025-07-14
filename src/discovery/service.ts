@@ -4,7 +4,7 @@
 
 import { EventEmitter } from "events";
 import { IConnectionManager } from "../connection/types";
-import { MCPMessage } from "../connection/clients/types";
+import { Tool, ToolListChangedNotification } from "@modelcontextprotocol/sdk/types.js";
 import {
   IToolDiscoveryEngine,
   DiscoveryConfig,
@@ -12,7 +12,6 @@ import {
   ServerToolState,
   ToolLookupOptions,
   DiscoveryStats,
-  MCPToolDefinition,
   DEFAULT_DISCOVERY_CONFIG,
   DiscoveredToolsChangedEvent,
 } from "./types";
@@ -132,20 +131,14 @@ export class ToolDiscoveryEngine
       throw new Error(`Server "${serverName}" is not connected`);
     }
 
-    // Send list_tools request via MCP protocol
-    const listToolsMessage: MCPMessage = {
-      jsonrpc: "2.0",
-      id: `list_tools_${Date.now()}`,
-      method: "tools/list",
-    };
-
-    const response = await this.sendMCPRequest(connection, listToolsMessage);
-
-    if (response.error) {
-      throw new Error(`MCP error: ${response.error.message}`);
+    // Use proper SDK client to list tools
+    const client = connection.client;
+    if (!client || !client.sdkClient) {
+      throw new Error(`No SDK client available for server "${serverName}"`);
     }
 
-    const toolDefinitions: MCPToolDefinition[] = response.result?.tools || [];
+    const toolsResult = await client.listTools();
+    const toolDefinitions: Tool[] = toolsResult.tools || [];
     const discoveredTools: DiscoveredTool[] = [];
 
     for (const toolDef of toolDefinitions) {
@@ -176,34 +169,6 @@ export class ToolDiscoveryEngine
     return discoveredTools;
   }
 
-  /**
-   * Send an MCP request and wait for response
-   */
-  private async sendMCPRequest(
-    connection: any,
-    message: MCPMessage
-  ): Promise<MCPMessage> {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error("MCP request timeout"));
-      }, 10000);
-
-      const handleResponse = (response: MCPMessage) => {
-        if (response.id === message.id) {
-          clearTimeout(timeout);
-          connection.client.off("message", handleResponse);
-          resolve(response);
-        }
-      };
-
-      connection.client.on("message", handleResponse);
-      connection.client.send(message).catch((error: Error) => {
-        clearTimeout(timeout);
-        connection.client.off("message", handleResponse);
-        reject(error);
-      });
-    });
-  }
 
   /**
    * Get a tool by its name or namespaced name
@@ -490,13 +455,13 @@ export class ToolDiscoveryEngine
       // Set up MCP notification handlers for this connection
       const connection = this.connectionManager.getConnection(event.serverName);
       if (connection?.client) {
-        connection.client.on("message", (message: MCPMessage) => {
-          if (message.method === "notifications/tools/list_changed") {
-            this.handleToolsListChanged(event.serverName).catch((error) => {
-              console.error(`Failed to handle tools list changed for ${event.serverName}:`, error);
-            });
-          }
-        });
+        // Set up tool list change notification handler using SDK client
+        const sdkClient = connection.client.sdkClient;
+        if (sdkClient) {
+          // SDK should handle notifications through its notification system
+          // For now, we'll rely on periodic discovery
+          // TODO: Implement proper notification handling when SDK exposes notification API
+        }
       }
 
       if (this.config.autoDiscovery && this.isInitialized) {

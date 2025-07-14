@@ -4,14 +4,14 @@
 
 import { EventEmitter } from "events";
 import { ToolDiscoveryEngine } from "./service";
-import { MCPToolDefinition, DiscoveryConfig } from "./types";
+import { DiscoveryConfig } from "./types";
+import { Tool, ListToolsResult } from "@modelcontextprotocol/sdk/types.js";
 import {
   IConnectionManager,
   Connection,
   ConnectionStatus,
   ConnectionState,
 } from "../connection/types";
-import { MCPMessage } from "../connection/clients/types";
 
 // Mock connection manager
 class MockConnectionManager extends EventEmitter implements IConnectionManager {
@@ -66,7 +66,7 @@ class MockConnectionManager extends EventEmitter implements IConnectionManager {
   }
 
   // Helper methods for testing
-  addMockServer(serverName: string, tools: MCPToolDefinition[] = []) {
+  addMockServer(serverName: string, tools: Tool[] = []) {
     const connection = new MockConnection(serverName, tools);
     this.connections.set(serverName, connection);
     this.serverConfigs.set(serverName, { type: "stdio" });
@@ -114,7 +114,7 @@ class MockConnection extends EventEmitter implements Connection {
 
   constructor(
     public readonly serverName: string,
-    private _tools: MCPToolDefinition[] = []
+    private _tools: Tool[] = []
   ) {
     super();
     this.id = `mock-${this.serverName}`;
@@ -163,7 +163,7 @@ class MockConnection extends EventEmitter implements Connection {
     this.emit("disconnected");
   }
 
-  updateTools(tools: MCPToolDefinition[]) {
+  updateTools(tools: Tool[]) {
     this._tools = tools;
     this._client.updateTools(tools);
   }
@@ -173,41 +173,34 @@ class MockConnection extends EventEmitter implements Connection {
   }
 }
 
-// Mock client
+// Mock client that implements the new SDK-based interface
 class MockClient extends EventEmitter {
-  private tools: MCPToolDefinition[] = [];
+  private tools: Tool[] = [];
   
-  constructor(tools: MCPToolDefinition[] = []) {
+  constructor(tools: Tool[] = []) {
     super();
     this.tools = tools;
   }
 
-  async send(message: MCPMessage): Promise<void> {
-    // Simulate async response
-    setTimeout(() => {
-      if (message.method === "tools/list") {
-        const response: MCPMessage = {
-          jsonrpc: "2.0",
-          id: message.id,
-          result: {
-            tools: this.tools,
-          },
-        };
-        this.emit("message", response);
-      }
-    }, 10);
+  async listTools(): Promise<ListToolsResult> {
+    return {
+      tools: this.tools,
+    };
   }
 
-  updateTools(tools: MCPToolDefinition[]) {
+  get sdkClient() {
+    return {
+      listTools: () => this.listTools(),
+    };
+  }
+
+  updateTools(tools: Tool[]) {
     this.tools = tools;
   }
 
   triggerToolsChanged() {
-    const notification: MCPMessage = {
-      jsonrpc: "2.0",
-      method: "notifications/tools/list_changed",
-    };
-    this.emit("message", notification);
+    // Emit a change event that the discovery engine can listen to
+    this.emit("toolsChanged");
   }
 }
 
@@ -215,7 +208,7 @@ describe("ToolDiscoveryEngine", () => {
   let connectionManager: MockConnectionManager;
   let discoveryEngine: ToolDiscoveryEngine;
 
-  const mockTool: MCPToolDefinition = {
+  const mockTool: Tool = {
     name: "test_tool",
     description: "A test tool",
     inputSchema: {
@@ -365,7 +358,7 @@ describe("ToolDiscoveryEngine", () => {
         discoveryEngine.once("toolsChanged", resolve);
       });
 
-      const newTool: MCPToolDefinition = {
+      const newTool: Tool = {
         name: "new_tool",
         description: "A new tool",
         inputSchema: { type: "object" },
@@ -398,7 +391,7 @@ describe("ToolDiscoveryEngine", () => {
         discoveryEngine.once("toolsChanged", resolve);
       });
 
-      const modifiedTool: MCPToolDefinition = {
+      const modifiedTool: Tool = {
         ...mockTool,
         inputSchema: {
           ...mockTool.inputSchema,
@@ -439,7 +432,7 @@ describe("ToolDiscoveryEngine", () => {
       await discoveryEngine.discoverTools("test-server");
 
       // Update the mock server's tools
-      const newTool: MCPToolDefinition = {
+      const newTool: Tool = {
         name: "cached_tool",
         description: "A cached tool",
         inputSchema: { type: "object" },
