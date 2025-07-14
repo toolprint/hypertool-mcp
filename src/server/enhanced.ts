@@ -9,6 +9,7 @@ import { IRequestRouter, RequestRouter } from "../router";
 import { IToolDiscoveryEngine, ToolDiscoveryEngine } from "../discovery";
 import { IConnectionManager, ConnectionManager } from "../connection";
 import { MCPConfigParser } from "../config";
+import ora from "ora";
 import {
   buildToolset,
   listSavedToolsets,
@@ -40,12 +41,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    * Enhanced start method with routing initialization
    */
   async start(options: ServerInitOptions): Promise<void> {
-    this.enableCallTool = options.enableCallTool || false;
+    this.enableCallTool = true; // Always enable tool calling
 
-    if (this.enableCallTool) {
-      await this.initializeRouting(options);
-    }
-
+    await this.initializeRouting(options);
     await super.start(options);
   }
 
@@ -55,6 +53,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   private async initializeRouting(options: ServerInitOptions): Promise<void> {
     try {
       // Initialize config parser
+      let mainSpinner = ora('Loading MCP configuration...').start();
       this.configParser = new MCPConfigParser();
 
       // Load configuration if path provided
@@ -65,7 +64,10 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         );
         if (parseResult.success && parseResult.config) {
           serverConfigs = parseResult.config.mcpServers || {};
+          const serverCount = Object.keys(serverConfigs).length;
+          mainSpinner.succeed(`Loaded configuration with ${serverCount} MCP server${serverCount !== 1 ? 's' : ''}`);
         } else {
+          mainSpinner.fail('Failed to load MCP configuration');
           console.error(`\n❌ FATAL ERROR: Failed to load MCP configuration`);
           if (parseResult.error) {
             console.error(`   Error: ${parseResult.error}`);
@@ -81,20 +83,72 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           console.error(`\n🚫 Meta-MCP server cannot start with invalid configuration.`);
           process.exit(1);
         }
+      } else {
+        mainSpinner.succeed('No configuration file specified - running without external servers');
       }
 
       // Initialize connection manager
+      mainSpinner = ora('Initializing connection manager...').start();
       this.connectionManager = new ConnectionManager();
       await this.connectionManager.initialize(serverConfigs);
+      mainSpinner.succeed('Connection manager initialized');
 
-      // Initialize discovery engine
+      // Connect to each server individually with progress
+      const serverEntries = Object.entries(serverConfigs);
+      if (serverEntries.length > 0) {
+        console.log('\n🔗 Connecting to MCP servers:');
+        
+        for (const [serverName, config] of serverEntries) {
+          const serverSpinner = ora(`Connecting to ${serverName}...`).start();
+          
+          try {
+            await this.connectionManager.connect(serverName);
+            serverSpinner.succeed(`Connected to ${serverName} (${(config as any).type})`);
+          } catch (error) {
+            serverSpinner.fail(`Failed to connect to ${serverName}: ${(error as Error).message}`);
+            // Don't fail the entire startup for individual server connection failures
+          }
+        }
+      }
+
+      // Initialize discovery engine with progress
+      mainSpinner = ora('Initializing tool discovery engine...').start();
       this.discoveryEngine = new ToolDiscoveryEngine(this.connectionManager);
       await this.discoveryEngine.initialize({
         autoDiscovery: true,
         enableMetrics: true,
       });
+      mainSpinner.succeed('Tool discovery engine initialized');
+
+      // Start discovery and show tool count
+      mainSpinner = ora('Discovering tools from connected servers...').start();
+      await this.discoveryEngine.start();
+      
+      const discoveredTools = this.discoveryEngine.getAvailableTools(true);
+      const toolCount = discoveredTools.length;
+      const connectedServers = this.connectionManager.getConnectedServers();
+      
+      if (toolCount > 0) {
+        mainSpinner.succeed(`Discovered ${toolCount} tool${toolCount !== 1 ? 's' : ''} from ${connectedServers.length} connected server${connectedServers.length !== 1 ? 's' : ''}`);
+        
+        // Show tools by server in debug mode
+        if (options.debug && toolCount > 0) {
+          console.log('\n📋 Tools discovered by server:');
+          const toolsByServer: Record<string, number> = {};
+          discoveredTools.forEach(tool => {
+            toolsByServer[tool.serverName] = (toolsByServer[tool.serverName] || 0) + 1;
+          });
+          
+          Object.entries(toolsByServer).forEach(([serverName, count]) => {
+            console.log(`   • ${serverName}: ${count} tool${count !== 1 ? 's' : ''}`);
+          });
+        }
+      } else {
+        mainSpinner.warn('No tools discovered from connected servers');
+      }
 
       // Initialize request router
+      mainSpinner = ora('Initializing request router...').start();
       this.requestRouter = new RequestRouter(
         this.discoveryEngine,
         this.connectionManager
@@ -103,10 +157,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         enableLogging: options.debug || false,
         enableMetrics: true,
       });
-
-      // Start all services
-      await this.connectionManager.start();
-      await this.discoveryEngine.start();
+      mainSpinner.succeed('Request router initialized');
 
       // Listen for tool discovery changes and notify clients
       (this.discoveryEngine as any).on?.("toolsChanged", async (event: any) => {
@@ -126,12 +177,10 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         await this.notifyToolsChanged();
       });
 
-      if (options.debug) {
-        console.log("Request routing initialized successfully");
-      }
-
       // Check for toolset configuration and warn if none equipped
       await this.checkToolsetStatus(options.debug);
+      
+      console.log(''); // Add spacing before final startup messages
     } catch (error) {
       console.error("Failed to initialize routing:", error);
       throw error;
@@ -491,8 +540,8 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       }
     );
 
-    // Add discovered tools if call tool is enabled
-    if (this.enableCallTool && this.discoveryEngine) {
+    // Add discovered tools from connected MCP servers
+    if (this.discoveryEngine) {
       try {
         const discoveredTools = this.discoveryEngine.getAvailableTools(true);
         
@@ -556,7 +605,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
               content: [
                 {
                   type: "text",
-                  text: "❌ **Tool discovery not enabled**\n\nTool calling must be enabled to discover tools from servers.",
+                  text: "❌ **Tool discovery not available**\n\nDiscovery engine is not initialized. Server may not be fully started.",
                 },
               ],
               isError: true
@@ -599,7 +648,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
               content: [
                 {
                   type: "text",
-                  text: "❌ **Tool discovery not enabled**\n\nTool calling must be enabled to build toolsets.",
+                  text: "❌ **Tool discovery not available**\n\nDiscovery engine is not initialized. Server may not be fully started.",
                 },
               ],
             };
@@ -641,7 +690,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
               content: [
                 {
                   type: "text",
-                  text: "❌ **Tool discovery not enabled**\n\nTool calling must be enabled to select toolsets.",
+                  text: "❌ **Tool discovery not available**\n\nDiscovery engine is not initialized. Server may not be fully started.",
                 },
               ],
             };
@@ -824,9 +873,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
         default:
           // Handle other tools via request router
-          if (!this.enableCallTool || !this.requestRouter) {
+          if (!this.requestRouter) {
             throw new Error(
-              "Tool calling is not enabled. Use --enable-call-tool flag to enable."
+              "Request router is not available. Server may not be fully initialized."
             );
           }
 

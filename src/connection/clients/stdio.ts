@@ -1,123 +1,105 @@
 /**
- * Stdio client implementation for MCP servers
+ * Stdio client implementation for MCP servers using official MCP SDK
  */
 
-import { spawn, ChildProcess } from "child_process";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { EventEmitter } from "events";
 import { StdioServerConfig } from "../../types/config";
 import { ConnectionOptions } from "../types";
 import { BaseConnection } from "./base";
-import {
-  MCPMessage,
-  IStdioClient,
-  ClientOptions,
-  DEFAULT_CLIENT_OPTIONS,
-} from "./types";
+import { MCPMessage } from "./types";
 
 /**
- * Stdio client for communicating with MCP servers via child process
+ * Stdio client wrapper for MCP SDK StdioClientTransport
  */
-export class StdioClient extends EventEmitter implements IStdioClient {
-  private _process: ChildProcess | null = null;
-  private messageBuffer = "";
-  private options: Required<ClientOptions>;
+export class StdioClient extends EventEmitter {
+  private transport: StdioClientTransport | null = null;
+  private isConnected = false;
 
-  constructor(
-    private config: StdioServerConfig,
-    options: ClientOptions = {}
-  ) {
+  constructor(private config: StdioServerConfig) {
     super();
-    this.options = { ...DEFAULT_CLIENT_OPTIONS, ...options };
-  }
-
-  get process(): ChildProcess | null {
-    return this._process;
   }
 
   get isRunning(): boolean {
-    return this._process?.pid !== undefined && !this._process.killed;
+    return this.isConnected && this.transport !== null;
   }
 
   /**
-   * Start the MCP server process
+   * Start the MCP server process using SDK transport
    */
   async start(): Promise<void> {
     if (this.isRunning) {
       return;
     }
 
-    return new Promise((resolve, reject) => {
-      try {
-        const env = { ...process.env, ...this.config.env };
+    try {
+      this.transport = new StdioClientTransport({
+        command: this.config.command,
+        args: this.config.args,
+        env: this.config.env,
+      });
 
-        this._process = spawn(this.config.command, this.config.args || [], {
-          stdio: ["pipe", "pipe", "pipe"],
-          env,
-        });
+      // Setup event handlers
+      this.transport.onmessage = (message) => {
+        this.emit("message", message);
+      };
 
-        this.setupProcessHandlers(resolve, reject);
-      } catch (error) {
-        reject(
-          new Error(`Failed to spawn process: ${(error as Error).message}`)
-        );
-      }
-    });
+      this.transport.onerror = (error) => {
+        this.emit("error", error);
+      };
+
+      this.transport.onclose = () => {
+        this.isConnected = false;
+        this.emit("disconnect");
+      };
+
+      await this.transport.start();
+      this.isConnected = true;
+    } catch (error) {
+      this.transport = null;
+      throw new Error(`Failed to start stdio transport: ${(error as Error).message}`);
+    }
   }
 
   /**
    * Stop the MCP server process
    */
   async stop(): Promise<void> {
-    if (!this._process) {
+    if (!this.transport) {
       return;
     }
 
-    return new Promise((resolve) => {
-      const cleanup = () => {
-        this._process = null;
-        resolve();
-      };
-
-      if (this._process?.killed) {
-        cleanup();
-        return;
-      }
-
-      this._process?.once("exit", cleanup);
-      this._process?.kill("SIGTERM");
-
-      // Force kill after timeout
-      setTimeout(() => {
-        if (this._process && !this._process.killed) {
-          this._process.kill("SIGKILL");
-        }
-      }, 5000);
-    });
+    try {
+      await this.transport.close();
+    } catch (error) {
+      console.error("Error closing stdio transport:", error);
+    } finally {
+      this.transport = null;
+      this.isConnected = false;
+    }
   }
 
   /**
    * Send a message to the MCP server
    */
   async send(message: MCPMessage): Promise<void> {
-    if (!this.isRunning || !this._process?.stdin) {
-      throw new Error("Process not running or stdin not available");
+    if (!this.transport) {
+      throw new Error("Transport not initialized");
     }
 
-    const messageStr = JSON.stringify(message) + "\n";
+    // Convert MCPMessage to JSONRPCMessage format expected by the SDK
+    if (!message.method) {
+      throw new Error("Message must have a method field");
+    }
 
-    return new Promise((resolve, reject) => {
-      if (this._process?.stdin) {
-        this._process.stdin.write(messageStr, (error) => {
-          if (error) {
-            reject(new Error(`Failed to send message: ${error.message}`));
-          } else {
-            resolve();
-          }
-        });
-      } else {
-        reject(new Error("Process stdin not available"));
-      }
-    });
+    const jsonRpcMessage = {
+      jsonrpc: "2.0" as const,
+      id: message.id || Date.now(),
+      method: message.method,
+      params: message.params,
+    };
+
+    await this.transport.send(jsonRpcMessage);
   }
 
   /**
@@ -141,90 +123,6 @@ export class StdioClient extends EventEmitter implements IStdioClient {
       return false;
     }
   }
-
-  /**
-   * Setup process event handlers
-   */
-  private setupProcessHandlers(
-    resolve: () => void,
-    reject: (error: Error) => void
-  ): void {
-    if (!this._process) {
-      return;
-    }
-
-    let isResolved = false;
-
-    // Handle process startup
-    this._process.once("spawn", () => {
-      if (!isResolved) {
-        isResolved = true;
-        resolve();
-      }
-    });
-
-    // Handle process errors
-    this._process.once("error", (error) => {
-      if (!isResolved) {
-        isResolved = true;
-        reject(new Error(`Process error: ${error.message}`));
-      } else {
-        this.emit("error", error);
-      }
-    });
-
-    // Handle process exit
-    this._process.once("exit", (code, signal) => {
-      if (!isResolved) {
-        isResolved = true;
-        reject(
-          new Error(`Process exited with code ${code} and signal ${signal}`)
-        );
-      } else {
-        this.emit("disconnect");
-      }
-      this._process = null;
-    });
-
-    // Handle stdout (messages from server)
-    this._process.stdout?.on("data", (data: Buffer) => {
-      this.handleStdoutData(data.toString());
-    });
-
-    // Handle stderr (log messages)
-    this._process.stderr?.on("data", (data: Buffer) => {
-      if (this.options.debug) {
-        console.error(`[${this.config.command}] ${data.toString()}`);
-      }
-    });
-  }
-
-  /**
-   * Handle stdout data and parse JSON messages
-   */
-  private handleStdoutData(data: string): void {
-    this.messageBuffer += data;
-
-    const lines = this.messageBuffer.split("\n");
-    this.messageBuffer = lines.pop() || "";
-
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (!trimmedLine) {
-        continue;
-      }
-
-      try {
-        const message: MCPMessage = JSON.parse(trimmedLine);
-        this.emit("message", message);
-      } catch (error) {
-        if (this.options.debug) {
-          console.error("Failed to parse message:", trimmedLine, error);
-        }
-        this.emit("error", new Error(`Invalid JSON message: ${trimmedLine}`));
-      }
-    }
-  }
 }
 
 /**
@@ -245,10 +143,7 @@ export class StdioConnection extends BaseConnection<StdioClient> {
    * Connect to the stdio server
    */
   protected async doConnect(): Promise<void> {
-    this._client = new StdioClient(this.config as StdioServerConfig, {
-      timeout: this.options.connectionTimeout,
-      debug: this.options.debug,
-    });
+    this._client = new StdioClient(this.config as StdioServerConfig);
 
     // Forward client events
     this._client.on("error", (error) => {
@@ -257,6 +152,10 @@ export class StdioConnection extends BaseConnection<StdioClient> {
 
     this._client.on("disconnect", () => {
       this.emit("disconnected", this.createEvent("disconnected"));
+    });
+
+    this._client.on("message", (message) => {
+      this.emit("message", message);
     });
 
     await this._client.start();
@@ -280,5 +179,12 @@ export class StdioConnection extends BaseConnection<StdioClient> {
       return false;
     }
     return await this._client.ping();
+  }
+
+  /**
+   * Get connection type
+   */
+  getType(): string {
+    return "stdio";
   }
 }

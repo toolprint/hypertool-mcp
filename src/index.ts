@@ -35,11 +35,6 @@ function parseCliArguments(): RuntimeOptions {
       false
     )
     .option(
-      '--enable-call-tool', 
-      chalk.cyan('Enable tool calling capabilities'), 
-      false
-    )
-    .option(
       '--insecure', 
       chalk.yellow('Allow tools with changed reference hashes') + chalk.red(' (insecure mode)'), 
       false
@@ -81,7 +76,6 @@ function parseCliArguments(): RuntimeOptions {
     transport,
     port: transport === 'http' ? port : undefined,
     debug: options.debug || false,
-    enableCallTool: options.enableCallTool || false,
     insecure: options.insecure || false,
     useToolset: options.useToolset,
     configPath: options.mcpConfig,
@@ -152,7 +146,6 @@ async function main(): Promise<void> {
     const initOptions = MetaMCPServerFactory.createInitOptions({
       transport: transportConfig,
       debug: runtimeOptions.debug,
-      enableCallTool: runtimeOptions.enableCallTool,
       configPath: configResult.configPath,
     });
 

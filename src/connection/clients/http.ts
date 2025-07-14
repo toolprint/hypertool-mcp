@@ -1,35 +1,23 @@
 /**
- * HTTP client implementation for MCP servers
+ * HTTP client implementation for MCP servers using official MCP SDK
  */
 
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { EventEmitter } from "events";
 import { HttpServerConfig } from "../../types/config";
 import { ConnectionOptions } from "../types";
 import { BaseConnection } from "./base";
-import {
-  MCPMessage,
-  IHttpClient,
-  ClientOptions,
-  DEFAULT_CLIENT_OPTIONS,
-} from "./types";
+import { MCPMessage } from "./types";
 
 /**
- * HTTP client for communicating with MCP servers via HTTP
+ * HTTP client wrapper for MCP SDK StreamableHTTPClientTransport
  */
-export class HttpClient extends EventEmitter implements IHttpClient {
-  private options: Required<ClientOptions>;
-  private isConnectedState = false;
+export class HttpClient extends EventEmitter {
+  private transport: StreamableHTTPClientTransport | null = null;
+  private isConnected = false;
 
-  constructor(
-    private config: HttpServerConfig,
-    options: ClientOptions = {}
-  ) {
+  constructor(private config: HttpServerConfig) {
     super();
-    this.options = { ...DEFAULT_CLIENT_OPTIONS, ...options };
-  }
-
-  get isConnected(): boolean {
-    return this.isConnectedState;
   }
 
   get url(): string {
@@ -37,7 +25,7 @@ export class HttpClient extends EventEmitter implements IHttpClient {
   }
 
   /**
-   * Connect to the HTTP server
+   * Connect to the HTTP server using SDK transport
    */
   async connect(): Promise<void> {
     if (this.isConnected) {
@@ -45,20 +33,28 @@ export class HttpClient extends EventEmitter implements IHttpClient {
     }
 
     try {
-      // Test connection with a simple health check or ping
-      const response = await fetch(this.config.url + '/health', {
-        method: 'GET',
-        headers: this.config.headers,
-      });
+      this.transport = new StreamableHTTPClientTransport(new URL(this.config.url));
 
-      if (response.ok) {
-        this.isConnectedState = true;
-        this.emit('connect');
-      } else {
-        throw new Error(`HTTP server returned status: ${response.status}`);
-      }
+      // Setup event handlers
+      this.transport.onmessage = (message) => {
+        this.emit("message", message);
+      };
+
+      this.transport.onerror = (error) => {
+        this.emit("error", error);
+      };
+
+      this.transport.onclose = () => {
+        this.isConnected = false;
+        this.emit("disconnect");
+      };
+
+      await this.transport.start();
+      this.isConnected = true;
+      this.emit("connect");
     } catch (error) {
-      throw new Error(`Failed to connect to HTTP server: ${(error as Error).message}`);
+      this.transport = null;
+      throw new Error(`Failed to start HTTP transport: ${(error as Error).message}`);
     }
   }
 
@@ -66,37 +62,41 @@ export class HttpClient extends EventEmitter implements IHttpClient {
    * Disconnect from the HTTP server
    */
   async disconnect(): Promise<void> {
-    this.isConnectedState = false;
-    this.emit("disconnect");
-  }
-
-  /**
-   * Send a message to the MCP server and wait for response
-   */
-  async send(message: MCPMessage): Promise<MCPMessage> {
-    if (!this.isConnected) {
-      throw new Error("Not connected to server");
+    if (!this.transport) {
+      return;
     }
 
     try {
-      const response = await fetch(this.config.url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...this.config.headers,
-        },
-        body: JSON.stringify(message),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const responseData = await response.json();
-      return responseData as MCPMessage;
+      await this.transport.close();
     } catch (error) {
-      throw new Error(`Failed to send message: ${(error as Error).message}`);
+      console.error("Error closing HTTP transport:", error);
+    } finally {
+      this.transport = null;
+      this.isConnected = false;
     }
+  }
+
+  /**
+   * Send a message to the MCP server
+   */
+  async send(message: MCPMessage): Promise<void> {
+    if (!this.transport) {
+      throw new Error("Transport not initialized");
+    }
+
+    // Convert MCPMessage to JSONRPCMessage format expected by the SDK
+    if (!message.method) {
+      throw new Error("Message must have a method field");
+    }
+
+    const jsonRpcMessage = {
+      jsonrpc: "2.0" as const,
+      id: message.id || Date.now(),
+      method: message.method,
+      params: message.params,
+    };
+
+    await this.transport.send(jsonRpcMessage);
   }
 
   /**
@@ -140,10 +140,7 @@ export class HttpConnection extends BaseConnection<HttpClient> {
    * Connect to the HTTP server
    */
   protected async doConnect(): Promise<void> {
-    this._client = new HttpClient(this.config as HttpServerConfig, {
-      timeout: this.options.connectionTimeout,
-      debug: this.options.debug,
-    });
+    this._client = new HttpClient(this.config as HttpServerConfig);
 
     // Forward client events
     this._client.on("error", (error) => {
@@ -152,6 +149,10 @@ export class HttpConnection extends BaseConnection<HttpClient> {
 
     this._client.on("disconnect", () => {
       this.emit("disconnected", this.createEvent("disconnected"));
+    });
+
+    this._client.on("message", (message) => {
+      this.emit("message", message);
     });
 
     await this._client.connect();
@@ -175,5 +176,12 @@ export class HttpConnection extends BaseConnection<HttpClient> {
       return false;
     }
     return await this._client.ping();
+  }
+
+  /**
+   * Get connection type
+   */
+  getType(): string {
+    return "http";
   }
 }

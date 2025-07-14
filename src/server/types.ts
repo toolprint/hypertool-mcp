@@ -34,7 +34,6 @@ export interface ServerInitOptions {
   transport: TransportConfig;
   configPath?: string;
   debug?: boolean;
-  enableCallTool?: boolean;
 }
 
 /**

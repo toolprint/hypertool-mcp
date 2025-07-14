@@ -1,8 +1,9 @@
 /**
- * SSE client implementation for connecting to external MCP servers
+ * SSE client implementation for connecting to external MCP servers using official MCP SDK
  * This is used when the Meta-MCP server acts as a CLIENT to SSE-based MCP servers (like Context7)
  */
 
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { EventEmitter } from "events";
 import { BaseConnection } from "./base";
 import { SSEServerConfig } from "../../types/config";
@@ -10,63 +11,47 @@ import { MCPMessage } from "./types";
 import { ConnectionOptions } from "../types";
 
 /**
- * Low-level SSE client for MCP communication
+ * SSE client wrapper for MCP SDK SSEClientTransport
  */
 export class SSEClient extends EventEmitter {
-  private eventSource?: EventSource;
-  private config: SSEServerConfig;
+  private transport: SSEClientTransport | null = null;
+  private isConnected = false;
 
-  constructor(config: SSEServerConfig) {
+  constructor(private config: SSEServerConfig) {
     super();
-    this.config = config;
   }
 
   /**
-   * Connect to the SSE-based MCP server
+   * Connect to the SSE-based MCP server using SDK transport
    */
   async connect(): Promise<void> {
+    if (this.isConnected) {
+      return;
+    }
+
     try {
-      // Create EventSource for SSE connection
-      this.eventSource = new EventSource(this.config.url, {
-        headers: this.config.headers || {},
-      } as any);
+      this.transport = new SSEClientTransport(new URL(this.config.url));
 
-      // Setup event listeners
-      this.eventSource.onopen = () => {
-        this.emit("connected");
+      // Setup event handlers
+      this.transport.onmessage = (message) => {
+        this.emit("message", message);
       };
 
-      this.eventSource.onmessage = (event) => {
-        try {
-          const message: MCPMessage = JSON.parse(event.data);
-          this.emit("message", message);
-        } catch (error) {
-          this.emit("error", new Error(`Failed to parse SSE message: ${error}`));
-        }
+      this.transport.onerror = (error) => {
+        this.emit("error", error);
       };
 
-      this.eventSource.onerror = (error) => {
-        this.emit("error", new Error(`SSE connection error: ${error}`));
+      this.transport.onclose = () => {
+        this.isConnected = false;
+        this.emit("disconnected");
       };
 
-      // Wait for connection to be established
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error("SSE connection timeout"));
-        }, 10000);
-
-        this.once("connected", () => {
-          clearTimeout(timeout);
-          resolve();
-        });
-
-        this.once("error", (error) => {
-          clearTimeout(timeout);
-          reject(error);
-        });
-      });
+      await this.transport.start();
+      this.isConnected = true;
+      this.emit("connected");
     } catch (error) {
-      throw error;
+      this.transport = null;
+      throw new Error(`Failed to start SSE transport: ${(error as Error).message}`);
     }
   }
 
@@ -74,37 +59,41 @@ export class SSEClient extends EventEmitter {
    * Disconnect from the SSE server
    */
   async disconnect(): Promise<void> {
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = undefined;
+    if (!this.transport) {
+      return;
     }
-    this.emit("disconnected");
+
+    try {
+      await this.transport.close();
+    } catch (error) {
+      console.error("Error closing SSE transport:", error);
+    } finally {
+      this.transport = null;
+      this.isConnected = false;
+    }
   }
 
   /**
-   * Send message to SSE server (via POST to companion endpoint)
+   * Send message to SSE server
    */
   async send(message: MCPMessage): Promise<void> {
-    try {
-      // For SSE, we typically POST messages to a companion endpoint
-      const postUrl = this.config.url.replace("/sse", "/message");
-      
-      const response = await fetch(postUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...this.config.headers,
-        },
-        body: JSON.stringify(message),
-      });
-
-      if (!response.ok) {
-        throw new Error(`SSE POST failed: ${response.status} ${response.statusText}`);
-      }
-    } catch (error) {
-      this.emit("error", error);
-      throw error;
+    if (!this.transport) {
+      throw new Error("Transport not initialized");
     }
+
+    // Convert MCPMessage to JSONRPCMessage format expected by the SDK
+    if (!message.method) {
+      throw new Error("Message must have a method field");
+    }
+
+    const jsonRpcMessage = {
+      jsonrpc: "2.0" as const,
+      id: message.id || Date.now(),
+      method: message.method,
+      params: message.params,
+    };
+
+    await this.transport.send(jsonRpcMessage);
   }
 }
 

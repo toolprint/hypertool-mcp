@@ -315,7 +315,7 @@ export class ConnectionManager
         throw new Error(`Invalid configuration for server "${serverName}"`);
       }
 
-      if (!config.type || (config.type !== "stdio" && config.type !== "http")) {
+      if (!config.type || (config.type !== "stdio" && config.type !== "http" && config.type !== "sse")) {
         throw new Error(
           `Invalid transport type for server "${serverName}": ${(config as any).type}`
         );

@@ -22,9 +22,6 @@ export interface RuntimeOptions {
   /** Enable debug mode with verbose logging */
   debug: boolean;
   
-  /** Enable tool calling capabilities */
-  enableCallTool: boolean;
-  
   /** Allow tools with changed reference hashes (insecure mode) */
   insecure: boolean;
   
@@ -41,6 +38,5 @@ export interface RuntimeOptions {
 export const DEFAULT_RUNTIME_OPTIONS: RuntimeOptions = {
   transport: 'stdio',
   debug: false,
-  enableCallTool: false,
   insecure: false,
 };
