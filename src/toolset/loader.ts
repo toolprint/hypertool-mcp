@@ -124,64 +124,6 @@ export async function saveToolsetConfig(
 }
 
 /**
- * Load multiple toolset configurations from directory
- */
-export async function loadToolsetConfigs(
-  directoryPath: string,
-  options: ToolsetParserOptions = {}
-): Promise<{
-  configs: Array<{
-    filePath: string;
-    config?: ToolsetConfig;
-    validation: ValidationResult;
-    error?: string;
-  }>;
-  summary: {
-    total: number;
-    valid: number;
-    invalid: number;
-  };
-}> {
-  const configs: Array<{
-    filePath: string;
-    config?: ToolsetConfig;
-    validation: ValidationResult;
-    error?: string;
-  }> = [];
-
-  try {
-    // Read directory
-    const files = await fs.readdir(directoryPath);
-    const jsonFiles = files.filter((file) => file.endsWith(".json"));
-
-    // Load each configuration
-    for (const file of jsonFiles) {
-      const filePath = path.join(directoryPath, file);
-      const result = await loadToolsetConfig(filePath, options);
-
-      configs.push({
-        filePath,
-        ...result,
-      });
-    }
-
-    // Generate summary
-    const summary = {
-      total: configs.length,
-      valid: configs.filter((c) => c.validation.valid).length,
-      invalid: configs.filter((c) => !c.validation.valid).length,
-    };
-
-    return { configs, summary };
-  } catch {
-    return {
-      configs: [],
-      summary: { total: 0, valid: 0, invalid: 0 },
-    };
-  }
-}
-
-/**
  * Normalize raw configuration object to ToolsetConfig
  */
 function normalizeToolsetConfig(rawConfig: any): ToolsetConfig {
@@ -202,54 +144,4 @@ function normalizeToolsetConfig(rawConfig: any): ToolsetConfig {
   }
 
   return config;
-}
-
-/**
- * Check if file exists and is readable
- */
-export async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await fs.access(filePath, fs.constants.R_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Get default toolset configuration file path
- */
-export function getDefaultConfigPath(configDir?: string): string {
-  const baseDir = configDir || path.join(process.cwd(), ".meta-mcp");
-  return path.join(baseDir, "toolset.json");
-}
-
-/**
- * Create example toolset configuration
- */
-export function createExampleConfig(): ToolsetConfig {
-  return {
-    name: "example-toolset",
-    description: "Example toolset configuration with common development tools",
-    version: "1.0.0",
-    createdAt: new Date(),
-    tools: [
-      {
-        namespacedName: "git.status",
-        refId: "example-git-status-hash"
-      },
-      {
-        namespacedName: "git.commit",
-        refId: "example-git-commit-hash"
-      },
-      {
-        namespacedName: "docker.ps",
-        refId: "example-docker-ps-hash"
-      },
-      {
-        namespacedName: "npm.install",
-        refId: "example-npm-install-hash"
-      }
-    ],
-  };
 }

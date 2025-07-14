@@ -13,34 +13,20 @@
 export * from "./types";
 
 // Export validator functions
-export { validateToolsetConfig, matchesToolPattern } from "./validator";
+export { validateToolsetConfig } from "./validator";
 
 // Export loader functions
 export {
   loadToolsetConfig,
   saveToolsetConfig,
-  loadToolsetConfigs,
-  fileExists,
-  getDefaultConfigPath,
-  createExampleConfig,
 } from "./loader";
-
-// Note: Filtering is now handled by ToolsetManager.applyConfig()
-
-// Export generator functions
-export {
-  generateDefaultToolsetConfig,
-  generateMinimalToolsetConfig,
-  generateUseCaseToolsetConfig,
-  generateConflictAwareToolsetConfig,
-} from "./generator";
 
 /**
  * Main toolset manager class
  */
 import { EventEmitter } from "events";
 import { DiscoveredTool, IToolDiscoveryEngine, DiscoveredToolsChangedEvent } from "../discovery/types";
-import { ToolsetConfig, ToolsetResolution, ValidationResult, ToolsetChangeEvent, DynamicToolReference } from "./types";
+import { ToolsetConfig, ValidationResult, ToolsetChangeEvent, DynamicToolReference } from "./types";
 import { loadToolsetConfig, saveToolsetConfig } from "./loader";
 import { validateToolsetConfig } from "./validator";
 

@@ -1,0 +1,14 @@
+# Task ID: 25
+# Title: Modernize HTTP Server with Express.js and Streamable Transport
+# Status: done
+# Dependencies: 15, 17
+# Priority: high
+# Description: Replace Node.js native HTTP server with Express.js framework and implement streamable HTTP transport mode with /mcp endpoint to support modern MCP tooling. [Updated: 7/13/2025]
+# Details:
+Migrate from Node's http.createServer() to Express.js framework following patterns from mcp-graphql-forge repository. Implement streamable HTTP transport mode with /mcp endpoint for bidirectional communication, replacing current SSE transport. Create transport abstraction layer supporting both stdio and HTTP modes with clean switching mechanism. Add Express middleware support for future extensibility. Implement proper request/response handling for MCP protocol over HTTP streams. Create transport factory pattern for instantiating appropriate transport based on configuration. Ensure backward compatibility with existing stdio transport for Claude Code integration. Add proper error handling and connection management for both transport modes.
+<info added on 2025-07-13T16:39:45.818Z>
+Assigned to claude-squad session-1720904000
+</info added on 2025-07-13T16:39:45.818Z>
+
+# Test Strategy:
+Unit tests for Express.js server initialization and middleware registration. Integration tests for streamable HTTP transport with mock MCP clients. End-to-end tests verifying /mcp endpoint functionality and bidirectional communication. Transport switching tests ensuring seamless mode transitions. Compatibility tests with MCP Inspector and other modern tooling. Performance tests comparing new Express implementation with previous native HTTP server. Connection handling tests for both stdio and HTTP transport modes.

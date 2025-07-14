@@ -1,0 +1,14 @@
+# Task ID: 21
+# Title: Create CLI Interface for Toolset Management
+# Status: done
+# Dependencies: 20
+# Priority: medium
+# Description: Develop command-line interface for toolset management operations (create, save, load, list) [Updated: 7/13/2025]
+# Details:
+Build CLI using commander.js or similar framework with commands for toolset management. Implement 'create', 'save', 'load', 'list', and 'delete' commands for toolset configurations. Add interactive toolset builder with server and tool selection menus. Create configuration import/export functionality. Include help documentation and command validation.
+<info added on 2025-07-13T16:52:13.067Z>
+Assigned to claude-squad session-1736790037
+</info added on 2025-07-13T16:52:13.067Z>
+
+# Test Strategy:
+CLI command tests, interactive menu tests, configuration import/export tests, help system tests

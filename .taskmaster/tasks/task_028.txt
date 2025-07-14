@@ -1,0 +1,29 @@
+# Task ID: 28
+# Title: Modernize Build System with ES2022/ESNext and Migrate from Jest to Vitest
+# Status: pending
+# Dependencies: 20, 24
+# Priority: medium
+# Description: Upgrade TypeScript configuration to ES2022/ESNext target and replace Jest testing framework with Vitest for better performance and modern ES module support.
+# Details:
+1. **TypeScript Configuration Updates**: Update tsconfig.json to use ES2022 target and ESNext module resolution. Configure moduleResolution to 'bundler' for better ES module support. Update lib array to include ES2022 features. Set target to 'ES2022' and module to 'ESNext'.
+
+2. **Package Dependencies**: Remove Jest and related packages (@types/jest, jest, ts-jest). Install Vitest and dependencies (vitest, @vitest/ui, jsdom for browser environment simulation). Update package.json test scripts to use 'vitest' instead of 'jest'.
+
+3. **Vitest Configuration**: Create vitest.config.ts with appropriate settings for TypeScript, ES modules, and test environment. Configure test file patterns, coverage settings, and environment setup. Set up proper ES module handling and TypeScript integration.
+
+4. **Test File Migration**: Convert all existing Jest test files to Vitest syntax. Replace Jest imports (describe, it, expect) with Vitest equivalents. Update any Jest-specific matchers or utilities to Vitest alternatives. Migrate mock implementations from Jest to Vitest mocking system.
+
+5. **Build System Updates**: Update any build scripts or CI configuration to use the new test runner. Ensure ES2022 features are properly supported in build pipeline. Update lint and format configurations to work with new module system.
+
+6. **Validation**: Run all existing tests with Vitest to ensure they pass. Verify TypeScript compilation with new ES2022 target. Test ES module imports/exports work correctly. Validate build performance improvements.
+
+# Test Strategy:
+1. **Migration Validation**: Run complete test suite with Vitest and verify 100% of existing tests pass without modification to test logic. Compare test execution performance between Jest and Vitest to confirm performance improvements.
+
+2. **TypeScript Compilation**: Verify TypeScript compiles successfully with ES2022 target. Test that ES2022 features (top-level await, private fields, etc.) are available and working. Validate module resolution works correctly with ESNext setting.
+
+3. **Build System Testing**: Run complete build pipeline (lint, format, test, compile) to ensure all steps work with new configuration. Test hot module replacement and dev server functionality if applicable.
+
+4. **ES Module Support**: Create test cases specifically for ES module imports/exports to verify modern module system works correctly. Test dynamic imports and tree-shaking capabilities.
+
+5. **Coverage and Performance**: Compare test coverage reports between old and new systems. Benchmark test execution time to confirm performance improvements. Verify all development scripts (dev, build, test) work correctly with updated configuration.

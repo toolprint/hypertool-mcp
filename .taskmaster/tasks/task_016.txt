@@ -1,0 +1,11 @@
+# Task ID: 16
+# Title: Develop Tool Discovery Engine
+# Status: done
+# Dependencies: 15
+# Priority: high
+# Description: Create system to query underlying servers for available tools and cache results with full TypeScript type safety
+# Details:
+Implement tool discovery mechanism that queries connected MCP servers for their available tools using MCP list_tools protocol. Create TypeScript interfaces for tool metadata including schemas, descriptions, and server origins. Build caching layer with TTL and invalidation strategies. Handle tool schema conflicts with namespacing (server.tool_name format). Store tool definitions in memory with efficient lookup structures.
+
+# Test Strategy:
+Unit tests for tool discovery logic, caching tests with TTL validation, schema conflict resolution tests, performance tests for large tool sets

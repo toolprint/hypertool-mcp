@@ -1,0 +1,14 @@
+# Task ID: 18
+# Title: Implement Toolset Configuration System
+# Status: done
+# Dependencies: 17
+# Priority: medium
+# Description: Create JSON-based toolset configuration allowing users to specify which tools to expose from each server [Updated: 7/10/2025]
+# Details:
+Design toolset configuration schema with JSON format supporting server-specific tool inclusion/exclusion rules. Create configuration validator and loader with TypeScript type definitions. Implement toolset filtering logic that respects user preferences. Support wildcard patterns and regex for tool selection. Create default configuration generator based on available tools.
+<info added on 2025-07-10T20:38:15.385Z>
+Assigned to claude-squad session-1736487412
+</info added on 2025-07-10T20:38:15.385Z>
+
+# Test Strategy:
+Schema validation tests, configuration loading tests, tool filtering accuracy tests, wildcard pattern tests
