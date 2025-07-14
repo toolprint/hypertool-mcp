@@ -39,12 +39,12 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
 
   resolveToolReference(ref: { namespacedName?: string; refId?: string }, options?: { allowStaleRefs?: boolean }) {
     const tool = this.tools.find(t => 
-      t.namespacedName === ref.namespacedName || t.fullHash === ref.refId
+      t.namespacedName === ref.namespacedName || t.toolHash === ref.refId
     );
     
     const exists = !!tool;
     const namespacedNameMatch = !!tool && tool.namespacedName === ref.namespacedName;
-    const refIdMatch = !!tool && tool.fullHash === ref.refId;
+    const refIdMatch = !!tool && tool.toolHash === ref.refId;
     
     const warnings: string[] = [];
     const errors: string[] = [];
@@ -107,23 +107,29 @@ describe("ToolsetManager", () => {
       name: "status",
       serverName: "git",
       namespacedName: "git.status",
-      schema: { type: "object" } as const,
+      tool: {
+        name: "status",
+        description: "Git status tool",
+        inputSchema: { type: "object" } as const,
+      },
       discoveredAt: new Date(),
       lastUpdated: new Date(),
       serverStatus: "connected",
-      structureHash: "hash1",
-      fullHash: "full1234567890", // Valid hash length
+      toolHash: "hash1",
     },
     {
       name: "ps",
       serverName: "docker",
       namespacedName: "docker.ps",
-      schema: { type: "object" } as const,
+      tool: {
+        name: "ps",
+        description: "Docker ps tool",
+        inputSchema: { type: "object" } as const,
+      },
       discoveredAt: new Date(),
       lastUpdated: new Date(),
       serverStatus: "connected",
-      structureHash: "hash2",
-      fullHash: "full2234567890", // Valid hash length
+      toolHash: "hash2",
     },
   ];
 
@@ -283,93 +289,8 @@ describe("ToolsetManager", () => {
     });
   });
 
-  describe("applyConfig", () => {
-    it("should apply configuration with discovery engine", async () => {
-      const config: ToolsetConfig = {
-        name: "test-config",
-        tools: [
-          { namespacedName: "git.status", refId: "full1234567890" }
-        ],
-        version: "1.0.0",
-        createdAt: new Date(),
-      };
-
-      manager.setConfig(config);
-
-      const result = await manager.applyConfig(mockTools, mockDiscovery);
-
-      expect(result.success).toBe(true);
-      expect(result.tools).toHaveLength(1);
-      expect(result.tools[0].originalName).toBe("status");
-      expect(result.tools[0].serverName).toBe("git");
-      expect(result.stats?.totalIncluded).toBe(1);
-    });
-
-    it("should handle tool reference mismatches securely", async () => {
-      const config: ToolsetConfig = {
-        name: "test-config",
-        tools: [
-          { namespacedName: "git.status", refId: "wrong-hash" } // Mismatch
-        ],
-        version: "1.0.0",
-        createdAt: new Date(),
-      };
-
-      manager.setConfig(config);
-
-      const result = await manager.applyConfig(mockTools, mockDiscovery);
-
-      expect(result.success).toBe(true);
-      expect(result.tools).toHaveLength(0); // Tool rejected due to mismatch
-      expect(result.warnings?.some(w => w.includes("SECURITY"))).toBe(true);
-    });
-
-    it("should apply configuration without discovery engine", async () => {
-      const config: ToolsetConfig = {
-        name: "test-config",
-        tools: [
-          { namespacedName: "docker.ps" }
-        ],
-        version: "1.0.0",
-        createdAt: new Date(),
-      };
-
-      manager.setConfig(config);
-
-      const result = await manager.applyConfig(mockTools);
-
-      expect(result.success).toBe(true);
-      expect(result.tools).toHaveLength(1);
-      expect(result.tools[0].originalName).toBe("ps");
-      expect(result.tools[0].serverName).toBe("docker");
-    });
-
-    it("should handle missing tools", async () => {
-      const config: ToolsetConfig = {
-        name: "test-config",
-        tools: [
-          { namespacedName: "nonexistent.tool" }
-        ],
-        version: "1.0.0",
-        createdAt: new Date(),
-      };
-
-      manager.setConfig(config);
-
-      const result = await manager.applyConfig(mockTools, mockDiscovery);
-
-      expect(result.success).toBe(true);
-      expect(result.tools).toHaveLength(0);
-      expect(result.warnings).toContain("Tool not found: nonexistent.tool");
-    });
-
-    it("should require config to be loaded", async () => {
-      const result = await manager.applyConfig(mockTools);
-
-      expect(result.success).toBe(false);
-      expect(result.errors).toContain("No configuration loaded");
-    });
-  });
+  // Note: applyConfig method and tests removed since we eliminated ResolvedTool
+  // The toolset system now works directly with DiscoveredTool objects
 
   describe("config validation", () => {
     it("should validate configuration on set", () => {

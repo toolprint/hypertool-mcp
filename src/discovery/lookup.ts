@@ -205,8 +205,8 @@ export class ToolLookupManager {
           continue;
         }
 
-        if (tool.description) {
-          const score = this.calculateFuzzyScore(query.name, tool.description);
+        if (tool.tool.description) {
+          const score = this.calculateFuzzyScore(query.name, tool.tool.description);
           if (score > 0.3) {
             results.push({
               tool,
@@ -324,11 +324,11 @@ export class ToolLookupManager {
       this.index.byNamespaced.set(tool.namespacedName, tool);
 
       // Add to description index
-      if (tool.description) {
-        if (!this.index.byDescription.has(tool.description)) {
-          this.index.byDescription.set(tool.description, []);
+      if (tool.tool.description) {
+        if (!this.index.byDescription.has(tool.tool.description)) {
+          this.index.byDescription.set(tool.tool.description, []);
         }
-        this.index.byDescription.get(tool.description)!.push(tool);
+        this.index.byDescription.get(tool.tool.description)!.push(tool);
       }
 
       // Add to searchable text index
@@ -363,15 +363,15 @@ export class ToolLookupManager {
       this.index.byNamespaced.delete(tool.namespacedName);
 
       // Remove from description index
-      if (tool.description) {
-        const descTools = this.index.byDescription.get(tool.description);
+      if (tool.tool.description) {
+        const descTools = this.index.byDescription.get(tool.tool.description);
         if (descTools) {
           const index = descTools.findIndex((t) => this.getToolKey(t) === key);
           if (index !== -1) {
             descTools.splice(index, 1);
           }
           if (descTools.length === 0) {
-            this.index.byDescription.delete(tool.description);
+            this.index.byDescription.delete(tool.tool.description);
           }
         }
       }
@@ -393,18 +393,18 @@ export class ToolLookupManager {
     keywords.push(tool.serverName.toLowerCase());
 
     // Add description words
-    if (tool.description) {
-      const words = tool.description
+    if (tool.tool.description) {
+      const words = tool.tool.description
         .toLowerCase()
         .split(/\s+/)
-        .filter((word) => word.length > 2)
-        .map((word) => word.replace(/[^\w]/g, ""));
+        .filter((word: string) => word.length > 2)
+        .map((word: string) => word.replace(/[^\w]/g, ""));
       keywords.push(...words);
     }
 
     // Add schema property names
-    if (tool.schema.properties) {
-      for (const prop of Object.keys(tool.schema.properties)) {
+    if (tool.tool.inputSchema.properties) {
+      for (const prop of Object.keys(tool.tool.inputSchema.properties)) {
         keywords.push(prop.toLowerCase());
       }
     }

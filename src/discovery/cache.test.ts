@@ -12,17 +12,19 @@ describe("ToolCache", () => {
     name: "test_tool",
     serverName: "test-server",
     namespacedName: "test-server.test_tool",
-    schema: {
-      type: "object",
-      properties: { input: { type: "string" } },
-      required: ["input"],
+    tool: {
+      name: "test_tool",
+      description: "A test tool",
+      inputSchema: {
+        type: "object",
+        properties: { input: { type: "string" } },
+        required: ["input"],
+      },
     },
-    description: "A test tool",
     discoveredAt: new Date(),
     lastUpdated: new Date(),
     serverStatus: "connected",
-    structureHash: "abc123",
-    fullHash: "def456",
+    toolHash: "abc123def456",
   };
 
   const config: DiscoveryConfig = {

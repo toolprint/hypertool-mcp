@@ -2,6 +2,8 @@
  * TypeScript interfaces for toolset configuration
  */
 
+import { DiscoveredTool } from "../discovery/types";
+
 /**
  * Dynamic tool reference that can specify a tool by namespacedName, refId, or both
  */
@@ -62,25 +64,8 @@ export interface ToolsetOptions {
   cacheTtl?: number;
 }
 
-/**
- * Resolved tool after applying toolset configuration
- */
-export interface ResolvedTool {
-  /** Original tool name */
-  originalName: string;
-  /** Resolved name (may be namespaced) */
-  resolvedName: string;
-  /** Server this tool comes from */
-  serverName: string;
-  /** Whether this tool is namespaced */
-  isNamespaced: boolean;
-  /** Namespace prefix used */
-  namespace?: string;
-  /** Tool description */
-  description?: string;
-  /** Tool input schema */
-  inputSchema: any;
-}
+// Note: ResolvedTool has been removed - use DiscoveredTool instead
+// This provides the complete tool definition from the MCP server
 
 /**
  * Toolset resolution result
@@ -89,7 +74,7 @@ export interface ToolsetResolution {
   /** Whether resolution was successful */
   success: boolean;
   /** Resolved tools */
-  tools: ResolvedTool[];
+  tools: DiscoveredTool[];
   /** Warnings during resolution */
   warnings?: string[];
   /** Errors during resolution */
@@ -174,3 +159,18 @@ export const DEFAULT_TOOLSET_OPTIONS: Required<ToolsetOptions> = {
 
 // Note: Default patterns removed in simplified toolset system
 // Users must explicitly select tools - no defaults
+
+/**
+ * Event emitted when a toolset changes
+ */
+export interface ToolsetChangeEvent {
+  /** The previously active toolset (null if none was active) */
+  previousToolset: ToolsetConfig | null;
+  /** The newly active toolset (null if toolset was unequipped) */
+  newToolset: ToolsetConfig | null;
+  /** Type of change that occurred */
+  changeType: 'equipped' | 'updated' | 'unequipped';
+  /** Timestamp when the change occurred */
+  timestamp?: Date;
+}
+

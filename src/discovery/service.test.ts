@@ -277,8 +277,7 @@ describe("ToolDiscoveryEngine", () => {
       expect(tools[0].name).toBe("test_tool");
       expect(tools[0].serverName).toBe("test-server");
       expect(tools[0].namespacedName).toBe("test-server.test_tool");
-      expect(tools[0].structureHash).toBeDefined();
-      expect(tools[0].fullHash).toBeDefined();
+      expect(tools[0].toolHash).toBeDefined();
     });
 
     it("should discover tools from all connected servers", async () => {
@@ -401,7 +400,13 @@ describe("ToolDiscoveryEngine", () => {
 
       const modifiedTool: MCPToolDefinition = {
         ...mockTool,
-        description: "Modified description",
+        inputSchema: {
+          ...mockTool.inputSchema,
+          properties: {
+            ...mockTool.inputSchema.properties,
+            newField: { type: "string" },
+          },
+        },
       };
 
       const mockConn = connectionManager.getMockConnection("test-server")!;

@@ -38,14 +38,20 @@ export {
 /**
  * Main toolset manager class
  */
-import { DiscoveredTool, IToolDiscoveryEngine } from "../discovery/types";
-import { ToolsetConfig, ToolsetResolution, ValidationResult, ResolvedTool } from "./types";
+import { EventEmitter } from "events";
+import { DiscoveredTool, IToolDiscoveryEngine, DiscoveredToolsChangedEvent } from "../discovery/types";
+import { ToolsetConfig, ToolsetResolution, ValidationResult, ToolsetChangeEvent } from "./types";
 import { loadToolsetConfig, saveToolsetConfig } from "./loader";
 import { validateToolsetConfig } from "./validator";
 
-export class ToolsetManager {
+export class ToolsetManager extends EventEmitter {
   private currentConfig?: ToolsetConfig;
   private configPath?: string;
+  private discoveryEngine?: IToolDiscoveryEngine;
+
+  constructor() {
+    super();
+  }
 
   /**
    * Load toolset configuration from file
@@ -122,7 +128,17 @@ export class ToolsetManager {
   setConfig(config: ToolsetConfig): ValidationResult {
     const validation = validateToolsetConfig(config);
     if (validation.valid) {
+      const previousConfig = this.currentConfig;
       this.currentConfig = config;
+      
+      // Emit toolset change event
+      const event: ToolsetChangeEvent = {
+        previousToolset: previousConfig || null,
+        newToolset: config,
+        changeType: previousConfig ? 'updated' : 'equipped',
+        timestamp: new Date()
+      };
+      this.emit('toolsetChanged', event);
     }
     return validation;
   }
@@ -134,118 +150,8 @@ export class ToolsetManager {
     return this.currentConfig;
   }
 
-  /**
-   * Apply current configuration using discovery engine for tool resolution
-   */
-  async applyConfig(
-    discoveredTools: DiscoveredTool[],
-    discoveryEngine?: IToolDiscoveryEngine
-  ): Promise<ToolsetResolution> {
-    if (!this.currentConfig) {
-      return {
-        success: false,
-        tools: [],
-        errors: ["No configuration loaded"],
-      };
-    }
-
-    const startTime = Date.now();
-    const resolvedTools: ResolvedTool[] = [];
-    const allWarnings: string[] = [];
-    const errors: string[] = [];
-
-    // Group tools by server for statistics
-    const toolsByServer: Record<string, number> = {};
-
-    // Validate and resolve each tool reference using discovery engine
-    for (const toolRef of this.currentConfig.tools) {
-      if (discoveryEngine) {
-        // Use discovery engine to resolve the tool reference with strict validation by default
-        const resolution = discoveryEngine.resolveToolReference(toolRef, { 
-          allowStaleRefs: false // Secure by default
-        });
-        
-        // Handle warnings from resolution
-        if (resolution.warnings && resolution.warnings.length > 0) {
-          allWarnings.push(...resolution.warnings);
-        }
-        
-        // Handle errors from strict validation
-        if (resolution.errors && resolution.errors.length > 0) {
-          allWarnings.push(...resolution.errors.map(err => `SECURITY: ${err}`));
-        }
-        
-        if (!resolution.exists || !resolution.tool) {
-          // Tool was rejected or not found - skip and continue with others
-          if (resolution.errors.length === 0) {
-            allWarnings.push(`Tool not found: ${toolRef.namespacedName || toolRef.refId}`);
-          }
-          continue;
-        }
-        
-        const foundTool = resolution.tool;
-        const serverName = resolution.serverName!;
-        
-        // Count tools by server
-        toolsByServer[serverName] = (toolsByServer[serverName] || 0) + 1;
-        
-        // Convert to resolved tool
-        resolvedTools.push({
-          originalName: foundTool.name,
-          resolvedName: foundTool.namespacedName,
-          serverName: serverName,
-          isNamespaced: true,
-          namespace: serverName,
-          description: foundTool.description,
-          inputSchema: foundTool.schema,
-        });
-      } else {
-        // Fallback to manual lookup if no discovery engine provided
-        let foundTool: DiscoveredTool | undefined;
-        
-        if (toolRef.namespacedName) {
-          foundTool = discoveredTools.find(tool => tool.namespacedName === toolRef.namespacedName);
-        }
-        
-        if (!foundTool && toolRef.refId) {
-          foundTool = discoveredTools.find(tool => tool.fullHash === toolRef.refId);
-        }
-        
-        if (!foundTool) {
-          allWarnings.push(`Tool reference not found: ${toolRef.namespacedName || toolRef.refId}`);
-          continue;
-        }
-        
-        // Count tools by server
-        toolsByServer[foundTool.serverName] = (toolsByServer[foundTool.serverName] || 0) + 1;
-        
-        resolvedTools.push({
-          originalName: foundTool.name,
-          resolvedName: foundTool.namespacedName,
-          serverName: foundTool.serverName,
-          isNamespaced: true,
-          namespace: foundTool.serverName,
-          description: foundTool.description,
-          inputSchema: foundTool.schema,
-        });
-      }
-    }
-
-    return {
-      success: errors.length === 0,
-      tools: resolvedTools,
-      warnings: allWarnings,
-      errors,
-      stats: {
-        totalDiscovered: discoveredTools.length,
-        totalIncluded: resolvedTools.length,
-        totalExcluded: discoveredTools.length - resolvedTools.length,
-        toolsByServer,
-        conflictsDetected: 0,
-        resolutionTime: Date.now() - startTime,
-      },
-    };
-  }
+  // Note: applyConfig method removed since we eliminated ResolvedTool
+  // The toolset system now works directly with DiscoveredTool objects
 
   /**
    * Validate current configuration
@@ -282,5 +188,242 @@ export class ToolsetManager {
   clearConfig(): void {
     this.currentConfig = undefined;
     this.configPath = undefined;
+  }
+
+  /**
+   * Set discovery engine reference for tool validation
+   */
+  setDiscoveryEngine(discoveryEngine: IToolDiscoveryEngine): void {
+    this.discoveryEngine = discoveryEngine;
+    
+    // Listen for discovered tools changes and validate active toolset
+    (discoveryEngine as any).on('toolsChanged', (event: DiscoveredToolsChangedEvent) => {
+      this.handleDiscoveredToolsChanged(event);
+    });
+  }
+
+  /**
+   * Get currently active MCP tools based on loaded toolset
+   * Returns all discovered tools if no toolset is active
+   */
+  getMcpTools(): Array<{ name: string; description: string; inputSchema: any }> {
+    if (!this.discoveryEngine) {
+      return [];
+    }
+
+    const discoveredTools = this.discoveryEngine.getAvailableTools(true);
+    
+    // If no toolset is active, return all tools with their namespaced names
+    if (!this.currentConfig || this.currentConfig.tools.length === 0) {
+      return discoveredTools.map(tool => ({
+        name: tool.namespacedName,
+        description: tool.tool.description || `Tool from ${tool.serverName} server`,
+        inputSchema: {
+          ...tool.tool.inputSchema,
+          type: "object" as const,
+        },
+      }));
+    }
+
+    // Filter tools based on active toolset
+    const filteredTools: DiscoveredTool[] = [];
+    
+    for (const toolRef of this.currentConfig.tools) {
+      const resolution = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
+      if (resolution?.exists && resolution.tool) {
+        filteredTools.push(resolution.tool);
+      }
+    }
+
+    // Convert to MCP tool format with flattened names for external exposure
+    return filteredTools.map(tool => ({
+      name: this.flattenToolName(tool.namespacedName),
+      description: tool.tool.description || `Tool from ${tool.serverName} server`,
+      inputSchema: {
+        ...tool.tool.inputSchema,
+        type: "object" as const,
+      },
+    }));
+  }
+
+  /**
+   * Get the original discovered tools that match the current toolset
+   * Used internally for routing
+   */
+  getActiveDiscoveredTools(): DiscoveredTool[] {
+    if (!this.discoveryEngine) {
+      return [];
+    }
+
+    const discoveredTools = this.discoveryEngine.getAvailableTools(true);
+    
+    // If no toolset is active, return all tools
+    if (!this.currentConfig || this.currentConfig.tools.length === 0) {
+      return discoveredTools;
+    }
+
+    // Filter tools based on active toolset
+    const filteredTools: DiscoveredTool[] = [];
+    
+    for (const toolRef of this.currentConfig.tools) {
+      const resolution = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
+      if (resolution?.exists && resolution.tool) {
+        filteredTools.push(resolution.tool);
+      }
+    }
+
+    return filteredTools;
+  }
+
+  /**
+   * Flatten tool name for external exposure (git.status → git_status)
+   */
+  private flattenToolName(namespacedName: string): string {
+    return namespacedName.replace(/\./g, '_');
+  }
+
+  /**
+   * Get original namespaced name from flattened name (git_status → git.status)
+   */
+  getOriginalToolName(flattenedName: string): string | null {
+    if (!this.discoveryEngine) {
+      return null;
+    }
+
+    const activeTools = this.getActiveDiscoveredTools();
+    
+    for (const tool of activeTools) {
+      if (this.flattenToolName(tool.namespacedName) === flattenedName) {
+        return tool.namespacedName;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Check if toolset is currently active
+   */
+  hasActiveToolset(): boolean {
+    return this.currentConfig !== undefined && this.currentConfig.tools.length > 0;
+  }
+
+  /**
+   * Get active toolset information
+   */
+  getActiveToolsetInfo(): { name: string; description?: string; toolCount: number; version?: string; createdAt?: Date } | null {
+    if (!this.currentConfig) {
+      return null;
+    }
+
+    return {
+      name: this.currentConfig.name,
+      description: this.currentConfig.description,
+      toolCount: this.currentConfig.tools.length,
+      version: this.currentConfig.version,
+      createdAt: this.currentConfig.createdAt,
+    };
+  }
+
+  /**
+   * Equip a toolset by loading it from storage
+   */
+  async equipToolset(toolsetName: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Import the function here to avoid circular imports
+      const { loadStoredToolsets } = await import("./mcp-tools");
+      
+      const stored = await loadStoredToolsets();
+      const toolsetConfig = stored[toolsetName];
+      
+      if (!toolsetConfig) {
+        return { success: false, error: `Toolset "${toolsetName}" not found` };
+      }
+
+      const validation = this.setConfig(toolsetConfig);
+      if (!validation.valid) {
+        return { success: false, error: `Invalid toolset: ${validation.errors.join(", ")}` };
+      }
+
+      // Event is already emitted by setConfig()
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: `Failed to load toolset: ${error instanceof Error ? error.message : String(error)}` };
+    }
+  }
+
+  /**
+   * Unequip the current toolset
+   */
+  unequipToolset(): void {
+    const previousConfig = this.currentConfig;
+    this.currentConfig = undefined;
+    this.configPath = undefined;
+    
+    // Emit toolset change event
+    if (previousConfig) {
+      const event: ToolsetChangeEvent = {
+        previousToolset: previousConfig,
+        newToolset: null,
+        changeType: 'unequipped',
+        timestamp: new Date()
+      };
+      this.emit('toolsetChanged', event);
+    }
+  }
+
+  /**
+   * Get the current active toolset config (if any)
+   */
+  getActiveToolset(): ToolsetConfig | null {
+    return this.currentConfig || null;
+  }
+
+  /**
+   * Handle discovered tools changes and validate active toolset
+   */
+  private handleDiscoveredToolsChanged(event: DiscoveredToolsChangedEvent): void {
+    // Only validate if we have an active toolset
+    if (!this.currentConfig || !this.discoveryEngine) {
+      return;
+    }
+
+    // Check if any of our toolset's tools are affected by this server change
+    const affectedTools: string[] = [];
+
+    for (const toolRef of this.currentConfig.tools) {
+      const resolution = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
+      
+      // Check if this tool belongs to the server that changed
+      if (resolution?.tool?.serverName === event.serverName) {
+        // Check if this specific tool was removed or changed
+        const wasRemoved = event.changes.some(change => 
+          change.changeType === 'removed' && 
+          change.tool.namespacedName === resolution.tool!.namespacedName
+        );
+        
+        const wasChanged = event.changes.some(change => 
+          change.changeType === 'updated' && 
+          change.tool.namespacedName === resolution.tool!.namespacedName
+        );
+
+        if (wasRemoved || wasChanged) {
+          affectedTools.push(resolution.tool.namespacedName);
+        }
+      }
+    }
+
+    // If any tools from our toolset were affected, emit a toolset change event
+    // This will trigger the server to refresh its tool list
+    if (affectedTools.length > 0) {
+      const changeEvent: ToolsetChangeEvent = {
+        previousToolset: this.currentConfig,
+        newToolset: this.currentConfig, // Same toolset, but tools have changed
+        changeType: 'updated',
+        timestamp: new Date()
+      };
+      
+      this.emit('toolsetChanged', changeEvent);
+    }
   }
 }

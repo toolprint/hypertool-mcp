@@ -41,7 +41,7 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
 
   resolveToolReference(ref: { namespacedName?: string; refId?: string }, _options?: { allowStaleRefs?: boolean }) {
     const tool = this.tools.find(t => 
-      t.namespacedName === ref.namespacedName || t.fullHash === ref.refId
+      t.namespacedName === ref.namespacedName || t.toolHash === ref.refId
     );
     
     return {
@@ -50,7 +50,7 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
       serverName: tool?.serverName,
       serverStatus: undefined,
       namespacedNameMatch: !!tool && tool.namespacedName === ref.namespacedName,
-      refIdMatch: !!tool && tool.fullHash === ref.refId,
+      refIdMatch: !!tool && tool.toolHash === ref.refId,
       warnings: [],
       errors: []
     };
@@ -185,13 +185,15 @@ describe("RequestRouter", () => {
       name: "status",
       serverName: "git",
       namespacedName: "git.status",
-      schema: { type: "object", properties: {} },
-      description: "Git status tool",
+      tool: {
+        name: "status",
+        description: "Git status tool",
+        inputSchema: { type: "object", properties: {} },
+      },
       discoveredAt: new Date(),
       lastUpdated: new Date(),
       serverStatus: "connected",
-      structureHash: "hash1",
-      fullHash: "fullhash1",
+      toolHash: "hash1",
     };
 
     beforeEach(() => {
@@ -250,17 +252,19 @@ describe("RequestRouter", () => {
       name: "status",
       serverName: "git",
       namespacedName: "git.status",
-      schema: {
-        type: "object",
-        properties: { path: { type: "string" } },
-        required: ["path"],
+      tool: {
+        name: "status",
+        description: "Git status tool",
+        inputSchema: {
+          type: "object",
+          properties: { path: { type: "string" } },
+          required: ["path"],
+        },
       },
-      description: "Git status tool",
       discoveredAt: new Date(),
       lastUpdated: new Date(),
       serverStatus: "connected",
-      structureHash: "hash1",
-      fullHash: "fullhash1",
+      toolHash: "hash1",
     };
 
     beforeEach(async () => {
@@ -336,20 +340,22 @@ describe("RequestRouter", () => {
       name: "commit",
       serverName: "git",
       namespacedName: "git.commit",
-      schema: {
-        type: "object",
-        properties: {
-          message: { type: "string" },
-          files: { type: "array" },
+      tool: {
+        name: "commit",
+        description: "Git commit tool",
+        inputSchema: {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            files: { type: "array" },
+          },
+          required: ["message"],
         },
-        required: ["message"],
       },
-      description: "Git commit tool",
       discoveredAt: new Date(),
       lastUpdated: new Date(),
       serverStatus: "connected",
-      structureHash: "hash1",
-      fullHash: "fullhash1",
+      toolHash: "hash1",
     };
 
     it("should validate required parameters", async () => {
@@ -375,7 +381,10 @@ describe("RequestRouter", () => {
     it("should handle empty arguments", async () => {
       const toolWithoutRequired: DiscoveredTool = {
         ...mockTool,
-        schema: { type: "object", properties: {} }, // No required fields
+        tool: {
+          ...mockTool.tool,
+          inputSchema: { type: "object", properties: {} }, // No required fields
+        },
       };
 
       const request: ToolCallRequest = {
@@ -401,13 +410,15 @@ describe("RequestRouter", () => {
         name: "status",
         serverName: "git",
         namespacedName: "git.status",
-        schema: { type: "object", properties: {} },
-        description: "Git status tool",
+        tool: {
+          name: "status",
+          description: "Git status tool",
+          inputSchema: { type: "object", properties: {} },
+        },
         discoveredAt: new Date(),
         lastUpdated: new Date(),
         serverStatus: "connected",
-        structureHash: "hash1",
-        fullHash: "fullhash1",
+        toolHash: "hash1",
       };
 
       mockDiscovery.setMockTools([mockTool]);

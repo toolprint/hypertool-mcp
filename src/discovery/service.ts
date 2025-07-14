@@ -14,6 +14,7 @@ import {
   DiscoveryStats,
   MCPToolDefinition,
   DEFAULT_DISCOVERY_CONFIG,
+  DiscoveredToolsChangedEvent,
 } from "./types";
 import { ToolCache } from "./cache";
 import { ToolLookupManager, SearchQuery, SearchResult } from "./lookup";
@@ -456,12 +457,14 @@ export class ToolDiscoveryEngine
       });
 
       // Emit change event
-      this.emit("toolsChanged", {
+      const event: DiscoveredToolsChangedEvent = {
         serverName,
         changes,
         summary,
         newTools,
-      });
+        timestamp: new Date(),
+      };
+      this.emit("toolsChanged", event);
     } catch (error) {
       console.error(
         `Failed to handle tools list changed for server "${serverName}":`,
@@ -650,7 +653,7 @@ export class ToolDiscoveryEngine
     
     for (const tool of allTools) {
       toolByNamespacedName.set(tool.namespacedName, tool);
-      toolByRefId.set(tool.fullHash, tool);
+      toolByRefId.set(tool.toolHash, tool);
     }
     
     // Attempt resolution by both methods (refId is more reliable)
@@ -672,7 +675,7 @@ export class ToolDiscoveryEngine
     
     if (toolByName && toolByRef) {
       // Both identifiers found tools - check if they're the same
-      if (toolByName.namespacedName === toolByRef.namespacedName && toolByName.fullHash === toolByRef.fullHash) {
+      if (toolByName.namespacedName === toolByRef.namespacedName && toolByName.toolHash === toolByRef.toolHash) {
         // Perfect match - both identifiers point to same tool
         return {
           exists: true,
@@ -764,9 +767,9 @@ export class ToolDiscoveryEngine
     
     if (toolByName) {
       // Found by namespacedName but not by refId (fallback - less reliable)
-      const refIdMatch = ref.refId ? toolByName.fullHash === ref.refId : true;
+      const refIdMatch = ref.refId ? toolByName.toolHash === ref.refId : true;
       if (!refIdMatch) {
-        const mismatchMsg = `Tool refId mismatch: '${ref.namespacedName}' found but refId changed from '${ref.refId}' to '${toolByName.fullHash}' (tool schema may have been updated)`;
+        const mismatchMsg = `Tool refId mismatch: '${ref.namespacedName}' found but refId changed from '${ref.refId}' to '${toolByName.toolHash}' (tool schema may have been updated)`;
         
         if (allowStaleRefs) {
           // INSECURE mode: Allow refId mismatch
