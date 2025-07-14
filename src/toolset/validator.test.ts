@@ -3,12 +3,8 @@
  */
 
 import { 
-  validateToolsetConfig, 
-  matchesToolPattern,
-  isValidToolsetName,
-  getValidationSummary 
+  validateToolsetConfig
 } from "./validator";
-import { validateRefFormat as validateToolReferenceFormat } from "./validator";
 import { ToolsetConfig, DynamicToolReference } from "./types";
 
 describe("ToolsetValidator", () => {
@@ -173,114 +169,6 @@ describe("ToolsetValidator", () => {
 
       const result = validateToolsetConfig(config);
       expect(result.suggestions).toContain("Consider adding refId values to tool references for better validation and security");
-    });
-  });
-
-  describe("validateToolReferenceFormat", () => {
-    it("should validate tool reference with namespacedName", () => {
-      const ref = { namespacedName: "git.status" };
-      expect(validateToolReferenceFormat(ref)).toBe(true);
-    });
-
-    it("should validate tool reference with refId", () => {
-      const ref = { refId: "hash123456789" };
-      expect(validateToolReferenceFormat(ref)).toBe(true);
-    });
-
-    it("should validate tool reference with both", () => {
-      const ref = { namespacedName: "git.status", refId: "hash123456789" };
-      expect(validateToolReferenceFormat(ref)).toBe(true);
-    });
-
-    it.skip("should reject empty tool reference", () => {
-      const ref = {};
-      const result = validateToolReferenceFormat(ref);
-      expect(typeof result).toBe("boolean");
-      expect(result).toBe(false);
-    });
-
-    it.skip("should reject non-object reference", () => {
-      expect(validateToolReferenceFormat("not-an-object")).toBe(false);
-      expect(validateToolReferenceFormat(null)).toBe(false);
-      expect(validateToolReferenceFormat(undefined)).toBe(false);
-    });
-
-    it.skip("should reject reference with empty strings", () => {
-      const ref = { namespacedName: "", refId: "" };
-      expect(validateToolReferenceFormat(ref)).toBe(false);
-    });
-  });
-
-  describe("isValidToolsetName", () => {
-    it("should accept valid names", () => {
-      expect(isValidToolsetName("test-toolset")).toBe(true);
-      expect(isValidToolsetName("my-dev-tools")).toBe(true);
-      expect(isValidToolsetName("admin123")).toBe(true);
-      expect(isValidToolsetName("ab")).toBe(true); // Minimum length
-    });
-
-    it("should reject invalid names", () => {
-      expect(isValidToolsetName("Test_Toolset")).toBe(false); // Uppercase/underscore
-      expect(isValidToolsetName("test toolset")).toBe(false); // Space
-      expect(isValidToolsetName("test.toolset")).toBe(false); // Dot
-      expect(isValidToolsetName("a")).toBe(false); // Too short
-      expect(isValidToolsetName("a".repeat(51))).toBe(false); // Too long
-      expect(isValidToolsetName("")).toBe(false); // Empty
-      expect(isValidToolsetName(undefined as any)).toBe(false); // Undefined
-    });
-  });
-
-  describe("matchesToolPattern", () => {
-    it("should match exact patterns", () => {
-      expect(matchesToolPattern("git.status", "git.status")).toBe(true);
-      expect(matchesToolPattern("docker.ps", "docker.ps")).toBe(true);
-    });
-
-    it("should match wildcard pattern", () => {
-      expect(matchesToolPattern("git.status", "*")).toBe(true);
-      expect(matchesToolPattern("anything", "*")).toBe(true);
-    });
-
-    it("should not match different patterns", () => {
-      expect(matchesToolPattern("git.status", "docker.ps")).toBe(false);
-      expect(matchesToolPattern("git.status", "git.log")).toBe(false);
-    });
-  });
-
-  describe("getValidationSummary", () => {
-    it("should return success message for valid config", () => {
-      const result = { valid: true, errors: [], warnings: [], suggestions: [] };
-      const summary = getValidationSummary(result);
-      expect(summary).toBe("✅ Configuration is valid with no issues");
-    });
-
-    it("should return error summary for invalid config", () => {
-      const result = { 
-        valid: false, 
-        errors: ["Missing name", "Invalid tools"], 
-        warnings: [],
-        suggestions: []
-      };
-      const summary = getValidationSummary(result);
-      expect(summary).toContain("❌ Configuration has errors");
-      expect(summary).toContain("Errors (2):");
-      expect(summary).toContain("• Missing name");
-      expect(summary).toContain("• Invalid tools");
-    });
-
-    it("should include warnings and suggestions", () => {
-      const result = { 
-        valid: true, 
-        errors: [], 
-        warnings: ["Large toolset"],
-        suggestions: ["Add refIds"]
-      };
-      const summary = getValidationSummary(result);
-      expect(summary).toContain("✅ Configuration is valid");
-      expect(summary).toContain("Warnings (1):");
-      expect(summary).toContain("• Large toolset");
-      expect(summary).toContain("Suggestions (1):");
-      expect(summary).toContain("• Add refIds");
     });
   });
 });

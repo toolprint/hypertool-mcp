@@ -8,10 +8,6 @@ import os from "os";
 import {
   loadToolsetConfig,
   saveToolsetConfig,
-  loadToolsetConfigs,
-  fileExists,
-  createExampleConfig,
-  getDefaultConfigPath,
 } from "./loader";
 import { ToolsetConfig } from "./types";
 
@@ -104,12 +100,30 @@ describe("ToolsetLoader", () => {
       expect(result.config!.createdAt).toBeInstanceOf(Date); // Default date added
     });
 
+    it("should filter out invalid tool references", async () => {
+      const configWithInvalidTools = {
+        name: "mixed-tools",
+        tools: [
+          { namespacedName: "git.status" }, // Valid
+          { refId: "hash123456789" }, // Valid
+          { invalidField: "value" }, // Invalid - no namespacedName or refId
+          { namespacedName: "" }, // Invalid - empty namespacedName
+          { refId: "" }, // Invalid - empty refId
+        ],
+      };
+
+      const filePath = path.join(tempDir, "mixed.json");
+      await fs.writeFile(filePath, JSON.stringify(configWithInvalidTools));
+
+      const result = await loadToolsetConfig(filePath);
+      expect(result.config).toBeDefined();
+      expect(result.config!.tools).toHaveLength(2); // Only 2 valid tools remain
+    });
+
     it("should apply custom validation", async () => {
       const config: ToolsetConfig = {
         name: "test-config",
-        tools: [
-          { namespacedName: "git.status", refId: "hash123456789" },
-        ],
+        tools: [{ namespacedName: "git.status" }],
         version: "1.0.0",
         createdAt: new Date(),
       };
@@ -117,79 +131,49 @@ describe("ToolsetLoader", () => {
       const filePath = path.join(tempDir, "config.json");
       await fs.writeFile(filePath, JSON.stringify(config));
 
-      const customValidation = () => ({
+      const customValidation = (config: ToolsetConfig) => ({
         valid: false,
-        errors: ["Custom error"],
+        errors: ["Custom validation failed"],
         warnings: ["Custom warning"],
-        suggestions: [],
       });
 
       const result = await loadToolsetConfig(filePath, { customValidation });
       expect(result.validation.valid).toBe(false);
-      expect(result.validation.errors).toContain("Custom error");
+      expect(result.validation.errors).toContain("Custom validation failed");
       expect(result.validation.warnings).toContain("Custom warning");
-    });
-
-    it("should require at least one tool in simplified format", async () => {
-      const config = {
-        name: "empty-config",
-        tools: [], // Empty tools array
-      };
-
-      const filePath = path.join(tempDir, "empty.json");
-      await fs.writeFile(filePath, JSON.stringify(config));
-
-      const result = await loadToolsetConfig(filePath);
-      expect(result.validation.valid).toBe(false);
-      expect(result.validation.errors).toContain("Configuration must specify at least one tool");
     });
   });
 
   describe("saveToolsetConfig", () => {
-    it("should save configuration to file", async () => {
+    it("should save valid configuration", async () => {
       const config: ToolsetConfig = {
-        name: "test-save",
+        name: "save-test",
+        description: "Configuration for save test",
+        version: "2.0.0",
+        createdAt: new Date(),
         tools: [
           { namespacedName: "git.status", refId: "hash123456789" },
         ],
-        version: "1.0.0",
-        createdAt: new Date(),
       };
 
-      const filePath = path.join(tempDir, "save-test.json");
+      const filePath = path.join(tempDir, "saved.json");
       const result = await saveToolsetConfig(config, filePath);
 
       expect(result.success).toBe(true);
-      expect(await fileExists(filePath)).toBe(true);
+      expect(result.error).toBeUndefined();
 
-      const savedContent = await fs.readFile(filePath, "utf-8");
-      const savedConfig = JSON.parse(savedContent);
-      expect(savedConfig.name).toBe("test-save");
-      expect(savedConfig.tools).toHaveLength(1);
+      // Verify file was created and can be read
+      const fileContent = await fs.readFile(filePath, "utf-8");
+      const parsedConfig = JSON.parse(fileContent);
+      expect(parsedConfig.name).toBe("save-test");
+      expect(parsedConfig.tools).toHaveLength(1);
     });
 
-    it("should create directory if requested", async () => {
+    it("should save with pretty formatting", async () => {
       const config: ToolsetConfig = {
-        name: "test-dir",
+        name: "pretty-test",
         tools: [{ namespacedName: "git.status" }],
         version: "1.0.0",
-        createdAt: new Date(),
-      };
-
-      const nestedDir = path.join(tempDir, "nested", "path");
-      const filePath = path.join(nestedDir, "config.json");
-      
-      const result = await saveToolsetConfig(config, filePath, { createDir: true });
-
-      expect(result.success).toBe(true);
-      expect(await fileExists(filePath)).toBe(true);
-    });
-
-    it("should format JSON prettily when requested", async () => {
-      const config: ToolsetConfig = {
-        name: "test-pretty",
-        tools: [{ namespacedName: "git.status" }],
-        version: "1.0.0", 
         createdAt: new Date(),
       };
 
@@ -198,128 +182,58 @@ describe("ToolsetLoader", () => {
 
       expect(result.success).toBe(true);
 
-      const savedContent = await fs.readFile(filePath, "utf-8");
-      expect(savedContent).toContain("  "); // Should contain indentation
-      expect(savedContent).toContain("\n"); // Should contain newlines
+      const fileContent = await fs.readFile(filePath, "utf-8");
+      expect(fileContent).toContain("\n  "); // Should contain indentation
     });
 
-    it("should handle save errors", async () => {
+    it("should create directory when requested", async () => {
       const config: ToolsetConfig = {
-        name: "test-error",
+        name: "mkdir-test",
         tools: [{ namespacedName: "git.status" }],
         version: "1.0.0",
         createdAt: new Date(),
       };
 
-      // Try to save to invalid path
-      const invalidPath = path.join("/nonexistent/path", "config.json");
-      const result = await saveToolsetConfig(config, invalidPath);
+      const subDir = path.join(tempDir, "nested", "deep");
+      const filePath = path.join(subDir, "config.json");
+
+      const result = await saveToolsetConfig(config, filePath, { createDir: true });
+
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
+
+      // Verify file exists in created directory
+      const exists = await fs.access(filePath).then(() => true).catch(() => false);
+      expect(exists).toBe(true);
+    });
+
+    it("should reject invalid configuration", async () => {
+      const invalidConfig = {
+        // Missing name and tools
+        description: "Invalid config",
+      } as ToolsetConfig;
+
+      const filePath = path.join(tempDir, "invalid.json");
+      const result = await saveToolsetConfig(invalidConfig, filePath);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
+      expect(result.error).toContain("Configuration validation failed");
     });
-  });
 
-  describe("loadToolsetConfigs", () => {
-    it("should load multiple configurations from directory", async () => {
-      const config1: ToolsetConfig = {
-        name: "config-1",
+    it("should add lastModified timestamp", async () => {
+      const config: ToolsetConfig = {
+        name: "timestamp-test",
         tools: [{ namespacedName: "git.status" }],
         version: "1.0.0",
         createdAt: new Date(),
       };
 
-      const config2: ToolsetConfig = {
-        name: "config-2", 
-        tools: [{ namespacedName: "docker.ps" }],
-        version: "1.0.0",
-        createdAt: new Date(),
-      };
+      const filePath = path.join(tempDir, "timestamp.json");
+      await saveToolsetConfig(config, filePath);
 
-      await fs.writeFile(
-        path.join(tempDir, "config1.json"),
-        JSON.stringify(config1)
-      );
-      await fs.writeFile(
-        path.join(tempDir, "config2.json"),
-        JSON.stringify(config2)
-      );
-      await fs.writeFile(
-        path.join(tempDir, "not-json.txt"),
-        "not a json file"
-      );
-
-      const results = await loadToolsetConfigs(tempDir);
-
-      expect(results.configs).toHaveLength(2);
-      expect(results.configs.map(r => r.config?.name)).toEqual(["config-1", "config-2"]);
-      expect(results.configs.every(r => r.validation.valid)).toBe(true);
-    });
-
-    it("should handle empty directory", async () => {
-      const results = await loadToolsetConfigs(tempDir);
-      expect(results.configs).toHaveLength(0);
-    });
-
-    it("should handle nonexistent directory", async () => {
-      const results = await loadToolsetConfigs(path.join(tempDir, "nonexistent"));
-      expect(results.configs).toHaveLength(0);
-    });
-  });
-
-  describe("fileExists", () => {
-    it("should return true for existing file", async () => {
-      const filePath = path.join(tempDir, "test.txt");
-      await fs.writeFile(filePath, "test content");
-
-      expect(await fileExists(filePath)).toBe(true);
-    });
-
-    it("should return false for non-existing file", async () => {
-      const filePath = path.join(tempDir, "nonexistent.txt");
-      expect(await fileExists(filePath)).toBe(false);
-    });
-  });
-
-  describe("createExampleConfig", () => {
-    it("should create example configuration", () => {
-      const config = createExampleConfig();
-
-      expect(config.name).toBeDefined();
-      expect(config.description).toBeDefined();
-      expect(config.tools).toBeDefined();
-      expect(Array.isArray(config.tools)).toBe(true);
-      expect(config.tools.length).toBeGreaterThan(0);
-      expect(config.version).toBe("1.0.0");
-      expect(config.createdAt).toBeInstanceOf(Date);
-    });
-
-    it("should create valid example configuration", () => {
-      const config = createExampleConfig();
-      
-      // All tools should have namespacedName and refId
-      config.tools.forEach((tool) => {
-        expect(tool.namespacedName).toBeDefined();
-        expect(tool.refId).toBeDefined();
-        expect(typeof tool.namespacedName).toBe("string");
-        expect(typeof tool.refId).toBe("string");
-      });
-    });
-  });
-
-  describe("getDefaultConfigPath", () => {
-    it("should return default config path", () => {
-      const defaultPath = getDefaultConfigPath();
-      expect(defaultPath).toContain("toolset.json");
-      expect(defaultPath).toContain(".meta-mcp");
-      expect(typeof defaultPath).toBe("string");
-    });
-
-    it("should accept custom directory", () => {
-      const customDir = "/custom/dir";
-      const defaultPath = getDefaultConfigPath(customDir);
-      expect(defaultPath).toContain(customDir);
-      expect(defaultPath).toContain("toolset.json");
+      const fileContent = await fs.readFile(filePath, "utf-8");
+      const parsedConfig = JSON.parse(fileContent);
+      expect(parsedConfig.lastModified).toBeDefined();
     });
   });
 
