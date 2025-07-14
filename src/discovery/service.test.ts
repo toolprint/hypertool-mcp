@@ -176,6 +176,7 @@ class MockConnection extends EventEmitter implements Connection {
 // Mock client that implements the new SDK-based interface
 class MockClient extends EventEmitter {
   private tools: Tool[] = [];
+  private notificationHandlers = new Map<string, Function>();
   
   constructor(tools: Tool[] = []) {
     super();
@@ -191,6 +192,9 @@ class MockClient extends EventEmitter {
   get sdkClient() {
     return {
       listTools: () => this.listTools(),
+      setNotificationHandler: (schema: any, handler: Function) => {
+        this.notificationHandlers.set(schema.shape.method.value || "tools/list_changed", handler);
+      }
     };
   }
 
@@ -199,8 +203,14 @@ class MockClient extends EventEmitter {
   }
 
   triggerToolsChanged() {
-    // Emit a change event that the discovery engine can listen to
-    this.emit("toolsChanged");
+    // Simulate receiving a tool list changed notification
+    const handler = this.notificationHandlers.get("notifications/tools/list_changed");
+    if (handler) {
+      handler({
+        method: "notifications/tools/list_changed",
+        params: {}
+      });
+    }
   }
 }
 

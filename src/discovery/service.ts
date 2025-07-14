@@ -4,7 +4,7 @@
 
 import { EventEmitter } from "events";
 import { IConnectionManager } from "../connection/types";
-import { Tool, ToolListChangedNotification } from "@modelcontextprotocol/sdk/types.js";
+import { Tool, ToolListChangedNotification, ToolListChangedNotificationSchema } from "@modelcontextprotocol/sdk/types.js";
 import {
   IToolDiscoveryEngine,
   DiscoveryConfig,
@@ -458,9 +458,17 @@ export class ToolDiscoveryEngine
         // Set up tool list change notification handler using SDK client
         const sdkClient = connection.client.sdkClient;
         if (sdkClient) {
-          // SDK should handle notifications through its notification system
-          // For now, we'll rely on periodic discovery
-          // TODO: Implement proper notification handling when SDK exposes notification API
+          // Register notification handler for tool list changes
+          sdkClient.setNotificationHandler(
+            ToolListChangedNotificationSchema,
+            async (_notification: ToolListChangedNotification) => {
+              try {
+                await this.handleToolsListChanged(event.serverName);
+              } catch (error) {
+                console.error(`Failed to handle tools list changed for ${event.serverName}:`, error);
+              }
+            }
+          );
         }
       }
 
