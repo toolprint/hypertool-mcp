@@ -105,7 +105,7 @@ export async function updateMcpConfigPath(configPath: string): Promise<void> {
 }
 
 /**
- * Get stored toolsets (legacy compatibility)
+ * Get stored toolsets
  */
 export async function loadStoredToolsets(): Promise<Record<string, ToolsetConfig>> {
   const preferences = await loadUserPreferences();
@@ -113,7 +113,7 @@ export async function loadStoredToolsets(): Promise<Record<string, ToolsetConfig
 }
 
 /**
- * Save toolsets (legacy compatibility)
+ * Save toolsets
  */
 export async function saveStoredToolsets(toolsets: Record<string, ToolsetConfig>): Promise<void> {
   const preferences = await loadUserPreferences();
@@ -132,46 +132,3 @@ export function getConfigPaths() {
   };
 }
 
-/**
- * Migrate from old toolsets.json to new preferences.json
- */
-export async function migrateFromLegacyConfig(): Promise<boolean> {
-  const legacyDir = path.join(homedir(), ".toolprint-meta-mcp");
-  const legacyFile = path.join(legacyDir, "toolsets.json");
-  
-  try {
-    // Check if legacy file exists
-    const legacyContent = await fs.readFile(legacyFile, "utf-8");
-    const legacyToolsets = JSON.parse(legacyContent) as Record<string, ToolsetConfig>;
-    
-    // Load current preferences (will create defaults if none exist)
-    const preferences = await loadUserPreferences();
-    
-    // Merge legacy toolsets into new structure
-    preferences.toolsets = {
-      ...preferences.toolsets,
-      ...legacyToolsets,
-    };
-    
-    // Save updated preferences
-    await saveUserPreferences(preferences);
-    
-    // Remove legacy file
-    await fs.unlink(legacyFile);
-    
-    // Try to remove legacy directory if empty
-    try {
-      await fs.rmdir(legacyDir);
-    } catch {
-      // Directory not empty or other error, ignore
-    }
-    
-    return true;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      // Legacy file doesn't exist, no migration needed
-      return false;
-    }
-    throw error;
-  }
-}

@@ -13,7 +13,6 @@ import {
 import { 
   loadStoredToolsets as loadToolsetsFromPreferences,
   saveStoredToolsets as saveToolsetsToPreferences,
-  migrateFromLegacyConfig,
   getConfigPaths
 } from "../config/preferences";
 
@@ -21,9 +20,6 @@ import {
  * Load stored toolsets from user preferences
  */
 export async function loadStoredToolsets(): Promise<Record<string, ToolsetConfig>> {
-  // Attempt migration from legacy config
-  await migrateFromLegacyConfig();
-  
   return await loadToolsetsFromPreferences();
 }
 
