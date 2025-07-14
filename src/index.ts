@@ -1,5 +1,6 @@
+#!/usr/bin/env node
 /**
- * Meta-MCP server main entry point
+ * HyperTool MCP server main entry point
  */
 
 import { Command } from 'commander';
@@ -7,6 +8,7 @@ import chalk from 'chalk';
 import { MetaMCPServerFactory } from "./server";
 import { TransportConfig } from "./server/types";
 import { RuntimeOptions, DEFAULT_RUNTIME_OPTIONS, RuntimeTransportType } from "./types/runtime";
+import { discoverMcpConfig } from "./config/discovery";
 
 /**
  * Parse CLI arguments and return runtime options
@@ -15,8 +17,8 @@ function parseCliArguments(): RuntimeOptions {
   const program = new Command();
   
   program
-    .name('meta-mcp')
-    .description(chalk.blue('Meta-MCP proxy server for routing requests between clients and multiple underlying MCP servers'))
+    .name('hypertool-mcp')
+    .description(chalk.blue('HyperTool MCP proxy server for routing requests between clients and multiple underlying MCP servers'))
     .version('1.0.0')
     .option(
       '--transport <type>', 
@@ -45,6 +47,10 @@ function parseCliArguments(): RuntimeOptions {
     .option(
       '--use-toolset <name>', 
       chalk.cyan('Toolset name to load on startup')
+    )
+    .option(
+      '--mcp-config <path>', 
+      chalk.cyan('Path to MCP configuration file') + ' (.mcp.json)'
     );
 
   program.parse();
@@ -78,16 +84,45 @@ function parseCliArguments(): RuntimeOptions {
     enableCallTool: options.enableCallTool || false,
     insecure: options.insecure || false,
     useToolset: options.useToolset,
+    configPath: options.mcpConfig,
   };
 }
 
 /**
- * Main entry point for Meta-MCP server
+ * Main entry point for HyperTool MCP server
  */
 async function main(): Promise<void> {
   try {
     // Parse CLI arguments
     const runtimeOptions = parseCliArguments();
+
+    // Discover MCP configuration
+    const configResult = await discoverMcpConfig(
+      runtimeOptions.configPath, 
+      true // Update preference when CLI path is provided
+    );
+
+    // Handle configuration discovery results
+    if (!configResult.configPath) {
+      console.error(chalk.red("❌ No MCP configuration found"));
+      console.error("");
+      console.error(chalk.yellow(configResult.errorMessage || "Unknown configuration error"));
+      console.error("");
+      console.error(chalk.cyan("💡 Use --mcp-config <path> to specify a configuration file"));
+      process.exit(1);
+    }
+
+    // Display config source info in debug mode
+    if (runtimeOptions.debug) {
+      const sourceText = {
+        cli: "command line argument",
+        preference: "user preference", 
+        discovered: "automatic discovery",
+        none: "unknown source"
+      }[configResult.source];
+      
+      console.log(chalk.green(`✅ Found MCP config via ${sourceText}: ${configResult.configPath}`));
+    }
 
     // Create transport config from runtime options
     const transportConfig: TransportConfig = {
@@ -104,7 +139,7 @@ async function main(): Promise<void> {
     // Setup graceful shutdown
     const shutdown = async () => {
       if (runtimeOptions.debug) {
-        console.log(chalk.yellow("🛑 Shutting down Meta-MCP server..."));
+        console.log(chalk.yellow("🛑 Shutting down HyperTool MCP server..."));
       }
       await server.stop();
       process.exit(0);
@@ -118,13 +153,14 @@ async function main(): Promise<void> {
       transport: transportConfig,
       debug: runtimeOptions.debug,
       enableCallTool: runtimeOptions.enableCallTool,
+      configPath: configResult.configPath,
     });
 
     await server.start(initOptions);
 
     // Display startup messages with colored output
     if (runtimeOptions.debug) {
-      console.log(chalk.green(`✅ Meta-MCP server running on ${runtimeOptions.transport} transport`));
+      console.log(chalk.green(`✅ HyperTool MCP server running on ${runtimeOptions.transport} transport`));
       if (runtimeOptions.transport === "http") {
         console.log(chalk.blue(`🌐 HTTP server listening on http://localhost:${runtimeOptions.port || 3000}`));
       }
@@ -141,7 +177,7 @@ async function main(): Promise<void> {
       process.stdin.resume();
     }
   } catch (error) {
-    console.error(chalk.red("❌ Failed to start Meta-MCP server:"), error);
+    console.error(chalk.red("❌ Failed to start HyperTool MCP server:"), error);
     process.exit(1);
   }
 }

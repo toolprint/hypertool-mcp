@@ -2,9 +2,6 @@
  * MCP tools for toolset configuration management
  */
 
-import { promises as fs } from "fs";
-import { homedir } from "os";
-import path from "path";
 import { DiscoveredTool } from "../discovery/types";
 import { 
   ToolsetManager, 
@@ -13,42 +10,28 @@ import {
   DynamicToolReference,
   resolveToolReference
 } from "./index";
-
-// Configuration directory for storing toolsets
-const TOOLSET_CONFIG_DIR = path.join(homedir(), ".toolprint-meta-mcp");
-const TOOLSETS_FILE = path.join(TOOLSET_CONFIG_DIR, "toolsets.json");
-
-/**
- * Ensure config directory exists
- */
-async function ensureConfigDir(): Promise<void> {
-  try {
-    await fs.mkdir(TOOLSET_CONFIG_DIR, { recursive: true });
-  } catch {
-    // Directory might already exist, that's fine
-  }
-}
+import { 
+  loadStoredToolsets as loadToolsetsFromPreferences,
+  saveStoredToolsets as saveToolsetsToPreferences,
+  migrateFromLegacyConfig,
+  getConfigPaths
+} from "../config/preferences";
 
 /**
- * Load stored toolsets from config file
+ * Load stored toolsets from user preferences
  */
 export async function loadStoredToolsets(): Promise<Record<string, ToolsetConfig>> {
-  try {
-    await ensureConfigDir();
-    const content = await fs.readFile(TOOLSETS_FILE, "utf-8");
-    return JSON.parse(content);
-  } catch {
-    // File doesn't exist or is invalid, return empty object
-    return {};
-  }
+  // Attempt migration from legacy config
+  await migrateFromLegacyConfig();
+  
+  return await loadToolsetsFromPreferences();
 }
 
 /**
- * Save toolsets to config file
+ * Save toolsets to user preferences
  */
 async function saveStoredToolsets(toolsets: Record<string, ToolsetConfig>): Promise<void> {
-  await ensureConfigDir();
-  await fs.writeFile(TOOLSETS_FILE, JSON.stringify(toolsets, null, 2), "utf-8");
+  await saveToolsetsToPreferences(toolsets);
 }
 
 /**
@@ -390,7 +373,7 @@ export async function buildToolset(
     const result = {
       success: true,
       toolsetName: args.name,
-      location: TOOLSETS_FILE,
+      location: getConfigPaths().preferencesFile,
       configuration: {
         totalServers: Object.keys(toolsByServer).length,
         enabledServers: Object.keys(toolsByServer).length,
@@ -467,7 +450,7 @@ export async function listSavedToolsets(): Promise<{
 
     const result = {
       totalToolsets: names.length,
-      storageLocation: TOOLSETS_FILE,
+      storageLocation: getConfigPaths().preferencesFile,
       toolsets: names.sort().map(name => {
         const config = stored[name];
         

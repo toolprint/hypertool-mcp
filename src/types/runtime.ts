@@ -30,6 +30,9 @@ export interface RuntimeOptions {
   
   /** Toolset name to load on startup */
   useToolset?: string;
+  
+  /** Path to MCP configuration file */
+  configPath?: string;
 }
 
 /**
