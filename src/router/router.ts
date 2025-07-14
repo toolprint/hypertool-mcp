@@ -221,7 +221,7 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
     tool: DiscoveredTool
   ): Promise<boolean> {
     try {
-      const schema = tool.schema;
+      const schema = tool.tool.inputSchema;
       const args = request.arguments || {};
 
       // Basic validation - check required fields

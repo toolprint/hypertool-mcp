@@ -1,8 +1,9 @@
 /**
- * Hashing utilities for tool change detection
+ * Hashing utilities for tool identity and change detection
  */
 
 import { createHash } from "crypto";
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { DiscoveredTool, MCPToolDefinition, ToolChangeInfo } from "./types";
 
 /**
@@ -11,23 +12,14 @@ import { DiscoveredTool, MCPToolDefinition, ToolChangeInfo } from "./types";
 const HASH_ALGORITHM = "sha256";
 
 /**
- * Hashable tool structure (excludes metadata like timestamps)
+ * Tool hash data - only includes fields that affect tool identity/functionality
  */
-interface HashableToolStructure {
+interface ToolHashData {
   name: string;
   serverName: string;
-  schema: any;
-  description?: string;
-}
-
-/**
- * Hashable tool metadata (includes all fields for full hash)
- */
-interface HashableToolMetadata extends HashableToolStructure {
-  namespacedName: string;
-  discoveredAt: string;
-  lastUpdated: string;
-  serverStatus: string;
+  inputSchema: any;
+  outputSchema?: any;
+  annotations?: Record<string, any>;
 }
 
 /**
@@ -35,41 +27,25 @@ interface HashableToolMetadata extends HashableToolStructure {
  */
 export class ToolHashUtils {
   /**
-   * Calculate structure hash for a tool (excludes timestamps and metadata)
+   * Calculate tool hash for identity and change detection
    */
-  static calculateStructureHash(
+  static calculateToolHash(
     tool: DiscoveredTool | MCPToolDefinition,
     serverName?: string
   ): string {
-    const hashableStructure: HashableToolStructure = {
-      name: tool.name,
+    const toolDef = "tool" in tool ? tool.tool : tool;
+    
+    const hashData: ToolHashData = {
+      name: (toolDef as any).name,
       serverName: serverName || (tool as DiscoveredTool).serverName,
-      schema:
-        "inputSchema" in tool
-          ? tool.inputSchema
-          : (tool as DiscoveredTool).schema,
-      description: tool.description,
+      inputSchema: (toolDef as any).inputSchema,
+      outputSchema: (toolDef as any).outputSchema,
+      annotations: (toolDef as any).annotations,
     };
+    
 
-    return this.hashObject(hashableStructure);
-  }
 
-  /**
-   * Calculate full hash for a tool (includes all metadata)
-   */
-  static calculateFullHash(tool: DiscoveredTool): string {
-    const hashableMetadata: HashableToolMetadata = {
-      name: tool.name,
-      serverName: tool.serverName,
-      namespacedName: tool.namespacedName,
-      schema: tool.schema,
-      description: tool.description,
-      discoveredAt: tool.discoveredAt.toISOString(),
-      lastUpdated: tool.lastUpdated.toISOString(),
-      serverStatus: tool.serverStatus,
-    };
-
-    return this.hashObject(hashableMetadata);
+    return this.hashObject(hashData);
   }
 
   /**
@@ -79,7 +55,7 @@ export class ToolHashUtils {
     // Sort tools by name for consistent hashing
     const sortedTools = [...tools].sort((a, b) => a.name.localeCompare(b.name));
     const toolHashes = sortedTools.map((tool) =>
-      this.calculateStructureHash(tool)
+      this.calculateToolHash(tool)
     );
 
     return this.hashObject(toolHashes);
@@ -98,6 +74,7 @@ export class ToolHashUtils {
     const previousMap = new Map<string, DiscoveredTool>();
     const currentMap = new Map<string, DiscoveredTool>();
 
+    // Populate maps using namespaced names as keys
     for (const tool of previousTools) {
       previousMap.set(tool.namespacedName, tool);
     }
@@ -106,48 +83,43 @@ export class ToolHashUtils {
       currentMap.set(tool.namespacedName, tool);
     }
 
-    // Check for added and updated tools
+    // Check for additions and updates
     for (const [namespacedName, currentTool] of currentMap) {
       const previousTool = previousMap.get(namespacedName);
 
       if (!previousTool) {
-        // Tool added
+        // New tool
         changes.push({
           tool: currentTool,
           changeType: "added",
-          currentHash: currentTool.structureHash,
+          currentHash: currentTool.toolHash,
         });
       } else {
         // Check if tool updated
-        if (previousTool.structureHash !== currentTool.structureHash) {
-          const changedFields = this.getChangedFields(
-            previousTool,
-            currentTool
-          );
+        if (previousTool.toolHash !== currentTool.toolHash) {
           changes.push({
             tool: currentTool,
             changeType: "updated",
-            previousHash: previousTool.structureHash,
-            currentHash: currentTool.structureHash,
-            changedFields,
+            previousHash: previousTool.toolHash,
+            currentHash: currentTool.toolHash,
           });
         } else {
           changes.push({
             tool: currentTool,
             changeType: "unchanged",
-            currentHash: currentTool.structureHash,
+            currentHash: currentTool.toolHash,
           });
         }
       }
     }
 
-    // Check for removed tools
+    // Check for removals
     for (const [namespacedName, previousTool] of previousMap) {
       if (!currentMap.has(namespacedName)) {
         changes.push({
           tool: previousTool,
           changeType: "removed",
-          previousHash: previousTool.structureHash,
+          previousHash: previousTool.toolHash,
         });
       }
     }
@@ -156,7 +128,7 @@ export class ToolHashUtils {
   }
 
   /**
-   * Create tool with hashes from MCP tool definition
+   * Create tool with hash from MCP tool definition
    */
   static createHashedTool(
     toolDef: MCPToolDefinition,
@@ -164,67 +136,28 @@ export class ToolHashUtils {
     namespacedName: string
   ): DiscoveredTool {
     const now = new Date();
+    const toolHash = this.calculateToolHash(toolDef, serverName);
 
-    // Create base tool object without hashes
-    const baseTool: Omit<DiscoveredTool, "structureHash" | "fullHash"> = {
+    return {
       name: toolDef.name,
       serverName,
       namespacedName,
-      schema: toolDef.inputSchema,
-      description: toolDef.description,
+      tool: toolDef,
       discoveredAt: now,
       lastUpdated: now,
       serverStatus: "connected",
-    };
-
-    // Calculate hashes
-    const structureHash = this.calculateStructureHash(toolDef, serverName);
-    const fullHash = this.calculateFullHash({
-      ...baseTool,
-      structureHash,
-      fullHash: "", // Temporary value
-    });
-
-    return {
-      ...baseTool,
-      structureHash,
-      fullHash,
+      toolHash,
     };
   }
 
   /**
-   * Update tool hashes after modification
+   * Update tool hash after modification
    */
-  static updateToolHashes(tool: DiscoveredTool): DiscoveredTool {
-    const updatedTool = {
+  static updateToolHash(tool: DiscoveredTool): DiscoveredTool {
+    return {
       ...tool,
       lastUpdated: new Date(),
-    };
-
-    return {
-      ...updatedTool,
-      structureHash: this.calculateStructureHash(updatedTool),
-      fullHash: this.calculateFullHash(updatedTool),
-    };
-  }
-
-  /**
-   * Validate tool hash integrity
-   */
-  static validateToolHashes(tool: DiscoveredTool): {
-    structureValid: boolean;
-    fullHashValid: boolean;
-    expectedStructureHash?: string;
-    expectedFullHash?: string;
-  } {
-    const expectedStructureHash = this.calculateStructureHash(tool);
-    const expectedFullHash = this.calculateFullHash(tool);
-
-    return {
-      structureValid: tool.structureHash === expectedStructureHash,
-      fullHashValid: tool.fullHash === expectedFullHash,
-      expectedStructureHash,
-      expectedFullHash,
+      toolHash: this.calculateToolHash(tool),
     };
   }
 
@@ -252,38 +185,9 @@ export class ToolHashUtils {
    */
   private static hashObject(obj: any): string {
     const hash = createHash(HASH_ALGORITHM);
-    const serialized = JSON.stringify(obj, Object.keys(obj).sort());
+    const serialized = JSON.stringify(obj);
     hash.update(serialized);
     return hash.digest("hex");
-  }
-
-  /**
-   * Get fields that changed between two tools
-   */
-  private static getChangedFields(
-    previous: DiscoveredTool,
-    current: DiscoveredTool
-  ): string[] {
-    const changedFields: string[] = [];
-
-    // Compare structure fields
-    if (previous.name !== current.name) {
-      changedFields.push("name");
-    }
-
-    if (previous.description !== current.description) {
-      changedFields.push("description");
-    }
-
-    if (JSON.stringify(previous.schema) !== JSON.stringify(current.schema)) {
-      changedFields.push("schema");
-    }
-
-    if (previous.serverName !== current.serverName) {
-      changedFields.push("serverName");
-    }
-
-    return changedFields;
   }
 }
 
@@ -305,7 +209,7 @@ export class ToolHashManager {
     }
 
     const history = this.hashHistory.get(key)!;
-    history.push(tool.structureHash);
+    history.push(tool.toolHash);
 
     // Limit history size
     if (history.length > this.maxHistorySize) {
@@ -330,7 +234,7 @@ export class ToolHashManager {
     }
 
     const lastHash = history[history.length - 1];
-    return lastHash !== tool.structureHash;
+    return lastHash !== tool.toolHash;
   }
 
   /**

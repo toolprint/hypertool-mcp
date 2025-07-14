@@ -61,7 +61,7 @@ export function generateMinimalToolsetConfig(
 
   const toolRefs: DynamicToolReference[] = selectedTools.map(tool => ({
     namespacedName: tool.namespacedName,
-    refId: tool.fullHash
+    refId: tool.toolHash
   }));
 
   return {
@@ -93,13 +93,13 @@ export function generateUseCaseToolsetConfig(
   const matchingTools = discoveredTools.filter(tool => 
     patterns.some(pattern => 
       tool.name.toLowerCase().includes(pattern) || 
-      tool.description?.toLowerCase().includes(pattern)
+      tool.tool.description?.toLowerCase().includes(pattern)
     )
   );
 
   const toolRefs: DynamicToolReference[] = matchingTools.map(tool => ({
     namespacedName: tool.namespacedName,
-    refId: tool.fullHash
+    refId: tool.toolHash
   }));
 
   return {

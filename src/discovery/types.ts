@@ -2,6 +2,8 @@
  * TypeScript interfaces for tool discovery and caching
  */
 
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
+
 /**
  * MCP tool schema definition
  */
@@ -14,12 +16,9 @@ export interface ToolSchema {
 
 /**
  * MCP tool definition from list_tools response
+ * Using the official Tool type from MCP SDK
  */
-export interface MCPToolDefinition {
-  name: string;
-  description?: string;
-  inputSchema: ToolSchema;
-}
+export { Tool as MCPToolDefinition } from "@modelcontextprotocol/sdk/types.js";
 
 /**
  * Enhanced tool metadata with discovery information
@@ -31,20 +30,16 @@ export interface DiscoveredTool {
   serverName: string;
   /** Namespaced name to avoid conflicts (e.g., "git.status") */
   namespacedName: string;
-  /** Tool input schema */
-  schema: ToolSchema;
-  /** Tool description */
-  description?: string;
+  /** Complete tool definition from the MCP server */
+  tool: Tool;
   /** When this tool was discovered */
   discoveredAt: Date;
   /** When this tool entry was last updated */
   lastUpdated: Date;
   /** Server connection status when discovered */
   serverStatus: "connected" | "disconnected";
-  /** Hash of tool structure for change detection */
-  structureHash: string;
-  /** Hash of the entire tool definition including metadata */
-  fullHash: string;
+  /** Hash for tool identity and change detection */
+  toolHash: string;
 }
 
 /**
