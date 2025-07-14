@@ -20,7 +20,7 @@
     "format": "prettier --write \"src/**/*.ts\""
   },
   "keywords": [],
-  "author": "",
+  "author": "OneGrep, Inc.",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {

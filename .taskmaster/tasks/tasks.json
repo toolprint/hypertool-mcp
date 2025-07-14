@@ -168,11 +168,42 @@
         ],
         "priority": "high",
         "subtasks": []
+      },
+      {
+        "id": 26,
+        "title": "Create comprehensive documentation including README, API documentation, and usage examples for the hypertool-mcp server",
+        "description": "Develop complete documentation suite including project README, API reference documentation, configuration guides, and practical usage examples for the hypertool-mcp proxy server",
+        "details": "Create comprehensive documentation structure with the following components:\n\n1. **README.md**: Project overview, quick start guide, installation instructions, basic configuration example, and links to detailed documentation\n\n2. **API Documentation**: Complete API reference using TypeDoc or similar tool, documenting all public interfaces, configuration schemas, and protocol specifications\n\n3. **Configuration Guide**: Detailed documentation of .mcp.json format, toolset configuration options, server connection parameters, and advanced configuration scenarios\n\n4. **Usage Examples**: Practical examples including:\n   - Basic proxy setup with multiple servers\n   - Toolset filtering and namespace configuration\n   - CLI usage for toolset management\n   - Integration with popular MCP clients\n   - Troubleshooting common issues\n\n5. **Architecture Documentation**: Technical overview of proxy architecture, request routing flow, connection management, and tool discovery mechanisms\n\n6. **Developer Guide**: Contributing guidelines, development setup, testing procedures, and code structure overview\n\nEnsure all documentation is clear, well-structured, and includes code examples where appropriate. Use consistent formatting and terminology throughout.",
+        "testStrategy": "Documentation validation through the following steps:\n\n1. **README Completeness**: Verify all sections are present (installation, quick start, configuration, usage)\n\n2. **API Documentation Generation**: Run TypeDoc or documentation generator and verify all public APIs are documented\n\n3. **Example Validation**: Test all code examples in documentation to ensure they work correctly\n\n4. **Link Verification**: Check all internal and external links are valid and point to correct resources\n\n5. **Configuration Examples**: Validate all .mcp.json and toolset configuration examples against the actual schemas\n\n6. **User Testing**: Have someone unfamiliar with the project follow the documentation to set up and use the proxy\n\n7. **Documentation Linting**: Use markdown linters to ensure consistent formatting and structure",
+        "status": "pending",
+        "dependencies": [
+          21,
+          22,
+          24
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 27,
+        "title": "Implement Dynamic Tool Registration System",
+        "description": "Replace static toolset filtering with dynamic tool registration/unregistration system that registers tools with flattened names and sends MCP change notifications when toolsets are equipped or unequipped",
+        "details": "Create a dynamic tool registration system replacing the current getAvailableTools() filtering approach. Implement tool registration with name flattening (git.search → git_search) while preserving exact schemas from underlying servers. When toolsets are equipped: 1) Register tools dynamically with the MCP server using flattened names, 2) Send MCP tool change notifications to connected clients, 3) Maintain mapping between flattened names and original server/tool pairs for routing. When toolsets are unequipped: 1) Unregister tools from the MCP server, 2) Send removal notifications to clients, 3) Clean up routing mappings. Preserve the two-layer architecture specified in PRD with tool discovery remaining separate from dynamic registration. Implement transparent proxying ensuring requests to flattened tool names are correctly routed to underlying servers with original names. Handle edge cases: 1) Name conflicts between servers (use server prefixing as fallback), 2) Tools becoming unavailable while registered, 3) Client connections during registration changes, 4) Partial registration failures. Create ToolRegistrationManager class with methods: registerToolset(toolsetId, tools), unregisterToolset(toolsetId), handleToolCall(flattenedName, params). Integrate with existing ToolsetManager for equipped/unequipped events. Ensure atomic registration operations and rollback on failures.",
+        "testStrategy": "Unit tests for name flattening logic and conflict resolution. Integration tests for registration/unregistration flows with mock MCP clients verifying change notifications. Test transparent proxying with various tool call scenarios. Simulate edge cases: server disconnections during registration, conflicting tool names, rapid equip/unequip cycles. Verify rollback behavior on partial failures. Performance tests for registration with large toolsets. Test MCP protocol compliance for tool change notifications.",
+        "status": "pending",
+        "dependencies": [
+          16,
+          17,
+          18,
+          19
+        ],
+        "priority": "high",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-07-09T21:55:09.811Z",
-      "updated": "2025-07-13T17:36:55.052Z",
+      "updated": "2025-07-14T15:26:57.563Z",
       "description": "Tasks for master context"
     }
   }
