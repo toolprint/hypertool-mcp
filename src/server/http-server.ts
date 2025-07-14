@@ -5,6 +5,9 @@
 import express, { Express, Request, Response } from "express";
 import { Server as HttpServer } from "http";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { randomUUID } from "node:crypto";
+import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 
 /**
  * Express.js-based HTTP server for MCP protocol with streamable transport
@@ -16,6 +19,7 @@ export class McpHttpServer {
   private mcpServer: Server;
   private port: number;
   private host: string;
+  private transports: Record<string, StreamableHTTPServerTransport> = {};
 
   constructor(mcpServer: Server, port: number = 3000, host: string = "localhost") {
     this.app = express();
@@ -33,11 +37,12 @@ export class McpHttpServer {
     // Enable JSON parsing
     this.app.use(express.json());
     
-    // Enable CORS for development
+    // Enable CORS for development with MCP session support
     this.app.use((req, res, next) => {
       res.header("Access-Control-Allow-Origin", "*");
-      res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-      res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+      res.header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+      res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Mcp-Session-Id");
+      res.header("Access-Control-Expose-Headers", "Mcp-Session-Id");
       
       if (req.method === "OPTIONS") {
         res.sendStatus(200);
@@ -53,7 +58,7 @@ export class McpHttpServer {
    */
   private setupRoutes(): void {
     // Health check endpoint
-    this.app.get("/health", (req: Request, res: Response) => {
+    this.app.get("/health", (_req: Request, res: Response) => {
       res.json({ 
         status: "healthy", 
         transport: "http",
@@ -61,16 +66,22 @@ export class McpHttpServer {
       });
     });
 
-    // MCP endpoint for streamable HTTP transport
-    this.app.post("/mcp", async (req: Request, res: Response) => {
+    // MCP endpoint for streamable HTTP transport - handle all methods
+    this.app.all("/mcp", async (req: Request, res: Response) => {
       try {
         await this.handleMcpRequest(req, res);
       } catch (error) {
         console.error("Error handling MCP request:", error);
-        res.status(500).json({ 
-          error: "Internal server error",
-          message: error instanceof Error ? error.message : "Unknown error"
-        });
+        if (!res.headersSent) {
+          res.status(500).json({
+            jsonrpc: "2.0",
+            error: {
+              code: -32603,
+              message: "Internal server error"
+            },
+            id: null
+          });
+        }
       }
     });
 
@@ -84,43 +95,54 @@ export class McpHttpServer {
   }
 
   /**
-   * Handle MCP protocol requests over HTTP
+   * Handle MCP protocol requests over HTTP using Streamable HTTP Transport
    */
   private async handleMcpRequest(req: Request, res: Response): Promise<void> {
-    // Set headers for streamable response
-    res.setHeader("Content-Type", "application/json");
-    res.setHeader("Cache-Control", "no-cache");
-    
-    // For now, implement basic JSON-RPC handling
-    // This will be enhanced to support full MCP protocol streaming
-    const mcpRequest = req.body;
-    
-    if (!mcpRequest || typeof mcpRequest !== "object") {
+    console.log(`Received ${req.method} request to /mcp`);
+
+    // Check for existing session ID
+    const sessionId = req.headers['mcp-session-id'] as string;
+    let transport: StreamableHTTPServerTransport;
+
+    if (sessionId && this.transports[sessionId]) {
+      // Reuse existing transport
+      transport = this.transports[sessionId];
+    } else if (!sessionId && req.method === 'POST' && isInitializeRequest(req.body)) {
+      // Create new transport for initialization request
+      transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => randomUUID(),
+        onsessioninitialized: (sessionId) => {
+          console.log(`Streamable HTTP session initialized with ID: ${sessionId}`);
+          this.transports[sessionId] = transport;
+        }
+      });
+
+      // Set up cleanup when transport closes
+      transport.onclose = () => {
+        const sid = transport.sessionId;
+        if (sid && this.transports[sid]) {
+          console.log(`Transport closed for session ${sid}, removing from transports map`);
+          delete this.transports[sid];
+        }
+      };
+
+      // Connect the transport to the MCP server
+      await this.mcpServer.connect(transport);
+    } else {
+      // Invalid request - no session ID or not initialization request
       res.status(400).json({
-        error: "Invalid request",
-        message: "Request body must be a valid JSON object"
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Bad Request: No valid session ID provided or not an initialization request"
+        },
+        id: null
       });
       return;
     }
 
-    // Validate basic JSON-RPC structure
-    if (!mcpRequest.jsonrpc || !mcpRequest.method) {
-      res.status(400).json({
-        error: "Invalid JSON-RPC request",
-        message: "Request must include jsonrpc and method fields"
-      });
-      return;
-    }
-
-    // Echo the request for now - this will be replaced with actual MCP handling
-    res.json({
-      jsonrpc: "2.0",
-      id: mcpRequest.id || null,
-      result: {
-        message: "MCP request received",
-        echo: mcpRequest
-      }
-    });
+    // Handle the request with the transport
+    await transport.handleRequest(req, res, req.body);
   }
 
   /**
@@ -148,6 +170,17 @@ export class McpHttpServer {
    * Stop the HTTP server
    */
   async stop(): Promise<void> {
+    // Close all active transports
+    for (const sessionId in this.transports) {
+      try {
+        console.log(`Closing transport for session ${sessionId}`);
+        await this.transports[sessionId].close();
+        delete this.transports[sessionId];
+      } catch (error) {
+        console.error(`Error closing transport for session ${sessionId}:`, error);
+      }
+    }
+
     if (this.httpServer) {
       return new Promise<void>((resolve) => {
         this.httpServer!.close(() => {
