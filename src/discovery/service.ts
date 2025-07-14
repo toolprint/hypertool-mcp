@@ -14,6 +14,7 @@ import {
   DiscoveryStats,
   MCPToolDefinition,
   DEFAULT_DISCOVERY_CONFIG,
+  DiscoveredToolsChangedEvent,
 } from "./types";
 import { ToolCache } from "./cache";
 import { ToolLookupManager, SearchQuery, SearchResult } from "./lookup";
@@ -456,12 +457,14 @@ export class ToolDiscoveryEngine
       });
 
       // Emit change event
-      this.emit("toolsChanged", {
+      const event: DiscoveredToolsChangedEvent = {
         serverName,
         changes,
         summary,
         newTools,
-      });
+        timestamp: new Date(),
+      };
+      this.emit("toolsChanged", event);
     } catch (error) {
       console.error(
         `Failed to handle tools list changed for server "${serverName}":`,

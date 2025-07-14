@@ -39,7 +39,7 @@ export {
  * Main toolset manager class
  */
 import { EventEmitter } from "events";
-import { DiscoveredTool, IToolDiscoveryEngine } from "../discovery/types";
+import { DiscoveredTool, IToolDiscoveryEngine, DiscoveredToolsChangedEvent } from "../discovery/types";
 import { ToolsetConfig, ToolsetResolution, ValidationResult, ToolsetChangeEvent } from "./types";
 import { loadToolsetConfig, saveToolsetConfig } from "./loader";
 import { validateToolsetConfig } from "./validator";
@@ -195,6 +195,11 @@ export class ToolsetManager extends EventEmitter {
    */
   setDiscoveryEngine(discoveryEngine: IToolDiscoveryEngine): void {
     this.discoveryEngine = discoveryEngine;
+    
+    // Listen for discovered tools changes and validate active toolset
+    (discoveryEngine as any).on('toolsChanged', (event: DiscoveredToolsChangedEvent) => {
+      this.handleDiscoveredToolsChanged(event);
+    });
   }
 
   /**
@@ -372,5 +377,53 @@ export class ToolsetManager extends EventEmitter {
    */
   getActiveToolset(): ToolsetConfig | null {
     return this.currentConfig || null;
+  }
+
+  /**
+   * Handle discovered tools changes and validate active toolset
+   */
+  private handleDiscoveredToolsChanged(event: DiscoveredToolsChangedEvent): void {
+    // Only validate if we have an active toolset
+    if (!this.currentConfig || !this.discoveryEngine) {
+      return;
+    }
+
+    // Check if any of our toolset's tools are affected by this server change
+    const affectedTools: string[] = [];
+
+    for (const toolRef of this.currentConfig.tools) {
+      const resolution = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
+      
+      // Check if this tool belongs to the server that changed
+      if (resolution?.tool?.serverName === event.serverName) {
+        // Check if this specific tool was removed or changed
+        const wasRemoved = event.changes.some(change => 
+          change.changeType === 'removed' && 
+          change.tool.namespacedName === resolution.tool!.namespacedName
+        );
+        
+        const wasChanged = event.changes.some(change => 
+          change.changeType === 'updated' && 
+          change.tool.namespacedName === resolution.tool!.namespacedName
+        );
+
+        if (wasRemoved || wasChanged) {
+          affectedTools.push(resolution.tool.namespacedName);
+        }
+      }
+    }
+
+    // If any tools from our toolset were affected, emit a toolset change event
+    // This will trigger the server to refresh its tool list
+    if (affectedTools.length > 0) {
+      const changeEvent: ToolsetChangeEvent = {
+        previousToolset: this.currentConfig,
+        newToolset: this.currentConfig, // Same toolset, but tools have changed
+        changeType: 'updated',
+        timestamp: new Date()
+      };
+      
+      this.emit('toolsetChanged', changeEvent);
+    }
   }
 }

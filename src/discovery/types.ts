@@ -245,6 +245,28 @@ export interface IToolCache {
 }
 
 /**
+ * Event emitted when discovered tools change
+ */
+export interface DiscoveredToolsChangedEvent {
+  /** Server name where changes occurred */
+  serverName: string;
+  /** Detailed change information for each tool */
+  changes: ToolChangeInfo[];
+  /** Summary of changes (added, updated, removed, unchanged counts) */
+  summary: {
+    added: number;
+    updated: number;
+    removed: number;
+    unchanged: number;
+    total: number;
+  };
+  /** All current tools from this server after changes */
+  newTools: DiscoveredTool[];
+  /** Timestamp when changes were detected */
+  timestamp: Date;
+}
+
+/**
  * Default discovery configuration
  */
 export const DEFAULT_DISCOVERY_CONFIG: Required<DiscoveryConfig> = {

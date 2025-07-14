@@ -19,6 +19,7 @@ import {
   formatAvailableTools,
 } from "../toolset/mcp-tools";
 import { ToolsetManager, ToolsetConfig, ToolsetChangeEvent } from "../toolset";
+import { DiscoveredToolsChangedEvent } from "../discovery/types";
 
 /**
  * Enhanced Meta-MCP server with routing capabilities
@@ -171,20 +172,20 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       mainSpinner.succeed('Request router initialized');
 
       // Listen for tool discovery changes and notify clients
-      (this.discoveryEngine as any).on?.("toolsChanged", async (event: any) => {
+      (this.discoveryEngine as any).on?.("toolsChanged", async (event: DiscoveredToolsChangedEvent) => {
         // If we have an active toolset, it might need re-validation
         const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();
         if (activeToolsetInfo) {
           if (options.debug) {
             console.log(
               `Tools changed while toolset "${activeToolsetInfo.name}" is equipped. ` +
-              `Change from server: ${event?.serverName || 'unknown'}`
+              `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
             );
           }
-          // The toolset filtering will automatically happen on next getAvailableTools() call
-          // as it always uses fresh discovered tools
         }
         
+        // Note: ToolsetManager will automatically handle toolset validation
+        // and emit toolsetChanged events if active tools are affected
         // Always notify clients about tool changes
         await this.notifyToolsChanged();
       });
