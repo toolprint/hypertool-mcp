@@ -10,14 +10,7 @@ import { IToolDiscoveryEngine, ToolDiscoveryEngine } from "../discovery";
 import { IConnectionManager, ConnectionManager } from "../connection";
 import { MCPConfigParser } from "../config";
 import ora from "ora";
-import {
-  buildToolset,
-  listSavedToolsets,
-  selectToolset,
-  deleteToolset,
-  loadStoredToolsets,
-  formatAvailableTools,
-} from "../toolset/mcp-tools";
+// Note: All mcp-tools functionality now handled by ToolsetManager
 import { ToolsetManager, ToolsetConfig, ToolsetChangeEvent } from "../toolset";
 import { DiscoveredToolsChangedEvent } from "../discovery/types";
 
@@ -205,7 +198,8 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    */
   private async checkToolsetStatus(debug?: boolean): Promise<void> {
     try {
-      const storedToolsets = await loadStoredToolsets();
+      const listResult = await this.toolsetManager.listSavedToolsets();
+      const storedToolsets = listResult.success ? listResult.toolsets.reduce((acc, t) => ({ ...acc, [t.name]: t }), {}) : {};
       const hasToolsets = Object.keys(storedToolsets).length > 0;
       const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();
       
@@ -224,7 +218,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    Example: Create a dev toolset with git and docker tools
    `);
       } else if (!activeToolsetInfo && hasToolsets) {
-        const toolsetNames = Object.keys(storedToolsets);
+        const toolsetNames = listResult.success ? listResult.toolsets.map(t => t.name) : [];
         console.warn(`
 ⚠️  WARNING: No toolset equipped
    
@@ -574,9 +568,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       switch (name) {
         case "list-available-tools":
           if (this.discoveryEngine) {
-            const discoveredTools = this.discoveryEngine.getAvailableTools(true);
-            // Also return structured content
-            const structured = formatAvailableTools(discoveredTools);
+            const structured = this.toolsetManager.formatAvailableTools();
             
             return {
               content: [
@@ -601,35 +593,24 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
         case "build-toolset":
           if (this.discoveryEngine) {
-            const discoveredTools = this.discoveryEngine.getAvailableTools(true);
-            const result = await buildToolset(args || {}, discoveredTools);
-            
-            // Handle autoEquip if requested and build was successful
-            if (result.content?.[0]?.text && args?.autoEquip) {
-              try {
-                const buildResult = JSON.parse(result.content[0].text);
-                if (buildResult.success) {
-                  // Load the newly created toolset and make it active
-                  const toolsetName = buildResult.toolsetName;
-                  if (toolsetName) {
-                    const equipResult = await this.toolsetManager.equipToolset(toolsetName);
-                    if (equipResult.success) {
-                      // Update result to indicate auto-equipping was successful
-                      buildResult.autoEquipped = true;
-                      result.content[0].text = JSON.stringify(buildResult);
-                      // ToolsetManager will emit 'toolsetChanged' event which triggers notifyToolsChanged()
-                    } else {
-                      console.error(`Failed to auto-equip toolset: ${equipResult.error}`);
-                    }
-                  }
-                }
-              } catch (error) {
-                console.error("Failed to auto-equip toolset:", error);
-                // Don't fail the entire operation if auto-equip fails
+            const result = await this.toolsetManager.createToolset(
+              args?.name || '',
+              args?.tools || [],
+              {
+                description: args?.description,
+                autoEquip: args?.autoEquip
               }
-            }
+            );
             
-            return result;
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify(result)
+                }
+              ],
+              structuredContent: result
+            };
           } else {
             return {
               content: [
@@ -642,36 +623,57 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           }
 
         case "list-saved-toolsets":
-          return await listSavedToolsets();
+          const listResult = await this.toolsetManager.listSavedToolsets();
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(listResult)
+              }
+            ],
+            structuredContent: listResult
+          };
 
         case "equip-toolset":
           if (this.discoveryEngine) {
             // Refresh discovery cache before applying toolset to ensure latest tools
             await this.discoveryEngine.refreshCache();
-            const discoveredTools = this.discoveryEngine.getAvailableTools(true);
-            const result = await selectToolset(args || {}, discoveredTools);
             
-            // If toolset was successfully selected, make it active
-            if (result.content && result.content[0] && result.content[0].text.includes("✅")) {
-              try {
-                // Equip the toolset using the ToolsetManager
-                const toolsetName = args?.name;
-                if (toolsetName) {
-                  const equipResult = await this.toolsetManager.equipToolset(toolsetName);
-                  if (equipResult.success) {
-                    // Add notification that toolset is now equipped
-                    result.content[0].text += "\n\n🔄 **Toolset Equipped**: The server's tool list has been updated to reflect this toolset.";
-                    // ToolsetManager will emit 'toolsetChanged' event which triggers notifyToolsChanged()
-                  } else {
-                    console.error(`Failed to equip toolset: ${equipResult.error}`);
+            const equipResult = await this.toolsetManager.equipToolset(args?.name);
+            if (equipResult.success) {
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: JSON.stringify({
+                      success: true,
+                      message: `✅ Toolset "${args?.name}" equipped successfully. The server's tool list has been updated.`
+                    })
                   }
+                ],
+                structuredContent: {
+                  success: true,
+                  toolsetName: args?.name,
+                  message: "Toolset equipped successfully"
                 }
-              } catch (error) {
-                console.error("Failed to apply toolset:", error);
-              }
+              };
+            } else {
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: JSON.stringify({
+                      success: false,
+                      error: equipResult.error
+                    })
+                  }
+                ],
+                structuredContent: {
+                  success: false,
+                  error: equipResult.error
+                }
+              };
             }
-            
-            return result;
           } else {
             return {
               content: [
@@ -684,7 +686,16 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           }
 
         case "delete-toolset":
-          return await deleteToolset(args || {});
+          const deleteResult = await this.toolsetManager.deleteToolset(args?.name, { confirm: args?.confirm });
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(deleteResult)
+              }
+            ],
+            structuredContent: deleteResult
+          };
 
         case "unequip-toolset":
           this.toolsetManager.unequipToolset();
