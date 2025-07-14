@@ -181,10 +181,4 @@ export class StdioConnection extends BaseConnection<StdioClient> {
     return await this._client.ping();
   }
 
-  /**
-   * Get connection type
-   */
-  getType(): string {
-    return "stdio";
-  }
 }

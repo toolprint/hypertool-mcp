@@ -172,10 +172,4 @@ export class SSEConnection extends BaseConnection<SSEClient> {
     }
   }
 
-  /**
-   * Get connection type
-   */
-  getType(): string {
-    return "sse";
-  }
 }

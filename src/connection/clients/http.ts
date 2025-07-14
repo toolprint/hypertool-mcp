@@ -178,10 +178,4 @@ export class HttpConnection extends BaseConnection<HttpClient> {
     return await this._client.ping();
   }
 
-  /**
-   * Get connection type
-   */
-  getType(): string {
-    return "http";
-  }
 }
