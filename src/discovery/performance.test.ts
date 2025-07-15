@@ -2,10 +2,11 @@
  * Performance tests for large tool sets
  */
 
-import { MCPToolDefinition, DiscoveredTool } from "./types";
-import { ToolCache } from "./cache";
-import { ToolLookupManager } from "./lookup";
-import { ToolHashUtils } from "./hash-utils";
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { MCPToolDefinition, DiscoveredTool } from "./types.js";
+import { ToolCache } from "./cache.js";
+import { ToolLookupManager } from "./lookup.js";
+import { ToolHashUtils } from "./hash-utils.js";
 
 // Performance thresholds for tests
 const PERFORMANCE_THRESHOLDS = {

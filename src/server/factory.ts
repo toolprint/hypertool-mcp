@@ -2,13 +2,13 @@
  * Server factory for creating Meta-MCP server instances
  */
 
-import { MetaMCPServer } from "./base";
-import { EnhancedMetaMCPServer } from "./enhanced";
+import { MetaMCPServer } from "./base.js";
+import { EnhancedMetaMCPServer } from "./enhanced.js";
 import {
   MetaMCPServerConfig,
   ServerInitOptions,
   TransportConfig,
-} from "./types";
+} from "./types.js";
 
 /**
  * Factory class for creating Meta-MCP server instances

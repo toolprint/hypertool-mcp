@@ -2,6 +2,7 @@
  * Tests for error handling system
  */
 
+import { describe, test, expect } from 'vitest';
 import {
   MetaMCPError,
   ConnectionError,
@@ -18,7 +19,7 @@ import {
   getErrorCode,
   getUserFriendlyMessage,
   ERROR_CODES,
-} from "./index";
+} from "./index.js";
 
 describe("MetaMCPError", () => {
   test("should create base error with all properties", () => {

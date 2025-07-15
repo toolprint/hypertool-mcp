@@ -3,7 +3,7 @@
  */
 
 import { EventEmitter } from "events";
-import { MetaMCPError } from "../errors";
+import { MetaMCPError } from "../errors/index.js";
 
 /**
  * Log levels

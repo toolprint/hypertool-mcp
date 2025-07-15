@@ -2,6 +2,7 @@
  * Tests for error recovery mechanisms
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   RetryManager,
   CircuitBreaker,
@@ -11,32 +12,32 @@ import {
   RecoveryCoordinator,
   DEFAULT_RETRY_CONFIG,
   DEFAULT_CIRCUIT_BREAKER_CONFIG,
-} from "./recovery";
-import { ConnectionError, ServerUnavailableError, ValidationError } from "./index";
+} from "./recovery.js";
+import { ConnectionError, ServerUnavailableError, ValidationError } from "./index.js";
 
 // Mock timers for testing
-jest.useFakeTimers();
+vi.useFakeTimers();
 
 // Mock setTimeout globally
-const mockSetTimeout = jest.fn();
+const mockSetTimeout = vi.fn();
 
 describe("RetryManager", () => {
   beforeEach(() => {
     // Disable console logging during tests
-    jest.spyOn(console, 'log').mockImplementation();
-    jest.spyOn(console, 'warn').mockImplementation();
-    jest.spyOn(console, 'error').mockImplementation();
-    jest.spyOn(console, 'info').mockImplementation();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'info').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.clearAllTimers();
-    jest.restoreAllMocks();
+    vi.clearAllTimers();
+    vi.restoreAllMocks();
   });
 
   test("should succeed on first attempt", async () => {
     const retryManager = new RetryManager();
-    const operation = jest.fn().mockResolvedValue("success");
+    const operation = vi.fn().mockResolvedValue("success");
 
     const result = await retryManager.execute(operation, "test-operation");
 
@@ -50,7 +51,7 @@ describe("RetryManager", () => {
       baseDelayMs: 100,
     });
 
-    const operation = jest.fn()
+    const operation = vi.fn()
       .mockRejectedValueOnce(new ConnectionError("Connection failed", "server", true))
       .mockRejectedValueOnce(new ConnectionError("Connection failed", "server", true))
       .mockResolvedValue("success");
@@ -58,7 +59,7 @@ describe("RetryManager", () => {
     const executePromise = retryManager.execute(operation, "test-operation");
 
     // Fast-forward through delays
-    await jest.runAllTimersAsync();
+    await vi.runAllTimersAsync();
     const result = await executePromise;
 
     expect(result).toBe("success");
@@ -67,7 +68,7 @@ describe("RetryManager", () => {
 
   test("should not retry non-retryable errors", async () => {
     const retryManager = new RetryManager();
-    const operation = jest.fn().mockRejectedValue(
+    const operation = vi.fn().mockRejectedValue(
       new ValidationError("Invalid input")
     );
 
@@ -85,12 +86,12 @@ describe("RetryManager", () => {
   
   test.skip("should respect max attempts", async () => {
     const retryManager = new RetryManager({ maxAttempts: 2 });
-    const operation = jest.fn().mockRejectedValue(
+    const operation = vi.fn().mockRejectedValue(
       new ConnectionError("Connection failed", "server", true)
     );
 
     const executePromise = retryManager.execute(operation, "test-operation");
-    await jest.runAllTimersAsync();
+    await vi.runAllTimersAsync();
 
     try {
       await executePromise;
@@ -109,14 +110,14 @@ describe("RetryManager", () => {
       jitter: false,
     });
 
-    const operation = jest.fn().mockRejectedValue(
+    const operation = vi.fn().mockRejectedValue(
       new ConnectionError("Connection failed", "server", true)
     );
 
     const executePromise = retryManager.execute(operation, "test-operation");
 
     // Let timers run
-    await jest.runAllTimersAsync();
+    await vi.runAllTimersAsync();
     
     try {
       await executePromise;
@@ -134,13 +135,13 @@ describe("RetryManager", () => {
       jitter: true,
     });
 
-    const operation = jest.fn().mockRejectedValue(
+    const operation = vi.fn().mockRejectedValue(
       new ConnectionError("Connection failed", "server", true)
     );
 
     const executePromise = retryManager.execute(operation, "test-operation");
 
-    await jest.runAllTimersAsync();
+    await vi.runAllTimersAsync();
     
     try {
       await executePromise;
@@ -154,7 +155,7 @@ describe("RetryManager", () => {
 
 describe("CircuitBreaker", () => {
   afterEach(() => {
-    jest.clearAllTimers();
+    vi.clearAllTimers();
   });
 
   test("should start in CLOSED state", () => {
@@ -164,7 +165,7 @@ describe("CircuitBreaker", () => {
 
   test("should execute operation when CLOSED", async () => {
     const breaker = new CircuitBreaker("test");
-    const operation = jest.fn().mockResolvedValue("success");
+    const operation = vi.fn().mockResolvedValue("success");
 
     const result = await breaker.execute(operation);
 
@@ -174,7 +175,7 @@ describe("CircuitBreaker", () => {
 
   test("should open after threshold failures", async () => {
     const breaker = new CircuitBreaker("test", { failureThreshold: 2 });
-    const operation = jest.fn().mockRejectedValue(new Error("Operation failed"));
+    const operation = vi.fn().mockRejectedValue(new Error("Operation failed"));
 
     // First failure
     await expect(breaker.execute(operation)).rejects.toThrow();
@@ -190,14 +191,14 @@ describe("CircuitBreaker", () => {
       failureThreshold: 1,
       recoveryTimeoutMs: 5000,
     });
-    const operation = jest.fn().mockRejectedValue(new Error("Operation failed"));
+    const operation = vi.fn().mockRejectedValue(new Error("Operation failed"));
 
     // Trigger failure to open circuit
     await expect(breaker.execute(operation)).rejects.toThrow();
     expect(breaker.getState()).toBe(CircuitBreakerState.OPEN);
 
     // Should reject without calling operation
-    const quickOperation = jest.fn().mockResolvedValue("success");
+    const quickOperation = vi.fn().mockResolvedValue("success");
     await expect(breaker.execute(quickOperation)).rejects.toThrow("Circuit breaker 'test' is OPEN");
     expect(quickOperation).not.toHaveBeenCalled();
   });
@@ -207,17 +208,17 @@ describe("CircuitBreaker", () => {
       failureThreshold: 1,
       recoveryTimeoutMs: 1000,
     });
-    const operation = jest.fn().mockRejectedValue(new Error("Operation failed"));
+    const operation = vi.fn().mockRejectedValue(new Error("Operation failed"));
 
     // Open the circuit
     await expect(breaker.execute(operation)).rejects.toThrow();
     expect(breaker.getState()).toBe(CircuitBreakerState.OPEN);
 
     // Fast-forward past recovery timeout
-    jest.advanceTimersByTime(1000);
+    vi.advanceTimersByTime(1000);
 
     // Next call should transition to HALF_OPEN
-    const testOperation = jest.fn().mockResolvedValue("success");
+    const testOperation = vi.fn().mockResolvedValue("success");
     const result = await breaker.execute(testOperation);
 
     expect(result).toBe("success");
@@ -232,14 +233,14 @@ describe("CircuitBreaker", () => {
     });
 
     // Open the circuit
-    await expect(breaker.execute(jest.fn().mockRejectedValue(new Error("fail"))))
+    await expect(breaker.execute(vi.fn().mockRejectedValue(new Error("fail"))))
       .rejects.toThrow();
 
     // Wait for recovery timeout
-    jest.advanceTimersByTime(1000);
+    vi.advanceTimersByTime(1000);
 
     // Successful operations to close circuit
-    const operation = jest.fn().mockResolvedValue("success");
+    const operation = vi.fn().mockResolvedValue("success");
     await breaker.execute(operation); // HALF_OPEN
     expect(breaker.getState()).toBe(CircuitBreakerState.HALF_OPEN);
 
@@ -254,14 +255,14 @@ describe("CircuitBreaker", () => {
     });
 
     // Open the circuit
-    await expect(breaker.execute(jest.fn().mockRejectedValue(new Error("fail"))))
+    await expect(breaker.execute(vi.fn().mockRejectedValue(new Error("fail"))))
       .rejects.toThrow();
 
     // Wait for recovery
-    jest.advanceTimersByTime(1000);
+    vi.advanceTimersByTime(1000);
 
     // Fail in HALF_OPEN state
-    await expect(breaker.execute(jest.fn().mockRejectedValue(new Error("fail again"))))
+    await expect(breaker.execute(vi.fn().mockRejectedValue(new Error("fail again"))))
       .rejects.toThrow();
 
     expect(breaker.getState()).toBe(CircuitBreakerState.OPEN);
@@ -269,12 +270,12 @@ describe("CircuitBreaker", () => {
 
   test("should emit state change events", async () => {
     const breaker = new CircuitBreaker("test", { failureThreshold: 1 });
-    const stateHandler = jest.fn();
+    const stateHandler = vi.fn();
     
     breaker.on("stateChanged", stateHandler);
 
     // Trigger state change
-    await expect(breaker.execute(jest.fn().mockRejectedValue(new Error("fail"))))
+    await expect(breaker.execute(vi.fn().mockRejectedValue(new Error("fail"))))
       .rejects.toThrow();
 
     expect(stateHandler).toHaveBeenCalledWith({
@@ -299,7 +300,7 @@ describe("CircuitBreaker", () => {
     const breaker = new CircuitBreaker("test", { failureThreshold: 1 });
 
     // Open the circuit
-    await expect(breaker.execute(jest.fn().mockRejectedValue(new Error("fail"))))
+    await expect(breaker.execute(vi.fn().mockRejectedValue(new Error("fail"))))
       .rejects.toThrow();
     expect(breaker.getState()).toBe(CircuitBreakerState.OPEN);
 
@@ -313,7 +314,7 @@ describe("CircuitBreaker", () => {
 describe("FallbackManager", () => {
   test("should execute primary operation successfully", async () => {
     const manager = new FallbackManager();
-    const operation = jest.fn().mockResolvedValue("primary-success");
+    const operation = vi.fn().mockResolvedValue("primary-success");
 
     const result = await manager.executeWithFallback(operation, "test-op");
 
@@ -326,7 +327,7 @@ describe("FallbackManager", () => {
     const strategy = new ServerUnavailableFallback("Custom fallback message");
     manager.registerStrategy(strategy);
 
-    const operation = jest.fn().mockRejectedValue(
+    const operation = vi.fn().mockRejectedValue(
       new ServerUnavailableError("test-server", "maintenance")
     );
 
@@ -350,19 +351,19 @@ describe("FallbackManager", () => {
     // Strategy that doesn't handle the error
     const strategy1 = {
       canHandle: () => false,
-      execute: jest.fn(),
+      execute: vi.fn(),
     };
     
     // Strategy that handles the error
     const strategy2 = {
       canHandle: () => true,
-      execute: jest.fn().mockResolvedValue("fallback-success"),
+      execute: vi.fn().mockResolvedValue("fallback-success"),
     };
 
     manager.registerStrategy(strategy1);
     manager.registerStrategy(strategy2);
 
-    const operation = jest.fn().mockRejectedValue(new Error("Primary failed"));
+    const operation = vi.fn().mockRejectedValue(new Error("Primary failed"));
 
     const result = await manager.executeWithFallback(operation, "test-op");
 
@@ -374,7 +375,7 @@ describe("FallbackManager", () => {
   test("should throw original error if no fallbacks work", async () => {
     const manager = new FallbackManager();
     const originalError = new Error("Primary operation failed");
-    const operation = jest.fn().mockRejectedValue(originalError);
+    const operation = vi.fn().mockRejectedValue(originalError);
 
     await expect(
       manager.executeWithFallback(operation, "test-op")
@@ -415,12 +416,12 @@ describe("ServerUnavailableFallback", () => {
 
 describe("RecoveryCoordinator", () => {
   afterEach(() => {
-    jest.clearAllTimers();
+    vi.clearAllTimers();
   });
 
   test("should execute with all recovery mechanisms", async () => {
     const coordinator = new RecoveryCoordinator();
-    const operation = jest.fn().mockResolvedValue("success");
+    const operation = vi.fn().mockResolvedValue("success");
 
     const result = await coordinator.executeWithRecovery(
       operation,
@@ -434,7 +435,7 @@ describe("RecoveryCoordinator", () => {
 
   test("should use circuit breaker when specified", async () => {
     const coordinator = new RecoveryCoordinator();
-    const operation = jest.fn().mockRejectedValue(new Error("Operation failed"));
+    const operation = vi.fn().mockRejectedValue(new Error("Operation failed"));
 
     // Execute multiple times to trigger circuit breaker
     for (let i = 0; i < 6; i++) {
@@ -459,12 +460,12 @@ describe("RecoveryCoordinator", () => {
     
     const customStrategy = {
       canHandle: (error: Error) => error.message.includes("custom"),
-      execute: jest.fn().mockResolvedValue("custom-fallback"),
+      execute: vi.fn().mockResolvedValue("custom-fallback"),
     };
     
     coordinator.registerFallbackStrategy(customStrategy);
 
-    const operation = jest.fn().mockRejectedValue(new Error("custom error"));
+    const operation = vi.fn().mockRejectedValue(new Error("custom error"));
 
     const result = await coordinator.executeWithRecovery(
       operation,
@@ -479,7 +480,7 @@ describe("RecoveryCoordinator", () => {
     const coordinator = new RecoveryCoordinator();
     
     // Create some circuit breakers with failures
-    const operation = jest.fn().mockRejectedValue(new Error("fail"));
+    const operation = vi.fn().mockRejectedValue(new Error("fail"));
     
     try {
       await coordinator.executeWithRecovery(operation, "op1", "circuit1");

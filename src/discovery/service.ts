@@ -3,7 +3,7 @@
  */
 
 import { EventEmitter } from "events";
-import { IConnectionManager } from "../connection/types";
+import { IConnectionManager } from "../connection/types.js";
 import { Tool, ToolListChangedNotification, ToolListChangedNotificationSchema } from "@modelcontextprotocol/sdk/types.js";
 import {
   IToolDiscoveryEngine,
@@ -14,10 +14,10 @@ import {
   DiscoveryStats,
   DEFAULT_DISCOVERY_CONFIG,
   DiscoveredToolsChangedEvent,
-} from "./types";
-import { ToolCache } from "./cache";
-import { ToolLookupManager, SearchQuery, SearchResult } from "./lookup";
-import { ToolHashUtils, ToolHashManager } from "./hash-utils";
+} from "./types.js";
+import { ToolCache } from "./cache.js";
+import { ToolLookupManager, SearchQuery, SearchResult } from "./lookup.js";
+import { ToolHashUtils, ToolHashManager } from "./hash-utils.js";
 
 /**
  * Tool discovery engine implementation
@@ -590,7 +590,7 @@ export class ToolDiscoveryEngine
     exists: boolean;
     tool?: DiscoveredTool;
     serverName?: string;
-    serverStatus?: import("../connection/types").ConnectionStatus;
+    serverStatus?: import("../connection/types.js").ConnectionStatus;
     namespacedNameMatch: boolean;
     refIdMatch: boolean;
     warnings: string[];

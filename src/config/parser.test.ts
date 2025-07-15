@@ -1,17 +1,18 @@
-import { MCPConfigParser } from "./parser";
-import { MCPConfig } from "../types/config";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { MCPConfigParser } from "./parser.js";
+import { MCPConfig } from "../types/config.js";
 import * as fs from "fs/promises";
 
 // Mock fs module
-jest.mock("fs/promises");
-const mockFs = fs as jest.Mocked<typeof fs>;
+vi.mock("fs/promises");
+const mockFs = fs as vi.Mocked<typeof fs>;
 
 describe("MCPConfigParser", () => {
   let parser: MCPConfigParser;
 
   beforeEach(() => {
     parser = new MCPConfigParser();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("parseContent", () => {

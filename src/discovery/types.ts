@@ -192,7 +192,7 @@ export interface IToolDiscoveryEngine {
     exists: boolean;
     tool?: DiscoveredTool;
     serverName?: string;
-    serverStatus?: import("../connection/types").ConnectionStatus;
+    serverStatus?: import("../connection/types.js").ConnectionStatus;
     namespacedNameMatch: boolean;
     refIdMatch: boolean;
     warnings: string[];

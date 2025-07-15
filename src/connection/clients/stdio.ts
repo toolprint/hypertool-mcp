@@ -6,9 +6,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { ListToolsResult, CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
 import { EventEmitter } from "events";
-import { StdioServerConfig } from "../../types/config";
-import { ConnectionOptions } from "../types";
-import { BaseConnection } from "./base";
+import { StdioServerConfig } from "../../types/config.js";
+import { ConnectionOptions } from "../types.js";
+import { BaseConnection } from "./base.js";
 
 /**
  * Stdio client wrapper using proper MCP SDK Client

@@ -2,14 +2,15 @@
  * Tests for simplified toolset configuration loader
  */
 
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from "fs";
 import path from "path";
 import os from "os";
 import {
   loadToolsetConfig,
   saveToolsetConfig,
-} from "./loader";
-import { ToolsetConfig } from "./types";
+} from "./loader.js";
+import { ToolsetConfig } from "./types.js";
 
 describe("ToolsetLoader", () => {
   let tempDir: string;

@@ -2,7 +2,7 @@
  * User-friendly error messages and message templates
  */
 
-import { MetaMCPError, ERROR_CODES } from "./index";
+import { MetaMCPError, ERROR_CODES } from "./index.js";
 
 /**
  * Common error scenarios and their user-friendly messages

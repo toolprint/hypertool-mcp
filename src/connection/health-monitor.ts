@@ -3,7 +3,7 @@
  */
 
 import { EventEmitter } from "events";
-import { Connection } from "./types";
+import { Connection } from "./types.js";
 
 /**
  * Server health states

@@ -7,9 +7,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { ListToolsResult, CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
 import { EventEmitter } from "events";
-import { BaseConnection } from "./base";
-import { SSEServerConfig } from "../../types/config";
-import { ConnectionOptions } from "../types";
+import { BaseConnection } from "./base.js";
+import { SSEServerConfig } from "../../types/config.js";
+import { ConnectionOptions } from "../types.js";
 
 /**
  * SSE client wrapper using proper MCP SDK Client

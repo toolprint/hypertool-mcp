@@ -2,8 +2,9 @@
  * Tests for hash utilities
  */
 
-import { ToolHashUtils } from "./hash-utils";
-import { DiscoveredTool } from "./types";
+import { describe, it, expect } from 'vitest';
+import { ToolHashUtils } from "./hash-utils.js";
+import { DiscoveredTool } from "./types.js";
 
 describe("ToolHashUtils", () => {
   const mockTool: DiscoveredTool = {

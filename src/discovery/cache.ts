@@ -8,7 +8,7 @@ import {
   IToolCache,
   DiscoveredTool,
   DiscoveryConfig,
-} from "./types";
+} from "./types.js";
 
 /**
  * Tool cache implementation using node-cache with TTL and server indexing

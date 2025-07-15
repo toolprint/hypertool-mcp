@@ -2,8 +2,9 @@
  * Unit tests for Meta-MCP server base implementation
  */
 
-import { MetaMCPServer } from "./base";
-import { MetaMCPServerConfig, ServerState } from "./types";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { MetaMCPServer } from "./base.js";
+import { MetaMCPServerConfig, ServerState } from "./types.js";
 
 describe("MetaMCPServer", () => {
   let server: MetaMCPServer;
@@ -42,11 +43,13 @@ describe("MetaMCPServer", () => {
   });
 
   describe("Server State Management", () => {
-    it("should emit stateChanged event when state changes", (done) => {
-      server.on("stateChanged", (event) => {
-        expect(event.from).toBe(ServerState.STOPPED);
-        expect(event.to).toBe(ServerState.STARTING);
-        done();
+    it("should emit stateChanged event when state changes", async () => {
+      const stateChangePromise = new Promise<void>((resolve) => {
+        server.on("stateChanged", (event) => {
+          expect(event.from).toBe(ServerState.STOPPED);
+          expect(event.to).toBe(ServerState.STARTING);
+          resolve();
+        });
       });
 
       // This will trigger state change from STOPPED to STARTING
@@ -57,11 +60,13 @@ describe("MetaMCPServer", () => {
         .catch(() => {
           // Expected to fail since we don't have actual transport setup
         });
+
+      await stateChangePromise;
     });
 
     it("should track uptime when running", async () => {
       // Mock the server start to avoid actual transport setup
-      jest.spyOn(server as any, "setState").mockImplementation((state) => {
+      vi.spyOn(server as any, "setState").mockImplementation((state: any) => {
         (server as any).state = state;
         (server as any).startTime = new Date();
       });
@@ -127,23 +132,29 @@ describe("MetaMCPServer", () => {
       expect(server.getStatus().connectedClients).toBe(0);
     });
 
-    it("should emit clientConnected event", (done) => {
-      server.on("clientConnected", (event) => {
-        expect(event.count).toBe(1);
-        done();
+    it("should emit clientConnected event", async () => {
+      const clientConnectedPromise = new Promise<void>((resolve) => {
+        server.on("clientConnected", (event) => {
+          expect(event.count).toBe(1);
+          resolve();
+        });
       });
 
       (server as any).onClientConnected();
+      await clientConnectedPromise;
     });
 
-    it("should emit clientDisconnected event", (done) => {
-      server.on("clientDisconnected", (event) => {
-        expect(event.count).toBe(0);
-        done();
+    it("should emit clientDisconnected event", async () => {
+      const clientDisconnectedPromise = new Promise<void>((resolve) => {
+        server.on("clientDisconnected", (event) => {
+          expect(event.count).toBe(0);
+          resolve();
+        });
       });
 
       (server as any).onClientConnected();
       (server as any).onClientDisconnected();
+      await clientDisconnectedPromise;
     });
   });
 });

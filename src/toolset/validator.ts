@@ -6,7 +6,7 @@ import {
   ToolsetConfig,
   ValidationResult,
   DynamicToolReference,
-} from "./types";
+} from "./types.js";
 
 /**
  * Validate a toolset configuration

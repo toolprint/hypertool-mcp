@@ -6,9 +6,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { ListToolsResult, CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
 import { EventEmitter } from "events";
-import { HttpServerConfig } from "../../types/config";
-import { ConnectionOptions } from "../types";
-import { BaseConnection } from "./base";
+import { HttpServerConfig } from "../../types/config.js";
+import { ConnectionOptions } from "../types.js";
+import { BaseConnection } from "./base.js";
 
 /**
  * HTTP client wrapper using proper MCP SDK Client

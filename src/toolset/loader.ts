@@ -4,8 +4,8 @@
 
 import { promises as fs } from "fs";
 import path from "path";
-import { ToolsetConfig, ToolsetParserOptions, ValidationResult } from "./types";
-import { validateToolsetConfig } from "./validator";
+import { ToolsetConfig, ToolsetParserOptions, ValidationResult } from "./types.js";
+import { validateToolsetConfig } from "./validator.js";
 
 /**
  * Load toolset configuration from file

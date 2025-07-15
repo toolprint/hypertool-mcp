@@ -2,9 +2,10 @@
  * Tests for health monitoring system
  */
 
-import { HealthMonitor, HealthState, HealthCheckResult } from "./health-monitor";
-import { ConnectionEventType, ConnectionEventCallback } from "./types";
-import { ServerConfig } from "../types/config";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { HealthMonitor, HealthState, HealthCheckResult } from "./health-monitor.js";
+import { ConnectionEventType, ConnectionEventCallback } from "./types.js";
+import { ServerConfig } from "../types/config.js";
 
 // Mock connection class
 class MockConnection {
@@ -297,7 +298,7 @@ describe("HealthMonitor", () => {
     it("should handle ping errors as failed", async () => {
       mockConnection.setConnected(true);
       // Mock ping to throw error
-      jest.spyOn(mockConnection, 'ping').mockRejectedValue(new Error("Ping failed"));
+      vi.spyOn(mockConnection, 'ping').mockRejectedValue(new Error("Ping failed"));
       
       const results = await healthMonitor.performHealthCheck();
       const result = results.get("test-server")!;

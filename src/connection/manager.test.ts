@@ -2,15 +2,16 @@
  * Integration tests for Connection Manager
  */
 
-import { ConnectionManager } from "./manager";
-import { ConnectionFactory } from "./factory";
-import { StdioServerConfig, HttpServerConfig } from "../types/config";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { ConnectionManager } from "./manager.js";
+import { ConnectionFactory } from "./factory.js";
+import { StdioServerConfig, HttpServerConfig } from "../types/config.js";
 import {
   ConnectionState,
   ConnectionEventType,
   Connection,
   ConnectionEvent,
-} from "./types";
+} from "./types.js";
 
 // Mock connection for testing
 class MockConnection implements Connection {
@@ -193,8 +194,8 @@ describe("ConnectionManager", () => {
       await manager.connect("git-server");
 
       const mockConnection = mockFactory.getMockConnection("git-server")!;
-      const disconnectSpy = jest.spyOn(mockConnection, "disconnect");
-      const connectSpy = jest.spyOn(mockConnection, "connect");
+      const disconnectSpy = vi.spyOn(mockConnection, "disconnect");
+      const connectSpy = vi.spyOn(mockConnection, "connect");
 
       await manager.reconnect("git-server");
 

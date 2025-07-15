@@ -8,7 +8,7 @@ import {
   SSEServerConfig,
   ParseResult,
   ParserOptions,
-} from "../types/config";
+} from "../types/config.js";
 
 /**
  * MCP Configuration Parser

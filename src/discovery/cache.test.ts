@@ -2,8 +2,9 @@
  * Unit tests for tool cache with TTL validation
  */
 
-import { ToolCache } from "./cache";
-import { DiscoveredTool, DiscoveryConfig } from "./types";
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { ToolCache } from "./cache.js";
+import { DiscoveredTool, DiscoveryConfig } from "./types.js";
 
 describe("ToolCache", () => {
   let cache: ToolCache;

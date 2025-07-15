@@ -3,7 +3,7 @@
  */
 
 import { EventEmitter } from "events";
-import { ServerConfig } from "../types/config";
+import { ServerConfig } from "../types/config.js";
 import {
   Connection,
   ConnectionEventType,
@@ -13,8 +13,8 @@ import {
   ConnectionStatus,
   IConnectionPool,
   DEFAULT_POOL_CONFIG,
-} from "./types";
-import { ConnectionFactory } from "./factory";
+} from "./types.js";
+import { ConnectionFactory } from "./factory.js";
 
 /**
  * Connection pool manages a collection of connections to MCP servers

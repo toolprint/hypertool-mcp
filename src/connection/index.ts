@@ -1,5 +1,5 @@
-export { ConnectionManager } from "./manager";
-export { ConnectionPool } from "./pool";
-export * from "./types";
-export * from "./clients";
-export { HealthMonitor, HealthState, HealthCheckResult } from "./health-monitor";
+export { ConnectionManager } from "./manager.js";
+export { ConnectionPool } from "./pool.js";
+export * from "./types.js";
+export * from "./clients/index.js";
+export { HealthMonitor, HealthState, HealthCheckResult } from "./health-monitor.js";

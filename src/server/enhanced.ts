@@ -2,17 +2,17 @@
  * Enhanced Meta-MCP server with request routing capabilities
  */
 
-import { MetaMCPServer } from "./base";
-import { MetaMCPServerConfig, ServerInitOptions } from "./types";
+import { MetaMCPServer } from "./base.js";
+import { MetaMCPServerConfig, ServerInitOptions } from "./types.js";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { IRequestRouter, RequestRouter } from "../router";
-import { IToolDiscoveryEngine, ToolDiscoveryEngine } from "../discovery";
-import { IConnectionManager, ConnectionManager } from "../connection";
-import { MCPConfigParser } from "../config";
+import { IRequestRouter, RequestRouter } from "../router/index.js";
+import { IToolDiscoveryEngine, ToolDiscoveryEngine } from "../discovery/index.js";
+import { IConnectionManager, ConnectionManager } from "../connection/index.js";
+import { MCPConfigParser } from "../config/index.js";
 import ora from "ora";
 // Note: All mcp-tools functionality now handled by ToolsetManager
-import { ToolsetManager, ToolsetConfig, ToolsetChangeEvent } from "../toolset";
-import { DiscoveredToolsChangedEvent } from "../discovery/types";
+import { ToolsetManager, ToolsetConfig, ToolsetChangeEvent } from "../toolset/index.js";
+import { DiscoveredToolsChangedEvent } from "../discovery/types.js";
 
 /**
  * Enhanced Meta-MCP server with routing capabilities
@@ -67,7 +67,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           }
           if (parseResult.validationErrors) {
             console.error(`   Validation errors:`);
-            parseResult.validationErrors.forEach(err => {
+            parseResult.validationErrors.forEach((err: string) => {
               console.error(`     • ${err}`);
             });
           }
@@ -140,7 +140,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         if (options.debug && toolCount > 0) {
           console.log('\n📋 Tools discovered by server:');
           const toolsByServer: Record<string, number> = {};
-          discoveredTools.forEach(tool => {
+          discoveredTools.forEach((tool: any) => {
             toolsByServer[tool.serverName] = (toolsByServer[tool.serverName] || 0) + 1;
           });
 
@@ -199,7 +199,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   private async checkToolsetStatus(debug?: boolean): Promise<void> {
     try {
       const listResult = await this.toolsetManager.listSavedToolsets();
-      const storedToolsets = listResult.success ? listResult.toolsets.reduce((acc, t) => ({ ...acc, [t.name]: t }), {}) : {};
+      const storedToolsets = listResult.success ? listResult.toolsets.reduce((acc: any, t: any) => ({ ...acc, [t.name]: t }), {}) : {};
       const hasToolsets = Object.keys(storedToolsets).length > 0;
       const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();
 
@@ -218,7 +218,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    Example: Create a dev toolset with git and docker tools
    `);
       } else if (!activeToolsetInfo && hasToolsets) {
-        const toolsetNames = listResult.success ? listResult.toolsets.map(t => t.name) : [];
+        const toolsetNames = listResult.success ? listResult.toolsets.map((t: any) => t.name) : [];
         console.warn(`
 ⚠️  WARNING: No toolset equipped
    
@@ -717,7 +717,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             const activeToolset = this.toolsetManager.getActiveToolset()!;
 
             // Count servers by status using discovery engine to resolve server information
-            const availableServers = new Set(discoveredTools.map(t => t.serverName));
+            const availableServers = new Set(discoveredTools.map((t: any) => t.serverName));
             const toolsetServers = new Set<string>();
 
             // Use discovery engine to resolve each tool reference and get server names

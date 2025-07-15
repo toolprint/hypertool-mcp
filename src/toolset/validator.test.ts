@@ -2,10 +2,11 @@
  * Tests for simplified toolset configuration validator
  */
 
+import { describe, it, expect } from 'vitest';
 import { 
   validateToolsetConfig
-} from "./validator";
-import { ToolsetConfig, DynamicToolReference } from "./types";
+} from "./validator.js";
+import { ToolsetConfig, DynamicToolReference } from "./types.js";
 
 describe("ToolsetValidator", () => {
   describe("validateToolsetConfig", () => {

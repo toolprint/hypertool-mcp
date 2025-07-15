@@ -2,11 +2,11 @@
  * Request router module exports
  */
 
-export * from "./types";
-export * from "./router";
+export * from "./types.js";
+export * from "./router.js";
 
 // Re-export main classes for convenience
-export { RequestRouter } from "./router";
+export { RequestRouter } from "./router.js";
 export type {
   IRequestRouter,
   ToolRoute,
@@ -14,4 +14,4 @@ export type {
   RoutingResult,
   RouterConfig,
   RouterStats,
-} from "./types";
+} from "./types.js";

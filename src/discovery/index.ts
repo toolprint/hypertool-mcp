@@ -2,8 +2,8 @@
  * Tool discovery module exports
  */
 
-export * from "./types";
-export * from "./service";
+export * from "./types.js";
+export * from "./service.js";
 
 // Re-export main class for convenience
-export { ToolDiscoveryEngine } from "./service";
+export { ToolDiscoveryEngine } from "./service.js";

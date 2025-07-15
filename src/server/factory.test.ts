@@ -2,9 +2,10 @@
  * Unit tests for Meta-MCP server factory
  */
 
-import { MetaMCPServerFactory } from "./factory";
-import { MetaMCPServer } from "./base";
-import { MetaMCPServerConfig, TransportConfig } from "./types";
+import { describe, it, expect } from 'vitest';
+import { MetaMCPServerFactory } from "./factory.js";
+import { MetaMCPServer } from "./base.js";
+import { MetaMCPServerConfig, TransportConfig } from "./types.js";
 
 describe("MetaMCPServerFactory", () => {
   describe("createServer", () => {

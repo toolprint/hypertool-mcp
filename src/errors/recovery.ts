@@ -3,8 +3,8 @@
  */
 
 import { EventEmitter } from "events";
-import { Logger, getLogger } from "../logging";
-import { MetaMCPError, isRetryableError, ConnectionError, ServerUnavailableError } from "./index";
+import { Logger, getLogger } from "../logging/index.js";
+import { MetaMCPError, isRetryableError, ConnectionError, ServerUnavailableError } from "./index.js";
 
 /**
  * Retry configuration

@@ -2,7 +2,7 @@
  * TypeScript interfaces for request routing
  */
 
-import { DiscoveredTool } from "../discovery/types";
+import { DiscoveredTool } from "../discovery/types.js";
 import { CallToolRequest, CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 /**

@@ -3,7 +3,7 @@
  */
 
 import { EventEmitter } from "events";
-import { ServerConfig } from "../types/config";
+import { ServerConfig } from "../types/config.js";
 import {
   Connection,
   ConnectionEventType,
@@ -13,12 +13,12 @@ import {
   ConnectionPoolConfig,
   IConnectionManager,
   IConnectionPool,
-} from "./types";
-import { ConnectionPool } from "./pool";
-import { ConnectionFactory } from "./factory";
-import { HealthMonitor } from "./health-monitor";
-import { Logger, createLogger } from "../logging";
-import { RecoveryCoordinator } from "../errors/recovery";
+} from "./types.js";
+import { ConnectionPool } from "./pool.js";
+import { ConnectionFactory } from "./factory.js";
+import { HealthMonitor } from "./health-monitor.js";
+import { Logger, createLogger } from "../logging/index.js";
+import { RecoveryCoordinator } from "../errors/recovery.js";
 
 /**
  * Connection manager orchestrates connections to multiple MCP servers

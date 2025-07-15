@@ -2,7 +2,7 @@
  * TypeScript interfaces for toolset configuration
  */
 
-import { DiscoveredTool } from "../discovery/types";
+import { DiscoveredTool } from "../discovery/types.js";
 
 /**
  * Dynamic tool reference that can specify a tool by namespacedName, refId, or both

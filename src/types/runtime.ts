@@ -2,7 +2,7 @@
  * Runtime options for Meta-MCP server from CLI arguments
  */
 
-import { ServerTransportType } from '../server/types';
+import { ServerTransportType } from "../server/types.js";
 
 /**
  * Runtime transport type options (matches server ServerTransportType)

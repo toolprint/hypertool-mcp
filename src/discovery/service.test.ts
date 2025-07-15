@@ -2,16 +2,17 @@
  * Unit tests for tool discovery service
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EventEmitter } from "events";
-import { ToolDiscoveryEngine } from "./service";
-import { DiscoveryConfig } from "./types";
+import { ToolDiscoveryEngine } from "./service.js";
+import { DiscoveryConfig } from "./types.js";
 import { Tool, ListToolsResult } from "@modelcontextprotocol/sdk/types.js";
 import {
   IConnectionManager,
   Connection,
   ConnectionStatus,
   ConnectionState,
-} from "../connection/types";
+} from "../connection/types.js";
 
 // Mock connection manager
 class MockConnectionManager extends EventEmitter implements IConnectionManager {

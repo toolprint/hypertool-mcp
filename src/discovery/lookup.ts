@@ -2,7 +2,7 @@
  * Efficient lookup structures for tool storage and retrieval
  */
 
-import { DiscoveredTool } from "./types";
+import { DiscoveredTool } from "./types.js";
 
 /**
  * Tool lookup index for fast retrieval

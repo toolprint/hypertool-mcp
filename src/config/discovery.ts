@@ -4,7 +4,8 @@
 
 import * as fs from "fs/promises";
 import * as path from "path";
-import { loadUserPreferences, updateMcpConfigPath } from "./preferences";
+import * as os from "os";
+import { loadUserPreferences, updateMcpConfigPath } from "./preferences.js";
 
 /**
  * Standard locations to search for MCP configuration files
@@ -27,7 +28,6 @@ const STANDARD_CONFIG_LOCATIONS = [
  */
 function resolvePath(filePath: string): string {
   if (filePath.startsWith("~/")) {
-    const os = require("os");
     return path.join(os.homedir(), filePath.slice(2));
   }
   return path.resolve(filePath);

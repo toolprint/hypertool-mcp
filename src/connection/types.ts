@@ -2,7 +2,7 @@
  * TypeScript interfaces for connection management
  */
 
-import { ServerConfig } from "../types/config";
+import { ServerConfig } from "../types/config.js";
 
 /**
  * Connection state enumeration

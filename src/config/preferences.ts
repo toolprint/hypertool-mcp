@@ -5,7 +5,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import { homedir } from "os";
-import { ToolsetConfig } from "../toolset/types";
+import { ToolsetConfig } from "../toolset/types.js";
 
 // Configuration directory structure
 const TOOLPRINT_CONFIG_DIR = path.join(homedir(), ".toolprint");

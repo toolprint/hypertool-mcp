@@ -4,7 +4,7 @@
 
 import { createHash } from "crypto";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { DiscoveredTool, MCPToolDefinition, ToolChangeInfo } from "./types";
+import { DiscoveredTool, MCPToolDefinition, ToolChangeInfo } from "./types.js";
 
 /**
  * Hash algorithm to use

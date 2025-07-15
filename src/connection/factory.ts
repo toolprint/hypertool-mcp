@@ -7,15 +7,15 @@ import {
   StdioServerConfig,
   HttpServerConfig,
   SSEServerConfig,
-} from "../types/config";
+} from "../types/config.js";
 import {
   Connection,
   ConnectionOptions,
   ConnectionFactory as IConnectionFactory,
-} from "./types";
-import { StdioConnection } from "./clients/stdio";
-import { HttpConnection } from "./clients/http";
-import { SSEConnection } from "./clients/sse";
+} from "./types.js";
+import { StdioConnection } from "./clients/stdio.js";
+import { HttpConnection } from "./clients/http.js";
+import { SSEConnection } from "./clients/sse.js";
 
 /**
  * Factory for creating connections based on server configuration

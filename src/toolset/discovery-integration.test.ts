@@ -2,9 +2,10 @@
  * Test ToolsetManager integration with DiscoveryEngine toolsChanged events
  */
 
-import { ToolsetManager } from "./index";
-import { ToolsetConfig, ToolsetChangeEvent } from "./types";
-import { DiscoveredTool, IToolDiscoveryEngine, DiscoveredToolsChangedEvent } from "../discovery/types";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { ToolsetManager } from "./index.js";
+import { ToolsetConfig, ToolsetChangeEvent } from "./types.js";
+import { DiscoveredTool, IToolDiscoveryEngine, DiscoveredToolsChangedEvent } from "../discovery/types.js";
 import { EventEmitter } from "events";
 
 // Mock discovery engine that can emit toolsChanged events
@@ -53,9 +54,11 @@ class MockDiscoveryEngine extends EventEmitter implements IToolDiscoveryEngine {
       toolsByServer: {},
     };
   }
-  getServerStates() { return []; }
-
-  // Method to simulate toolsChanged event
+  getServerStates() {
+    return [];
+  }
+  
+  // Helper method to simulate toolsChanged events
   simulateToolsChanged(event: DiscoveredToolsChangedEvent) {
     this.emit('toolsChanged', event);
   }
@@ -64,7 +67,8 @@ class MockDiscoveryEngine extends EventEmitter implements IToolDiscoveryEngine {
 describe("ToolsetManager Discovery Integration", () => {
   let toolsetManager: ToolsetManager;
   let mockDiscovery: MockDiscoveryEngine;
-
+  
+  // Sample tool for testing
   const sampleTool: DiscoveredTool = {
     name: "status",
     serverName: "git",
@@ -89,7 +93,7 @@ describe("ToolsetManager Discovery Integration", () => {
     toolsetManager.setDiscoveryEngine(mockDiscovery);
   });
 
-  it("should emit toolsetChanged when active toolset tools are affected by discovery changes", (done) => {
+  it("should emit toolsetChanged when active toolset tools are affected by discovery changes", async () => {
     // Set up an active toolset that includes the sample tool
     const toolsetConfig: ToolsetConfig = {
       name: "test-toolset",
@@ -101,14 +105,16 @@ describe("ToolsetManager Discovery Integration", () => {
       ],
     };
 
-    toolsetManager.setConfig(toolsetConfig);
+    toolsetManager.setCurrentToolset(toolsetConfig);
 
     // Listen for toolset change events
-    toolsetManager.on('toolsetChanged', (event: ToolsetChangeEvent) => {
-      expect(event.changeType).toBe('updated');
-      expect(event.newToolset).toBe(toolsetConfig);
-      expect(event.previousToolset).toBe(toolsetConfig);
-      done();
+    const toolsetChangedPromise = new Promise<void>((resolve) => {
+      toolsetManager.on('toolsetChanged', (event: ToolsetChangeEvent) => {
+        expect(event.changeType).toBe('updated');
+        expect(event.newToolset).toBe(toolsetConfig);
+        expect(event.previousToolset).toBe(toolsetConfig);
+        resolve();
+      });
     });
 
     // Simulate discovery change affecting our tool
@@ -134,9 +140,12 @@ describe("ToolsetManager Discovery Integration", () => {
     };
 
     mockDiscovery.simulateToolsChanged(discoveryEvent);
+    
+    // Wait for the event to be handled
+    await toolsetChangedPromise;
   });
 
-  it("should emit toolsetChanged when active toolset tools are removed", (done) => {
+  it("should emit toolsetChanged when active toolset tools are removed", async () => {
     // Set up an active toolset
     const toolsetConfig: ToolsetConfig = {
       name: "test-toolset",
@@ -148,12 +157,14 @@ describe("ToolsetManager Discovery Integration", () => {
       ],
     };
 
-    toolsetManager.setConfig(toolsetConfig);
+    toolsetManager.setCurrentToolset(toolsetConfig);
 
     // Listen for toolset change events
-    toolsetManager.on('toolsetChanged', (event: ToolsetChangeEvent) => {
-      expect(event.changeType).toBe('updated');
-      done();
+    const toolsetChangedPromise = new Promise<void>((resolve) => {
+      toolsetManager.on('toolsetChanged', (event: ToolsetChangeEvent) => {
+        expect(event.changeType).toBe('updated');
+        resolve();
+      });
     });
 
     // Simulate tool removal
@@ -178,25 +189,29 @@ describe("ToolsetManager Discovery Integration", () => {
     };
 
     mockDiscovery.simulateToolsChanged(discoveryEvent);
+    
+    // Wait for the event to be handled
+    await toolsetChangedPromise;
   });
 
-  it("should NOT emit toolsetChanged when unrelated tools change", (done) => {
-    // Set up an active toolset that doesn't include the changing tool
+  it("should NOT emit toolsetChanged when unrelated tools change", async () => {
+    // Set up an active toolset with a different tool
     const toolsetConfig: ToolsetConfig = {
       name: "test-toolset",
       description: "Test toolset",
       version: "1.0.0",
       createdAt: new Date(),
       tools: [
-        { namespacedName: "docker.ps", refId: "different-hash" }
+        { namespacedName: "docker.ps", refId: "dockerHashABCD1234567890" }
       ],
     };
 
-    toolsetManager.setConfig(toolsetConfig);
+    toolsetManager.setCurrentToolset(toolsetConfig);
 
     // Listen for toolset change events (should not be called)
+    let eventEmitted = false;
     toolsetManager.on('toolsetChanged', () => {
-      done(new Error('Should not emit toolsetChanged for unrelated tool changes'));
+      eventEmitted = true;
     });
 
     // Simulate discovery change for unrelated tool
@@ -223,32 +238,33 @@ describe("ToolsetManager Discovery Integration", () => {
 
     mockDiscovery.simulateToolsChanged(discoveryEvent);
 
-    // Complete the test after a short delay
-    setTimeout(() => done(), 100);
+    // Wait a short time to ensure no event is emitted
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Verify no event was emitted
+    expect(eventEmitted).toBe(false);
   });
 
-  it("should NOT emit toolsetChanged when no toolset is active", (done) => {
+  it("should NOT emit toolsetChanged when no toolset is active", async () => {
     // Don't set any active toolset
 
     // Listen for toolset change events (should not be called)
-    toolsetManager.on('toolsetChanged', () => {
-      done(new Error('Should not emit toolsetChanged when no toolset is active'));
-    });
+    const toolsetHandler = vi.fn();
+    toolsetManager.on('toolsetChanged', toolsetHandler);
 
-    // Simulate discovery change
+    // Simulate discovery changes
     const discoveryEvent: DiscoveredToolsChangedEvent = {
       serverName: "git",
       changes: [
         {
           tool: sampleTool,
-          changeType: "updated",
-          previousHash: "oldHash123456789012345678901234567890",
+          changeType: "added",
           currentHash: "abcd1234567890abcdef1234567890abcdef12",
         }
       ],
       summary: {
-        added: 0,
-        updated: 1,
+        added: 1,
+        updated: 0,
         removed: 0,
         unchanged: 0,
         total: 1,
@@ -259,7 +275,10 @@ describe("ToolsetManager Discovery Integration", () => {
 
     mockDiscovery.simulateToolsChanged(discoveryEvent);
 
-    // Complete the test after a short delay
-    setTimeout(() => done(), 100);
+    // Wait a short time to ensure no event is emitted
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Verify no event was emitted
+    expect(toolsetHandler).not.toHaveBeenCalled();
   });
 });

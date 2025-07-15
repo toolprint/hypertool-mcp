@@ -15,9 +15,9 @@ import {
   ServerInitOptions,
   ServerState,
   ServerStatus,
-} from "./types";
+} from "./types.js";
 import { EventEmitter } from "events";
-import { McpHttpServer } from "./http-server";
+import { McpHttpServer } from "./http-server.js";
 
 /**
  * Base Meta-MCP server class

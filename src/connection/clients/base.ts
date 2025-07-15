@@ -4,7 +4,7 @@
 
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
-import { ServerConfig } from "../../types/config";
+import { ServerConfig } from "../../types/config.js";
 import {
   Connection,
   ConnectionState,
@@ -14,7 +14,7 @@ import {
   ConnectionEventCallback,
   ConnectionEvent,
   DEFAULT_CONNECTION_OPTIONS,
-} from "../types";
+} from "../types.js";
 
 /**
  * Base connection implementation providing common functionality

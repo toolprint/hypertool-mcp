@@ -2,6 +2,7 @@
  * Tests for logging system
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   Logger,
   LogLevel,
@@ -12,17 +13,17 @@ import {
   createLogger,
   initializeLogger,
   getLogger,
-} from "./index";
-import { ConnectionError } from "../errors";
+} from "./index.js";
+import { ConnectionError } from "../errors/index.js";
 
 // Mock console methods for testing
 const originalConsole = { ...console };
 beforeEach(() => {
-  console.log = jest.fn();
-  console.info = jest.fn();
-  console.warn = jest.fn();
-  console.error = jest.fn();
-  console.debug = jest.fn();
+  console.log = vi.fn();
+  console.info = vi.fn();
+  console.warn = vi.fn();
+  console.error = vi.fn();
+  console.debug = vi.fn();
 });
 
 afterEach(() => {
@@ -181,7 +182,7 @@ describe("Logger", () => {
 
   test("should emit log events", () => {
     const logger = new Logger({ enableConsole: false });
-    const logHandler = jest.fn();
+    const logHandler = vi.fn();
     
     logger.on("log", logHandler);
     logger.info("Test message", { key: "value" });
@@ -199,7 +200,7 @@ describe("Logger", () => {
     const parentLogger = new Logger({ level: LogLevel.DEBUG });
     const childLogger = parentLogger.child("ChildComponent");
 
-    const logHandler = jest.fn();
+    const logHandler = vi.fn();
     childLogger.on("log", logHandler);
     
     childLogger.info("Child message");
@@ -214,7 +215,7 @@ describe("Logger", () => {
 
   test("should log connection events", () => {
     const logger = new Logger({ enableConsole: false });
-    const logHandler = jest.fn();
+    const logHandler = vi.fn();
     
     logger.on("log", logHandler);
     logger.logConnection("connected", "test-server", { duration: 150 });
@@ -233,7 +234,7 @@ describe("Logger", () => {
 
   test("should log tool call events", () => {
     const logger = new Logger({ enableConsole: false });
-    const logHandler = jest.fn();
+    const logHandler = vi.fn();
     
     logger.on("log", logHandler);
     logger.logToolCall("started", "test-tool", "test-server", "req-123", { args: {} });
@@ -268,7 +269,7 @@ describe("Logger", () => {
 
     logger.info("Test message", { key: "value" });
 
-    const logCall = (console.info as jest.Mock).mock.calls[0][0];
+    const logCall = (console.info as any).mock.calls[0][0];
     const parsed = JSON.parse(logCall);
     
     expect(parsed).toMatchObject({
@@ -290,7 +291,7 @@ describe("Global Logger", () => {
 
   test("should create component logger", () => {
     const logger = createLogger("TestComponent", { level: LogLevel.WARN });
-    const logHandler = jest.fn();
+    const logHandler = vi.fn();
     
     logger.on("log", logHandler);
     logger.warn("Test warning");
@@ -314,7 +315,7 @@ describe("Global Logger", () => {
 describe("Log Entry Fields", () => {
   test("should extract fields from context", () => {
     const logger = new Logger({ enableConsole: false });
-    const logHandler = jest.fn();
+    const logHandler = vi.fn();
     
     logger.on("log", logHandler);
     logger.info("Test", {
@@ -341,7 +342,7 @@ describe("Log Entry Fields", () => {
 
   test("should handle missing context fields", () => {
     const logger = new Logger({ enableConsole: false });
-    const logHandler = jest.fn();
+    const logHandler = vi.fn();
     
     logger.on("log", logHandler);
     logger.info("Test");

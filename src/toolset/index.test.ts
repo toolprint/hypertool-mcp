@@ -2,12 +2,13 @@
  * Tests for ToolsetManager with simplified structure
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { promises as fs } from "fs";
 import path from "path";
 import os from "os";
-import { ToolsetManager } from "./index";
-import { ToolsetConfig } from "./types";
-import { DiscoveredTool, IToolDiscoveryEngine } from "../discovery/types";
+import { ToolsetManager } from "./index.js";
+import { ToolsetConfig } from "./types.js";
+import { DiscoveredTool, IToolDiscoveryEngine } from "../discovery/types.js";
 
 // Mock discovery engine
 class MockDiscoveryEngine implements IToolDiscoveryEngine {
@@ -161,11 +162,11 @@ describe("ToolsetManager", () => {
       const filePath = path.join(tempDir, "config.json");
       await fs.writeFile(filePath, JSON.stringify(config));
 
-      const result = await manager.loadConfig(filePath);
+      const result = await manager.loadToolsetFromConfig(filePath);
 
       expect(result.success).toBe(true);
-      expect(manager.isConfigLoaded()).toBe(true);
-      expect(manager.getConfig()?.name).toBe("test-config");
+      expect(manager.getCurrentToolset()).toBeDefined();
+      expect(manager.getCurrentToolset()?.name).toBe("test-config");
       expect(manager.getConfigPath()).toBe(filePath);
     });
 
@@ -177,16 +178,16 @@ describe("ToolsetManager", () => {
       const filePath = path.join(tempDir, "invalid.json");
       await fs.writeFile(filePath, JSON.stringify(invalidConfig));
 
-      const result = await manager.loadConfig(filePath);
+      const result = await manager.loadToolsetFromConfig(filePath);
 
       expect(result.success).toBe(false);
-      expect(manager.isConfigLoaded()).toBe(false);
+      expect(manager.getCurrentToolset()).toBeUndefined();
       expect(result.validation.valid).toBe(false);
       expect(result.validation.errors).toContain("Configuration name must contain only lowercase letters, numbers, and hyphens");
     });
 
     it("should handle file read errors", async () => {
-      const result = await manager.loadConfig("/nonexistent/path.json");
+      const result = await manager.loadToolsetFromConfig("/nonexistent/path.json");
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -204,10 +205,10 @@ describe("ToolsetManager", () => {
         createdAt: new Date(),
       };
 
-      manager.setConfig(config);
+      manager.setCurrentToolset(config);
 
       const filePath = path.join(tempDir, "saved.json");
-      const result = await manager.saveConfig(filePath);
+      const result = await manager.persistToolset(filePath);
 
       expect(result.success).toBe(true);
       expect(manager.getConfigPath()).toBe(filePath);
@@ -232,22 +233,22 @@ describe("ToolsetManager", () => {
 
       const filePath = path.join(tempDir, "config.json");
       await fs.writeFile(filePath, JSON.stringify(config));
-      await manager.loadConfig(filePath);
+      await manager.loadToolsetFromConfig(filePath);
 
       // Modify config
-      const modifiedConfig = manager.getConfig()!;
+      const modifiedConfig = manager.getCurrentToolset()!;
       modifiedConfig.description = "Modified description";
-      manager.setConfig(modifiedConfig);
+      manager.setCurrentToolset(modifiedConfig);
 
       // Save without specifying path
-      const result = await manager.saveConfig();
+      const result = await manager.persistToolset();
 
       expect(result.success).toBe(true);
 
       // Reload and verify
-      const reloadResult = await manager.loadConfig(filePath);
+      const reloadResult = await manager.loadToolsetFromConfig(filePath);
       expect(reloadResult.success).toBe(true);
-      expect(manager.getConfig()?.description).toBe("Modified description");
+      expect(manager.getCurrentToolset()?.description).toBe("Modified description");
     });
 
     it("should require path if no previous path", async () => {
@@ -258,9 +259,9 @@ describe("ToolsetManager", () => {
         createdAt: new Date(),
       };
 
-      manager.setConfig(config);
+      manager.setCurrentToolset(config);
 
-      const result = await manager.saveConfig();
+      const result = await manager.persistToolset();
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("No file path specified");
@@ -301,11 +302,11 @@ describe("ToolsetManager", () => {
         createdAt: new Date(),
       };
 
-      const result = manager.setConfig(invalidConfig);
+      const result = manager.setCurrentToolset(invalidConfig);
 
       expect(result.valid).toBe(false);
       expect(result.errors).toContain("Configuration must have a valid name");
-      expect(manager.isConfigLoaded()).toBe(false);
+      expect(manager.getCurrentToolset()).toBeUndefined();
     });
 
     it("should validate current configuration", () => {
@@ -318,16 +319,16 @@ describe("ToolsetManager", () => {
         createdAt: new Date(),
       };
 
-      manager.setConfig(config);
+      manager.setCurrentToolset(config);
 
-      const result = manager.validateConfig();
+      const result = manager.isCurrentToolsetValid();
 
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
     it("should validate when no config loaded", () => {
-      const result = manager.validateConfig();
+      const result = manager.isCurrentToolsetValid();
 
       expect(result.valid).toBe(false);
       expect(result.errors).toContain("No configuration loaded");
@@ -343,12 +344,11 @@ describe("ToolsetManager", () => {
         createdAt: new Date(),
       };
 
-      manager.setConfig(config);
-      expect(manager.isConfigLoaded()).toBe(true);
+      manager.setCurrentToolset(config);
+      expect(manager.getCurrentToolset()).toBeDefined();
 
-      manager.clearConfig();
-      expect(manager.isConfigLoaded()).toBe(false);
-      expect(manager.getConfig()).toBeUndefined();
+      manager.clearCurrentToolset();
+      expect(manager.getCurrentToolset()).toBeUndefined();
       expect(manager.getConfigPath()).toBeUndefined();
     });
 
@@ -363,12 +363,12 @@ describe("ToolsetManager", () => {
       const filePath = path.join(tempDir, "config.json");
       await fs.writeFile(filePath, JSON.stringify(config));
       
-      await manager.loadConfig(filePath);
+      await manager.loadToolsetFromConfig(filePath);
       expect(manager.getConfigPath()).toBe(filePath);
 
       // Path should persist after save
       const newPath = path.join(tempDir, "new-config.json");
-      await manager.saveConfig(newPath);
+      await manager.persistToolset(newPath);
       expect(manager.getConfigPath()).toBe(newPath);
     });
   });

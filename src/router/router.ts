@@ -15,9 +15,9 @@ import {
   RouterStats,
   DEFAULT_ROUTER_CONFIG,
   ROUTER_ERROR_CODES,
-} from "./types";
-import { IToolDiscoveryEngine, DiscoveredTool } from "../discovery/types";
-import { IConnectionManager } from "../connection/types";
+} from "./types.js";
+import { IToolDiscoveryEngine, DiscoveredTool } from "../discovery/types.js";
+import { IConnectionManager } from "../connection/types.js";
 
 /**
  * Request router implementation

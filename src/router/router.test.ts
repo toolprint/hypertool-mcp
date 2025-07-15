@@ -2,11 +2,12 @@
  * Request router tests
  */
 
-import { RequestRouter } from "./router";
-import { ROUTER_ERROR_CODES } from "./types";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { RequestRouter } from "./router.js";
+import { ROUTER_ERROR_CODES } from "./types.js";
 import { CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
-import { IToolDiscoveryEngine, DiscoveredTool } from "../discovery/types";
-import { IConnectionManager, Connection } from "../connection/types";
+import { IToolDiscoveryEngine, DiscoveredTool } from "../discovery/types.js";
+import { IConnectionManager, Connection } from "../connection/types.js";
 
 // Mock implementations
 class MockDiscoveryEngine implements IToolDiscoveryEngine {
@@ -89,7 +90,7 @@ class MockConnection implements Connection {
     this.config = {};
     this.status = {};
     this.client = {
-      callTool: jest.fn().mockResolvedValue(
+      callTool: vi.fn().mockResolvedValue(
         mockResponse || {
           content: [{ type: "text", text: "Mock response" }],
         }
@@ -496,7 +497,7 @@ describe("RequestRouter", () => {
       await router.initialize({ enableLogging: true });
 
       // Create a spy on console.log to check if logging occurs
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation();
 
       const request: CallToolRequest["params"] = {
         name: "unknown.tool",
