@@ -5,10 +5,10 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { MetaMCPServerFactory } from "./server";
-import { TransportConfig } from "./server/types";
-import { RuntimeOptions, DEFAULT_RUNTIME_OPTIONS, RuntimeTransportType } from "./types/runtime";
-import { discoverMcpConfig } from "./config/discovery";
+import { MetaMCPServerFactory } from "./server/index.js";
+import { TransportConfig } from "./server/types.js";
+import { RuntimeOptions, DEFAULT_RUNTIME_OPTIONS, RuntimeTransportType } from "./types/runtime.js";
+import { discoverMcpConfig } from "./config/discovery.js";
 
 /**
  * Parse CLI arguments and return runtime options
@@ -187,8 +187,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export { main };
-export * from "./server";
-export * from "./config";
-export * from "./types/config";
-export * from "./types/runtime";
-export * from "./router";
+export * from "./server/index.js";
+export * from "./config/index.js";
+export * from "./types/config.js";
+export * from "./types/runtime.js";
+export * from "./router/index.js";
