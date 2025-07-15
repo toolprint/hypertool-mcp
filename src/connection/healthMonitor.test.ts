@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { HealthMonitor, HealthState, HealthCheckResult } from "./health-monitor.js";
+import { HealthMonitor, HealthState, HealthCheckResult } from "./healthMonitor.js";
 import { ConnectionEventType, ConnectionEventCallback } from "./types.js";
 import { ServerConfig } from "../types/config.js";
 
@@ -225,18 +225,20 @@ describe("HealthMonitor", () => {
       healthMonitor.addConnection(mockConnection as any);
     });
 
-    it("should update lastHealthyAt when becoming healthy", (done) => {
+    it("should update lastHealthyAt when becoming healthy", async () => {
       const initialTime = healthMonitor.getHealthStatus("test-server")!.lastHealthyAt!;
       
       // Wait a bit and trigger connected again
-      setTimeout(() => {
-        mockConnection.triggerConnected();
-        const status = healthMonitor.getHealthStatus("test-server");
-        if (status && status.lastHealthyAt) {
-          expect(status.lastHealthyAt.getTime()).toBeGreaterThan(initialTime.getTime());
-        }
-        done();
-      }, 10);
+      await new Promise((resolve) => {
+        setTimeout(() => {
+          mockConnection.triggerConnected();
+          const status = healthMonitor.getHealthStatus("test-server");
+          if (status && status.lastHealthyAt) {
+            expect(status.lastHealthyAt.getTime()).toBeGreaterThan(initialTime.getTime());
+          }
+          resolve(undefined);
+        }, 10);
+      });
     });
 
     it("should preserve lastHealthyAt when becoming unhealthy", () => {

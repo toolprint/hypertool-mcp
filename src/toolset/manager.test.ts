@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { promises as fs } from "fs";
 import path from "path";
 import os from "os";
-import { ToolsetManager } from "./index.js";
+import { ToolsetManager } from "./manager.js";
 import { ToolsetConfig } from "./types.js";
 import { DiscoveredTool, IToolDiscoveryEngine } from "../discovery/types.js";
 

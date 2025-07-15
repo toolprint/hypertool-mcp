@@ -16,7 +16,7 @@ import {
 } from "./types.js";
 import { ConnectionPool } from "./pool.js";
 import { ConnectionFactory } from "./factory.js";
-import { HealthMonitor } from "./health-monitor.js";
+import { HealthMonitor } from "./healthMonitor.js";
 import { Logger, createLogger } from "../logging/index.js";
 import { RecoveryCoordinator } from "../errors/recovery.js";
 
@@ -25,8 +25,7 @@ import { RecoveryCoordinator } from "../errors/recovery.js";
  */
 export class ConnectionManager
   extends EventEmitter
-  implements IConnectionManager
-{
+  implements IConnectionManager {
   private _pool: IConnectionPool;
   private _healthMonitor: HealthMonitor;
   private _logger: Logger;

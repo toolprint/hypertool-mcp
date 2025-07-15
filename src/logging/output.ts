@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import { Console } from 'console';
 import { spawnSync } from 'child_process';
 import { isDefined } from '../utils/helpers.js';
-import { APP_CONFIG, APP_NAME, BRAND_NAME } from '../config/app-config.js';
+import { APP_CONFIG, APP_NAME, BRAND_NAME } from '../config/appConfig.js';
 
 const stdioDisplay = new Console({
   stdout: process.stdout,
@@ -259,7 +259,7 @@ function getAsciiArt(text: string, font: FigletFont = PREFERRED_FONT): string {
 export function displayBanner(appName: string = APP_NAME): void {
   // 2. Display the app-specific banner (light blue)
   displayAppBanner(appName);
-  
+
   output.displaySpaceBuffer(1);
   output.displayLinkWithPrefix('Built and supported by the devs @ ', 'https://toolprint.ai');
   output.displayLinkWithPrefix('Check out more of our stuff at ', 'https://github.com/toolprint');

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ToolHashUtils } from "./hash-utils.js";
+import { ToolHashUtils } from "./hashUtils.js";
 import { DiscoveredTool } from "./types.js";
 
 describe("ToolHashUtils", () => {

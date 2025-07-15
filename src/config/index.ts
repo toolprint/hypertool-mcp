@@ -1,3 +1,3 @@
-export { MCPConfigParser } from "./parser.js";
+export { MCPConfigParser } from "./mcpConfigParser.js";
 export * from "../types/config.js";
-export * from "./app-config.js";
+export * from "./appConfig.js";

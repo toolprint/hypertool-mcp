@@ -9,7 +9,7 @@ import {
   ServerInitOptions,
   TransportConfig,
 } from "./types.js";
-import { APP_NAME, APP_VERSION, APP_DESCRIPTION } from "../config/app-config.js";
+import { APP_NAME, APP_VERSION, APP_DESCRIPTION } from "../config/appConfig.js";
 
 /**
  * Factory class for creating Hypertool MCP server instances

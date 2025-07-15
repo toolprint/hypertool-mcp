@@ -20,7 +20,7 @@ import {
 } from "./types.js";
 import { ToolCache } from "./cache.js";
 import { ToolLookupManager, SearchQuery, SearchResult } from "./lookup.js";
-import { ToolHashUtils, ToolHashManager } from "./hash-utils.js";
+import { ToolHashUtils, ToolHashManager } from "./hashUtils.js";
 
 /**
  * Tool discovery engine implementation

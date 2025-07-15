@@ -15,7 +15,7 @@ import { createLogger } from "../logging/index.js";
 
 const logger = createLogger({ module: 'server/enhanced' });
 // Note: All mcp-tools functionality now handled by ToolsetManager
-import { ToolsetManager, ToolsetChangeEvent } from "../toolset/index.js";
+import { ToolsetManager, ToolsetChangeEvent } from "../toolset/manager.js";
 import { DiscoveredToolsChangedEvent } from "../discovery/types.js";
 import { ToolDependencies, ToolModule, TOOL_MODULE_FACTORIES } from "./tools/index.js";
 /**

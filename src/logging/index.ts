@@ -6,7 +6,7 @@ import pino from 'pino';
 import { createWriteStream, mkdirSync, existsSync, renameSync, readdirSync, statSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
-import { APP_TECHNICAL_NAME, BRAND_NAME } from '../config/app-config.js';
+import { APP_TECHNICAL_NAME, BRAND_NAME } from '../config/appConfig.js';
 
 export interface LoggingConfig {
   level: pino.LevelWithSilent;
@@ -95,16 +95,16 @@ export class Logger {
   private createFileStream() {
     try {
       const logDir = join(homedir(), `.${BRAND_NAME.toLowerCase()}`, this.config.serverName, 'logs');
-      
+
       // Create directory synchronously on first use
       this.ensureLogDirectory(logDir);
-      
+
       // Main log file (no timestamp)
       const logFile = join(logDir, `${this.config.serverName}.log`);
-      
+
       // Rotate existing logs before creating new stream
       this.rotateLogFiles(logDir, logFile);
-      
+
       return createWriteStream(logFile, { flags: 'a' });
     } catch (error) {
       console.warn('Failed to create log file stream:', error);
@@ -164,7 +164,7 @@ export class Logger {
       for (let i = maxRotations - 1; i > 0; i--) {
         const oldPath = join(logDir, `${baseFileName}.${i}`);
         const newPath = join(logDir, `${baseFileName}.${i + 1}`);
-        
+
         if (existsSync(oldPath)) {
           try {
             if (i === maxRotations - 1) {
@@ -190,7 +190,7 @@ export class Logger {
           console.warn(`Warning: Could not rotate current log file ${currentLogPath}:`, error instanceof Error ? error.message : String(error));
         }
       }
-      
+
     } catch (error) {
       console.warn('Failed to rotate log files:', error);
       // Continue anyway - logging should not fail the application

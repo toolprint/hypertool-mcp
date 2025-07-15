@@ -5,8 +5,8 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as os from "os";
-import { loadUserPreferences, updateMcpConfigPath } from "./preferences.js";
-import { APP_TECHNICAL_NAME, BRAND_NAME } from "./app-config.js";
+import { loadUserPreferences, updateMcpConfigPath } from "./preferenceStore.js";
+import { APP_TECHNICAL_NAME, BRAND_NAME } from "./appConfig.js";
 import { createLogger } from "../logging/index.js";
 
 const logger = createLogger({ module: 'config/discovery' });
@@ -20,7 +20,7 @@ const STANDARD_CONFIG_LOCATIONS = [
   "mcp.json",
   `.${APP_TECHNICAL_NAME}.json`,
   `${APP_TECHNICAL_NAME}.json`,
-  
+
   // User home directory
   `~/.${BRAND_NAME.toLowerCase()}/${APP_TECHNICAL_NAME}/config.json`,
   `~/.${APP_TECHNICAL_NAME}.json`,
@@ -67,7 +67,7 @@ export async function discoverMcpConfig(
   // 1. Check CLI argument first (highest priority)
   if (cliConfigPath) {
     const resolvedPath = resolvePath(cliConfigPath);
-    
+
     if (await fileExists(resolvedPath)) {
       // Update user preference if requested
       if (updatePreference) {
@@ -78,7 +78,7 @@ export async function discoverMcpConfig(
           logger.warn("Warning: Could not update MCP config preference:", error);
         }
       }
-      
+
       return {
         configPath: resolvedPath,
         source: "cli",
@@ -97,7 +97,7 @@ export async function discoverMcpConfig(
     const preferences = await loadUserPreferences();
     if (preferences.mcpConfigPath) {
       const resolvedPath = resolvePath(preferences.mcpConfigPath);
-      
+
       if (await fileExists(resolvedPath)) {
         return {
           configPath: resolvedPath,
@@ -116,7 +116,7 @@ export async function discoverMcpConfig(
   // 3. Search standard locations
   for (const location of STANDARD_CONFIG_LOCATIONS) {
     const resolvedPath = resolvePath(location);
-    
+
     if (await fileExists(resolvedPath)) {
       return {
         configPath: resolvedPath,
@@ -137,7 +137,7 @@ export async function discoverMcpConfig(
  * Generate helpful error message when no config is found
  */
 function generateNoConfigFoundMessage(): string {
-  const locations = STANDARD_CONFIG_LOCATIONS.map(loc => 
+  const locations = STANDARD_CONFIG_LOCATIONS.map(loc =>
     loc.startsWith("~/") ? loc : `./${loc}`
   ).join("\n  - ");
 
@@ -168,12 +168,12 @@ export async function loadMcpConfig(configPath: string): Promise<any> {
   try {
     const content = await fs.readFile(configPath, "utf-8");
     const config = JSON.parse(content);
-    
+
     // Basic validation - ensure mcpServers field exists
     if (!config.mcpServers || typeof config.mcpServers !== "object") {
       throw new Error("Invalid MCP config: missing 'mcpServers' field");
     }
-    
+
     return config;
   } catch (error) {
     if (error instanceof SyntaxError) {

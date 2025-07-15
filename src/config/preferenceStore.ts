@@ -6,7 +6,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import { homedir } from "os";
 import { ToolsetConfig } from "../toolset/types.js";
-import { APP_TECHNICAL_NAME, BRAND_NAME } from "./app-config.js";
+import { APP_TECHNICAL_NAME, BRAND_NAME } from "./appConfig.js";
 
 // Configuration directory structure
 const BRAND_CONFIG_DIR = path.join(homedir(), `.${BRAND_NAME.toLowerCase()}`);
@@ -19,13 +19,13 @@ const PREFERENCES_FILE = path.join(APP_CONFIG_DIR, "preferences.json");
 export interface UserPreferences {
   /** Stored toolset configurations */
   toolsets: Record<string, ToolsetConfig>;
-  
+
   /** User's preferred path to their MCP server configuration file */
   mcpConfigPath?: string;
-  
+
   /** Last updated timestamp */
   lastUpdated?: string;
-  
+
   /** Version of preferences format */
   version?: string;
 }
@@ -57,7 +57,7 @@ export async function loadUserPreferences(): Promise<UserPreferences> {
     await ensureConfigDir();
     const content = await fs.readFile(PREFERENCES_FILE, "utf-8");
     const preferences = JSON.parse(content) as UserPreferences;
-    
+
     // Ensure all required fields exist
     return {
       ...DEFAULT_PREFERENCES,
@@ -83,15 +83,15 @@ export async function loadUserPreferences(): Promise<UserPreferences> {
  */
 export async function saveUserPreferences(preferences: UserPreferences): Promise<void> {
   await ensureConfigDir();
-  
+
   const updatedPreferences = {
     ...preferences,
     lastUpdated: new Date().toISOString(),
   };
-  
+
   await fs.writeFile(
-    PREFERENCES_FILE, 
-    JSON.stringify(updatedPreferences, null, 2), 
+    PREFERENCES_FILE,
+    JSON.stringify(updatedPreferences, null, 2),
     "utf-8"
   );
 }

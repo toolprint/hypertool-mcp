@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ToolsetManager } from "./index.js";
+import { ToolsetManager } from "./manager.js";
 import { ToolsetConfig, ToolsetChangeEvent } from "./types.js";
 import { DiscoveredTool, IToolDiscoveryEngine, DiscoveredToolsChangedEvent } from "../discovery/types.js";
 import { EventEmitter } from "events";

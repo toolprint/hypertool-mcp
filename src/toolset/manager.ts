@@ -305,8 +305,8 @@ export class ToolsetManager extends EventEmitter {
       description: this.currentToolset.description,
       toolCount: this.currentToolset.tools.length,
       version: this.currentToolset.version,
-      createdAt: this.currentToolset.createdAt instanceof Date 
-        ? this.currentToolset.createdAt.toISOString() 
+      createdAt: this.currentToolset.createdAt instanceof Date
+        ? this.currentToolset.createdAt.toISOString()
         : this.currentToolset.createdAt,
     };
   }
@@ -366,7 +366,7 @@ export class ToolsetManager extends EventEmitter {
       }
 
       // Check if toolset already exists
-      const preferences = await import("../config/preferences.js");
+      const preferences = await import("../config/preferenceStore.js");
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
       const saveToolsetsToPreferences = preferences.saveStoredToolsets;
       const stored = await loadToolsetsFromPreferences();
@@ -448,7 +448,7 @@ export class ToolsetManager extends EventEmitter {
     message?: string;
   }> {
     try {
-      const preferences = await import("../config/preferences.js");
+      const preferences = await import("../config/preferenceStore.js");
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
       const saveToolsetsToPreferences = preferences.saveStoredToolsets;
       const stored = await loadToolsetsFromPreferences();
@@ -494,7 +494,7 @@ export class ToolsetManager extends EventEmitter {
    */
   async listSavedToolsets(): Promise<ListSavedToolsetsResponse> {
     try {
-      const preferences = await import("../config/preferences.js");
+      const preferences = await import("../config/preferenceStore.js");
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
       const stored = await loadToolsetsFromPreferences();
 
@@ -629,7 +629,7 @@ export class ToolsetManager extends EventEmitter {
   async equipToolset(toolsetName: string): Promise<EquipToolsetResponse> {
     try {
       // Import the function here to avoid circular imports
-      const preferences = await import("../config/preferences.js");
+      const preferences = await import("../config/preferenceStore.js");
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
 
       const stored = await loadToolsetsFromPreferences();
@@ -646,11 +646,11 @@ export class ToolsetManager extends EventEmitter {
 
       // Generate toolset info with current status
       const toolsetInfo = await this.generateToolsetInfo(toolsetConfig);
-      
+
       // Event is already emitted by setConfig()
-      return { 
-        success: true, 
-        toolset: toolsetInfo 
+      return {
+        success: true,
+        toolset: toolsetInfo
       };
     } catch (error) {
       return { success: false, error: `Failed to load toolset: ${error instanceof Error ? error.message : String(error)}` };
@@ -695,7 +695,7 @@ export class ToolsetManager extends EventEmitter {
       server: string;
       active: boolean;
     }> = [];
-    
+
     if (this.discoveryEngine) {
       // Process each tool reference
       for (const toolRef of config.tools) {
@@ -709,11 +709,11 @@ export class ToolsetManager extends EventEmitter {
           warnings: string[];
           errors: string[];
         } | undefined = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
-        
+
         if (resolution?.exists && resolution.tool) {
           const serverName = resolution.tool.serverName;
           serverToolCounts[serverName] = (serverToolCounts[serverName] || 0) + 1;
-          
+
           // Add detailed tool information
           detailedTools.push({
             namespacedName: resolution.tool.namespacedName,
@@ -740,19 +740,19 @@ export class ToolsetManager extends EventEmitter {
         active: false // Cannot determine availability without discovery engine
       })));
     }
-    
+
     const servers = Object.entries(serverToolCounts).map(([name, toolCount]) => ({
       name,
       enabled: true,
       toolCount
     }));
-    
+
     return {
       name: config.name,
       description: config.description,
       version: config.version,
-      createdAt: config.createdAt instanceof Date 
-        ? config.createdAt.toISOString() 
+      createdAt: config.createdAt instanceof Date
+        ? config.createdAt.toISOString()
         : config.createdAt,
       toolCount: config.tools.length,
       active: this.currentToolset?.name === config.name,

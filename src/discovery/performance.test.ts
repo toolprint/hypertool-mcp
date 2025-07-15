@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { MCPToolDefinition, DiscoveredTool } from "./types.js";
 import { ToolCache } from "./cache.js";
 import { ToolLookupManager } from "./lookup.js";
-import { ToolHashUtils } from "./hash-utils.js";
+import { ToolHashUtils } from "./hashUtils.js";
 import { createLogger } from "../logging/index.js";
 
 const logger = createLogger({ module: 'discovery/performance.test' });
