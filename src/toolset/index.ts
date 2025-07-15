@@ -29,6 +29,9 @@ import { DiscoveredTool, IToolDiscoveryEngine, DiscoveredToolsChangedEvent } fro
 import { ToolsetConfig, ValidationResult, ToolsetChangeEvent, DynamicToolReference } from "./types.js";
 import { loadToolsetConfig, saveToolsetConfig } from "./loader.js";
 import { validateToolsetConfig } from "./validator.js";
+import { createLogger } from "../logging/index.js";
+
+const logger = createLogger({ module: 'toolset' });
 
 export class ToolsetManager extends EventEmitter {
   private currentToolset?: ToolsetConfig;
@@ -124,7 +127,7 @@ export class ToolsetManager extends EventEmitter {
         changeType: previousConfig ? 'updated' : 'equipped',
         timestamp: new Date()
       };
-      console.debug('toolsetChanged', event);
+      logger.debug('toolsetChanged', event);
       this.emit('toolsetChanged', event);
     }
     return validation;

@@ -10,6 +10,9 @@ import { EventEmitter } from "events";
 import { BaseConnection } from "./base.js";
 import { SSEServerConfig } from "../../types/config.js";
 import { ConnectionOptions } from "../types.js";
+import { createLogger } from "../../logging/index.js";
+
+const logger = createLogger({ module: 'clients/sse' });
 
 /**
  * SSE client wrapper using proper MCP SDK Client
@@ -61,7 +64,7 @@ export class SSEClient extends EventEmitter {
     try {
       await this.client.close();
     } catch (error) {
-      console.error("Error closing SSE client:", error);
+      logger.error("Error closing SSE client:", error);
     } finally {
       this.client = null;
       this.isConnected = false;

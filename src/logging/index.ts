@@ -1,424 +1,238 @@
 /**
- * Structured logging framework
+ * Structured logging framework with Pino
  */
 
-import { EventEmitter } from "events";
-import { MetaMCPError } from "../errors/index.js";
+import pino from 'pino';
+import { createWriteStream, mkdirSync, existsSync, renameSync, readdirSync, statSync, unlinkSync } from 'fs';
+import { join } from 'path';
+import { homedir } from 'os';
+import { APP_TECHNICAL_NAME, BRAND_NAME } from '../config/app-config.js';
 
-/**
- * Log levels
- */
-export enum LogLevel {
-  ERROR = 0,
-  WARN = 1,
-  INFO = 2,
-  DEBUG = 3,
-}
-
-/**
- * Log level strings
- */
-export const LOG_LEVEL_NAMES = {
-  [LogLevel.ERROR]: "ERROR",
-  [LogLevel.WARN]: "WARN",
-  [LogLevel.INFO]: "INFO",
-  [LogLevel.DEBUG]: "DEBUG",
-} as const;
-
-/**
- * Log entry interface
- */
-export interface LogEntry {
-  timestamp: Date;
-  level: LogLevel;
-  component: string;
-  message: string;
-  context?: Record<string, any>;
-  error?: Error;
-  requestId?: string;
-  serverName?: string;
-  toolName?: string;
-}
-
-/**
- * Logger configuration
- */
-export interface LoggerConfig {
-  level: LogLevel;
+export interface LoggingConfig {
+  level: pino.LevelWithSilent;
   enableConsole: boolean;
   enableFile: boolean;
-  filePath?: string;
-  enableStructured: boolean;
-  component?: string;
-  maxFileSize?: number;
-  maxFiles?: number;
+  serverName: string;
+  format: 'json' | 'pretty';
+  colorize: boolean;
 }
 
-/**
- * Log formatter interface
- */
-export interface LogFormatter {
-  format(entry: LogEntry): string;
-}
+export const DEFAULT_LOGGING_CONFIG: LoggingConfig = {
+  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+  enableConsole: true,
+  enableFile: true,
+  serverName: APP_TECHNICAL_NAME,
+  format: 'pretty', // Always use pretty format for console
+  colorize: true,
+};
 
-/**
- * Console log formatter
- */
-export class ConsoleFormatter implements LogFormatter {
-  format(entry: LogEntry): string {
-    const timestamp = entry.timestamp.toISOString();
-    const level = LOG_LEVEL_NAMES[entry.level];
-    const component = entry.component ? `[${entry.component}]` : "";
-    
-    let message = `${timestamp} ${level} ${component} ${entry.message}`;
-    
-    if (entry.context && Object.keys(entry.context).length > 0) {
-      message += ` ${JSON.stringify(entry.context)}`;
+export class Logger {
+  private pinoLogger: pino.Logger;
+  private config: LoggingConfig;
+
+  constructor(config: Partial<LoggingConfig> = {}) {
+    this.config = { ...DEFAULT_LOGGING_CONFIG, ...config };
+    this.pinoLogger = this.createLogger();
+  }
+
+  private createLogger(): pino.Logger {
+    const streams: pino.StreamEntry[] = [];
+
+    // Console stream
+    if (this.config.enableConsole) {
+      streams.push({
+        level: this.config.level as pino.Level,
+        stream: this.createConsoleStream(),
+      });
     }
-    
-    if (entry.error) {
-      message += `\nError: ${entry.error.message}`;
-      if (entry.error.stack) {
-        message += `\nStack: ${entry.error.stack}`;
+
+    // File stream
+    if (this.config.enableFile) {
+      const fileStream = this.createFileStream();
+      if (fileStream) {
+        streams.push({
+          level: this.config.level as pino.Level,
+          stream: fileStream,
+        });
       }
     }
-    
-    return message;
-  }
-}
 
-/**
- * Structured JSON formatter
- */
-export class JsonFormatter implements LogFormatter {
-  format(entry: LogEntry): string {
-    const logObject = {
-      timestamp: entry.timestamp.toISOString(),
-      level: LOG_LEVEL_NAMES[entry.level],
-      component: entry.component,
-      message: entry.message,
-      ...(entry.context && { context: entry.context }),
-      ...(entry.requestId && { requestId: entry.requestId }),
-      ...(entry.serverName && { serverName: entry.serverName }),
-      ...(entry.toolName && { toolName: entry.toolName }),
-      ...(entry.error && {
-        error: {
-          name: entry.error.name,
-          message: entry.error.message,
-          stack: entry.error.stack,
-          ...(entry.error instanceof MetaMCPError && {
-            code: entry.error.code,
-            category: entry.error.category,
-            isRetryable: entry.error.isRetryable,
-          }),
+    // If no streams, fallback to console
+    if (streams.length === 0) {
+      streams.push({
+        level: this.config.level as pino.Level,
+        stream: process.stdout,
+      });
+    }
+
+    return pino(
+      {
+        level: this.config.level,
+        base: {
+          pid: process.pid,
+          hostname: process.env.HOSTNAME || 'localhost',
+          serverName: this.config.serverName,
         },
-      }),
-    };
-    
-    return JSON.stringify(logObject);
-  }
-}
-
-/**
- * Logger implementation
- */
-export class Logger extends EventEmitter {
-  private config: LoggerConfig;
-  private formatter: LogFormatter;
-
-  constructor(config: Partial<LoggerConfig> = {}) {
-    super();
-    
-    this.config = {
-      level: LogLevel.INFO,
-      enableConsole: true,
-      enableFile: false,
-      enableStructured: false,
-      ...config,
-    };
-
-    this.formatter = this.config.enableStructured
-      ? new JsonFormatter()
-      : new ConsoleFormatter();
+        timestamp: pino.stdTimeFunctions.isoTime,
+      },
+      pino.multistream(streams)
+    );
   }
 
-  /**
-   * Update logger configuration
-   */
-  configure(config: Partial<LoggerConfig>): void {
-    this.config = { ...this.config, ...config };
-    
-    this.formatter = this.config.enableStructured
-      ? new JsonFormatter()
-      : new ConsoleFormatter();
-  }
-
-  /**
-   * Set log level
-   */
-  setLevel(level: LogLevel): void {
-    this.config.level = level;
-  }
-
-  /**
-   * Get current log level
-   */
-  getLevel(): LogLevel {
-    return this.config.level;
-  }
-
-  /**
-   * Check if level should be logged
-   */
-  shouldLog(level: LogLevel): boolean {
-    return level <= this.config.level;
-  }
-
-  /**
-   * Create child logger with component context
-   */
-  child(component: string): Logger {
-    const childLogger = new Logger({
-      ...this.config,
-      component,
+  private createConsoleStream() {
+    // Always use pino-pretty for console output for better readability
+    return pino.transport({
+      target: 'pino-pretty',
+      options: {
+        colorize: this.config.colorize,
+        translateTime: 'SYS:standard',
+        include: 'level,time,msg',
+        ignore: 'pid,hostname', // Simplify output
+      },
     });
+  }
+
+  private createFileStream() {
+    try {
+      const logDir = join(homedir(), `.${BRAND_NAME.toLowerCase()}`, this.config.serverName, 'logs');
+      
+      // Create directory synchronously on first use
+      this.ensureLogDirectory(logDir);
+      
+      // Main log file (no timestamp)
+      const logFile = join(logDir, `${this.config.serverName}.log`);
+      
+      // Rotate existing logs before creating new stream
+      this.rotateLogFiles(logDir, logFile);
+      
+      return createWriteStream(logFile, { flags: 'a' });
+    } catch (error) {
+      console.warn('Failed to create log file stream:', error);
+      return null;
+    }
+  }
+
+  private ensureLogDirectory(logDir: string): void {
+    try {
+      mkdirSync(logDir, { recursive: true });
+    } catch (error) {
+      console.warn('Failed to create log directory:', error);
+    }
+  }
+
+  /**
+   * Rotate log files:
+   * - Current log becomes log.1
+   * - log.1 becomes log.2
+   * - log.2 becomes log.3
+   * - Keep up to 5 rotated logs
+   * - Delete logs older than 7 days
+   */
+  private rotateLogFiles(logDir: string, currentLogPath: string): void {
+    try {
+      if (!existsSync(currentLogPath)) {
+        return; // No existing log to rotate
+      }
+
+      const baseFileName = `${this.config.serverName}.log`;
+      const maxRotations = 5;
+      const maxAgeDays = 7;
+
+      // First, clean up old rotated logs
+      const files = readdirSync(logDir);
+      const now = Date.now();
+      const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
+
+      files.forEach(file => {
+        const filePath = join(logDir, file);
+        try {
+          const stats = statSync(filePath);
+          // Delete files older than maxAgeDays
+          if (now - stats.mtimeMs > maxAgeMs) {
+            unlinkSync(filePath);
+            console.info(`Deleted old log file: ${file}`);
+          }
+        } catch (error) {
+          // Ignore errors for individual files
+        }
+      });
+
+      // Rotate existing numbered logs
+      for (let i = maxRotations - 1; i > 0; i--) {
+        const oldPath = join(logDir, `${baseFileName}.${i}`);
+        const newPath = join(logDir, `${baseFileName}.${i + 1}`);
+        
+        if (existsSync(oldPath)) {
+          if (i === maxRotations - 1) {
+            // Delete the oldest rotation
+            unlinkSync(oldPath);
+          } else {
+            // Rename to next number
+            renameSync(oldPath, newPath);
+          }
+        }
+      }
+
+      // Rotate current log to .1
+      renameSync(currentLogPath, join(logDir, `${baseFileName}.1`));
+      
+    } catch (error) {
+      console.warn('Failed to rotate log files:', error);
+      // Continue anyway - logging should not fail the application
+    }
+  }
+
+  // Public logging methods
+  fatal(message: string, context?: any): void {
+    this.pinoLogger.fatal(context, message);
+  }
+
+  error(message: string, context?: any): void {
+    this.pinoLogger.error(context, message);
+  }
+
+  warn(message: string, context?: any): void {
+    this.pinoLogger.warn(context, message);
+  }
+
+  info(message: string, context?: any): void {
+    this.pinoLogger.info(context, message);
+  }
+
+  debug(message: string, context?: any): void {
+    this.pinoLogger.debug(context, message);
+  }
+
+  trace(message: string, context?: any): void {
+    this.pinoLogger.trace(context, message);
+  }
+
+  // Structured logging methods
+  child(bindings: pino.Bindings): Logger {
+    const childLogger = new Logger(this.config);
+    childLogger.pinoLogger = this.pinoLogger.child(bindings);
     return childLogger;
   }
 
-  /**
-   * Log an error
-   */
-  error(message: string, context?: Record<string, any>, error?: Error): void {
-    this.log(LogLevel.ERROR, message, context, error);
+  // Access to underlying pino logger for advanced use cases
+  get pino(): pino.Logger {
+    return this.pinoLogger;
   }
 
-  /**
-   * Log a warning
-   */
-  warn(message: string, context?: Record<string, any>): void {
-    this.log(LogLevel.WARN, message, context);
-  }
-
-  /**
-   * Log info
-   */
-  info(message: string, context?: Record<string, any>): void {
-    this.log(LogLevel.INFO, message, context);
-  }
-
-  /**
-   * Log debug
-   */
-  debug(message: string, context?: Record<string, any>): void {
-    this.log(LogLevel.DEBUG, message, context);
-  }
-
-  /**
-   * Log connection events
-   */
-  logConnection(
-    event: string,
-    serverName: string,
-    context?: Record<string, any>
-  ): void {
-    this.info(`Connection ${event}`, {
-      ...context,
-      serverName,
-      event,
-    });
-  }
-
-  /**
-   * Log tool call events
-   */
-  logToolCall(
-    event: string,
-    toolName: string,
-    serverName?: string,
-    requestId?: string,
-    context?: Record<string, any>
-  ): void {
-    this.info(`Tool call ${event}`, {
-      ...context,
-      toolName,
-      serverName,
-      requestId,
-      event,
-    });
-  }
-
-  /**
-   * Log health check events
-   */
-  logHealthCheck(
-    serverName: string,
-    state: string,
-    context?: Record<string, any>
-  ): void {
-    this.info("Health check result", {
-      ...context,
-      serverName,
-      state,
-    });
-  }
-
-  /**
-   * Log discovery events
-   */
-  logDiscovery(
-    event: string,
-    serverName?: string,
-    toolCount?: number,
-    context?: Record<string, any>
-  ): void {
-    this.info(`Discovery ${event}`, {
-      ...context,
-      serverName,
-      toolCount,
-      event,
-    });
-  }
-
-  /**
-   * Log server lifecycle events
-   */
-  logServerLifecycle(
-    event: string,
-    context?: Record<string, any>
-  ): void {
-    this.info(`Server ${event}`, {
-      ...context,
-      event,
-    });
-  }
-
-  /**
-   * Core logging method
-   */
-  private log(
-    level: LogLevel,
-    message: string,
-    context?: Record<string, any>,
-    error?: Error
-  ): void {
-    if (!this.shouldLog(level)) {
-      return;
-    }
-
-    const entry: LogEntry = {
-      timestamp: new Date(),
-      level,
-      component: this.config.component || "MetaMCP",
-      message,
-      context,
-      error,
-    };
-
-    // Extract common fields from context
-    if (context) {
-      if (context.requestId) {
-        entry.requestId = context.requestId;
-      }
-      if (context.serverName) {
-        entry.serverName = context.serverName;
-      }
-      if (context.toolName) {
-        entry.toolName = context.toolName;
-      }
-    }
-
-    this.emit("log", entry);
-    this.writeLog(entry);
-  }
-
-  /**
-   * Write log entry to outputs
-   */
-  private writeLog(entry: LogEntry): void {
-    const formatted = this.formatter.format(entry);
-
-    // Console output
-    if (this.config.enableConsole) {
-      switch (entry.level) {
-        case LogLevel.ERROR:
-          console.error(formatted);
-          break;
-        case LogLevel.WARN:
-          console.warn(formatted);
-          break;
-        case LogLevel.INFO:
-          console.info(formatted);
-          break;
-        case LogLevel.DEBUG:
-          console.debug(formatted);
-          break;
-      }
-    }
-
-    // File output (simplified - in production would use proper file rotation)
-    if (this.config.enableFile && this.config.filePath) {
-      // Note: In a real implementation, this would use async file writes
-      // and proper file rotation. For now, it's a placeholder.
-      this.emit("fileLog", { path: this.config.filePath, content: formatted });
-    }
+  // Update configuration
+  updateConfig(config: Partial<LoggingConfig>): void {
+    this.config = { ...this.config, ...config };
+    this.pinoLogger = this.createLogger();
   }
 }
 
-/**
- * Global logger instance
- */
-let globalLogger: Logger | null = null;
+// Global logger instance
+export const logger = new Logger();
 
-/**
- * Initialize global logger
- */
-export function initializeLogger(config?: Partial<LoggerConfig>): Logger {
-  globalLogger = new Logger(config);
-  return globalLogger;
-}
-
-/**
- * Get global logger instance
- */
-export function getLogger(): Logger {
-  if (!globalLogger) {
-    globalLogger = new Logger();
+// Convenience function to create a child logger
+export function createLogger(context: pino.Bindings, config?: Partial<LoggingConfig>): Logger {
+  if (config) {
+    return new Logger(config).child(context);
   }
-  return globalLogger;
+  return logger.child(context);
 }
-
-/**
- * Create component-specific logger
- */
-export function createLogger(component: string, config?: Partial<LoggerConfig>): Logger {
-  return new Logger({ ...config, component });
-}
-
-/**
- * Log level utilities
- */
-export const LogLevelUtils = {
-  fromString(level: string): LogLevel | undefined {
-    switch (level.toUpperCase()) {
-      case "ERROR":
-        return LogLevel.ERROR;
-      case "WARN":
-      case "WARNING":
-        return LogLevel.WARN;
-      case "INFO":
-        return LogLevel.INFO;
-      case "DEBUG":
-        return LogLevel.DEBUG;
-      default:
-        return undefined;
-    }
-  },
-
-  toString(level: LogLevel): string {
-    return LOG_LEVEL_NAMES[level];
-  },
-
-  isValidLevel(level: string): boolean {
-    return this.fromString(level) !== undefined;
-  },
-};

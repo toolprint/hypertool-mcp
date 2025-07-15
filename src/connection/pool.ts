@@ -4,6 +4,9 @@
 
 import { EventEmitter } from "events";
 import { ServerConfig } from "../types/config.js";
+import { createLogger } from "../logging/index.js";
+
+const logger = createLogger({ module: 'connection/pool' });
 import {
   Connection,
   ConnectionEventType,
@@ -120,7 +123,7 @@ export class ConnectionPool extends EventEmitter implements IConnectionPool {
     try {
       await connection.disconnect();
     } catch (error) {
-      console.warn(`Error disconnecting from server "${serverName}":`, error);
+      logger.warn(`Error disconnecting from server "${serverName}":`, error);
     }
 
     this.connections.delete(serverName);
@@ -166,7 +169,7 @@ export class ConnectionPool extends EventEmitter implements IConnectionPool {
         try {
           await connection.connect();
         } catch (error) {
-          console.error(`Failed to connect to server "${serverName}":`, error);
+          logger.error(`Failed to connect to server "${serverName}":`, error);
           this.emit("error", {
             type: "failed",
             serverId: connection.id,
@@ -205,7 +208,7 @@ export class ConnectionPool extends EventEmitter implements IConnectionPool {
         try {
           await connection.disconnect();
         } catch (error) {
-          console.warn(
+          logger.warn(
             `Error disconnecting from server "${serverName}":`,
             error
           );
@@ -244,7 +247,7 @@ export class ConnectionPool extends EventEmitter implements IConnectionPool {
   private setupEventHandlers(): void {
     // Handle connection failures
     this.on("failed", (event: ConnectionEvent) => {
-      console.error(
+      logger.error(
         `Connection to server "${event.serverName}" failed:`,
         event.error
       );
@@ -252,7 +255,7 @@ export class ConnectionPool extends EventEmitter implements IConnectionPool {
 
     // Handle connection errors
     this.on("error", (event: ConnectionEvent) => {
-      console.error(
+      logger.error(
         `Connection error for server "${event.serverName}":`,
         event.error
       );
@@ -291,7 +294,7 @@ export class ConnectionPool extends EventEmitter implements IConnectionPool {
         try {
           const isHealthy = await connection.ping();
           if (!isHealthy && connection.isConnected()) {
-            console.warn(`Health check failed for server "${serverName}"`);
+            logger.warn(`Health check failed for server "${serverName}"`);
             this.emit("error", {
               type: "error",
               serverId: connection.id,
@@ -301,7 +304,7 @@ export class ConnectionPool extends EventEmitter implements IConnectionPool {
             });
           }
         } catch (error) {
-          console.warn(`Health check error for server "${serverName}":`, error);
+          logger.warn(`Health check error for server "${serverName}":`, error);
         }
       }
     );

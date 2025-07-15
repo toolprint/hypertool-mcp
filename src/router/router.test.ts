@@ -8,6 +8,9 @@ import { ROUTER_ERROR_CODES } from "./types.js";
 import { CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
 import { IToolDiscoveryEngine, DiscoveredTool } from "../discovery/types.js";
 import { IConnectionManager, Connection } from "../connection/types.js";
+import { createLogger } from "../logging/index.js";
+
+const logger = createLogger({ module: 'router/router.test' });
 
 // Mock implementations
 class MockDiscoveryEngine implements IToolDiscoveryEngine {
@@ -496,7 +499,7 @@ describe("RequestRouter", () => {
     it("should enable/disable logging", async () => {
       await router.initialize({ enableLogging: true });
 
-      // Create a spy on console.log to check if logging occurs
+      // Create a spy on logger.info to check if logging occurs
       const consoleSpy = vi.spyOn(console, "log").mockImplementation();
 
       const request: CallToolRequest["params"] = {

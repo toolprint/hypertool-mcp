@@ -7,6 +7,9 @@ import { MCPToolDefinition, DiscoveredTool } from "./types.js";
 import { ToolCache } from "./cache.js";
 import { ToolLookupManager } from "./lookup.js";
 import { ToolHashUtils } from "./hash-utils.js";
+import { createLogger } from "../logging/index.js";
+
+const logger = createLogger({ module: 'discovery/performance.test' });
 
 // Performance thresholds for tests
 const PERFORMANCE_THRESHOLDS = {
@@ -68,7 +71,7 @@ describe("Tool Discovery Performance Tests", () => {
       await Promise.all(insertPromises);
       const insertTime = performance.now() - insertStart;
       
-      console.log(`Cache insertion time for ${toolCount} tools: ${insertTime.toFixed(2)}ms`);
+      logger.info(`Cache insertion time for ${toolCount} tools: ${insertTime.toFixed(2)}ms`);
       expect(insertTime).toBeLessThan(PERFORMANCE_THRESHOLDS.CACHE_ACCESS_TIME_MS * toolCount / 100);
       
       // Measure retrieval time
@@ -79,7 +82,7 @@ describe("Tool Discovery Performance Tests", () => {
       const results = await Promise.all(retrievePromises);
       const retrieveTime = performance.now() - retrieveStart;
       
-      console.log(`Cache retrieval time for ${toolCount} tools: ${retrieveTime.toFixed(2)}ms`);
+      logger.info(`Cache retrieval time for ${toolCount} tools: ${retrieveTime.toFixed(2)}ms`);
       expect(retrieveTime).toBeLessThan(PERFORMANCE_THRESHOLDS.CACHE_ACCESS_TIME_MS * toolCount / 100);
       
       // Verify all tools were retrieved
@@ -90,7 +93,7 @@ describe("Tool Discovery Performance Tests", () => {
       const stats = await cache.getStats();
       const statsTime = performance.now() - statsStart;
       
-      console.log(`Cache stats time: ${statsTime.toFixed(2)}ms`);
+      logger.info(`Cache stats time: ${statsTime.toFixed(2)}ms`);
       expect(statsTime).toBeLessThan(10); // Should be very fast
       expect(stats.size).toBe(toolCount);
     });
@@ -113,7 +116,7 @@ describe("Tool Discovery Performance Tests", () => {
       await Promise.all([...insertPromises, ...retrievePromises]);
       const concurrentTime = performance.now() - concurrentStart;
       
-      console.log(`Concurrent operations time: ${concurrentTime.toFixed(2)}ms`);
+      logger.info(`Concurrent operations time: ${concurrentTime.toFixed(2)}ms`);
       expect(concurrentTime).toBeLessThan(PERFORMANCE_THRESHOLDS.CACHE_ACCESS_TIME_MS * 10);
     });
 
@@ -132,7 +135,7 @@ describe("Tool Discovery Performance Tests", () => {
       }
       const insertTime = performance.now() - insertStart;
       
-      console.log(`Multi-server insertion time: ${insertTime.toFixed(2)}ms`);
+      logger.info(`Multi-server insertion time: ${insertTime.toFixed(2)}ms`);
       
       // Test server-specific retrieval
       const retrievalStart = performance.now();
@@ -142,7 +145,7 @@ describe("Tool Discovery Performance Tests", () => {
       }
       const retrievalTime = performance.now() - retrievalStart;
       
-      console.log(`Multi-server retrieval time: ${retrievalTime.toFixed(2)}ms`);
+      logger.info(`Multi-server retrieval time: ${retrievalTime.toFixed(2)}ms`);
       expect(retrievalTime).toBeLessThan(100); // Should be very fast
       
       // Test server clearing
@@ -150,7 +153,7 @@ describe("Tool Discovery Performance Tests", () => {
       await cache.clearServer("server_0");
       const clearTime = performance.now() - clearStart;
       
-      console.log(`Server clear time: ${clearTime.toFixed(2)}ms`);
+      logger.info(`Server clear time: ${clearTime.toFixed(2)}ms`);
       expect(clearTime).toBeLessThan(50);
     });
   });
@@ -171,7 +174,7 @@ describe("Tool Discovery Performance Tests", () => {
       tools.forEach(tool => lookupManager.addTool(tool));
       const insertTime = performance.now() - insertStart;
       
-      console.log(`Lookup insertion time for ${toolCount} tools: ${insertTime.toFixed(2)}ms`);
+      logger.info(`Lookup insertion time for ${toolCount} tools: ${insertTime.toFixed(2)}ms`);
       expect(insertTime).toBeLessThan(PERFORMANCE_THRESHOLDS.CACHE_ACCESS_TIME_MS * 2);
       
       // Measure search performance
@@ -183,7 +186,7 @@ describe("Tool Discovery Performance Tests", () => {
       });
       const searchTime = performance.now() - searchStart;
       
-      console.log(`Search time in ${toolCount} tools: ${searchTime.toFixed(2)}ms`);
+      logger.info(`Search time in ${toolCount} tools: ${searchTime.toFixed(2)}ms`);
       expect(searchTime).toBeLessThan(PERFORMANCE_THRESHOLDS.SEARCH_TIME_MS);
       expect(searchResults.length).toBeGreaterThan(0);
       
@@ -195,7 +198,7 @@ describe("Tool Discovery Performance Tests", () => {
       }
       const exactTime = performance.now() - exactStart;
       
-      console.log(`100 exact lookups time: ${exactTime.toFixed(2)}ms`);
+      logger.info(`100 exact lookups time: ${exactTime.toFixed(2)}ms`);
       expect(exactTime).toBeLessThan(10); // Should be very fast
     });
 
@@ -217,7 +220,7 @@ describe("Tool Discovery Performance Tests", () => {
         const results = lookupManager.search(scenario);
         const searchTime = performance.now() - searchStart;
         
-        console.log(`Search scenario ${JSON.stringify(scenario)}: ${searchTime.toFixed(2)}ms, ${results.length} results`);
+        logger.info(`Search scenario ${JSON.stringify(scenario)}: ${searchTime.toFixed(2)}ms, ${results.length} results`);
         expect(searchTime).toBeLessThan(PERFORMANCE_THRESHOLDS.SEARCH_TIME_MS);
       }
     });
@@ -231,7 +234,7 @@ describe("Tool Discovery Performance Tests", () => {
       const stats = lookupManager.getStats();
       const statsTime = performance.now() - statsStart;
       
-      console.log(`Lookup stats calculation time: ${statsTime.toFixed(2)}ms`);
+      logger.info(`Lookup stats calculation time: ${statsTime.toFixed(2)}ms`);
       expect(statsTime).toBeLessThan(10); // Should be very fast
       expect(stats.totalTools).toBe(toolCount);
     });
@@ -249,7 +252,7 @@ describe("Tool Discovery Performance Tests", () => {
       );
       const toolHashTime = performance.now() - toolHashStart;
       
-      console.log(`Tool hash calculation for ${toolCount} tools: ${toolHashTime.toFixed(2)}ms`);
+      logger.info(`Tool hash calculation for ${toolCount} tools: ${toolHashTime.toFixed(2)}ms`);
       expect(toolHashTime).toBeLessThan(PERFORMANCE_THRESHOLDS.HASH_CALCULATION_TIME_MS);
       expect(toolHashes).toHaveLength(toolCount);
       
@@ -258,7 +261,7 @@ describe("Tool Discovery Performance Tests", () => {
       const serverHash = ToolHashUtils.calculateServerToolsHash(tools);
       const serverHashTime = performance.now() - serverHashStart;
       
-      console.log(`Server tools hash calculation: ${serverHashTime.toFixed(2)}ms`);
+      logger.info(`Server tools hash calculation: ${serverHashTime.toFixed(2)}ms`);
       expect(serverHashTime).toBeLessThan(100); // Should be fast
       expect(serverHash).toBeDefined();
     });
@@ -275,7 +278,7 @@ describe("Tool Discovery Performance Tests", () => {
       const changes = ToolHashUtils.detectToolChanges(originalTools, finalTools);
       const changeDetectionTime = performance.now() - changeDetectionStart;
       
-      console.log(`Change detection time for ${toolCount} tools: ${changeDetectionTime.toFixed(2)}ms`);
+      logger.info(`Change detection time for ${toolCount} tools: ${changeDetectionTime.toFixed(2)}ms`);
       expect(changeDetectionTime).toBeLessThan(PERFORMANCE_THRESHOLDS.HASH_CALCULATION_TIME_MS);
       
       const summary = ToolHashUtils.summarizeChanges(changes);
@@ -287,7 +290,7 @@ describe("Tool Discovery Performance Tests", () => {
   describe("Memory Usage", () => {
     it("should maintain reasonable memory usage with large tool sets", async () => {
       if (typeof process === 'undefined' || !process.memoryUsage) {
-        console.log("Memory usage test skipped (not in Node.js environment)");
+        logger.info("Memory usage test skipped (not in Node.js environment)");
         return;
       }
 
@@ -310,7 +313,7 @@ describe("Tool Discovery Performance Tests", () => {
         const finalMemory = process.memoryUsage().heapUsed;
         const memoryIncrease = (finalMemory - initialMemory) / (1024 * 1024); // MB
         
-        console.log(`Memory increase for ${toolCount} tools: ${memoryIncrease.toFixed(2)}MB`);
+        logger.info(`Memory increase for ${toolCount} tools: ${memoryIncrease.toFixed(2)}MB`);
         
         // This is a rough check - memory usage can vary significantly
         expect(memoryIncrease).toBeLessThan(PERFORMANCE_THRESHOLDS.MEMORY_USAGE_MB);
@@ -364,7 +367,7 @@ describe("Tool Discovery Performance Tests", () => {
       }
       
       const stressTime = performance.now() - stressStart;
-      console.log(`Stress test completed in: ${stressTime.toFixed(2)}ms`);
+      logger.info(`Stress test completed in: ${stressTime.toFixed(2)}ms`);
       
       // Should complete in reasonable time
       expect(stressTime).toBeLessThan(30000); // 30 seconds
@@ -409,7 +412,7 @@ describe("Tool Discovery Performance Tests", () => {
       await Promise.all(operationPromises);
       
       const concurrentTime = performance.now() - concurrentStart;
-      console.log(`Concurrent operations completed in: ${concurrentTime.toFixed(2)}ms`);
+      logger.info(`Concurrent operations completed in: ${concurrentTime.toFixed(2)}ms`);
       
       // Should handle concurrent load
       expect(concurrentTime).toBeLessThan(10000); // 10 seconds

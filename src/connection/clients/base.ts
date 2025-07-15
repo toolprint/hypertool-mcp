@@ -5,6 +5,9 @@
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
 import { ServerConfig } from "../../types/config.js";
+import { createLogger } from "../../logging/index.js";
+
+const logger = createLogger({ module: 'clients/base' });
 import {
   Connection,
   ConnectionState,
@@ -132,7 +135,7 @@ export abstract class BaseConnection<T = any>
     try {
       await this.doDisconnect();
     } catch (error) {
-      console.warn(
+      logger.warn(
         `Error during disconnect for server "${this.serverName}":`,
         error
       );

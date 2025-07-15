@@ -8,6 +8,9 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "node:crypto";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
+import { createLogger } from "../logging/index.js";
+
+const logger = createLogger({ module: 'server/http-server' });
 
 /**
  * Express.js-based HTTP server for MCP protocol with streamable transport
@@ -71,7 +74,7 @@ export class McpHttpServer {
       try {
         await this.handleMcpRequest(req, res);
       } catch (error) {
-        console.error("Error handling MCP request:", error);
+        logger.error("Error handling MCP request:", error);
         if (!res.headersSent) {
           res.status(500).json({
             jsonrpc: "2.0",
@@ -98,7 +101,7 @@ export class McpHttpServer {
    * Handle MCP protocol requests over HTTP using Streamable HTTP Transport
    */
   private async handleMcpRequest(req: Request, res: Response): Promise<void> {
-    console.log(`Received ${req.method} request to /mcp`);
+    logger.info(`Received ${req.method} request to /mcp`);
 
     // Check for existing session ID
     const sessionId = req.headers['mcp-session-id'] as string;
@@ -112,7 +115,7 @@ export class McpHttpServer {
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         onsessioninitialized: (sessionId) => {
-          console.log(`Streamable HTTP session initialized with ID: ${sessionId}`);
+          logger.info(`Streamable HTTP session initialized with ID: ${sessionId}`);
           this.transports[sessionId] = transport;
         }
       });
@@ -121,7 +124,7 @@ export class McpHttpServer {
       transport.onclose = () => {
         const sid = transport.sessionId;
         if (sid && this.transports[sid]) {
-          console.log(`Transport closed for session ${sid}, removing from transports map`);
+          logger.info(`Transport closed for session ${sid}, removing from transports map`);
           delete this.transports[sid];
         }
       };
@@ -152,8 +155,8 @@ export class McpHttpServer {
     return new Promise((resolve, reject) => {
       try {
         this.httpServer = this.app.listen(this.port, this.host, () => {
-          console.log(`MCP HTTP server listening on http://${this.host}:${this.port}`);
-          console.log(`MCP endpoint available at: http://${this.host}:${this.port}/mcp`);
+          logger.info(`MCP HTTP server listening on http://${this.host}:${this.port}`);
+          logger.info(`MCP endpoint available at: http://${this.host}:${this.port}/mcp`);
           resolve();
         });
 
@@ -173,11 +176,11 @@ export class McpHttpServer {
     // Close all active transports
     for (const sessionId in this.transports) {
       try {
-        console.log(`Closing transport for session ${sessionId}`);
+        logger.info(`Closing transport for session ${sessionId}`);
         await this.transports[sessionId].close();
         delete this.transports[sessionId];
       } catch (error) {
-        console.error(`Error closing transport for session ${sessionId}:`, error);
+        logger.error(`Error closing transport for session ${sessionId}:`, error);
       }
     }
 

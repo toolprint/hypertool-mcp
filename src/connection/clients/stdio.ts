@@ -9,6 +9,9 @@ import { EventEmitter } from "events";
 import { StdioServerConfig } from "../../types/config.js";
 import { ConnectionOptions } from "../types.js";
 import { BaseConnection } from "./base.js";
+import { createLogger } from "../../logging/index.js";
+
+const logger = createLogger({ module: 'clients/stdio' });
 
 /**
  * Stdio client wrapper using proper MCP SDK Client
@@ -68,7 +71,7 @@ export class StdioClient extends EventEmitter {
     try {
       await this.client.close();
     } catch (error) {
-      console.error("Error closing stdio client:", error);
+      logger.error("Error closing stdio client:", error);
     } finally {
       this.client = null;
       this.isConnected = false;

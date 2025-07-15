@@ -7,6 +7,9 @@ import * as path from "path";
 import * as os from "os";
 import { loadUserPreferences, updateMcpConfigPath } from "./preferences.js";
 import { APP_TECHNICAL_NAME, BRAND_NAME } from "./app-config.js";
+import { createLogger } from "../logging/index.js";
+
+const logger = createLogger({ module: 'config/discovery' });
 
 /**
  * Standard locations to search for MCP configuration files
@@ -72,7 +75,7 @@ export async function discoverMcpConfig(
           await updateMcpConfigPath(resolvedPath);
         } catch (error) {
           // Don't fail if preference update fails
-          console.warn("Warning: Could not update MCP config preference:", error);
+          logger.warn("Warning: Could not update MCP config preference:", error);
         }
       }
       
@@ -102,12 +105,12 @@ export async function discoverMcpConfig(
         };
       } else {
         // Preference points to non-existent file, continue to discovery
-        console.warn(`Warning: Preferred MCP config file not found: ${resolvedPath}`);
+        logger.warn(`Warning: Preferred MCP config file not found: ${resolvedPath}`);
       }
     }
   } catch (error) {
     // Continue to discovery if preference loading fails
-    console.warn("Warning: Could not load user preferences:", error);
+    logger.warn("Warning: Could not load user preferences:", error);
   }
 
   // 3. Search standard locations

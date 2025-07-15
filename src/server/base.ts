@@ -5,6 +5,9 @@
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { createLogger } from "../logging/index.js";
+
+const logger = createLogger({ module: 'server/base' });
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
@@ -117,7 +120,7 @@ export class MetaMCPServer extends EventEmitter {
       this.emit("started");
 
       if (options.debug) {
-        console.log(
+        logger.info(
           `Meta-MCP server started with ${options.transport.type} transport`
         );
       }
@@ -206,7 +209,7 @@ export class MetaMCPServer extends EventEmitter {
           method: "notifications/tools/list_changed",
         });
       } catch (error) {
-        console.error("Failed to send tools list changed notification:", error);
+        logger.error("Failed to send tools list changed notification:", error);
       }
     }
   }

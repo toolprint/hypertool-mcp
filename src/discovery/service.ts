@@ -5,6 +5,9 @@
 import { EventEmitter } from "events";
 import { IConnectionManager } from "../connection/types.js";
 import { Tool, ToolListChangedNotification, ToolListChangedNotificationSchema } from "@modelcontextprotocol/sdk/types.js";
+import { createLogger } from "../logging/index.js";
+
+const logger = createLogger({ module: 'discovery/service' });
 import {
   IToolDiscoveryEngine,
   DiscoveryConfig,
@@ -95,7 +98,7 @@ export class ToolDiscoveryEngine
           lastError: undefined,
         });
       } catch (error) {
-        console.error(
+        logger.error(
           `Failed to discover tools from server "${server}":`,
           error
         );
@@ -327,7 +330,7 @@ export class ToolDiscoveryEngine
     if (this.config.refreshInterval > 0) {
       this.refreshTimer = setInterval(() => {
         this.discoverTools().catch((error) => {
-          console.error("Periodic tool discovery failed:", error);
+          logger.error("Periodic tool discovery failed:", error);
         });
       }, this.config.refreshInterval);
     }
@@ -384,7 +387,7 @@ export class ToolDiscoveryEngine
    * Handle MCP tools list changed notification
    */
   async handleToolsListChanged(serverName: string): Promise<void> {
-    console.log(
+    logger.info(
       `Received tools list changed notification from server: ${serverName}`
     );
 
@@ -399,7 +402,7 @@ export class ToolDiscoveryEngine
       const changes = ToolHashUtils.detectToolChanges(previousTools, newTools);
       const summary = ToolHashUtils.summarizeChanges(changes);
 
-      console.log(`Tool changes detected for ${serverName}:`, summary);
+      logger.info(`Tool changes detected for ${serverName}:`, summary);
 
       // Update lookup manager
       this.lookupManager.clearServer(serverName);
@@ -431,7 +434,7 @@ export class ToolDiscoveryEngine
       };
       this.emit("toolsChanged", event);
     } catch (error) {
-      console.error(
+      logger.error(
         `Failed to handle tools list changed for server "${serverName}":`,
         error
       );
@@ -465,7 +468,7 @@ export class ToolDiscoveryEngine
               try {
                 await this.handleToolsListChanged(event.serverName);
               } catch (error) {
-                console.error(`Failed to handle tools list changed for ${event.serverName}:`, error);
+                logger.error(`Failed to handle tools list changed for ${event.serverName}:`, error);
               }
             }
           );
@@ -474,7 +477,7 @@ export class ToolDiscoveryEngine
 
       if (this.config.autoDiscovery && this.isInitialized) {
         this.discoverTools(event.serverName).catch((error) => {
-          console.error(
+          logger.error(
             `Auto-discovery failed for server "${event.serverName}":`,
             error
           );
@@ -493,7 +496,7 @@ export class ToolDiscoveryEngine
 
     // Listen for health-based tool availability changes
     this.connectionManager.on("serverToolsUnavailable" as any, (event: any) => {
-      console.log(`Server "${event.serverName}" tools unavailable due to health: ${event.reason}`);
+      logger.info(`Server "${event.serverName}" tools unavailable due to health: ${event.reason}`);
       
       this.updateServerState(event.serverName, {
         isConnected: false,
@@ -512,12 +515,12 @@ export class ToolDiscoveryEngine
     });
 
     this.connectionManager.on("serverToolsAvailable" as any, (event: any) => {
-      console.log(`Server "${event.serverName}" tools available again, recovered from: ${event.recoveredFrom}`);
+      logger.info(`Server "${event.serverName}" tools available again, recovered from: ${event.recoveredFrom}`);
       
       // Trigger tool rediscovery if auto-discovery is enabled
       if (this.config.autoDiscovery && this.isInitialized) {
         this.discoverTools(event.serverName).catch((error) => {
-          console.error(`Auto-discovery failed for recovered server "${event.serverName}":`, error);
+          logger.error(`Auto-discovery failed for recovered server "${event.serverName}":`, error);
         });
       }
       

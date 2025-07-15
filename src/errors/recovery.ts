@@ -3,7 +3,7 @@
  */
 
 import { EventEmitter } from "events";
-import { Logger, getLogger } from "../logging/index.js";
+import { Logger, logger } from "../logging/index.js";
 import { MetaMCPError, isRetryableError, ConnectionError, ServerUnavailableError } from "./index.js";
 
 /**
@@ -84,7 +84,7 @@ export class RetryManager {
 
   constructor(config: Partial<RetryConfig> = {}) {
     this.config = { ...DEFAULT_RETRY_CONFIG, ...config };
-    this.logger = getLogger().child("RetryManager");
+    this.logger = logger.child({ module: "RetryManager" });
   }
 
   /**
@@ -195,7 +195,7 @@ export class CircuitBreaker extends EventEmitter {
   ) {
     super();
     this.config = { ...DEFAULT_CIRCUIT_BREAKER_CONFIG, ...config };
-    this.logger = getLogger().child("CircuitBreaker");
+    this.logger = logger.child({ module: "CircuitBreaker" });
     this.startMonitoring();
   }
 
@@ -345,7 +345,7 @@ export class FallbackManager {
   private logger: Logger;
 
   constructor() {
-    this.logger = getLogger().child("FallbackManager");
+    this.logger = logger.child({ module: "FallbackManager" });
   }
 
   /**
@@ -463,7 +463,7 @@ export class RecoveryCoordinator {
   ) {
     this.retryManager = new RetryManager(retryConfig);
     this.fallbackManager = new FallbackManager();
-    this.logger = getLogger().child("RecoveryCoordinator");
+    this.logger = logger.child({ module: "RecoveryCoordinator" });
 
     // Register default fallback strategies
     this.fallbackManager.registerStrategy(new ServerUnavailableFallback());

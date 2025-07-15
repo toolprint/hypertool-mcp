@@ -6,6 +6,9 @@
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
 import { CallToolRequest, CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { createLogger } from "../logging/index.js";
+
+const logger = createLogger({ module: 'router/router' });
 import {
   IRequestRouter,
   ToolRoute,
@@ -357,7 +360,7 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
       this.emit("log", logEntry);
 
       // Simple console logging for now
-      console.log(JSON.stringify(logEntry));
+      logger.info(JSON.stringify(logEntry));
     }
   }
 }

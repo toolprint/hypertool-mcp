@@ -30,6 +30,9 @@ export interface RuntimeOptions {
   
   /** Path to MCP configuration file */
   configPath?: string;
+  
+  /** Log level for the application */
+  logLevel?: string;
 }
 
 /**

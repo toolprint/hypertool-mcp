@@ -42,7 +42,7 @@ export class ConnectionManager
     super();
     this._pool = new ConnectionPool(poolConfig, connectionFactory);
     this._healthMonitor = new HealthMonitor();
-    this._logger = createLogger('ConnectionManager');
+    this._logger = createLogger({ module: 'ConnectionManager' });
     this._recoveryCoordinator = new RecoveryCoordinator();
     this.setupPoolEventForwarding();
   }

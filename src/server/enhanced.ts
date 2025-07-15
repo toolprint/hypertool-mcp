@@ -10,6 +10,9 @@ import { IToolDiscoveryEngine, ToolDiscoveryEngine } from "../discovery/index.js
 import { IConnectionManager, ConnectionManager } from "../connection/index.js";
 import { MCPConfigParser, APP_NAME } from "../config/index.js";
 import ora from "ora";
+import { createLogger } from "../logging/index.js";
+
+const logger = createLogger({ module: 'server/enhanced' });
 // Note: All mcp-tools functionality now handled by ToolsetManager
 import { ToolsetManager, ToolsetConfig, ToolsetChangeEvent } from "../toolset/index.js";
 import { DiscoveredToolsChangedEvent } from "../discovery/types.js";
@@ -61,19 +64,19 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           mainSpinner.succeed(`Loaded configuration with ${serverCount} MCP server${serverCount !== 1 ? 's' : ''}`);
         } else {
           mainSpinner.fail('Failed to load MCP configuration');
-          console.error(`\n❌ FATAL ERROR: Failed to load MCP configuration`);
+          logger.error(`\n❌ FATAL ERROR: Failed to load MCP configuration`);
           if (parseResult.error) {
-            console.error(`   Error: ${parseResult.error}`);
+            logger.error(`   Error: ${parseResult.error}`);
           }
           if (parseResult.validationErrors) {
-            console.error(`   Validation errors:`);
+            logger.error(`   Validation errors:`);
             parseResult.validationErrors.forEach((err: string) => {
-              console.error(`     • ${err}`);
+              logger.error(`     • ${err}`);
             });
           }
-          console.error(`\n💡 Resolution: Fix the configuration file and restart the server.`);
-          console.error(`   Configuration file: ${options.configPath}`);
-          console.error(`\n🚫 ${APP_NAME} server cannot start with invalid configuration.`);
+          logger.error(`\n💡 Resolution: Fix the configuration file and restart the server.`);
+          logger.error(`   Configuration file: ${options.configPath}`);
+          logger.error(`\n🚫 ${APP_NAME} server cannot start with invalid configuration.`);
           process.exit(1);
         }
       } else {
@@ -89,7 +92,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       // Connect to each server individually with progress
       const serverEntries = Object.entries(serverConfigs);
       if (serverEntries.length > 0) {
-        console.log('\n🔗 Connecting to MCP servers:');
+        logger.info('\n🔗 Connecting to MCP servers:');
 
         for (const [serverName, config] of serverEntries) {
           const serverSpinner = ora(`Connecting to ${serverName}...`).start();
@@ -118,7 +121,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       // Listen for toolset changes and notify clients
       this.toolsetManager.on('toolsetChanged', async (event: ToolsetChangeEvent) => {
         if (options.debug) {
-          console.log(`Toolset ${event.changeType}: ${event.newToolset?.name || 'none'}`);
+          logger.info(`Toolset ${event.changeType}: ${event.newToolset?.name || 'none'}`);
         }
         await this.notifyToolsChanged();
       });
@@ -138,15 +141,17 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
         // Show tools by server in debug mode
         if (options.debug && toolCount > 0) {
-          console.log('\n📋 Tools discovered by server:');
+          const toolsByServerStr: Array<string> = []
           const toolsByServer: Record<string, number> = {};
           discoveredTools.forEach((tool: any) => {
             toolsByServer[tool.serverName] = (toolsByServer[tool.serverName] || 0) + 1;
           });
 
           Object.entries(toolsByServer).forEach(([serverName, count]) => {
-            console.log(`   • ${serverName}: ${count} tool${count !== 1 ? 's' : ''}`);
+            toolsByServerStr.push(`   • ${serverName}: ${count} tool${count !== 1 ? 's' : ''}`);
           });
+
+          logger.info(`\n📋 Tools discovered by server:\n${toolsByServerStr.join('\n')}`);
         }
       } else {
         mainSpinner.warn('No tools discovered from connected servers');
@@ -170,7 +175,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();
         if (activeToolsetInfo) {
           if (options.debug) {
-            console.log(
+            logger.info(
               `Tools changed while toolset "${activeToolsetInfo.name}" is equipped. ` +
               `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
             );
@@ -186,9 +191,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       // Check for toolset configuration and warn if none equipped
       await this.checkToolsetStatus(options.debug);
 
-      console.log(''); // Add spacing before final startup messages
+      logger.info(''); // Add spacing before final startup messages
     } catch (error) {
-      console.error("Failed to initialize routing:", error);
+      logger.error("Failed to initialize routing:", error);
       throw error;
     }
   }
@@ -204,7 +209,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();
 
       if (!activeToolsetInfo && !hasToolsets) {
-        console.warn(`
+        logger.warn(`
 ⚠️  WARNING: No toolsets configured
    
    Meta-MCP is running but no toolsets have been created yet.
@@ -219,7 +224,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    `);
       } else if (!activeToolsetInfo && hasToolsets) {
         const toolsetNames = listResult.success ? listResult.toolsets.map((t: any) => t.name) : [];
-        console.warn(`
+        logger.warn(`
 ⚠️  WARNING: No toolset equipped
    
    You have ${toolsetNames.length} saved toolset(s) but none are currently equipped.
@@ -228,11 +233,11 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    💡 Use 'equip-toolset' to activate a toolset and expose its tools.
    `);
       } else if (debug && activeToolsetInfo) {
-        console.log(`✅ Toolset "${activeToolsetInfo.name}" is equipped and active`);
+        logger.info(`✅ Toolset "${activeToolsetInfo.name}" is equipped and active`);
       }
     } catch (error) {
       if (debug) {
-        console.warn("Could not check toolset status:", error);
+        logger.warn("Could not check toolset status:", error);
       }
     }
   }
@@ -553,7 +558,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const mcpTools = this.toolsetManager.getMcpTools();
       tools.push(...mcpTools);
     } catch (error) {
-      console.error("Failed to get available tools:", error);
+      logger.error("Failed to get available tools:", error);
     }
 
     return tools;
@@ -875,7 +880,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           return response;
       }
     } catch (error) {
-      console.error("Tool call failed:", error);
+      logger.error("Tool call failed:", error);
       throw error;
     }
   }
@@ -899,7 +904,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       // Stop the base server
       await super.stop();
     } catch (error) {
-      console.error("Error stopping enhanced server:", error);
+      logger.error("Error stopping enhanced server:", error);
       throw error;
     }
   }

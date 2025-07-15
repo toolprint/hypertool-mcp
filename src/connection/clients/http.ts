@@ -9,6 +9,9 @@ import { EventEmitter } from "events";
 import { HttpServerConfig } from "../../types/config.js";
 import { ConnectionOptions } from "../types.js";
 import { BaseConnection } from "./base.js";
+import { createLogger } from "../../logging/index.js";
+
+const logger = createLogger({ module: 'clients/http' });
 
 /**
  * HTTP client wrapper using proper MCP SDK Client
@@ -64,7 +67,7 @@ export class HttpClient extends EventEmitter {
     try {
       await this.client.close();
     } catch (error) {
-      console.error("Error closing HTTP client:", error);
+      logger.error("Error closing HTTP client:", error);
     } finally {
       this.client = null;
       this.isConnected = false;

@@ -7,46 +7,54 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { MetaMCPServerFactory } from "./server/index.js";
 import { TransportConfig } from "./server/types.js";
-import { RuntimeOptions, DEFAULT_RUNTIME_OPTIONS, RuntimeTransportType } from "./types/runtime.js";
+import { RuntimeOptions, RuntimeTransportType } from "./types/runtime.js";
 import { discoverMcpConfig } from "./config/discovery.js";
 import { APP_NAME, APP_DESCRIPTION, APP_VERSION, APP_TECHNICAL_NAME } from "./config/app-config.js";
+import { logger, createLogger } from "./logging/index.js";
+import { displayServerBanner, output } from "./logging/output.js";
+import type { LevelWithSilent } from 'pino';
 
 /**
  * Parse CLI arguments and return runtime options
  */
 function parseCliArguments(): RuntimeOptions {
   const program = new Command();
-  
+
   program
     .name(APP_TECHNICAL_NAME)
     .description(chalk.blue(APP_DESCRIPTION))
     .version(APP_VERSION)
     .option(
-      '--transport <type>', 
-      chalk.cyan('Transport protocol to use') + ' (http, stdio)', 
+      '--transport <type>',
+      chalk.cyan('Transport protocol to use') + ' (http, stdio)',
       'stdio'
     )
     .option(
-      '--port <number>', 
+      '--port <number>',
       chalk.cyan('Port number for HTTP transport') + ' (only valid with --transport http)'
     )
     .option(
-      '--debug', 
-      chalk.cyan('Enable debug mode with verbose logging'), 
+      '--debug',
+      chalk.cyan('Enable debug mode with verbose logging'),
       false
     )
     .option(
-      '--insecure', 
-      chalk.yellow('Allow tools with changed reference hashes') + chalk.red(' (insecure mode)'), 
+      '--insecure',
+      chalk.yellow('Allow tools with changed reference hashes') + chalk.red(' (insecure mode)'),
       false
     )
     .option(
-      '--use-toolset <name>', 
+      '--use-toolset <name>',
       chalk.cyan('Toolset name to load on startup')
     )
     .option(
-      '--mcp-config <path>', 
+      '--mcp-config <path>',
       chalk.cyan('Path to MCP configuration file') + ' (.mcp.json)'
+    )
+    .option(
+      '--log-level <level>',
+      chalk.cyan('Log level') + ' (trace, debug, info, warn, error, fatal)',
+      'info'
     );
 
   program.parse();
@@ -73,6 +81,15 @@ function parseCliArguments(): RuntimeOptions {
     process.exit(1);
   }
 
+  // Validate log level
+  const logLevel = options.logLevel;
+  const validLogLevels = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'];
+  if (!validLogLevels.includes(logLevel)) {
+    console.error(chalk.red(`❌ Invalid log level: ${logLevel}`));
+    console.error(chalk.yellow(`   Valid options: ${validLogLevels.join(', ')}`));
+    process.exit(1);
+  }
+
   return {
     transport,
     port: transport === 'http' ? port : undefined,
@@ -80,6 +97,7 @@ function parseCliArguments(): RuntimeOptions {
     insecure: options.insecure || false,
     useToolset: options.useToolset,
     configPath: options.mcpConfig,
+    logLevel,
   };
 }
 
@@ -91,9 +109,16 @@ async function main(): Promise<void> {
     // Parse CLI arguments
     const runtimeOptions = parseCliArguments();
 
+    // Update logger configuration
+    logger.updateConfig({
+      level: (runtimeOptions.logLevel || (runtimeOptions.debug ? 'debug' : 'info')) as LevelWithSilent,
+    });
+
+    const mainLogger = createLogger({ module: 'main' });
+
     // Discover MCP configuration
     const configResult = await discoverMcpConfig(
-      runtimeOptions.configPath, 
+      runtimeOptions.configPath,
       true // Update preference when CLI path is provided
     );
 
@@ -111,20 +136,20 @@ async function main(): Promise<void> {
     if (runtimeOptions.debug) {
       const sourceText = {
         cli: "command line argument",
-        preference: "user preference", 
+        preference: "user preference",
         discovered: "automatic discovery",
         none: "unknown source"
       }[configResult.source];
-      
+
       console.log(chalk.green(`✅ Found MCP config via ${sourceText}: ${configResult.configPath}`));
     }
 
     // Create transport config from runtime options
     const transportConfig: TransportConfig = {
       type: runtimeOptions.transport,
-      ...(runtimeOptions.transport === 'http' && { 
-        port: runtimeOptions.port || 3000, 
-        host: "localhost" 
+      ...(runtimeOptions.transport === 'http' && {
+        port: runtimeOptions.port || 3000,
+        host: "localhost"
       }),
     };
 
@@ -143,6 +168,14 @@ async function main(): Promise<void> {
     process.on("SIGINT", shutdown);
     process.on("SIGTERM", shutdown);
 
+    // Display server banner before starting (especially important for stdio)
+    displayServerBanner(
+      APP_NAME,
+      runtimeOptions.transport,
+      runtimeOptions.port,
+      runtimeOptions.transport === 'http' ? 'localhost' : undefined
+    );
+
     // Start server
     const initOptions = MetaMCPServerFactory.createInitOptions({
       transport: transportConfig,
@@ -152,19 +185,17 @@ async function main(): Promise<void> {
 
     await server.start(initOptions);
 
-    // Display startup messages with colored output
-    if (runtimeOptions.debug) {
-      console.log(chalk.green(`✅ ${APP_NAME} server running on ${runtimeOptions.transport} transport`));
-      if (runtimeOptions.transport === "http") {
-        console.log(chalk.blue(`🌐 HTTP server listening on http://localhost:${runtimeOptions.port || 3000}`));
-      }
-      if (runtimeOptions.insecure) {
-        console.log(chalk.red("⚠️  INSECURE MODE: Tools with changed reference hashes are allowed"));
-      }
-      if (runtimeOptions.useToolset) {
-        console.log(chalk.cyan(`🛠️  Using toolset: ${runtimeOptions.useToolset}`));
-      }
+    // Display additional startup messages with colored output
+    logger.info(chalk.green(`✅ ${APP_NAME} server running on ${runtimeOptions.transport} transport`));
+
+    if (runtimeOptions.insecure) {
+      logger.info(chalk.red("⚠️  INSECURE MODE: Tools with changed reference hashes are allowed"));
     }
+    if (runtimeOptions.useToolset) {
+      logger.info(chalk.cyan(`🛠️  Using toolset: ${runtimeOptions.useToolset}`));
+    }
+
+    output.displaySeparator();
 
     // Keep process alive for stdio transport
     if (runtimeOptions.transport === "stdio") {
