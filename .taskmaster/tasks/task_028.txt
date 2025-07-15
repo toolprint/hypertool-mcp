@@ -1,29 +1,59 @@
 # Task ID: 28
-# Title: Modernize Build System with ES2022/ESNext and Migrate from Jest to Vitest
+# Title: Replace current logging system with Pino logger
 # Status: pending
-# Dependencies: 20, 24
+# Dependencies: 13, 14, 15, 16, 17, 18, 19, 20, 21, 23
 # Priority: medium
-# Description: Upgrade TypeScript configuration to ES2022/ESNext target and replace Jest testing framework with Vitest for better performance and modern ES module support.
+# Description: Implement Pino as the primary logging system throughout the codebase, replacing all console.log/warn/error calls with structured logging that supports both stdio and HTTP transport modes
 # Details:
-1. **TypeScript Configuration Updates**: Update tsconfig.json to use ES2022 target and ESNext module resolution. Configure moduleResolution to 'bundler' for better ES module support. Update lib array to include ES2022 features. Set target to 'ES2022' and module to 'ESNext'.
+1. **Install and Configure Pino**: Add Pino and necessary dependencies (@types/pino, pino-pretty for development). Create logger configuration module at src/logger/index.ts with TypeScript interfaces for logger options.
 
-2. **Package Dependencies**: Remove Jest and related packages (@types/jest, jest, ts-jest). Install Vitest and dependencies (vitest, @vitest/ui, jsdom for browser environment simulation). Update package.json test scripts to use 'vitest' instead of 'jest'.
+2. **Logger Initialization**: Implement logger factory that creates Pino instances with proper configuration including log levels (trace, debug, info, warn, error, fatal), structured output format, and transport-specific settings. Configure file logging to write to {config_dir}/{app_name}.mcp_{timestamp}.log format.
 
-3. **Vitest Configuration**: Create vitest.config.ts with appropriate settings for TypeScript, ES modules, and test environment. Configure test file patterns, coverage settings, and environment setup. Set up proper ES module handling and TypeScript integration.
+3. **File Logging Setup**: Implement file transport using pino.transport() with rotation capabilities. Use pino-roll or similar for log rotation based on size/time. Ensure logs directory exists in config path before writing.
 
-4. **Test File Migration**: Convert all existing Jest test files to Vitest syntax. Replace Jest imports (describe, it, expect) with Vitest equivalents. Update any Jest-specific matchers or utilities to Vitest alternatives. Migrate mock implementations from Jest to Vitest mocking system.
+4. **Replace Console Calls**: Search and replace all console.log/warn/error throughout codebase:
+   - console.log → logger.info or logger.debug
+   - console.warn → logger.warn
+   - console.error → logger.error
+   - Add contextual information to each log call
 
-5. **Build System Updates**: Update any build scripts or CI configuration to use the new test runner. Ensure ES2022 features are properly supported in build pipeline. Update lint and format configurations to work with new module system.
+5. **Module Integration**: Update all modules to import and use the logger:
+   - Server modules (connection manager, router, etc.)
+   - Configuration parser
+   - Tool discovery engine
+   - Health monitoring
+   - CLI interface
 
-6. **Validation**: Run all existing tests with Vitest to ensure they pass. Verify TypeScript compilation with new ES2022 target. Test ES module imports/exports work correctly. Validate build performance improvements.
+6. **Transport Mode Support**: Ensure logger works correctly in both stdio and HTTP modes:
+   - In stdio mode: Use pino.destination() with stdout
+   - In HTTP mode: Consider async logging to prevent blocking
+   - Add transport detection logic
+
+7. **TypeScript Types**: Create comprehensive type definitions:
+   ```typescript
+   interface LoggerConfig {
+     level: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+     filePath?: string;
+     prettyPrint?: boolean;
+     rotation?: RotationConfig;
+   }
+   ```
+
+8. **Performance Optimization**: Use pino's async mode for file logging. Implement log buffering for high-throughput scenarios. Add configuration for sync vs async logging based on environment.
+
+9. **Error Handling**: Ensure logger gracefully handles file system errors, permission issues, and disk space problems. Implement fallback to console if file logging fails.
+
+10. **Logger Context**: Add request ID tracking for correlated logs. Include server/module context in structured logs. Support child loggers for component-specific logging.
 
 # Test Strategy:
-1. **Migration Validation**: Run complete test suite with Vitest and verify 100% of existing tests pass without modification to test logic. Compare test execution performance between Jest and Vitest to confirm performance improvements.
+1. **Unit Tests**: Test logger initialization with various configurations. Verify log level filtering works correctly. Test file path generation and rotation logic.
 
-2. **TypeScript Compilation**: Verify TypeScript compiles successfully with ES2022 target. Test that ES2022 features (top-level await, private fields, etc.) are available and working. Validate module resolution works correctly with ESNext setting.
+2. **Integration Tests**: Verify logger works in both stdio and HTTP transport modes. Test file writing and rotation functionality. Ensure proper error handling when file system fails.
 
-3. **Build System Testing**: Run complete build pipeline (lint, format, test, compile) to ensure all steps work with new configuration. Test hot module replacement and dev server functionality if applicable.
+3. **Replacement Verification**: Use grep/search to ensure no console.log/warn/error calls remain. Verify all modules properly import and use the logger. Check that contextual information is included in logs.
 
-4. **ES Module Support**: Create test cases specifically for ES module imports/exports to verify modern module system works correctly. Test dynamic imports and tree-shaking capabilities.
+4. **Performance Tests**: Benchmark logging performance vs console.log. Test async logging doesn't block main thread. Verify log rotation doesn't impact performance.
 
-5. **Coverage and Performance**: Compare test coverage reports between old and new systems. Benchmark test execution time to confirm performance improvements. Verify all development scripts (dev, build, test) work correctly with updated configuration.
+5. **Transport Mode Tests**: Test logger behavior in stdio mode (output to stdout). Test logger in HTTP mode with async operations. Verify logs are properly formatted for each transport.
+
+6. **Error Scenario Tests**: Test behavior when log directory is not writable. Verify fallback mechanisms work correctly. Test recovery from file system errors.

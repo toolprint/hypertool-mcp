@@ -126,7 +126,7 @@
         "dependencies": [
           19
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -139,7 +139,7 @@
         "dependencies": [
           17
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -152,7 +152,7 @@
         "dependencies": [
           22
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -190,7 +190,7 @@
         "description": "Replace static toolset filtering with dynamic tool registration/unregistration system that registers tools with flattened names and sends MCP change notifications when toolsets are equipped or unequipped [Updated: 7/14/2025]",
         "details": "Create a dynamic tool registration system replacing the current getAvailableTools() filtering approach. Implement tool registration with name flattening (git.search → git_search) while preserving exact schemas from underlying servers. When toolsets are equipped: 1) Register tools dynamically with the MCP server using flattened names, 2) Send MCP tool change notifications to connected clients, 3) Maintain mapping between flattened names and original server/tool pairs for routing. When toolsets are unequipped: 1) Unregister tools from the MCP server, 2) Send removal notifications to clients, 3) Clean up routing mappings. Preserve the two-layer architecture specified in PRD with tool discovery remaining separate from dynamic registration. Implement transparent proxying ensuring requests to flattened tool names are correctly routed to underlying servers with original names. Handle edge cases: 1) Name conflicts between servers (use server prefixing as fallback), 2) Tools becoming unavailable while registered, 3) Client connections during registration changes, 4) Partial registration failures. Create ToolRegistrationManager class with methods: registerToolset(toolsetId, tools), unregisterToolset(toolsetId), handleToolCall(flattenedName, params). Integrate with existing ToolsetManager for equipped/unequipped events. Ensure atomic registration operations and rollback on failures.\n<info added on 2025-07-14T15:43:43.331Z>\nBased on the user request \"Assigned to claude-squad session-1721000000\", the new text that should be appended to the task's details is:\n\nAssigned to claude-squad session-1721000000\n</info added on 2025-07-14T15:43:43.331Z>",
         "testStrategy": "Unit tests for name flattening logic and conflict resolution. Integration tests for registration/unregistration flows with mock MCP clients verifying change notifications. Test transparent proxying with various tool call scenarios. Simulate edge cases: server disconnections during registration, conflicting tool names, rapid equip/unequip cycles. Verify rollback behavior on partial failures. Performance tests for registration with large toolsets. Test MCP protocol compliance for tool change notifications.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           16,
           17,
@@ -199,11 +199,117 @@
         ],
         "priority": "high",
         "subtasks": []
+      },
+      {
+        "id": 28,
+        "title": "Replace current logging system with Pino logger",
+        "description": "Implement Pino as the primary logging system throughout the codebase as specified in the PRD's Logging System section. This includes structured logging with CLI configuration, file logging with ISO timestamps, and comprehensive migration from console.* calls to Pino logging.",
+        "status": "pending",
+        "dependencies": [
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          23
+        ],
+        "priority": "medium",
+        "details": "Implement the comprehensive Pino logging system as detailed in the PRD's Logging System section. Key requirements include:\n\n1. **Dependencies**: Install Pino and pino-pretty for development pretty-printing\n2. **Centralized Logger**: Create logger module at src/logging/index.ts with TypeScript interfaces\n3. **CLI Integration**: Add --log-level flag with support for trace, debug, info, warn, error, fatal levels\n4. **File Logging**: Implement file transport with ISO timestamp format (hypertool-mcp_{ISO_timestamp}.log)\n5. **Migration**: Create automated script to replace all console.* calls with appropriate Pino logger calls\n6. **Child Loggers**: Implement child loggers for different modules with proper context\n7. **Transport Support**: Ensure compatibility with both stdio and HTTP transport modes\n8. **Request/Response Logging**: Include comprehensive logging with metadata for tracing\n\nRefer to the PRD's Logging System section for complete technical specifications, configuration details, and implementation requirements.",
+        "testStrategy": "Follow the testing strategy outlined in the PRD's Logging System section:\n\n1. **Unit Tests**: Test logger initialization, configuration, and CLI flag handling\n2. **Integration Tests**: Verify transport mode compatibility and file logging functionality\n3. **Migration Tests**: Ensure complete replacement of console.* calls without regressions\n4. **Performance Tests**: Validate async logging performance and file I/O efficiency\n5. **Child Logger Tests**: Test context propagation and module isolation\n6. **Error Handling Tests**: Verify fallback mechanisms and error scenarios\n\nAll tests should validate compliance with the PRD specifications for the logging system.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Install Pino dependencies and create initial logger module",
+            "description": "Install pino and pino-pretty packages, create src/logging/index.ts with basic logger configuration",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement CLI --log-level flag support",
+            "description": "Add --log-level CLI flag with support for all log levels (trace, debug, info, warn, error, fatal)",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement file logging with ISO timestamp format",
+            "description": "Create file transport with hypertool-mcp_{ISO_timestamp}.log naming convention",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Create migration script for console.* replacement",
+            "description": "Build automated script to replace all console.log/warn/error calls with appropriate Pino logger calls",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement child loggers for module integration",
+            "description": "Create child logger system for different modules with proper context and integrate across all modules",
+            "status": "pending",
+            "dependencies": [
+              1,
+              4
+            ],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Ensure transport mode compatibility",
+            "description": "Verify logger works correctly in both stdio and HTTP transport modes with proper configuration",
+            "status": "pending",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement comprehensive test suite",
+            "description": "Create unit, integration, and performance tests covering all logging functionality as specified in PRD",
+            "status": "pending",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "details": "",
+            "testStrategy": ""
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-07-09T21:55:09.811Z",
-      "updated": "2025-07-14T15:44:19.173Z",
+      "updated": "2025-07-15T15:09:20.058Z",
       "description": "Tasks for master context"
     }
   }

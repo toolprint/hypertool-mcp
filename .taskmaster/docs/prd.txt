@@ -365,6 +365,134 @@ getAvailableTools() → [
 - **Cleanup**: Automatic cleanup on toolset unequip
 - **Garbage Collection**: No memory leaks from registration operations
 
+# Logging System
+
+## Overview
+The logging system uses Pino as the primary logger throughout the codebase, replacing all console.log/warn/error calls with structured logging. It provides both human-readable output for development and structured JSON logs for production, with comprehensive request/response tracking and file logging capabilities.
+
+## Core Requirements
+
+### 1. Pino Implementation
+- **Primary Logger**: Pino with async logging for performance
+- **Pretty Printing**: pino-pretty for development mode with colored, human-readable output
+- **Structured Logging**: JSON format for production with full metadata
+- **TypeScript Support**: Full type definitions via @types/pino
+
+### 2. CLI Configuration
+- **Log Level Flag**: `--log-level` with options: trace, debug, info, warn, error, fatal
+- **Default Level**: info
+- **Environment Detection**: Automatically enable pretty-printing in development
+- **Transport Awareness**: Adjust logging based on stdio vs HTTP transport
+
+### 3. Centralized Logger Module
+- **Location**: `src/logging/index.ts`
+- **Architecture**: Factory pattern for creating child loggers
+- **Child Loggers**: Each module gets its own child logger with context
+- **Type Safety**: Full TypeScript interfaces for logger configuration
+
+### 4. File Logging
+- **Directory**: Configuration directory (e.g., ~/.config/hypertool-mcp/logs/)
+- **Filename Format**: `hypertool-mcp_{ISO_timestamp}.log` where timestamp is like `2025-01-15T10-30-45`
+- **New File Per Run**: Each server start creates a new log file
+- **Async Writing**: Non-blocking file writes using Pino's async mode
+
+### 5. Request/Response Logging
+- **Metadata Fields**:
+  - `requestId`: Unique identifier for each request
+  - `correlationId`: Track related requests across the system
+  - `serverName`: Which underlying MCP server handled the request
+  - `toolName`: The specific tool being called
+  - `duration`: Time taken for the request
+  - `status`: Success/failure status
+- **Automatic Tracking**: Middleware to automatically log all MCP requests/responses
+- **Sensitive Data**: Careful not to log sensitive parameters
+
+### 6. Module Integration
+Each module should create its own child logger:
+```typescript
+// In src/server/index.ts
+const logger = createLogger('server');
+
+// In src/discovery/engine.ts  
+const logger = createLogger('discovery');
+
+// In src/router/index.ts
+const logger = createLogger('router');
+```
+
+### 7. Migration Script
+- **Location**: `scripts/migrate-to-pino.js`
+- **Functionality**:
+  - Replace `console.log` → `logger.info` or `logger.debug`
+  - Replace `console.warn` → `logger.warn`
+  - Replace `console.error` → `logger.error`
+  - Add appropriate context to each log call
+  - Handle special cases (startup messages, CLI output)
+
+### 8. Transport Mode Support
+- **stdio Mode**: 
+  - Use stdout for logs to avoid mixing with MCP protocol
+  - Consider using stderr for error logs
+  - Pretty-print by default
+- **HTTP Mode**:
+  - Full async logging to prevent request blocking
+  - JSON format for easier parsing
+  - Include HTTP-specific metadata (headers, status codes)
+
+### 9. Development Features
+- **Stack Traces**: Include full stack traces in error logs when in development
+- **Source Location**: Log file and line number in development mode
+- **Performance Timing**: Log function execution times for debugging
+- **Memory Usage**: Optional memory usage logging for performance debugging
+
+### 10. TypeScript Interfaces
+```typescript
+interface LoggerConfig {
+  level: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+  transport: 'stdio' | 'http';
+  filePath?: string;
+  prettyPrint?: boolean;
+  async?: boolean;
+}
+
+interface RequestLogContext {
+  requestId: string;
+  correlationId: string;
+  serverName: string;
+  toolName?: string;
+  startTime: number;
+  metadata?: Record<string, any>;
+}
+
+interface LoggerFactory {
+  createLogger(module: string): Logger;
+  getRootLogger(): Logger;
+  setGlobalLevel(level: string): void;
+}
+```
+
+### 11. Error Handling
+- **Fallback Logging**: If file logging fails, fallback to console
+- **Circular Reference**: Handle circular references in logged objects
+- **Large Payloads**: Truncate extremely large logged objects
+- **Performance Impact**: Monitor and limit logging in hot paths
+
+### 12. Best Practices
+- **Contextual Logging**: Always include relevant context (module, operation, IDs)
+- **Log Levels**: Use appropriate levels (debug for development, info for important events)
+- **Structured Data**: Log objects instead of concatenated strings
+- **Consistent Format**: Use consistent field names across all modules
+- **Performance**: Use child loggers to avoid repeated context addition
+
+## Implementation Priority
+1. Create centralized logger module with TypeScript interfaces
+2. Add CLI flag parsing for log level
+3. Implement file logging with ISO timestamp format
+4. Create migration script to replace console.* calls
+5. Integrate with request/response middleware
+6. Add child loggers to all major modules
+7. Test in both stdio and HTTP transport modes
+
 # Appendix  
 - **Target MCP Servers**: git, docker, context7, task-master, claude-task, and others
 - **Configuration Format**: JSON-based toolset definitions with server mappings

@@ -1,16 +1,17 @@
 /**
- * User preferences management for HyperTool MCP
+ * User preferences management
  */
 
 import * as fs from "fs/promises";
 import * as path from "path";
 import { homedir } from "os";
 import { ToolsetConfig } from "../toolset/types.js";
+import { APP_TECHNICAL_NAME, BRAND_NAME } from "./app-config.js";
 
 // Configuration directory structure
-const TOOLPRINT_CONFIG_DIR = path.join(homedir(), ".toolprint");
-const HYPERTOOL_MCP_CONFIG_DIR = path.join(TOOLPRINT_CONFIG_DIR, "hypertool-mcp");
-const PREFERENCES_FILE = path.join(HYPERTOOL_MCP_CONFIG_DIR, "preferences.json");
+const BRAND_CONFIG_DIR = path.join(homedir(), `.${BRAND_NAME.toLowerCase()}`);
+const APP_CONFIG_DIR = path.join(BRAND_CONFIG_DIR, APP_TECHNICAL_NAME);
+const PREFERENCES_FILE = path.join(APP_CONFIG_DIR, "preferences.json");
 
 /**
  * User preferences structure
@@ -42,7 +43,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
  */
 async function ensureConfigDir(): Promise<void> {
   try {
-    await fs.mkdir(HYPERTOOL_MCP_CONFIG_DIR, { recursive: true });
+    await fs.mkdir(APP_CONFIG_DIR, { recursive: true });
   } catch {
     // Directory might already exist, that's fine
   }
@@ -126,8 +127,8 @@ export async function saveStoredToolsets(toolsets: Record<string, ToolsetConfig>
  */
 export function getConfigPaths() {
   return {
-    toolprintDir: TOOLPRINT_CONFIG_DIR,
-    hypertoolMcpDir: HYPERTOOL_MCP_CONFIG_DIR,
+    brandDir: BRAND_CONFIG_DIR,
+    appDir: APP_CONFIG_DIR,
     preferencesFile: PREFERENCES_FILE,
   };
 }

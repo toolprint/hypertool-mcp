@@ -9,6 +9,7 @@ import {
   ServerInitOptions,
   TransportConfig,
 } from "./types.js";
+import { APP_TECHNICAL_NAME, APP_VERSION, APP_DESCRIPTION } from "../config/app-config.js";
 
 /**
  * Factory class for creating Meta-MCP server instances
@@ -28,10 +29,9 @@ export class MetaMCPServerFactory {
     transport: TransportConfig
   ): EnhancedMetaMCPServer {
     const config: MetaMCPServerConfig = {
-      name: "meta-mcp",
-      version: "1.0.0",
-      description:
-        "Meta-MCP proxy server for routing requests between clients and multiple underlying MCP servers",
+      name: APP_TECHNICAL_NAME,
+      version: APP_VERSION,
+      description: APP_DESCRIPTION,
       transport,
     };
 

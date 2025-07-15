@@ -9,6 +9,7 @@ import { MetaMCPServerFactory } from "./server/index.js";
 import { TransportConfig } from "./server/types.js";
 import { RuntimeOptions, DEFAULT_RUNTIME_OPTIONS, RuntimeTransportType } from "./types/runtime.js";
 import { discoverMcpConfig } from "./config/discovery.js";
+import { APP_NAME, APP_DESCRIPTION, APP_VERSION, APP_TECHNICAL_NAME } from "./config/app-config.js";
 
 /**
  * Parse CLI arguments and return runtime options
@@ -17,9 +18,9 @@ function parseCliArguments(): RuntimeOptions {
   const program = new Command();
   
   program
-    .name('hypertool-mcp')
-    .description(chalk.blue('HyperTool MCP proxy server for routing requests between clients and multiple underlying MCP servers'))
-    .version('1.0.0')
+    .name(APP_TECHNICAL_NAME)
+    .description(chalk.blue(APP_DESCRIPTION))
+    .version(APP_VERSION)
     .option(
       '--transport <type>', 
       chalk.cyan('Transport protocol to use') + ' (http, stdio)', 
@@ -133,7 +134,7 @@ async function main(): Promise<void> {
     // Setup graceful shutdown
     const shutdown = async () => {
       if (runtimeOptions.debug) {
-        console.log(chalk.yellow("🛑 Shutting down HyperTool MCP server..."));
+        console.log(chalk.yellow(`🛑 Shutting down ${APP_NAME} server...`));
       }
       await server.stop();
       process.exit(0);
@@ -153,7 +154,7 @@ async function main(): Promise<void> {
 
     // Display startup messages with colored output
     if (runtimeOptions.debug) {
-      console.log(chalk.green(`✅ HyperTool MCP server running on ${runtimeOptions.transport} transport`));
+      console.log(chalk.green(`✅ ${APP_NAME} server running on ${runtimeOptions.transport} transport`));
       if (runtimeOptions.transport === "http") {
         console.log(chalk.blue(`🌐 HTTP server listening on http://localhost:${runtimeOptions.port || 3000}`));
       }
@@ -170,7 +171,7 @@ async function main(): Promise<void> {
       process.stdin.resume();
     }
   } catch (error) {
-    console.error(chalk.red("❌ Failed to start HyperTool MCP server:"), error);
+    console.error(chalk.red(`❌ Failed to start ${APP_NAME} server:`), error);
     process.exit(1);
   }
 }

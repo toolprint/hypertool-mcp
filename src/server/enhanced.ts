@@ -8,7 +8,7 @@ import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { IRequestRouter, RequestRouter } from "../router/index.js";
 import { IToolDiscoveryEngine, ToolDiscoveryEngine } from "../discovery/index.js";
 import { IConnectionManager, ConnectionManager } from "../connection/index.js";
-import { MCPConfigParser } from "../config/index.js";
+import { MCPConfigParser, APP_NAME } from "../config/index.js";
 import ora from "ora";
 // Note: All mcp-tools functionality now handled by ToolsetManager
 import { ToolsetManager, ToolsetConfig, ToolsetChangeEvent } from "../toolset/index.js";
@@ -73,7 +73,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           }
           console.error(`\n💡 Resolution: Fix the configuration file and restart the server.`);
           console.error(`   Configuration file: ${options.configPath}`);
-          console.error(`\n🚫 Meta-MCP server cannot start with invalid configuration.`);
+          console.error(`\n🚫 ${APP_NAME} server cannot start with invalid configuration.`);
           process.exit(1);
         }
       } else {

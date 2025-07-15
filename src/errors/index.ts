@@ -1,9 +1,9 @@
 /**
- * Custom error classes for Meta-MCP server
+ * Custom error classes
  */
 
 /**
- * Base error class for all Meta-MCP errors
+ * Base error class for all application errors
  */
 export abstract class MetaMCPError extends Error {
   public readonly code: string;

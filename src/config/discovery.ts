@@ -6,6 +6,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import * as os from "os";
 import { loadUserPreferences, updateMcpConfigPath } from "./preferences.js";
+import { APP_TECHNICAL_NAME, BRAND_NAME } from "./app-config.js";
 
 /**
  * Standard locations to search for MCP configuration files
@@ -14,12 +15,12 @@ const STANDARD_CONFIG_LOCATIONS = [
   // Current working directory
   ".mcp.json",
   "mcp.json",
-  ".hypertool-mcp.json",
-  "hypertool-mcp.json",
+  `.${APP_TECHNICAL_NAME}.json`,
+  `${APP_TECHNICAL_NAME}.json`,
   
   // User home directory
-  "~/.toolprint/hypertool-mcp/config.json",
-  "~/.hypertool-mcp.json",
+  `~/.${BRAND_NAME.toLowerCase()}/${APP_TECHNICAL_NAME}/config.json`,
+  `~/.${APP_TECHNICAL_NAME}.json`,
   "~/.mcp.json",
 ];
 
@@ -143,7 +144,7 @@ function generateNoConfigFoundMessage(): string {
 To get started:
   1. Create a .mcp.json file in your current directory, or
   2. Use --mcp-config <path> to specify a custom location, or
-  3. Run 'hypertool-mcp --help' for more configuration options
+  3. Run '${APP_TECHNICAL_NAME} --help' for more configuration options
 
 Example .mcp.json:
 {

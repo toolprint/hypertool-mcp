@@ -1,5 +1,5 @@
 /**
- * Structured logging framework for Meta-MCP server
+ * Structured logging framework
  */
 
 import { EventEmitter } from "events";
