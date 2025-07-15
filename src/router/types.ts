@@ -3,28 +3,7 @@
  */
 
 import { DiscoveredTool } from "../discovery/types";
-
-/**
- * Tool call request from MCP client
- */
-export interface ToolCallRequest {
-  name: string;
-  arguments?: Record<string, any>;
-}
-
-/**
- * Tool call response to MCP client
- */
-export interface ToolCallResponse {
-  content: Array<{
-    type: "text" | "image" | "resource";
-    text?: string;
-    data?: string;
-    url?: string;
-    mimeType?: string;
-  }>;
-  isError?: boolean;
-}
+import { CallToolRequest, CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 /**
  * Routing information for a tool call
@@ -51,7 +30,7 @@ export interface RouteContext {
   /** Timestamp when request was received */
   timestamp: Date;
   /** Tool call request details */
-  request: ToolCallRequest;
+  request: CallToolRequest["params"];
   /** Resolved routing information */
   route?: ToolRoute;
   /** Client information (if available) */
@@ -126,9 +105,9 @@ export interface IRequestRouter {
    * Route a tool call request to the appropriate server
    */
   routeToolCall(
-    request: ToolCallRequest,
+    request: CallToolRequest["params"],
     context?: Partial<RouteContext>
-  ): Promise<ToolCallResponse>;
+  ): Promise<CallToolResult>;
 
   /**
    * Resolve tool name to routing information
@@ -139,7 +118,7 @@ export interface IRequestRouter {
    * Validate request parameters against tool schema
    */
   validateRequest(
-    request: ToolCallRequest,
+    request: CallToolRequest["params"],
     tool: DiscoveredTool
   ): Promise<boolean>;
 

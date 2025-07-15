@@ -4,7 +4,7 @@
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { ListToolsResult } from "@modelcontextprotocol/sdk/types.js";
+import { ListToolsResult, CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
 import { EventEmitter } from "events";
 import { HttpServerConfig } from "../../types/config";
 import { ConnectionOptions } from "../types";
@@ -80,6 +80,17 @@ export class HttpClient extends EventEmitter {
     }
 
     return await this.client.listTools();
+  }
+
+  /**
+   * Call a tool on the MCP server
+   */
+  async callTool(params: CallToolRequest["params"]): Promise<any> {
+    if (!this.client) {
+      throw new Error("Client not connected");
+    }
+
+    return await this.client.callTool(params);
   }
 
   /**

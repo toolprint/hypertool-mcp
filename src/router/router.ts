@@ -5,10 +5,9 @@
 
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
+import { CallToolRequest, CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import {
   IRequestRouter,
-  ToolCallRequest,
-  ToolCallResponse,
   ToolRoute,
   RouteContext,
   RoutingResult,
@@ -58,9 +57,9 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
    * Route a tool call request to the appropriate server
    */
   async routeToolCall(
-    request: ToolCallRequest,
+    request: CallToolRequest["params"],
     context?: Partial<RouteContext>
-  ): Promise<ToolCallResponse> {
+  ): Promise<CallToolResult> {
     const requestId = uuidv4();
     const routeContext: RouteContext = {
       requestId,
@@ -217,7 +216,7 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
    * Validate request parameters against tool schema
    */
   async validateRequest(
-    request: ToolCallRequest,
+    request: CallToolRequest["params"],
     tool: DiscoveredTool
   ): Promise<boolean> {
     try {
@@ -252,8 +251,8 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
   private async makeToolCall(
     connection: any,
     route: ToolRoute,
-    request: ToolCallRequest
-  ): Promise<ToolCallResponse> {
+    request: CallToolRequest["params"]
+  ): Promise<CallToolResult> {
     try {
       // Use the underlying tool's original name for the call
       const toolCallArgs = {
@@ -261,27 +260,8 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
         arguments: request.arguments,
       };
 
-      // Make the call through the connection's client
-      const result = await connection.client.callTool(toolCallArgs);
-
-      // Transform result to our response format
-      if (result && result.content) {
-        return {
-          content: result.content,
-          isError: result.isError || false,
-        };
-      }
-
-      // Handle different response formats
-      return {
-        content: [
-          {
-            type: "text",
-            text: typeof result === "string" ? result : JSON.stringify(result),
-          },
-        ],
-        isError: false,
-      };
+      // Make the call through the connection's client and return result directly
+      return await connection.client.callTool(toolCallArgs);
     } catch (error) {
       throw new Error(
         `Tool call failed on server '${route.serverName}': ${

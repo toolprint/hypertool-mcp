@@ -9,8 +9,6 @@ export * from "./router";
 export { RequestRouter } from "./router";
 export type {
   IRequestRouter,
-  ToolCallRequest,
-  ToolCallResponse,
   ToolRoute,
   RouteContext,
   RoutingResult,

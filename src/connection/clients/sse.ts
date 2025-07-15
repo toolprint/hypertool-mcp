@@ -5,7 +5,7 @@
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import { ListToolsResult } from "@modelcontextprotocol/sdk/types.js";
+import { ListToolsResult, CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
 import { EventEmitter } from "events";
 import { BaseConnection } from "./base";
 import { SSEServerConfig } from "../../types/config";
@@ -77,6 +77,17 @@ export class SSEClient extends EventEmitter {
     }
 
     return await this.client.listTools();
+  }
+
+  /**
+   * Call a tool on the MCP server
+   */
+  async callTool(params: CallToolRequest["params"]): Promise<any> {
+    if (!this.client) {
+      throw new Error("Client not connected");
+    }
+
+    return await this.client.callTool(params);
   }
 
   /**
