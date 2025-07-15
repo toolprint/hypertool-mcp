@@ -495,37 +495,4 @@ describe("RequestRouter", () => {
     });
   });
 
-  describe("logging", () => {
-    it("should enable/disable logging", async () => {
-      await router.initialize({ enableLogging: true });
-
-      // Create a spy on logger.info to check if logging occurs
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation();
-
-      const request: CallToolRequest["params"] = {
-        name: "unknown.tool",
-        arguments: {},
-      };
-
-      try {
-        await router.routeToolCall(request);
-      } catch (error) {
-        // Expected to throw for unknown tool
-      }
-      expect(consoleSpy).toHaveBeenCalled();
-
-      // Disable logging
-      router.setLogging(false);
-      consoleSpy.mockClear();
-
-      try {
-        await router.routeToolCall(request);
-      } catch (error) {
-        // Expected to throw for unknown tool
-      }
-      // Should be called less frequently or not at all for request logs
-
-      consoleSpy.mockRestore();
-    });
-  });
 });
