@@ -31,7 +31,7 @@ import { loadToolsetConfig, saveToolsetConfig } from "./loader";
 import { validateToolsetConfig } from "./validator";
 
 export class ToolsetManager extends EventEmitter {
-  private currentConfig?: ToolsetConfig;
+  private currentToolset?: ToolsetConfig;
   private configPath?: string;
   private discoveryEngine?: IToolDiscoveryEngine;
 
@@ -42,7 +42,7 @@ export class ToolsetManager extends EventEmitter {
   /**
    * Load toolset configuration from file
    */
-  async loadConfig(
+  async loadToolsetFromConfig(
     filePath: string
   ): Promise<{
     success: boolean;
@@ -52,7 +52,7 @@ export class ToolsetManager extends EventEmitter {
     const result = await loadToolsetConfig(filePath);
 
     if (result.config && result.validation.valid) {
-      this.currentConfig = result.config;
+      this.currentToolset = result.config;
       this.configPath = filePath;
     }
 
@@ -66,10 +66,10 @@ export class ToolsetManager extends EventEmitter {
   /**
    * Save current configuration to file
    */
-  async saveConfig(
+  async persistToolset(
     filePath?: string
   ): Promise<{ success: boolean; error?: string }> {
-    if (!this.currentConfig) {
+    if (!this.currentToolset) {
       return { success: false, error: "No configuration loaded" };
     }
 
@@ -78,7 +78,7 @@ export class ToolsetManager extends EventEmitter {
       return { success: false, error: "No file path specified" };
     }
 
-    const result = await saveToolsetConfig(this.currentConfig, targetPath, {
+    const result = await saveToolsetConfig(this.currentToolset, targetPath, {
       createDir: true,
       pretty: true,
     });
@@ -98,32 +98,33 @@ export class ToolsetManager extends EventEmitter {
     options?: { name?: string; description?: string }
   ): ToolsetConfig {
     // Return empty toolset - users must select tools explicitly
-    this.currentConfig = {
+    this.currentToolset = {
       name: options?.name || "empty-toolset",
       description: options?.description || "Empty toolset - add tools explicitly",
       version: "1.0.0",
       createdAt: new Date(),
       tools: [], // Intentionally empty - no default tools
     };
-    return this.currentConfig;
+    return this.currentToolset;
   }
 
   /**
    * Set configuration directly
    */
-  setConfig(config: ToolsetConfig): ValidationResult {
-    const validation = validateToolsetConfig(config);
+  setCurrentToolset(toolsetConfig: ToolsetConfig): ValidationResult {
+    const validation = validateToolsetConfig(toolsetConfig);
     if (validation.valid) {
-      const previousConfig = this.currentConfig;
-      this.currentConfig = config;
-      
+      const previousConfig = this.currentToolset;
+      this.currentToolset = toolsetConfig;
+
       // Emit toolset change event
       const event: ToolsetChangeEvent = {
         previousToolset: previousConfig || null,
-        newToolset: config,
+        newToolset: toolsetConfig,
         changeType: previousConfig ? 'updated' : 'equipped',
         timestamp: new Date()
       };
+      console.debug('toolsetChanged', event);
       this.emit('toolsetChanged', event);
     }
     return validation;
@@ -132,8 +133,8 @@ export class ToolsetManager extends EventEmitter {
   /**
    * Get current configuration
    */
-  getConfig(): ToolsetConfig | undefined {
-    return this.currentConfig;
+  getCurrentToolset(): ToolsetConfig | undefined {
+    return this.currentToolset;
   }
 
   // Note: applyConfig method removed since we eliminated ResolvedTool
@@ -142,8 +143,8 @@ export class ToolsetManager extends EventEmitter {
   /**
    * Validate current configuration
    */
-  validateConfig(): ValidationResult {
-    if (!this.currentConfig) {
+  isCurrentToolsetValid(): ValidationResult {
+    if (!this.currentToolset) {
       return {
         valid: false,
         errors: ["No configuration loaded"],
@@ -151,14 +152,14 @@ export class ToolsetManager extends EventEmitter {
       };
     }
 
-    return validateToolsetConfig(this.currentConfig);
+    return validateToolsetConfig(this.currentToolset);
   }
 
   /**
    * Check if configuration is loaded
    */
-  isConfigLoaded(): boolean {
-    return this.currentConfig !== undefined;
+  isCurrentToolsetLoaded(): boolean {
+    return this.currentToolset !== undefined;
   }
 
   /**
@@ -171,8 +172,8 @@ export class ToolsetManager extends EventEmitter {
   /**
    * Clear current configuration
    */
-  clearConfig(): void {
-    this.currentConfig = undefined;
+  clearCurrentToolset(): void {
+    this.currentToolset = undefined;
     this.configPath = undefined;
   }
 
@@ -181,7 +182,7 @@ export class ToolsetManager extends EventEmitter {
    */
   setDiscoveryEngine(discoveryEngine: IToolDiscoveryEngine): void {
     this.discoveryEngine = discoveryEngine;
-    
+
     // Listen for discovered tools changes and validate active toolset
     (discoveryEngine as any).on('toolsChanged', (event: DiscoveredToolsChangedEvent) => {
       this.handleDiscoveredToolsChanged(event);
@@ -198,16 +199,16 @@ export class ToolsetManager extends EventEmitter {
     }
 
     const discoveredTools = this.discoveryEngine.getAvailableTools(true);
-    
+
     // If no toolset is active, return empty array (no tools should be exposed)
-    if (!this.currentConfig || this.currentConfig.tools.length === 0) {
+    if (!this.currentToolset || this.currentToolset.tools.length === 0) {
       return [];
     }
 
     // Filter tools based on active toolset
     const filteredTools: DiscoveredTool[] = [];
-    
-    for (const toolRef of this.currentConfig.tools) {
+
+    for (const toolRef of this.currentToolset.tools) {
       const resolution = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
       if (resolution?.exists && resolution.tool) {
         filteredTools.push(resolution.tool);
@@ -235,16 +236,16 @@ export class ToolsetManager extends EventEmitter {
     }
 
     const discoveredTools = this.discoveryEngine.getAvailableTools(true);
-    
+
     // If no toolset is active, return all tools
-    if (!this.currentConfig || this.currentConfig.tools.length === 0) {
+    if (!this.currentToolset || this.currentToolset.tools.length === 0) {
       return discoveredTools;
     }
 
     // Filter tools based on active toolset
     const filteredTools: DiscoveredTool[] = [];
-    
-    for (const toolRef of this.currentConfig.tools) {
+
+    for (const toolRef of this.currentToolset.tools) {
       const resolution = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
       if (resolution?.exists && resolution.tool) {
         filteredTools.push(resolution.tool);
@@ -270,7 +271,7 @@ export class ToolsetManager extends EventEmitter {
     }
 
     const activeTools = this.getActiveDiscoveredTools();
-    
+
     for (const tool of activeTools) {
       if (this.flattenToolName(tool.namespacedName) === flattenedName) {
         return tool.namespacedName;
@@ -284,30 +285,30 @@ export class ToolsetManager extends EventEmitter {
    * Check if toolset is currently active
    */
   hasActiveToolset(): boolean {
-    return this.currentConfig !== undefined && this.currentConfig.tools.length > 0;
+    return this.currentToolset !== undefined && this.currentToolset.tools.length > 0;
   }
 
   /**
    * Get active toolset information
    */
   getActiveToolsetInfo(): { name: string; description?: string; toolCount: number; version?: string; createdAt?: Date } | null {
-    if (!this.currentConfig) {
+    if (!this.currentToolset) {
       return null;
     }
 
     return {
-      name: this.currentConfig.name,
-      description: this.currentConfig.description,
-      toolCount: this.currentConfig.tools.length,
-      version: this.currentConfig.version,
-      createdAt: this.currentConfig.createdAt,
+      name: this.currentToolset.name,
+      description: this.currentToolset.description,
+      toolCount: this.currentToolset.tools.length,
+      version: this.currentToolset.version,
+      createdAt: this.currentToolset.createdAt,
     };
   }
 
   /**
    * Create and save a new toolset
    */
-  async createToolset(
+  async buildToolset(
     name: string,
     tools: DynamicToolReference[],
     options: {
@@ -372,7 +373,7 @@ export class ToolsetManager extends EventEmitter {
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
       const saveToolsetsToPreferences = preferences.saveStoredToolsets;
       const stored = await loadToolsetsFromPreferences();
-      
+
       if (stored[name]) {
         return {
           success: false,
@@ -476,7 +477,7 @@ export class ToolsetManager extends EventEmitter {
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
       const saveToolsetsToPreferences = preferences.saveStoredToolsets;
       const stored = await loadToolsetsFromPreferences();
-      
+
       if (!stored[name]) {
         const availableNames = Object.keys(stored);
         return {
@@ -493,7 +494,7 @@ export class ToolsetManager extends EventEmitter {
       }
 
       // Unequip if currently active
-      if (this.currentConfig?.name === name) {
+      if (this.currentToolset?.name === name) {
         this.unequipToolset();
       }
 
@@ -532,14 +533,14 @@ export class ToolsetManager extends EventEmitter {
       const preferences = await import("../config/preferences");
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
       const stored = await loadToolsetsFromPreferences();
-      
+
       const toolsets = Object.values(stored).map(config => ({
         name: config.name,
         description: config.description,
         version: config.version,
         createdAt: config.createdAt?.toISOString(),
         toolCount: config.tools.length,
-        active: this.currentConfig?.name === config.name
+        active: this.currentToolset?.name === config.name
       }));
 
       return {
@@ -646,7 +647,7 @@ export class ToolsetManager extends EventEmitter {
 
     for (const toolRef of tools) {
       const resolution = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
-      
+
       if (resolution?.exists && resolution.tool) {
         validReferences.push(toolRef);
         resolvedTools.push(resolution.tool);
@@ -671,15 +672,15 @@ export class ToolsetManager extends EventEmitter {
       // Import the function here to avoid circular imports
       const preferences = await import("../config/preferences");
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
-      
+
       const stored = await loadToolsetsFromPreferences();
       const toolsetConfig = stored[toolsetName];
-      
+
       if (!toolsetConfig) {
         return { success: false, error: `Toolset "${toolsetName}" not found` };
       }
 
-      const validation = this.setConfig(toolsetConfig);
+      const validation = this.setCurrentToolset(toolsetConfig);
       if (!validation.valid) {
         return { success: false, error: `Invalid toolset: ${validation.errors.join(", ")}` };
       }
@@ -695,10 +696,10 @@ export class ToolsetManager extends EventEmitter {
    * Unequip the current toolset
    */
   unequipToolset(): void {
-    const previousConfig = this.currentConfig;
-    this.currentConfig = undefined;
+    const previousConfig = this.currentToolset;
+    this.currentToolset = undefined;
     this.configPath = undefined;
-    
+
     // Emit toolset change event
     if (previousConfig) {
       const event: ToolsetChangeEvent = {
@@ -715,7 +716,7 @@ export class ToolsetManager extends EventEmitter {
    * Get the current active toolset config (if any)
    */
   getActiveToolset(): ToolsetConfig | null {
-    return this.currentConfig || null;
+    return this.currentToolset || null;
   }
 
   /**
@@ -723,26 +724,26 @@ export class ToolsetManager extends EventEmitter {
    */
   private handleDiscoveredToolsChanged(event: DiscoveredToolsChangedEvent): void {
     // Only validate if we have an active toolset
-    if (!this.currentConfig || !this.discoveryEngine) {
+    if (!this.currentToolset || !this.discoveryEngine) {
       return;
     }
 
     // Check if any of our toolset's tools are affected by this server change
     const affectedTools: string[] = [];
 
-    for (const toolRef of this.currentConfig.tools) {
+    for (const toolRef of this.currentToolset.tools) {
       const resolution = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
-      
+
       // Check if this tool belongs to the server that changed
       if (resolution?.tool?.serverName === event.serverName) {
         // Check if this specific tool was removed or changed
-        const wasRemoved = event.changes.some(change => 
-          change.changeType === 'removed' && 
+        const wasRemoved = event.changes.some(change =>
+          change.changeType === 'removed' &&
           change.tool.namespacedName === resolution.tool!.namespacedName
         );
-        
-        const wasChanged = event.changes.some(change => 
-          change.changeType === 'updated' && 
+
+        const wasChanged = event.changes.some(change =>
+          change.changeType === 'updated' &&
           change.tool.namespacedName === resolution.tool!.namespacedName
         );
 
@@ -756,12 +757,12 @@ export class ToolsetManager extends EventEmitter {
     // This will trigger the server to refresh its tool list
     if (affectedTools.length > 0) {
       const changeEvent: ToolsetChangeEvent = {
-        previousToolset: this.currentConfig,
-        newToolset: this.currentConfig, // Same toolset, but tools have changed
+        previousToolset: this.currentToolset,
+        newToolset: this.currentToolset, // Same toolset, but tools have changed
         changeType: 'updated',
         timestamp: new Date()
       };
-      
+
       this.emit('toolsetChanged', changeEvent);
     }
   }

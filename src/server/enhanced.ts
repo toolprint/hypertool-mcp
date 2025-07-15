@@ -90,10 +90,10 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const serverEntries = Object.entries(serverConfigs);
       if (serverEntries.length > 0) {
         console.log('\n🔗 Connecting to MCP servers:');
-        
+
         for (const [serverName, config] of serverEntries) {
           const serverSpinner = ora(`Connecting to ${serverName}...`).start();
-          
+
           try {
             await this.connectionManager.connect(serverName);
             serverSpinner.succeed(`Connected to ${serverName} (${(config as any).type})`);
@@ -111,10 +111,10 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         autoDiscovery: true,
         enableMetrics: true,
       });
-      
+
       // Set discovery engine reference in toolset manager
       this.toolsetManager.setDiscoveryEngine(this.discoveryEngine);
-      
+
       // Listen for toolset changes and notify clients
       this.toolsetManager.on('toolsetChanged', async (event: ToolsetChangeEvent) => {
         if (options.debug) {
@@ -122,20 +122,20 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         }
         await this.notifyToolsChanged();
       });
-      
+
       mainSpinner.succeed('Tool discovery engine initialized');
 
       // Start discovery and show tool count
       mainSpinner = ora('Discovering tools from connected servers...').start();
       await this.discoveryEngine.start();
-      
+
       const discoveredTools = this.discoveryEngine.getAvailableTools(true);
       const toolCount = discoveredTools.length;
       const connectedServers = this.connectionManager.getConnectedServers();
-      
+
       if (toolCount > 0) {
         mainSpinner.succeed(`Discovered ${toolCount} tool${toolCount !== 1 ? 's' : ''} from ${connectedServers.length} connected server${connectedServers.length !== 1 ? 's' : ''}`);
-        
+
         // Show tools by server in debug mode
         if (options.debug && toolCount > 0) {
           console.log('\n📋 Tools discovered by server:');
@@ -143,7 +143,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           discoveredTools.forEach(tool => {
             toolsByServer[tool.serverName] = (toolsByServer[tool.serverName] || 0) + 1;
           });
-          
+
           Object.entries(toolsByServer).forEach(([serverName, count]) => {
             console.log(`   • ${serverName}: ${count} tool${count !== 1 ? 's' : ''}`);
           });
@@ -176,7 +176,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             );
           }
         }
-        
+
         // Note: ToolsetManager will automatically handle toolset validation
         // and emit toolsetChanged events if active tools are affected
         // Always notify clients about tool changes
@@ -185,7 +185,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
       // Check for toolset configuration and warn if none equipped
       await this.checkToolsetStatus(options.debug);
-      
+
       console.log(''); // Add spacing before final startup messages
     } catch (error) {
       console.error("Failed to initialize routing:", error);
@@ -202,7 +202,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const storedToolsets = listResult.success ? listResult.toolsets.reduce((acc, t) => ({ ...acc, [t.name]: t }), {}) : {};
       const hasToolsets = Object.keys(storedToolsets).length > 0;
       const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();
-      
+
       if (!activeToolsetInfo && !hasToolsets) {
         console.warn(`
 ⚠️  WARNING: No toolsets configured
@@ -260,13 +260,13 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
               type: "object",
               description: "High-level statistics about available tools",
               properties: {
-                totalTools: { 
-                  type: "number", 
-                  description: "Total number of tools across all servers" 
+                totalTools: {
+                  type: "number",
+                  description: "Total number of tools across all servers"
                 },
-                totalServers: { 
-                  type: "number", 
-                  description: "Number of connected MCP servers" 
+                totalServers: {
+                  type: "number",
+                  description: "Number of connected MCP servers"
                 }
               },
               required: ["totalTools", "totalServers"]
@@ -277,13 +277,13 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
               items: {
                 type: "object",
                 properties: {
-                  serverName: { 
-                    type: "string", 
-                    description: "Name of the MCP server" 
+                  serverName: {
+                    type: "string",
+                    description: "Name of the MCP server"
                   },
-                  toolCount: { 
-                    type: "number", 
-                    description: "Number of tools from this server" 
+                  toolCount: {
+                    type: "number",
+                    description: "Number of tools from this server"
                   },
                   tools: {
                     type: "array",
@@ -291,25 +291,25 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
                     items: {
                       type: "object",
                       properties: {
-                        name: { 
-                          type: "string", 
-                          description: "Original tool name" 
+                        name: {
+                          type: "string",
+                          description: "Original tool name"
                         },
-                        description: { 
-                          type: "string", 
-                          description: "Tool description (optional)" 
+                        description: {
+                          type: "string",
+                          description: "Tool description (optional)"
                         },
-                        namespacedName: { 
-                          type: "string", 
-                          description: "Namespaced name for unambiguous reference (serverName.toolName)" 
+                        namespacedName: {
+                          type: "string",
+                          description: "Namespaced name for unambiguous reference (serverName.toolName)"
                         },
-                        serverName: { 
-                          type: "string", 
-                          description: "Source server name" 
+                        serverName: {
+                          type: "string",
+                          description: "Source server name"
                         },
-                        refId: { 
-                          type: "string", 
-                          description: "Unique hash identifier for this tool" 
+                        refId: {
+                          type: "string",
+                          description: "Unique hash identifier for this tool"
                         }
                       },
                       required: ["name", "namespacedName", "serverName", "refId"]
@@ -356,7 +356,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
                     description: "Tool reference by namespaced name (e.g., 'git.status', 'docker.ps')"
                   },
                   refId: {
-                    type: "string", 
+                    type: "string",
                     description: "Tool reference by unique hash identifier (e.g., 'abc123def456...')"
                   }
                 },
@@ -368,7 +368,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
               }
             },
             description: {
-              type: "string", 
+              type: "string",
               description: "Optional description of what this toolset is for (e.g., 'Essential tools for web development')",
               maxLength: 200
             },
@@ -523,7 +523,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
               }
             },
             serverStatus: {
-              type: "object", 
+              type: "object",
               properties: {
                 totalConfigured: { type: "number" },
                 enabled: { type: "number" },
@@ -569,7 +569,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         case "list-available-tools":
           if (this.discoveryEngine) {
             const structured = this.toolsetManager.formatAvailableTools();
-            
+
             return {
               content: [
                 {
@@ -593,7 +593,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
         case "build-toolset":
           if (this.discoveryEngine) {
-            const result = await this.toolsetManager.createToolset(
+            const result = await this.toolsetManager.buildToolset(
               args?.name || '',
               args?.tools || [],
               {
@@ -601,7 +601,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
                 autoEquip: args?.autoEquip
               }
             );
-            
+
             return {
               content: [
                 {
@@ -638,7 +638,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           if (this.discoveryEngine) {
             // Refresh discovery cache before applying toolset to ensure latest tools
             await this.discoveryEngine.refreshCache();
-            
+
             const equipResult = await this.toolsetManager.equipToolset(args?.name);
             if (equipResult.success) {
               return {
@@ -700,7 +700,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         case "unequip-toolset":
           this.toolsetManager.unequipToolset();
           // ToolsetManager will emit 'toolsetChanged' event which triggers notifyToolsChanged()
-          
+
           return {
             content: [
               {
@@ -715,11 +715,11 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           if (activeToolsetInfo) {
             const discoveredTools = this.discoveryEngine?.getAvailableTools(true) || [];
             const activeToolset = this.toolsetManager.getActiveToolset()!;
-            
+
             // Count servers by status using discovery engine to resolve server information
             const availableServers = new Set(discoveredTools.map(t => t.serverName));
             const toolsetServers = new Set<string>();
-            
+
             // Use discovery engine to resolve each tool reference and get server names
             for (const toolRef of activeToolset.tools) {
               const resolution = this.discoveryEngine?.resolveToolReference(toolRef, { allowStaleRefs: false });
@@ -727,12 +727,12 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
                 toolsetServers.add(resolution.serverName);
               }
             }
-            
+
             const configuredServers = Array.from(toolsetServers).map(name => ({ serverName: name, enabled: true }));
             const enabledServers = configuredServers; // All servers are enabled in simplified structure
             const unavailableServers = enabledServers.filter(s => !availableServers.has(s.serverName));
             const disabledServers: any[] = []; // No disabled servers in simplified structure
-            
+
             // Get tool details from active discovered tools
             const activeDiscoveredTools = this.toolsetManager.getActiveDiscoveredTools();
             const totalConfiguredTools = activeDiscoveredTools.length;
@@ -743,16 +743,16 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
               }
               toolsByServer[tool.serverName].push(tool.name);
             }
-            
+
             let output = `🎯 **Equipped Toolset: "${activeToolsetInfo.name}"**\n\n`;
             output += `${activeToolsetInfo.description || 'No description'}\n\n`;
-            
+
             // Toolset metadata
             output += `## Toolset Information\n`;
             output += `- **Created:** ${activeToolset.createdAt ? new Date(activeToolset.createdAt).toLocaleDateString() : 'Unknown'}\n`;
             output += `- **Version:** ${activeToolset.version || '1.0.0'}\n`;
             output += `- **Tool Count:** ${activeToolsetInfo.toolCount}\n\n`;
-            
+
             // Server status
             output += `## Server Status\n`;
             output += `- **Total Configured:** ${configuredServers.length}\n`;
@@ -760,13 +760,13 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             output += `- **Available:** ${enabledServers.length - unavailableServers.length}\n`;
             output += `- **Unavailable:** ${unavailableServers.length}\n`;
             output += `- **Disabled:** ${disabledServers.length}\n\n`;
-            
+
             // Tool count summary
             output += `## Tool Summary\n`;
             output += `- **Currently Exposed:** ${totalConfiguredTools}\n`;
             output += `- **Total Discovered:** ${discoveredTools.length}\n`;
             output += `- **Filtered Out:** ${discoveredTools.length - totalConfiguredTools}\n\n`;
-            
+
             // Active tools by server
             if (Object.keys(toolsByServer).length > 0) {
               output += `## Currently Exposed Tools\n\n`;
@@ -778,7 +778,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
                 output += `\n`;
               }
             }
-            
+
             // Show unavailable servers if any
             if (unavailableServers.length > 0) {
               output += `## ⚠️ Unavailable Servers\n\n`;
@@ -787,7 +787,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
               }
               output += `\nThese servers are configured in the toolset but not currently available.\n\n`;
             }
-            
+
             // Show disabled servers if any
             if (disabledServers.length > 0) {
               output += `## ℹ️ Disabled Servers\n\n`;
@@ -796,11 +796,11 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
               }
               output += `\n`;
             }
-            
+
             // Note: Warnings handling simplified since we removed ResolvedTool system
-            
+
             output += `Use \`unequip-toolset\` to remove this filter and show all tools.`;
-            
+
             // Create structured response
             const structuredResponse = {
               equipped: true,
@@ -827,7 +827,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
               unavailableServers: unavailableServers.map(s => s.serverName),
               warnings: [] // Simplified: no warnings in current system
             };
-            
+
             return {
               content: [
                 {
@@ -847,7 +847,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
               unavailableServers: [],
               warnings: []
             };
-            
+
             return {
               content: [
                 {
