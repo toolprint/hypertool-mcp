@@ -443,7 +443,9 @@ export class ToolsetManager extends EventEmitter {
           totalTools: tools.length,
           servers
         },
-        createdAt: config.createdAt?.toISOString(),
+        createdAt: config.createdAt instanceof Date 
+          ? config.createdAt.toISOString() 
+          : config.createdAt, // Already a string from JSON
         autoEquipped: false
       };
 
@@ -541,7 +543,9 @@ export class ToolsetManager extends EventEmitter {
         name: config.name,
         description: config.description,
         version: config.version,
-        createdAt: config.createdAt?.toISOString(),
+        createdAt: config.createdAt instanceof Date 
+          ? config.createdAt.toISOString() 
+          : config.createdAt, // Already a string from JSON
         toolCount: config.tools.length,
         active: this.currentToolset?.name === config.name
       }));
