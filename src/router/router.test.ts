@@ -3,7 +3,8 @@
  */
 
 import { RequestRouter } from "./router";
-import { ToolCallRequest, ROUTER_ERROR_CODES } from "./types";
+import { ROUTER_ERROR_CODES } from "./types";
+import { CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
 import { IToolDiscoveryEngine, DiscoveredTool } from "../discovery/types";
 import { IConnectionManager, Connection } from "../connection/types";
 
@@ -277,7 +278,7 @@ describe("RequestRouter", () => {
     });
 
     it("should route tool calls successfully", async () => {
-      const request: ToolCallRequest = {
+      const request: CallToolRequest["params"] = {
         name: "git.status",
         arguments: { path: "/repo" },
       };
@@ -293,15 +294,12 @@ describe("RequestRouter", () => {
     it("should validate required parameters", async () => {
       await router.initialize({ validateParameters: true });
 
-      const request: ToolCallRequest = {
+      const request: CallToolRequest["params"] = {
         name: "git.status",
         arguments: {}, // Missing required 'path' parameter
       };
 
-      const response = await router.routeToolCall(request);
-
-      expect(response.isError).toBe(true);
-      expect(response.content[0].text).toContain("Error:");
+      await expect(router.routeToolCall(request)).rejects.toThrow("Invalid request parameters");
     });
 
     it("should handle tool call errors", async () => {
@@ -309,27 +307,42 @@ describe("RequestRouter", () => {
       errorConnection.client.callTool.mockRejectedValue(new Error("Git error"));
       mockConnectionManager.addMockConnection("git", errorConnection);
 
-      const request: ToolCallRequest = {
+      const request: CallToolRequest["params"] = {
+        name: "git.status",
+        arguments: { path: "/repo" },
+      };
+
+      await expect(router.routeToolCall(request)).rejects.toThrow("Tool call failed on server 'git': Git error");
+    });
+
+    it("should pass through tool-level errors with isError flag", async () => {
+      // Tool returns an error response (not a thrown error)
+      const toolErrorConnection = new MockConnection("git", {
+        content: [{ type: "text", text: "Repository not found" }],
+        isError: true,
+      });
+      mockConnectionManager.addMockConnection("git", toolErrorConnection);
+
+      const request: CallToolRequest["params"] = {
         name: "git.status",
         arguments: { path: "/repo" },
       };
 
       const response = await router.routeToolCall(request);
 
+      expect(response.content).toEqual([
+        { type: "text", text: "Repository not found" },
+      ]);
       expect(response.isError).toBe(true);
-      expect(response.content[0].text).toContain("Tool call failed");
     });
 
     it("should handle unknown tools", async () => {
-      const request: ToolCallRequest = {
+      const request: CallToolRequest["params"] = {
         name: "unknown.tool",
         arguments: {},
       };
 
-      const response = await router.routeToolCall(request);
-
-      expect(response.isError).toBe(true);
-      expect(response.content[0].text).toContain(
+      await expect(router.routeToolCall(request)).rejects.toThrow(
         "Failed to resolve tool route"
       );
     });
@@ -359,7 +372,7 @@ describe("RequestRouter", () => {
     };
 
     it("should validate required parameters", async () => {
-      const validRequest: ToolCallRequest = {
+      const validRequest: CallToolRequest["params"] = {
         name: "git.commit",
         arguments: { message: "Test commit" },
       };
@@ -369,7 +382,7 @@ describe("RequestRouter", () => {
     });
 
     it("should reject missing required parameters", async () => {
-      const invalidRequest: ToolCallRequest = {
+      const invalidRequest: CallToolRequest["params"] = {
         name: "git.commit",
         arguments: { files: ["file1.txt"] }, // Missing required 'message'
       };
@@ -387,7 +400,7 @@ describe("RequestRouter", () => {
         },
       };
 
-      const request: ToolCallRequest = {
+      const request: CallToolRequest["params"] = {
         name: "git.commit",
         arguments: {},
       };
@@ -425,7 +438,7 @@ describe("RequestRouter", () => {
       const mockConnection = new MockConnection("git");
       mockConnectionManager.addMockConnection("git", mockConnection);
 
-      const request: ToolCallRequest = {
+      const request: CallToolRequest["params"] = {
         name: "git.status",
         arguments: {},
       };
@@ -440,12 +453,16 @@ describe("RequestRouter", () => {
     });
 
     it("should track failed requests", async () => {
-      const request: ToolCallRequest = {
+      const request: CallToolRequest["params"] = {
         name: "unknown.tool",
         arguments: {},
       };
 
-      await router.routeToolCall(request);
+      try {
+        await router.routeToolCall(request);
+      } catch (error) {
+        // Expected to throw
+      }
 
       const stats = router.getStats();
       expect(stats.totalRequests).toBe(1);
@@ -453,13 +470,18 @@ describe("RequestRouter", () => {
       expect(stats.failedRequests).toBe(1);
     });
 
-    it("should clear statistics", () => {
-      const request: ToolCallRequest = {
+    it("should clear statistics", async () => {
+      const request: CallToolRequest["params"] = {
         name: "unknown.tool",
         arguments: {},
       };
 
-      router.routeToolCall(request);
+      try {
+        await router.routeToolCall(request);
+      } catch (error) {
+        // Expected to throw
+      }
+      
       router.clearStats();
 
       const stats = router.getStats();
@@ -476,19 +498,27 @@ describe("RequestRouter", () => {
       // Create a spy on console.log to check if logging occurs
       const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
-      const request: ToolCallRequest = {
+      const request: CallToolRequest["params"] = {
         name: "unknown.tool",
         arguments: {},
       };
 
-      await router.routeToolCall(request);
+      try {
+        await router.routeToolCall(request);
+      } catch (error) {
+        // Expected to throw for unknown tool
+      }
       expect(consoleSpy).toHaveBeenCalled();
 
       // Disable logging
       router.setLogging(false);
       consoleSpy.mockClear();
 
-      await router.routeToolCall(request);
+      try {
+        await router.routeToolCall(request);
+      } catch (error) {
+        // Expected to throw for unknown tool
+      }
       // Should be called less frequently or not at all for request logs
 
       consoleSpy.mockRestore();

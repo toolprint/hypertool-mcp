@@ -110,6 +110,12 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
       // Make the tool call to the underlying server
       const response = await this.makeToolCall(connection, route, request);
 
+      // Ensure the response has proper error flag for successful calls
+      const result: CallToolResult = {
+        ...response,
+        isError: response.isError || false,
+      };
+
       // Update statistics
       this.updateStats(true, route.serverName, Date.now() - startTime);
 
@@ -119,7 +125,7 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
         duration: Date.now() - startTime,
       });
 
-      return response;
+      return result;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -137,16 +143,9 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
         duration: Date.now() - startTime,
       });
 
-      // Return error response in MCP format
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Error: ${errorMessage}`,
-          },
-        ],
-        isError: true,
-      };
+      // For protocol-level errors, throw the error to be handled by MCP error mechanism
+      // Only tool-level errors should use CallToolResult with isError: true
+      throw error;
     } finally {
       // Clean up request context after some time
       if (this.config.enableLogging) {

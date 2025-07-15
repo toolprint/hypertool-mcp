@@ -199,16 +199,9 @@ export class ToolsetManager extends EventEmitter {
 
     const discoveredTools = this.discoveryEngine.getAvailableTools(true);
     
-    // If no toolset is active, return all tools with their namespaced names
+    // If no toolset is active, return empty array (no tools should be exposed)
     if (!this.currentConfig || this.currentConfig.tools.length === 0) {
-      return discoveredTools.map(tool => ({
-        name: tool.namespacedName,
-        description: tool.tool.description || `Tool from ${tool.serverName} server`,
-        inputSchema: {
-          ...tool.tool.inputSchema,
-          type: "object" as const,
-        },
-      }));
+      return [];
     }
 
     // Filter tools based on active toolset
