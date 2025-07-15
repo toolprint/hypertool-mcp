@@ -166,19 +166,29 @@ export class Logger {
         const newPath = join(logDir, `${baseFileName}.${i + 1}`);
         
         if (existsSync(oldPath)) {
-          if (i === maxRotations - 1) {
-            // Delete the oldest rotation
-            unlinkSync(oldPath);
-          } else {
-            // Rename to next number
-            renameSync(oldPath, newPath);
+          try {
+            if (i === maxRotations - 1) {
+              // Delete the oldest rotation
+              unlinkSync(oldPath);
+            } else {
+              // Rename to next number
+              renameSync(oldPath, newPath);
+            }
+          } catch (error) {
+            // Gracefully handle file system errors during log rotation
+            // This is not critical to application functionality
+            console.warn(`Warning: Could not rotate log file ${oldPath}:`, error instanceof Error ? error.message : String(error));
           }
         }
       }
 
       // Rotate current log to .1 (only if it exists)
       if (existsSync(currentLogPath)) {
-        renameSync(currentLogPath, join(logDir, `${baseFileName}.1`));
+        try {
+          renameSync(currentLogPath, join(logDir, `${baseFileName}.1`));
+        } catch (error) {
+          console.warn(`Warning: Could not rotate current log file ${currentLogPath}:`, error instanceof Error ? error.message : String(error));
+        }
       }
       
     } catch (error) {

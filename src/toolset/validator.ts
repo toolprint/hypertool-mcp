@@ -72,8 +72,17 @@ export function validateToolsetConfig(config: ToolsetConfig): ValidationResult {
     errors.push("Version must be a string if provided");
   }
 
-  if (config.createdAt && !(config.createdAt instanceof Date)) {
-    errors.push("createdAt must be a Date object if provided");
+  if (config.createdAt) {
+    if (!(config.createdAt instanceof Date)) {
+      if (typeof config.createdAt === "string") {
+        const parsedDate = new Date(config.createdAt);
+        if (isNaN(parsedDate.getTime())) {
+          errors.push("createdAt must be a valid Date object or ISO string if provided");
+        }
+      } else {
+        errors.push("createdAt must be a Date object or ISO string if provided");
+      }
+    }
   }
 
   // Provide suggestions for improvement

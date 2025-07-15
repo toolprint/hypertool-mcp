@@ -4,6 +4,7 @@
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolModuleFactory, ToolModule } from "./types.js";
+import { getActiveToolsetResponseSchema, getActiveToolsetResponseZodSchema } from "./schemas.js";
 
 export const getActiveToolsetDefinition: Tool = {
   name: "get-active-toolset",
@@ -13,43 +14,7 @@ export const getActiveToolsetDefinition: Tool = {
     properties: {},
     additionalProperties: false,
   },
-  outputSchema: {
-    type: "object" as const,
-    properties: {
-      equipped: { type: "boolean" },
-      toolset: {
-        type: "object",
-        properties: {
-          name: { type: "string" },
-          description: { type: "string" },
-          version: { type: "string" },
-          createdAt: { type: "string" },
-          conflictResolution: { type: "string" }
-        }
-      },
-      serverStatus: {
-        type: "object",
-        properties: {
-          totalConfigured: { type: "number" },
-          enabled: { type: "number" },
-          available: { type: "number" },
-          unavailable: { type: "number" },
-          disabled: { type: "number" }
-        }
-      },
-      toolSummary: {
-        type: "object",
-        properties: {
-          currentlyExposed: { type: "number" },
-          totalDiscovered: { type: "number" },
-          filteredOut: { type: "number" }
-        }
-      },
-      exposedTools: { type: "object" },
-      unavailableServers: { type: "array", items: { type: "string" } },
-      warnings: { type: "array", items: { type: "string" } }
-    }
-  }
+  outputSchema: getActiveToolsetResponseSchema as any
 };
 
 export const createGetActiveToolsetModule: ToolModuleFactory = (deps): ToolModule => {
@@ -57,11 +22,14 @@ export const createGetActiveToolsetModule: ToolModuleFactory = (deps): ToolModul
     toolName: "get-active-toolset",
     definition: getActiveToolsetDefinition,
     handler: async (_args: any) => {
-      const activeToolsetInfo = deps.toolsetManager.getActiveToolsetInfo();
-      if (activeToolsetInfo) {
+      const activeToolset = deps.toolsetManager.getActiveToolset();
+      if (activeToolset) {
         // Get all discovered tools and active tools from toolset manager
         const allDiscoveredTools = deps.discoveryEngine?.getAvailableTools(true) || [];
         const activeDiscoveredTools = deps.toolsetManager.getActiveDiscoveredTools();
+        
+        // Generate full toolset information using the helper method
+        const toolsetInfo = await deps.toolsetManager.generateToolsetInfo(activeToolset);
         
         // Group active tools by server
         const toolsByServer: Record<string, string[]> = {};
@@ -82,15 +50,7 @@ export const createGetActiveToolsetModule: ToolModuleFactory = (deps): ToolModul
         // Create structured response
         const structuredResponse = {
           equipped: true,
-          toolset: {
-            name: activeToolsetInfo.name,
-            description: activeToolsetInfo.description || '',
-            version: activeToolsetInfo.version || '1.0.0',
-            createdAt: activeToolsetInfo.createdAt instanceof Date 
-              ? activeToolsetInfo.createdAt.toISOString() 
-              : activeToolsetInfo.createdAt || '',
-            toolCount: activeToolsetInfo.toolCount
-          },
+          toolset: toolsetInfo,
           serverStatus: {
             totalConfigured: serverNames.size,
             enabled: serverNames.size,
@@ -108,15 +68,31 @@ export const createGetActiveToolsetModule: ToolModuleFactory = (deps): ToolModul
           warnings: [] // Simplified: no warnings in current system
         };
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(structuredResponse)
-            },
-          ],
-          structuredContent: structuredResponse
-        };
+        // Validate response against schema
+        try {
+          const validatedResponse = getActiveToolsetResponseZodSchema.parse(structuredResponse);
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(validatedResponse)
+              },
+            ],
+            structuredContent: validatedResponse
+          };
+        } catch (validationError) {
+          console.error('Schema validation failed for get-active-toolset response:', validationError);
+          // Return original response if validation fails (for debugging)
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(structuredResponse)
+              },
+            ],
+            structuredContent: structuredResponse
+          };
+        }
       } else {
         const noToolsetResponse = {
           equipped: false,

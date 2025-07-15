@@ -300,6 +300,10 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         return await toolModule.handler(args);
       }
 
+      // Check if this is a flattened tool name from active toolset
+      const originalToolName = this.toolsetManager.getOriginalToolName(name);
+      const toolNameForRouter = originalToolName || name;
+
       // Handle non-toolset tools via request router
       if (!this.requestRouter) {
         throw new Error(
@@ -308,7 +312,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       }
 
       const response = await this.requestRouter.routeToolCall({
-        name,
+        name: toolNameForRouter,
         arguments: args,
       });
 

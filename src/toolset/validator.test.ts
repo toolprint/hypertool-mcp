@@ -138,7 +138,23 @@ describe("ToolsetValidator", () => {
       expect(result.valid).toBe(false);
       expect(result.errors).toContain("Description must be a string if provided");
       expect(result.errors).toContain("Version must be a string if provided");
-      expect(result.errors).toContain("createdAt must be a Date object if provided");
+      expect(result.errors).toContain("createdAt must be a valid Date object or ISO string if provided");
+    });
+
+    it("should accept valid ISO string dates", () => {
+      const config: ToolsetConfig = {
+        name: "test-toolset",
+        description: "Test toolset with ISO date",
+        version: "1.0.0",
+        createdAt: "2023-12-01T10:00:00.000Z", // Valid ISO string
+        tools: [
+          { namespacedName: "git.status" },
+        ],
+      };
+
+      const result = validateToolsetConfig(config);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
     });
 
     it("should provide suggestions for large toolsets", () => {

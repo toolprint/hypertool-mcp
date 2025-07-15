@@ -4,6 +4,7 @@
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolModuleFactory, ToolModule } from "./types.js";
+import { buildToolsetResponseSchema } from "./schemas.js";
 
 export const buildToolsetDefinition: Tool = {
   name: "build-toolset",
@@ -55,73 +56,7 @@ export const buildToolsetDefinition: Tool = {
     required: ["name", "tools"],
     additionalProperties: false,
   },
-  outputSchema: {
-    type: "object" as const,
-    properties: {
-      success: {
-        type: "boolean",
-        description: "Whether the toolset was successfully created"
-      },
-      toolsetName: {
-        type: "string",
-        description: "Name of the created toolset"
-      },
-      location: {
-        type: "string",
-        description: "File path where the toolset configuration is stored"
-      },
-      configuration: {
-        type: "object",
-        description: "Summary of the toolset configuration",
-        properties: {
-          totalServers: {
-            type: "number",
-            description: "Total number of servers included in the toolset"
-          },
-          enabledServers: {
-            type: "number",
-            description: "Number of enabled servers in the toolset"
-          },
-          totalTools: {
-            type: "number",
-            description: "Total number of tools included in the toolset"
-          },
-          servers: {
-            type: "array",
-            description: "Server configurations in the toolset",
-            items: {
-              type: "object",
-              properties: {
-                name: {
-                  type: "string",
-                  description: "Server name"
-                },
-                enabled: {
-                  type: "boolean",
-                  description: "Whether the server is enabled"
-                },
-                toolCount: {
-                  type: "number",
-                  description: "Number of tools from this server"
-                }
-              },
-              required: ["name", "enabled", "toolCount"]
-            }
-          }
-        },
-        required: ["totalServers", "enabledServers", "totalTools", "servers"]
-      },
-      createdAt: {
-        type: "string",
-        description: "ISO timestamp when the toolset was created"
-      },
-      autoEquipped: {
-        type: "boolean",
-        description: "Whether the toolset was automatically equipped after creation"
-      }
-    },
-    required: ["success", "toolsetName", "location", "configuration", "createdAt", "autoEquipped"]
-  },
+  outputSchema: buildToolsetResponseSchema as any,
 };
 
 export const createBuildToolsetModule: ToolModuleFactory = (deps): ToolModule => {

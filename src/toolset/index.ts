@@ -30,6 +30,7 @@ import { ToolsetConfig, ValidationResult, ToolsetChangeEvent, DynamicToolReferen
 import { loadToolsetConfig, saveToolsetConfig } from "./loader.js";
 import { validateToolsetConfig } from "./validator.js";
 import { createLogger } from "../logging/index.js";
+import { BuildToolsetResponse, ListSavedToolsetsResponse, EquipToolsetResponse, ToolsetInfo } from "../server/tools/schemas.js";
 
 const logger = createLogger({ module: 'toolset' });
 
@@ -294,7 +295,7 @@ export class ToolsetManager extends EventEmitter {
   /**
    * Get active toolset information
    */
-  getActiveToolsetInfo(): { name: string; description?: string; toolCount: number; version?: string; createdAt?: Date } | null {
+  getActiveToolsetInfo(): { name: string; description?: string; toolCount: number; version?: string; createdAt?: string } | null {
     if (!this.currentToolset) {
       return null;
     }
@@ -304,7 +305,9 @@ export class ToolsetManager extends EventEmitter {
       description: this.currentToolset.description,
       toolCount: this.currentToolset.tools.length,
       version: this.currentToolset.version,
-      createdAt: this.currentToolset.createdAt,
+      createdAt: this.currentToolset.createdAt instanceof Date 
+        ? this.currentToolset.createdAt.toISOString() 
+        : this.currentToolset.createdAt,
     };
   }
 
@@ -318,45 +321,34 @@ export class ToolsetManager extends EventEmitter {
       description?: string;
       autoEquip?: boolean;
     } = {}
-  ): Promise<{
-    success: boolean;
-    error?: string;
-    toolsetName?: string;
-    location?: string;
-    configuration?: {
-      totalServers: number;
-      enabledServers: number;
-      totalTools: number;
-      servers: Array<{
-        name: string;
-        enabled: boolean;
-        toolCount: number;
-      }>;
-    };
-    createdAt?: string;
-    autoEquipped?: boolean;
-  }> {
+  ): Promise<BuildToolsetResponse> {
     try {
       // Validate toolset name format
       const namePattern = /^[a-z0-9-]+$/;
       if (!namePattern.test(name)) {
         return {
-          success: false,
-          error: "Invalid toolset name format. Use only lowercase letters, numbers, and hyphens (a-z, 0-9, -)"
+          meta: {
+            success: false,
+            error: "Invalid toolset name format. Use only lowercase letters, numbers, and hyphens (a-z, 0-9, -)"
+          }
         };
       }
 
       if (name.length < 2 || name.length > 50) {
         return {
-          success: false,
-          error: "Toolset name must be between 2 and 50 characters"
+          meta: {
+            success: false,
+            error: "Toolset name must be between 2 and 50 characters"
+          }
         };
       }
 
       if (!tools || tools.length === 0) {
         return {
-          success: false,
-          error: "Toolset must include at least one tool"
+          meta: {
+            success: false,
+            error: "Toolset must include at least one tool"
+          }
         };
       }
 
@@ -365,8 +357,10 @@ export class ToolsetManager extends EventEmitter {
         const validationResult = this.validateToolReferences(tools);
         if (!validationResult.valid) {
           return {
-            success: false,
-            error: `Invalid tool references: ${validationResult.invalidReferences.join(', ')}`
+            meta: {
+              success: false,
+              error: `Invalid tool references: ${validationResult.invalidReferences.join(', ')}`
+            }
           };
         }
       }
@@ -379,8 +373,10 @@ export class ToolsetManager extends EventEmitter {
 
       if (stored[name]) {
         return {
-          success: false,
-          error: `Toolset "${name}" already exists. Use a different name or delete the existing toolset first.`
+          meta: {
+            success: false,
+            error: `Toolset "${name}" already exists. Use a different name or delete the existing toolset first.`
+          }
         };
       }
 
@@ -397,8 +393,10 @@ export class ToolsetManager extends EventEmitter {
       const validation = validateToolsetConfig(config);
       if (!validation.valid) {
         return {
-          success: false,
-          error: `Invalid toolset configuration: ${validation.errors.join(', ')}`
+          meta: {
+            success: false,
+            error: `Invalid toolset configuration: ${validation.errors.join(', ')}`
+          }
         };
       }
 
@@ -406,62 +404,34 @@ export class ToolsetManager extends EventEmitter {
       stored[name] = config;
       await saveToolsetsToPreferences(stored);
 
-      // Generate configuration summary
-      const serverToolCounts: Record<string, number> = {};
-      if (this.discoveryEngine) {
-        for (const toolRef of tools) {
-          const resolution: {
-            exists: boolean;
-            tool?: DiscoveredTool;
-            serverName?: string;
-            serverStatus?: any;
-            namespacedNameMatch: boolean;
-            refIdMatch: boolean;
-            warnings: string[];
-            errors: string[];
-          } | undefined = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
-          if (resolution?.exists && resolution.tool) {
-            const serverName = resolution.tool.serverName;
-            serverToolCounts[serverName] = (serverToolCounts[serverName] || 0) + 1;
-          }
-        }
-      }
-
-      const servers = Object.entries(serverToolCounts).map(([name, toolCount]) => ({
-        name,
-        enabled: true,
-        toolCount
-      }));
+      // Generate detailed toolset information
+      const toolsetInfo = await this.generateToolsetInfo(config);
 
       const result = {
-        success: true,
-        toolsetName: name,
-        location: `User preferences (${name})`,
-        configuration: {
-          totalServers: servers.length,
-          enabledServers: servers.length,
-          totalTools: tools.length,
-          servers
+        meta: {
+          success: true,
+          toolsetName: name,
+          autoEquipped: false
         },
-        createdAt: config.createdAt instanceof Date 
-          ? config.createdAt.toISOString() 
-          : config.createdAt, // Already a string from JSON
-        autoEquipped: false
+        toolset: toolsetInfo
       };
 
       // Auto-equip if requested
       if (options.autoEquip) {
         const equipResult = await this.equipToolset(name);
         if (equipResult.success) {
-          result.autoEquipped = true;
+          result.meta.autoEquipped = true;
+          result.toolset.active = true;
         }
       }
 
       return result;
     } catch (error) {
       return {
-        success: false,
-        error: `Failed to create toolset: ${error instanceof Error ? error.message : String(error)}`
+        meta: {
+          success: false,
+          error: `Failed to create toolset: ${error instanceof Error ? error.message : String(error)}`
+        }
       };
     }
   }
@@ -522,33 +492,15 @@ export class ToolsetManager extends EventEmitter {
   /**
    * List all saved toolsets
    */
-  async listSavedToolsets(): Promise<{
-    success: boolean;
-    toolsets: Array<{
-      name: string;
-      description?: string;
-      version?: string;
-      createdAt?: string;
-      toolCount: number;
-      active: boolean;
-    }>;
-    error?: string;
-  }> {
+  async listSavedToolsets(): Promise<ListSavedToolsetsResponse> {
     try {
       const preferences = await import("../config/preferences.js");
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
       const stored = await loadToolsetsFromPreferences();
 
-      const toolsets = Object.values(stored).map(config => ({
-        name: config.name,
-        description: config.description,
-        version: config.version,
-        createdAt: config.createdAt instanceof Date 
-          ? config.createdAt.toISOString() 
-          : config.createdAt, // Already a string from JSON
-        toolCount: config.tools.length,
-        active: this.currentToolset?.name === config.name
-      }));
+      const toolsets = await Promise.all(
+        Object.values(stored).map(config => this.generateToolsetInfo(config))
+      );
 
       return {
         success: true,
@@ -674,7 +626,7 @@ export class ToolsetManager extends EventEmitter {
   /**
    * Equip a toolset by loading it from storage
    */
-  async equipToolset(toolsetName: string): Promise<{ success: boolean; error?: string }> {
+  async equipToolset(toolsetName: string): Promise<EquipToolsetResponse> {
     try {
       // Import the function here to avoid circular imports
       const preferences = await import("../config/preferences.js");
@@ -692,8 +644,14 @@ export class ToolsetManager extends EventEmitter {
         return { success: false, error: `Invalid toolset: ${validation.errors.join(", ")}` };
       }
 
+      // Generate toolset info with current status
+      const toolsetInfo = await this.generateToolsetInfo(toolsetConfig);
+      
       // Event is already emitted by setConfig()
-      return { success: true };
+      return { 
+        success: true, 
+        toolset: toolsetInfo 
+      };
     } catch (error) {
       return { success: false, error: `Failed to load toolset: ${error instanceof Error ? error.message : String(error)}` };
     }
@@ -724,6 +682,87 @@ export class ToolsetManager extends EventEmitter {
    */
   getActiveToolset(): ToolsetConfig | null {
     return this.currentToolset || null;
+  }
+
+  /**
+   * Generate detailed toolset information
+   */
+  async generateToolsetInfo(config: ToolsetConfig): Promise<ToolsetInfo> {
+    const serverToolCounts: Record<string, number> = {};
+    const detailedTools: Array<{
+      namespacedName: string;
+      refId: string;
+      server: string;
+      active: boolean;
+    }> = [];
+    
+    if (this.discoveryEngine) {
+      // Process each tool reference
+      for (const toolRef of config.tools) {
+        const resolution: {
+          exists: boolean;
+          tool?: any;
+          serverName?: string;
+          serverStatus?: any;
+          namespacedNameMatch: boolean;
+          refIdMatch: boolean;
+          warnings: string[];
+          errors: string[];
+        } | undefined = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
+        
+        if (resolution?.exists && resolution.tool) {
+          const serverName = resolution.tool.serverName;
+          serverToolCounts[serverName] = (serverToolCounts[serverName] || 0) + 1;
+          
+          // Add detailed tool information
+          detailedTools.push({
+            namespacedName: resolution.tool.namespacedName,
+            refId: resolution.tool.toolHash,
+            server: serverName,
+            active: true // Tool is available
+          });
+        } else {
+          // Tool is not available, but we can still include it with the info we have
+          detailedTools.push({
+            namespacedName: toolRef.namespacedName || 'unknown',
+            refId: toolRef.refId || 'unknown',
+            server: 'unknown',
+            active: false // Tool is not available
+          });
+        }
+      }
+    } else {
+      // No discovery engine available, create tools array with basic info
+      detailedTools.push(...config.tools.map(toolRef => ({
+        namespacedName: toolRef.namespacedName || 'unknown',
+        refId: toolRef.refId || 'unknown',
+        server: 'unknown',
+        active: false // Cannot determine availability without discovery engine
+      })));
+    }
+    
+    const servers = Object.entries(serverToolCounts).map(([name, toolCount]) => ({
+      name,
+      enabled: true,
+      toolCount
+    }));
+    
+    return {
+      name: config.name,
+      description: config.description,
+      version: config.version,
+      createdAt: config.createdAt instanceof Date 
+        ? config.createdAt.toISOString() 
+        : config.createdAt,
+      toolCount: config.tools.length,
+      active: this.currentToolset?.name === config.name,
+      location: `User preferences (${config.name})`,
+      totalServers: servers.length,
+      enabledServers: servers.length,
+      totalTools: config.tools.length,
+      servers,
+      tools: detailedTools
+    };
   }
 
   /**

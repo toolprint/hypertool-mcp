@@ -38,10 +38,10 @@ export interface ToolsetConfig {
   description?: string;
   /** Configuration version (for future compatibility) */
   version?: string;
-  /** Created timestamp */
-  createdAt?: Date;
-  /** Last modified timestamp */
-  lastModified?: Date;
+  /** Created timestamp (Date object or ISO string) */
+  createdAt?: Date | string;
+  /** Last modified timestamp (Date object or ISO string) */
+  lastModified?: Date | string;
   /** Array of tool references in this toolset */
   tools: DynamicToolReference[];
 }
