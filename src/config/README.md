@@ -1,6 +1,6 @@
 # MCP Configuration Parser
 
-This module provides a TypeScript parser for `.mcp.json` configuration files used in the Meta-MCP project.
+This module provides a TypeScript parser for `.mcp.json` configuration files used in the hypertool-mcp project.
 
 ## Usage
 

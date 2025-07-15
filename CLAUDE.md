@@ -1,8 +1,8 @@
-# Meta-MCP Development Instructions
+# hypertool-mcp Development Instructions
 
 ## For Agents Working on This Project
 
-You are working on **Meta-MCP**: a TypeScript MCP proxy server that routes requests between clients and multiple underlying MCP servers.
+You are working on **hypertool-mcp**: a TypeScript MCP proxy server that routes requests between clients and multiple underlying MCP servers.
 
 ### 📋 Essential Reading
 **READ FIRST**: `.taskmaster/docs/prd.txt` - Contains complete project requirements, architecture, and technical specifications.

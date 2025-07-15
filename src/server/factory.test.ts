@@ -1,12 +1,12 @@
 /**
- * Unit tests for Meta-MCP server factory
+ * Unit tests for Hypertool MCP server factory
  */
 
 import { describe, it, expect } from 'vitest';
 import { MetaMCPServerFactory } from "./factory.js";
 import { MetaMCPServer } from "./base.js";
 import { MetaMCPServerConfig, TransportConfig } from "./types.js";
-import { APP_TECHNICAL_NAME, APP_VERSION, APP_DESCRIPTION } from "../config/app-config.js";
+import { APP_NAME, APP_VERSION, APP_DESCRIPTION } from "../config/app-config.js";
 
 describe("MetaMCPServerFactory", () => {
   describe("createServer", () => {
@@ -33,7 +33,7 @@ describe("MetaMCPServerFactory", () => {
       expect(server).toBeInstanceOf(MetaMCPServer);
 
       const config = server.getConfig();
-      expect(config.name).toBe(APP_TECHNICAL_NAME);
+      expect(config.name).toBe(APP_NAME);
       expect(config.version).toBe(APP_VERSION);
       expect(config.description).toBe(APP_DESCRIPTION);
       expect(config.transport).toEqual(transport);

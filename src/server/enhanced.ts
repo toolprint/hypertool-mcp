@@ -1,5 +1,5 @@
 /**
- * Enhanced Meta-MCP server with request routing capabilities
+ * Enhanced Hypertool MCP server with request routing capabilities
  */
 
 import { MetaMCPServer } from "./base.js";
@@ -18,7 +18,7 @@ import { ToolsetManager, ToolsetConfig, ToolsetChangeEvent } from "../toolset/in
 import { DiscoveredToolsChangedEvent } from "../discovery/types.js";
 
 /**
- * Enhanced Meta-MCP server with routing capabilities
+ * Enhanced Hypertool MCP server with routing capabilities
  */
 export class EnhancedMetaMCPServer extends MetaMCPServer {
   private requestRouter?: IRequestRouter;

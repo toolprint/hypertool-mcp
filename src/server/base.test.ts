@@ -1,5 +1,5 @@
 /**
- * Unit tests for Meta-MCP server base implementation
+ * Unit tests for Hypertool MCP server base implementation
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';

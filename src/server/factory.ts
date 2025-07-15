@@ -1,5 +1,5 @@
 /**
- * Server factory for creating Meta-MCP server instances
+ * Server factory for creating Hypertool MCP server instances
  */
 
 import { MetaMCPServer } from "./base.js";
@@ -9,14 +9,14 @@ import {
   ServerInitOptions,
   TransportConfig,
 } from "./types.js";
-import { APP_TECHNICAL_NAME, APP_VERSION, APP_DESCRIPTION } from "../config/app-config.js";
+import { APP_NAME, APP_VERSION, APP_DESCRIPTION } from "../config/app-config.js";
 
 /**
- * Factory class for creating Meta-MCP server instances
+ * Factory class for creating Hypertool MCP server instances
  */
 export class MetaMCPServerFactory {
   /**
-   * Create a new Meta-MCP server instance
+   * Create a new Hypertool MCP server instance
    */
   static createServer(config: MetaMCPServerConfig): MetaMCPServer {
     return new MetaMCPServer(config);
@@ -29,7 +29,7 @@ export class MetaMCPServerFactory {
     transport: TransportConfig
   ): EnhancedMetaMCPServer {
     const config: MetaMCPServerConfig = {
-      name: APP_TECHNICAL_NAME,
+      name: APP_NAME,
       version: APP_VERSION,
       description: APP_DESCRIPTION,
       transport,

@@ -1,5 +1,5 @@
 /**
- * TypeScript interfaces for Meta-MCP server implementation
+ * TypeScript interfaces for Hypertool MCP server implementation
  */
 
 /**
@@ -8,7 +8,7 @@
 export type ServerTransportType = "stdio" | "http";
 
 /**
- * Transport configuration for the Meta-MCP server
+ * Transport configuration for the Hypertool MCP server
  */
 export interface TransportConfig {
   type: ServerTransportType;
@@ -17,7 +17,7 @@ export interface TransportConfig {
 }
 
 /**
- * Meta-MCP server configuration
+ * Hypertool MCP server configuration
  */
 export interface MetaMCPServerConfig {
   name: string;

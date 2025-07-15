@@ -36,7 +36,7 @@ export class SSEClient extends EventEmitter {
     try {
       const transport = new SSEClientTransport(new URL(this.config.url));
       this.client = new Client({
-        name: "meta-mcp-client",
+        name: "hypertool-mcp-client",
         version: "1.0.0",
       }, {
         capabilities: {

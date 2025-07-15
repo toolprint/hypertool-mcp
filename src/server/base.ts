@@ -1,5 +1,5 @@
 /**
- * Base Meta-MCP server implementation
+ * Base Hypertool MCP server implementation
  * Provides core MCP server functionality with transport abstraction
  */
 
@@ -23,7 +23,7 @@ import { EventEmitter } from "events";
 import { McpHttpServer } from "./http-server.js";
 
 /**
- * Base Meta-MCP server class
+ * Base Hypertool MCP server class
  * Handles MCP protocol implementation with pluggable transport layer
  */
 export class MetaMCPServer extends EventEmitter {

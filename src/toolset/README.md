@@ -1,6 +1,6 @@
 # Toolset Configuration System
 
-This directory contains the simplified toolset configuration system for Meta-MCP, allowing users to create custom collections of tools from discovered MCP servers.
+This directory contains the simplified toolset configuration system for hypertool-mcp, allowing users to create custom collections of tools from discovered MCP servers.
 
 ## 🎯 Core Concept
 
@@ -20,8 +20,8 @@ A **toolset** is a user-defined collection of specific tools selected from all a
                                 ▼
                        ┌─────────────────┐
                        │ Persisted Config│
-                       │ ~/.toolprint-   │
-                       │ meta-mcp/       │
+                       │ ~/.toolprint/   │
+                       │ hypertool-mcp/  │
                        │ toolsets.json   │
                        └─────────────────┘
 ```
@@ -279,7 +279,7 @@ if (this.activeToolset) {
 
 ## 💾 Persistence Format
 
-Toolsets are stored in `~/.toolprint-meta-mcp/toolsets.json`:
+Toolsets are stored in `~/.toolprint/hypertool-mcp/toolsets.json`:
 
 ```json
 {

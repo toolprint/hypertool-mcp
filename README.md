@@ -1,10 +1,10 @@
-# Meta-MCP
+# hypertool-mcp
 
 A TypeScript MCP proxy server that routes requests between clients and multiple underlying MCP servers.
 
 ## Overview
 
-Meta-MCP is a single MCP server that:
+hypertool-mcp is a single MCP server that:
 1. Connects to multiple underlying MCP servers as a client
 2. Discovers available tools from those servers
 3. Exposes a configurable subset of those tools to its own clients
@@ -34,7 +34,7 @@ Meta-MCP is a single MCP server that:
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd meta-mcp
+cd hypertool-mcp
 
 # Install dependencies
 npm install
@@ -77,26 +77,26 @@ npm test
 }
 ```
 
-3. **Start the Meta-MCP server**:
+3. **Start the hypertool-mcp server**:
 ```bash
 npm start
 ```
 
 ## CLI Usage
 
-Meta-MCP provides a flexible command-line interface for different use cases:
+hypertool-mcp provides a flexible command-line interface for different use cases:
 
 ### Basic Usage (Most Common)
 
 **Start with stdio transport (default):**
 ```bash
-meta-mcp
+hypertool-mcp
 ```
 This is the most common usage for integrating with Claude Code or other MCP clients that use stdio transport.
 
 **Enable debug output:**
 ```bash
-meta-mcp --debug
+hypertool-mcp --debug
 ```
 Shows detailed startup information and server status.
 
@@ -104,31 +104,31 @@ Shows detailed startup information and server status.
 
 **Start HTTP server with Express.js on default port (3000):**
 ```bash
-meta-mcp --transport http
+hypertool-mcp --transport http
 ```
 Starts an Express.js HTTP server with MCP endpoint at `/mcp` for modern MCP tooling and web-based clients.
 
 **Start HTTP server on custom port:**
 ```bash
-meta-mcp --transport http --port 8080
+hypertool-mcp --transport http --port 8080
 ```
 
 **HTTP server with debug (shows Express.js startup details):**
 ```bash
-meta-mcp --transport http --port 8080 --debug
+hypertool-mcp --transport http --port 8080 --debug
 ```
 
 ### Tool Management
 
 **Load a specific toolset on startup:**
 ```bash
-meta-mcp --use-toolset "development"
+hypertool-mcp --use-toolset "development"
 ```
 Automatically loads and applies the specified toolset configuration.
 
 **Enable tool calling capabilities:**
 ```bash
-meta-mcp --enable-call-tool
+hypertool-mcp --enable-call-tool
 ```
 Required to actually execute tools from underlying servers.
 
@@ -136,13 +136,13 @@ Required to actually execute tools from underlying servers.
 
 **Enable insecure mode (allow changed tool references):**
 ```bash
-meta-mcp --insecure
+hypertool-mcp --insecure
 ```
 ⚠️  **Warning**: This allows tools with changed reference hashes, which may be unsafe.
 
 **Complex configuration example:**
 ```bash
-meta-mcp --transport http --port 8080 --enable-call-tool --use-toolset "production" --debug
+hypertool-mcp --transport http --port 8080 --enable-call-tool --use-toolset "production" --debug
 ```
 
 ### CLI Options Reference
@@ -156,7 +156,7 @@ meta-mcp --transport http --port 8080 --enable-call-tool --use-toolset "producti
 | `--insecure` | Allow changed tool hashes | `false` | ⚠️ Security risk |
 | `--use-toolset <name>` | Load toolset on startup | - | Auto-applies toolset config |
 | `--help` | Show help information | - | Displays all options |
-| `--version` | Show version number | - | Current Meta-MCP version |
+| `--version` | Show version number | - | Current hypertool-mcp version |
 
 ## Architecture
 
@@ -171,11 +171,11 @@ meta-mcp --transport http --port 8080 --enable-call-tool --use-toolset "producti
 ### Tool Resolution Flow
 
 ```
-Client Request → Meta-MCP → Toolset Filter → Route to Server → Execute → Response
+Client Request → hypertool-mcp → Toolset Filter → Route to Server → Execute → Response
 ```
 
-1. Client sends tool call to Meta-MCP
-2. Meta-MCP checks if tool is in active toolset
+1. Client sends tool call to hypertool-mcp
+2. hypertool-mcp checks if tool is in active toolset
 3. Routes request to appropriate underlying server
 4. Executes tool on underlying server
 5. Returns response to client

@@ -1,6 +1,6 @@
 # Error Handling System
 
-This directory contains the comprehensive error handling and recovery system for Meta-MCP.
+This directory contains the comprehensive error handling and recovery system for hypertool-mcp.
 
 ## Components
 
@@ -69,7 +69,7 @@ The skipped tests should be re-enabled when Jest's timer mock support improves o
 
 ## Integration
 
-The error handling system is integrated throughout Meta-MCP:
+The error handling system is integrated throughout hypertool-mcp:
 
 1. **ConnectionManager** - Uses custom errors and recovery for server connections
 2. **RequestRouter** - Provides user-friendly error responses for routing failures

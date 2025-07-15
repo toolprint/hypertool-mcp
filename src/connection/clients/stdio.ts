@@ -44,7 +44,7 @@ export class StdioClient extends EventEmitter {
       });
 
       this.client = new Client({
-        name: "meta-mcp-client",
+        name: "hypertool-mcp-client",
         version: "1.0.0",
       }, {
         capabilities: {

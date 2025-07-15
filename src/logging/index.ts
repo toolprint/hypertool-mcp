@@ -114,9 +114,12 @@ export class Logger {
 
   private ensureLogDirectory(logDir: string): void {
     try {
-      mkdirSync(logDir, { recursive: true });
+      if (!existsSync(logDir)) {
+        mkdirSync(logDir, { recursive: true });
+      }
     } catch (error) {
       console.warn('Failed to create log directory:', error);
+      // Continue anyway - logging should not fail the application
     }
   }
 
@@ -173,8 +176,10 @@ export class Logger {
         }
       }
 
-      // Rotate current log to .1
-      renameSync(currentLogPath, join(logDir, `${baseFileName}.1`));
+      // Rotate current log to .1 (only if it exists)
+      if (existsSync(currentLogPath)) {
+        renameSync(currentLogPath, join(logDir, `${baseFileName}.1`));
+      }
       
     } catch (error) {
       console.warn('Failed to rotate log files:', error);

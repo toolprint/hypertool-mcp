@@ -1,6 +1,6 @@
 # Connection Management System
 
-This directory contains the core connection management logic for Meta-MCP, responsible for establishing, maintaining, and routing connections to multiple underlying MCP servers.
+This directory contains the core connection management logic for hypertool-mcp, responsible for establishing, maintaining, and routing connections to multiple underlying MCP servers.
 
 ## 🏗️ Architecture Overview
 
@@ -65,7 +65,7 @@ src/connection/
 ❌ Server name conflict detected: "git" already exists.
 💡 Resolution: Use a unique server name or remove the existing server first.
 📋 Existing servers: git, docker, npm
-🚫 Meta-MCP server cannot start with conflicting server configurations.
+🚫 hypertool-mcp server cannot start with conflicting server configurations.
 ```
 
 ### 2. **Graceful Connection Lifecycle Management**
@@ -182,7 +182,7 @@ console.error(`
    Error: Connection for server "git" already exists
 💡 Resolution: Check configuration for duplicate server names
    Configuration file: /path/to/.mcp.json
-🚫 Meta-MCP server cannot start with conflicting configurations.`);
+🚫 hypertool-mcp server cannot start with conflicting configurations.`);
 process.exit(1); // ✅
 ```
 

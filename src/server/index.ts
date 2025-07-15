@@ -1,5 +1,5 @@
 /**
- * Meta-MCP server module exports
+ * Hypertool MCP server module exports
  */
 
 export { MetaMCPServer } from "./base.js";

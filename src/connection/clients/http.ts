@@ -39,7 +39,7 @@ export class HttpClient extends EventEmitter {
     try {
       const transport = new StreamableHTTPClientTransport(new URL(this.config.url));
       this.client = new Client({
-        name: "meta-mcp-client",
+        name: "hypertool-mcp-client",
         version: "1.0.0",
       }, {
         capabilities: {

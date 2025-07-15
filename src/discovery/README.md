@@ -1,6 +1,6 @@
 # Discovery Module
 
-The Discovery Module is responsible for automatically discovering, cataloging, and managing tools from connected MCP (Model Context Protocol) servers. It provides a centralized tool registry that enables the Meta-MCP server to route tool calls efficiently.
+The Discovery Module is responsible for automatically discovering, cataloging, and managing tools from connected MCP (Model Context Protocol) servers. It provides a centralized tool registry that enables the hypertool-mcp server to route tool calls efficiently.
 
 ## Overview
 
@@ -74,11 +74,11 @@ Tool identity and change detection system using cryptographic hashes.
 - Enables efficient diff operations
 - Supports cache invalidation strategies
 
-## Usage in Meta-MCP
+## Usage in hypertool-mcp
 
 ### Integration with Enhanced Server
 
-The Discovery Module is initialized and used by the Enhanced Meta-MCP Server:
+The Discovery Module is initialized and used by the Enhanced Hypertool MCP Server:
 
 ```typescript
 // In src/server/enhanced.ts
