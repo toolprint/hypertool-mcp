@@ -7,7 +7,7 @@ import { Server as HttpServer } from "http";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "node:crypto";
-import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
+import { isInitializeRequest, Notification } from "@modelcontextprotocol/sdk/types.js";
 import { createLogger } from "../logging/index.js";
 
 const logger = createLogger({ module: 'server/http-server' });
@@ -213,5 +213,14 @@ export class McpHttpServer {
    */
   isRunning(): boolean {
     return this.httpServer !== null && this.httpServer.listening;
+  }
+
+  /**
+   * Broadcast notification to all connected clients
+   */
+  async broadcastNotification(notification: Notification): Promise<void> {
+    const sessionIds = Object.keys(this.transports);
+    logger.info(`Broadcasting notification to ${sessionIds.length} connected sessions`);
+    await this.mcpServer.notification(notification);
   }
 }

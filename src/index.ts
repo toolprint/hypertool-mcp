@@ -161,6 +161,10 @@ async function main(): Promise<void> {
       if (runtimeOptions.debug) {
         console.log(chalk.yellow(`🛑 Shutting down ${APP_NAME} server...`));
       }
+      // Remove process listeners to prevent memory leaks
+      process.removeListener("SIGINT", shutdown);
+      process.removeListener("SIGTERM", shutdown);
+      
       await server.stop();
       process.exit(0);
     };

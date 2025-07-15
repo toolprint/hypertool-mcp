@@ -12,6 +12,7 @@ import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
   Tool,
+  Notification,
 } from "@modelcontextprotocol/sdk/types.js";
 import {
   MetaMCPServerConfig,
@@ -28,7 +29,7 @@ import { McpHttpServer } from "./http-server.js";
  */
 export class MetaMCPServer extends EventEmitter {
   private server: Server;
-  private transport: StdioServerTransport | null = null;
+  private stdioTransport: StdioServerTransport | null = null;
   private httpServer?: McpHttpServer;
   private config: MetaMCPServerConfig;
   private state: ServerState = ServerState.STOPPED;
@@ -106,8 +107,8 @@ export class MetaMCPServer extends EventEmitter {
 
       // Initialize transport layer
       if (options.transport.type === "stdio") {
-        this.transport = new StdioServerTransport();
-        await this.server.connect(this.transport);
+        this.stdioTransport = new StdioServerTransport();
+        await this.server.connect(this.stdioTransport);
       } else if (options.transport.type === "http") {
         await this.setupHttpServer(options.transport);
       } else {
@@ -157,9 +158,9 @@ export class MetaMCPServer extends EventEmitter {
     try {
       this.setState(ServerState.STOPPING);
 
-      if (this.transport) {
-        await this.transport.close();
-        this.transport = null;
+      if (this.stdioTransport) {
+        await this.stdioTransport.close();
+        this.stdioTransport = null;
       }
 
       if (this.httpServer) {
@@ -203,14 +204,28 @@ export class MetaMCPServer extends EventEmitter {
    * Send tools list changed notification to clients
    */
   protected async notifyToolsChanged(): Promise<void> {
-    if (this.server && this.transport) {
-      try {
-        await this.server.notification({
-          method: "notifications/tools/list_changed",
-        });
-      } catch (error) {
-        logger.error("Failed to send tools list changed notification:", error);
+    if (!this.server) {
+      return;
+    }
+
+    const toolsChangedNotification: Notification = {
+      method: "notifications/tools/list_changed",
+    };
+
+    try {
+      logger.info("Sending tools list changed notification");
+
+      if (this.stdioTransport) {
+        // stdio transport - send to single client
+        await this.server.notification(toolsChangedNotification);
+        logger.debug("Tools list changed notification sent via stdio transport");
+      } else if (this.httpServer) {
+        // HTTP transport - broadcast to all connected clients
+        await this.httpServer.broadcastNotification(toolsChangedNotification);
+        logger.debug("Tools list changed notification broadcasted via HTTP transport");
       }
+    } catch (error) {
+      logger.error("Failed to send tools list changed notification:", error);
     }
   }
 
