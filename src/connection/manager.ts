@@ -26,7 +26,8 @@ import { APP_TECHNICAL_NAME } from "../config/appConfig.js";
  */
 export class ConnectionManager
   extends EventEmitter
-  implements IConnectionManager {
+  implements IConnectionManager
+{
   private _pool: IConnectionPool;
   private _healthMonitor: HealthMonitor;
   private _logger: Logger;
@@ -42,7 +43,7 @@ export class ConnectionManager
     super();
     this._pool = new ConnectionPool(poolConfig, connectionFactory);
     this._healthMonitor = new HealthMonitor();
-    this._logger = createLogger({ module: 'ConnectionManager' });
+    this._logger = createLogger({ module: "ConnectionManager" });
     this._recoveryCoordinator = new RecoveryCoordinator();
     this.setupPoolEventForwarding();
   }
@@ -80,11 +81,19 @@ export class ConnectionManager
       try {
         await this._pool.addConnection(serverName, config);
       } catch (error) {
-        this._logger.error(`\n❌ FATAL ERROR: Failed to initialize server "${serverName}"`);
+        this._logger.error(
+          `\n❌ FATAL ERROR: Failed to initialize server "${serverName}"`
+        );
         this._logger.error(`   Error: ${(error as Error).message}`);
-        this._logger.error(`\n💡 Resolution: Please check your MCP configuration and ensure all server names are unique.`);
-        this._logger.error(`   Configuration file: Check for duplicate server names in mcpServers section.`);
-        this._logger.error(`\n🚫 ${APP_TECHNICAL_NAME} server cannot start with conflicting server configurations.`);
+        this._logger.error(
+          `\n💡 Resolution: Please check your MCP configuration and ensure all server names are unique.`
+        );
+        this._logger.error(
+          `   Configuration file: Check for duplicate server names in mcpServers section.`
+        );
+        this._logger.error(
+          `\n🚫 ${APP_TECHNICAL_NAME} server cannot start with conflicting server configurations.`
+        );
         process.exit(1);
       }
     }
@@ -225,8 +234,8 @@ export class ConnectionManager
     if (this.servers[serverName]) {
       const error = new Error(
         `❌ Server name conflict detected: "${serverName}" already exists.\n` +
-        `💡 Resolution: Use a unique server name or remove the existing server first.\n` +
-        `📋 Existing servers: ${Object.keys(this.servers).join(', ')}`
+          `💡 Resolution: Use a unique server name or remove the existing server first.\n` +
+          `📋 Existing servers: ${Object.keys(this.servers).join(", ")}`
       );
       console.error(error.message);
       throw error;
@@ -315,7 +324,12 @@ export class ConnectionManager
         throw new Error(`Invalid configuration for server "${serverName}"`);
       }
 
-      if (!config.type || (config.type !== "stdio" && config.type !== "http" && config.type !== "sse")) {
+      if (
+        !config.type ||
+        (config.type !== "stdio" &&
+          config.type !== "http" &&
+          config.type !== "sse")
+      ) {
         throw new Error(
           `Invalid transport type for server "${serverName}": ${(config as any).type}`
         );

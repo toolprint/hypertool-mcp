@@ -2,7 +2,7 @@
  * Unit tests for Hypertool MCP server base implementation
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { MetaMCPServer } from "./base.js";
 import { MetaMCPServerConfig, ServerState } from "./types.js";
 

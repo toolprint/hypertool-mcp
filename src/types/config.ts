@@ -44,7 +44,10 @@ export interface SSEServerConfig extends BaseServerConfig {
 /**
  * Union type for all server configurations
  */
-export type ServerConfig = StdioServerConfig | HttpServerConfig | SSEServerConfig;
+export type ServerConfig =
+  | StdioServerConfig
+  | HttpServerConfig
+  | SSEServerConfig;
 
 /**
  * Root configuration structure matching .mcp.json format

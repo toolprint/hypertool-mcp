@@ -3,7 +3,10 @@
  */
 
 import { DiscoveredTool } from "../discovery/types.js";
-import { CallToolRequest, CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import {
+  CallToolRequest,
+  CallToolResult,
+} from "@modelcontextprotocol/sdk/types.js";
 
 /**
  * Routing information for a tool call

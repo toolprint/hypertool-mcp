@@ -7,7 +7,8 @@ import { ToolModuleFactory, ToolModule } from "./types.js";
 
 export const listAvailableToolsDefinition: Tool = {
   name: "list-available-tools",
-  description: "Discover all tools available from connected MCP servers. Returns structured data showing tools grouped by server for toolset creation. Tools can be referenced by 'namespacedName' (e.g., 'git.status') or 'refId' (unique hash). Example: Call with no parameters to see all tools organized by server with detailed metadata for each tool.",
+  description:
+    "Discover all tools available from connected MCP servers. Returns structured data showing tools grouped by server for toolset creation. Tools can be referenced by 'namespacedName' (e.g., 'git.status') or 'refId' (unique hash). Example: Call with no parameters to see all tools organized by server with detailed metadata for each tool.",
   inputSchema: {
     type: "object" as const,
     properties: {},
@@ -22,14 +23,14 @@ export const listAvailableToolsDefinition: Tool = {
         properties: {
           totalTools: {
             type: "number",
-            description: "Total number of tools across all servers"
+            description: "Total number of tools across all servers",
           },
           totalServers: {
             type: "number",
-            description: "Number of connected MCP servers"
-          }
+            description: "Number of connected MCP servers",
+          },
         },
-        required: ["totalTools", "totalServers"]
+        required: ["totalTools", "totalServers"],
       },
       toolsByServer: {
         type: "array",
@@ -39,11 +40,11 @@ export const listAvailableToolsDefinition: Tool = {
           properties: {
             serverName: {
               type: "string",
-              description: "Name of the MCP server"
+              description: "Name of the MCP server",
             },
             toolCount: {
               type: "number",
-              description: "Number of tools from this server"
+              description: "Number of tools from this server",
             },
             tools: {
               type: "array",
@@ -53,45 +54,48 @@ export const listAvailableToolsDefinition: Tool = {
                 properties: {
                   name: {
                     type: "string",
-                    description: "Original tool name"
+                    description: "Original tool name",
                   },
                   description: {
                     type: "string",
-                    description: "Tool description (optional)"
+                    description: "Tool description (optional)",
                   },
                   namespacedName: {
                     type: "string",
-                    description: "Namespaced name for unambiguous reference (serverName.toolName)"
+                    description:
+                      "Namespaced name for unambiguous reference (serverName.toolName)",
                   },
                   serverName: {
                     type: "string",
-                    description: "Source server name"
+                    description: "Source server name",
                   },
                   refId: {
                     type: "string",
-                    description: "Unique hash identifier for this tool"
-                  }
+                    description: "Unique hash identifier for this tool",
+                  },
                 },
-                required: ["name", "namespacedName", "serverName", "refId"]
-              }
-            }
+                required: ["name", "namespacedName", "serverName", "refId"],
+              },
+            },
           },
-          required: ["serverName", "toolCount", "tools"]
-        }
-      }
+          required: ["serverName", "toolCount", "tools"],
+        },
+      },
     },
-    required: ["summary", "toolsByServer"]
+    required: ["summary", "toolsByServer"],
   },
   annotations: {
     title: "List Available Tools",
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
-    openWorldHint: false
+    openWorldHint: false,
   },
 };
 
-export const createListAvailableToolsModule: ToolModuleFactory = (deps): ToolModule => {
+export const createListAvailableToolsModule: ToolModuleFactory = (
+  deps
+): ToolModule => {
   return {
     toolName: "list-available-tools",
     definition: listAvailableToolsDefinition,
@@ -103,10 +107,10 @@ export const createListAvailableToolsModule: ToolModuleFactory = (deps): ToolMod
           content: [
             {
               type: "text",
-              text: JSON.stringify(structured)
-            }
+              text: JSON.stringify(structured),
+            },
           ],
-          structuredContent: structured
+          structuredContent: structured,
         };
       } else {
         return {
@@ -116,9 +120,9 @@ export const createListAvailableToolsModule: ToolModuleFactory = (deps): ToolMod
               text: "❌ **Tool discovery not available**\n\nDiscovery engine is not initialized. Server may not be fully started.",
             },
           ],
-          isError: true
+          isError: true,
         };
       }
-    }
+    },
   };
 };

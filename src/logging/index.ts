@@ -2,27 +2,35 @@
  * Structured logging framework with Pino
  */
 
-import pino from 'pino';
-import { createWriteStream, mkdirSync, existsSync, renameSync, readdirSync, statSync, unlinkSync } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
-import { APP_TECHNICAL_NAME, BRAND_NAME } from '../config/appConfig.js';
+import pino from "pino";
+import {
+  createWriteStream,
+  mkdirSync,
+  existsSync,
+  renameSync,
+  readdirSync,
+  statSync,
+  unlinkSync,
+} from "fs";
+import { join } from "path";
+import { homedir } from "os";
+import { APP_TECHNICAL_NAME, BRAND_NAME } from "../config/appConfig.js";
 
 export interface LoggingConfig {
   level: pino.LevelWithSilent;
   enableConsole: boolean;
   enableFile: boolean;
   serverName: string;
-  format: 'json' | 'pretty';
+  format: "json" | "pretty";
   colorize: boolean;
 }
 
 export const DEFAULT_LOGGING_CONFIG: LoggingConfig = {
-  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+  level: process.env.NODE_ENV === "development" ? "debug" : "info",
   enableConsole: true,
   enableFile: true,
   serverName: APP_TECHNICAL_NAME,
-  format: 'pretty', // Always use pretty format for console
+  format: "pretty", // Always use pretty format for console
   colorize: true,
 };
 
@@ -74,7 +82,7 @@ export class Logger {
         level: this.config.level,
         base: {
           pid: process.pid,
-          hostname: process.env.HOSTNAME || 'localhost',
+          hostname: process.env.HOSTNAME || "localhost",
           serverName: this.config.serverName,
         },
         timestamp: pino.stdTimeFunctions.isoTime,
@@ -101,7 +109,12 @@ export class Logger {
 
   private createFileStream() {
     try {
-      const logDir = join(homedir(), `.${BRAND_NAME.toLowerCase()}`, this.config.serverName, 'logs');
+      const logDir = join(
+        homedir(),
+        `.${BRAND_NAME.toLowerCase()}`,
+        this.config.serverName,
+        "logs"
+      );
 
       // Create directory synchronously on first use
       this.ensureLogDirectory(logDir);
@@ -112,9 +125,9 @@ export class Logger {
       // Rotate existing logs before creating new stream
       this.rotateLogFiles(logDir, logFile);
 
-      return createWriteStream(logFile, { flags: 'a' });
+      return createWriteStream(logFile, { flags: "a" });
     } catch (error) {
-      console.warn('Failed to create log file stream:', error);
+      console.warn("Failed to create log file stream:", error);
       return null;
     }
   }
@@ -125,7 +138,7 @@ export class Logger {
         mkdirSync(logDir, { recursive: true });
       }
     } catch (error) {
-      console.warn('Failed to create log directory:', error);
+      console.warn("Failed to create log directory:", error);
       // Continue anyway - logging should not fail the application
     }
   }
@@ -153,7 +166,7 @@ export class Logger {
       const now = Date.now();
       const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
 
-      files.forEach(file => {
+      files.forEach((file) => {
         const filePath = join(logDir, file);
         try {
           const stats = statSync(filePath);
@@ -184,7 +197,10 @@ export class Logger {
           } catch (error) {
             // Gracefully handle file system errors during log rotation
             // This is not critical to application functionality
-            console.warn(`Warning: Could not rotate log file ${oldPath}:`, error instanceof Error ? error.message : String(error));
+            console.warn(
+              `Warning: Could not rotate log file ${oldPath}:`,
+              error instanceof Error ? error.message : String(error)
+            );
           }
         }
       }
@@ -194,12 +210,14 @@ export class Logger {
         try {
           renameSync(currentLogPath, join(logDir, `${baseFileName}.1`));
         } catch (error) {
-          console.warn(`Warning: Could not rotate current log file ${currentLogPath}:`, error instanceof Error ? error.message : String(error));
+          console.warn(
+            `Warning: Could not rotate current log file ${currentLogPath}:`,
+            error instanceof Error ? error.message : String(error)
+          );
         }
       }
-
     } catch (error) {
-      console.warn('Failed to rotate log files:', error);
+      console.warn("Failed to rotate log files:", error);
       // Continue anyway - logging should not fail the application
     }
   }
@@ -252,7 +270,10 @@ export class Logger {
 export const logger = new Logger();
 
 // Convenience function to create a child logger
-export function createLogger(context: pino.Bindings, config?: Partial<LoggingConfig>): Logger {
+export function createLogger(
+  context: pino.Bindings,
+  config?: Partial<LoggingConfig>
+): Logger {
   if (config) {
     return new Logger(config).child(context);
   }

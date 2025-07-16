@@ -2,7 +2,7 @@
  * Unit tests for tool cache with TTL validation
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { ToolCache } from "./cache.js";
 import { DiscoveredTool, DiscoveryConfig } from "./types.js";
 
@@ -94,7 +94,6 @@ describe("ToolCache", () => {
       const retrieved = await cache.get("default-ttl");
       expect(retrieved).toEqual(mockTool);
     });
-
   });
 
   describe("server-based operations", () => {
@@ -136,7 +135,6 @@ describe("ToolCache", () => {
       expect(server2Tools).toHaveLength(1);
     });
 
-
     it("should get all cached tools", () => {
       const allTools = cache.getAllTools();
       expect(allTools).toHaveLength(2);
@@ -175,8 +173,6 @@ describe("ToolCache", () => {
   });
 
   describe("cache maintenance", () => {
-
-
     it("should clear entire cache", async () => {
       await cache.set("key1", mockTool);
       await cache.set("key2", { ...mockTool, name: "tool2" });

@@ -13,11 +13,11 @@ export const deleteToolsetDefinition: Tool = {
     properties: {
       name: {
         type: "string",
-        description: "Name of the toolset to delete"
+        description: "Name of the toolset to delete",
       },
       confirm: {
         type: "boolean",
-        description: "Confirm deletion (required to actually delete)"
+        description: "Confirm deletion (required to actually delete)",
       },
     },
     required: ["name"],
@@ -25,21 +25,25 @@ export const deleteToolsetDefinition: Tool = {
   },
 };
 
-export const createDeleteToolsetModule: ToolModuleFactory = (deps): ToolModule => {
+export const createDeleteToolsetModule: ToolModuleFactory = (
+  deps
+): ToolModule => {
   return {
     toolName: "delete-toolset",
     definition: deleteToolsetDefinition,
     handler: async (args: any) => {
-      const deleteResult = await deps.toolsetManager.deleteToolset(args?.name, { confirm: args?.confirm });
+      const deleteResult = await deps.toolsetManager.deleteToolset(args?.name, {
+        confirm: args?.confirm,
+      });
       return {
         content: [
           {
             type: "text",
-            text: JSON.stringify(deleteResult)
-          }
+            text: JSON.stringify(deleteResult),
+          },
         ],
-        structuredContent: deleteResult
+        structuredContent: deleteResult,
       };
-    }
+    },
   };
 };

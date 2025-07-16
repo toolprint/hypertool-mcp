@@ -7,13 +7,16 @@ import { Server as HttpServer } from "http";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "node:crypto";
-import { isInitializeRequest, Notification } from "@modelcontextprotocol/sdk/types.js";
+import {
+  isInitializeRequest,
+  Notification,
+} from "@modelcontextprotocol/sdk/types.js";
 import { createLogger } from "../logging/index.js";
 import { output } from "../logging/output.js";
 import chalk from "chalk";
 import { APP_TECHNICAL_NAME } from "../config/appConfig.js";
 
-const logger = createLogger({ module: 'server/http-server' });
+const logger = createLogger({ module: "server/http-server" });
 
 /**
  * Express.js-based HTTP server for MCP protocol with streamable transport
@@ -28,7 +31,11 @@ export class McpHttpServer {
   private transports: Record<string, StreamableHTTPServerTransport> = {};
   private connectionString: string;
 
-  constructor(mcpServer: Server, port: number = 3000, host: string = "localhost") {
+  constructor(
+    mcpServer: Server,
+    port: number = 3000,
+    host: string = "localhost"
+  ) {
     this.app = express();
     this.mcpServer = mcpServer;
     this.port = port;
@@ -49,7 +56,10 @@ export class McpHttpServer {
     this.app.use((req, res, next) => {
       res.header("Access-Control-Allow-Origin", "*");
       res.header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-      res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Mcp-Session-Id");
+      res.header(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, Mcp-Session-Id"
+      );
       res.header("Access-Control-Expose-Headers", "Mcp-Session-Id");
 
       if (req.method === "OPTIONS") {
@@ -70,7 +80,7 @@ export class McpHttpServer {
       res.json({
         status: "healthy",
         transport: "http",
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     });
 
@@ -85,9 +95,9 @@ export class McpHttpServer {
             jsonrpc: "2.0",
             error: {
               code: -32603,
-              message: "Internal server error"
+              message: "Internal server error",
             },
-            id: null
+            id: null,
           });
         }
       }
@@ -97,7 +107,7 @@ export class McpHttpServer {
     this.app.use((req: Request, res: Response) => {
       res.status(404).json({
         error: "Not found",
-        message: `Route ${req.method} ${req.path} not found`
+        message: `Route ${req.method} ${req.path} not found`,
       });
     });
   }
@@ -109,27 +119,35 @@ export class McpHttpServer {
     logger.info(`Received ${req.method} request to /mcp`);
 
     // Check for existing session ID
-    const sessionId = req.headers['mcp-session-id'] as string;
+    const sessionId = req.headers["mcp-session-id"] as string;
     let transport: StreamableHTTPServerTransport;
 
     if (sessionId && this.transports[sessionId]) {
       // Reuse existing transport
       transport = this.transports[sessionId];
-    } else if (!sessionId && req.method === 'POST' && isInitializeRequest(req.body)) {
+    } else if (
+      !sessionId &&
+      req.method === "POST" &&
+      isInitializeRequest(req.body)
+    ) {
       // Create new transport for initialization request
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         onsessioninitialized: (sessionId) => {
-          logger.info(`Streamable HTTP session initialized with ID: ${sessionId}`);
+          logger.info(
+            `Streamable HTTP session initialized with ID: ${sessionId}`
+          );
           this.transports[sessionId] = transport;
-        }
+        },
       });
 
       // Set up cleanup when transport closes
       transport.onclose = () => {
         const sid = transport.sessionId;
         if (sid && this.transports[sid]) {
-          logger.info(`Transport closed for session ${sid}, removing from transports map`);
+          logger.info(
+            `Transport closed for session ${sid}, removing from transports map`
+          );
           delete this.transports[sid];
         }
       };
@@ -142,9 +160,10 @@ export class McpHttpServer {
         jsonrpc: "2.0",
         error: {
           code: -32000,
-          message: "Bad Request: No valid session ID provided or not an initialization request"
+          message:
+            "Bad Request: No valid session ID provided or not an initialization request",
         },
-        id: null
+        id: null,
       });
       return;
     }
@@ -161,20 +180,35 @@ export class McpHttpServer {
       try {
         this.httpServer = this.app.listen(this.port, this.host, () => {
           output.displaySeparator();
-          output.displaySubHeader(`Connect to ${APP_TECHNICAL_NAME} Instructions\n`);
+          output.displaySubHeader(
+            `Connect to ${APP_TECHNICAL_NAME} Instructions\n`
+          );
           output.displayHelpContext(`Server available on [http]`);
-          output.displayInstruction(`http://${this.host}:${this.port}/mcp`, true)
+          output.displayInstruction(
+            `http://${this.host}:${this.port}/mcp`,
+            true
+          );
           output.displaySpaceBuffer();
-          output.displayHelpContext(`Connect using MCP Inspector`)
-          output.displayInstruction(`npx @modelcontextprotocol/inspector`, true);
+          output.displayHelpContext(`Connect using MCP Inspector`);
+          output.displayInstruction(
+            `npx @modelcontextprotocol/inspector`,
+            true
+          );
           output.displaySpaceBuffer();
-          output.displayHelpContext(`Add this to your MCP config:`)
-          output.displayInstruction(JSON.stringify({
-            "hypertool-mcp": {
-              type: "streamable-http",
-              url: this.connectionString,
-            }
-          }, null, 2), true)
+          output.displayHelpContext(`Add this to your MCP config:`);
+          output.displayInstruction(
+            JSON.stringify(
+              {
+                "hypertool-mcp": {
+                  type: "streamable-http",
+                  url: this.connectionString,
+                },
+              },
+              null,
+              2
+            ),
+            true
+          );
           resolve();
         });
 
@@ -198,7 +232,10 @@ export class McpHttpServer {
         await this.transports[sessionId].close();
         delete this.transports[sessionId];
       } catch (error) {
-        logger.error(`Error closing transport for session ${sessionId}:`, error);
+        logger.error(
+          `Error closing transport for session ${sessionId}:`,
+          error
+        );
       }
     }
 
@@ -238,7 +275,9 @@ export class McpHttpServer {
    */
   async broadcastNotification(notification: Notification): Promise<void> {
     const sessionIds = Object.keys(this.transports);
-    logger.info(`Broadcasting notification to ${sessionIds.length} connected sessions`);
+    logger.info(
+      `Broadcasting notification to ${sessionIds.length} connected sessions`
+    );
     await this.mcpServer.notification(notification);
   }
 }

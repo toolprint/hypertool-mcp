@@ -1,9 +1,9 @@
-import figlet from 'figlet';
-import chalk from 'chalk';
-import { Console } from 'console';
-import { spawnSync } from 'child_process';
-import { isDefined } from '../utils/helpers.js';
-import { APP_CONFIG, APP_NAME, BRAND_NAME } from '../config/appConfig.js';
+import figlet from "figlet";
+import chalk from "chalk";
+import { Console } from "console";
+import { spawnSync } from "child_process";
+import { isDefined } from "../utils/helpers.js";
+import { APP_CONFIG, APP_NAME, BRAND_NAME } from "../config/appConfig.js";
 
 const stdioDisplay = new Console({
   stdout: process.stdout,
@@ -11,15 +11,15 @@ const stdioDisplay = new Console({
 });
 
 enum FigletFont {
-  Standard = 'Standard',
-  SubZero = 'Sub-Zero',
-  Slant = 'Slant',
-  ANSIShadow = 'ANSI Shadow',
-  Block = 'Block',
-  Doom = 'Doom',
-  ThreeDASCII = '3D-ASCII',
-  Small = 'Small',
-  Speed = 'Speed',
+  Standard = "Standard",
+  SubZero = "Sub-Zero",
+  Slant = "Slant",
+  ANSIShadow = "ANSI Shadow",
+  Block = "Block",
+  Doom = "Doom",
+  ThreeDASCII = "3D-ASCII",
+  Small = "Small",
+  Speed = "Speed",
 }
 
 const PREFERRED_FONT = FigletFont.SubZero;
@@ -64,7 +64,7 @@ export const output = {
     options?: {
       delayMs?: number;
       byWord?: boolean;
-    },
+    }
   ) => {
     let { delayMs, byWord } = options ?? {};
 
@@ -133,7 +133,7 @@ export const output = {
    */
   displayTerminalInstruction: (
     msg: string,
-    copyToClipboard: boolean = false,
+    copyToClipboard: boolean = false
   ) => {
     // Create terminal-like prompt with different colors
     const promptSymbol = chalk.cyan("$");
@@ -260,8 +260,8 @@ export const output = {
 function getAsciiArt(text: string, font: FigletFont = PREFERRED_FONT): string {
   return figlet.textSync(text, {
     font: font,
-    horizontalLayout: 'fitted',
-    verticalLayout: 'default',
+    horizontalLayout: "fitted",
+    verticalLayout: "default",
   });
 }
 
@@ -275,8 +275,14 @@ export function displayBanner(appName: string = APP_NAME): void {
   displayAppBanner(appName);
 
   output.displaySpaceBuffer(1);
-  output.displayLinkWithPrefix('Built and supported by the devs @ ', 'https://toolprint.ai');
-  output.displayLinkWithPrefix('Check out more of our stuff at ', 'https://github.com/toolprint');
+  output.displayLinkWithPrefix(
+    "Built and supported by the devs @ ",
+    "https://toolprint.ai"
+  );
+  output.displayLinkWithPrefix(
+    "Check out more of our stuff at ",
+    "https://github.com/toolprint"
+  );
   output.displaySeparator(80);
   output.displaySpaceBuffer(1);
 }
@@ -288,7 +294,7 @@ export function displayBanner(appName: string = APP_NAME): void {
 function displayAppBanner(appName: string): void {
   // Handle app name - split into lines if too long, use same font as Toolprint
   if (appName.length > 8) {
-    const words = appName.split(' ');
+    const words = appName.split(" ");
     for (const word of words) {
       const wordBanner = getAsciiArt(word, PREFERRED_FONT);
       output.log(chalk.blueBright.bold(wordBanner));
@@ -325,13 +331,15 @@ export function displayServerBanner(
   displayBanner(appName);
 
   // Server info without figlet
-  output.log(chalk.blue.bold('Server Configuration:'));
+  output.log(chalk.blue.bold("Server Configuration:"));
   output.log(chalk.white(`  Transport: ${chalk.yellow(transport)}`));
 
-  if (transport === 'http' && port && host) {
-    output.log(chalk.white(`  Address:   ${chalk.yellow(`http://${host}:${port}`)}`));
-  } else if (transport === 'stdio') {
-    output.log(chalk.white(`  Mode:      ${chalk.yellow('Standard I/O')}`));
+  if (transport === "http" && port && host) {
+    output.log(
+      chalk.white(`  Address:   ${chalk.yellow(`http://${host}:${port}`)}`)
+    );
+  } else if (transport === "stdio") {
+    output.log(chalk.white(`  Mode:      ${chalk.yellow("Standard I/O")}`));
   }
 
   output.log(chalk.white(`  Version:   ${chalk.yellow(APP_CONFIG.version)}`));

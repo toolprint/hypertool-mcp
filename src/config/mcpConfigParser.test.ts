@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { MCPConfigParser } from "./mcpConfigParser.js";
 import { MCPConfig } from "../types/config.js";
 import * as fs from "fs/promises";

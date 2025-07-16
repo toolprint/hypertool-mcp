@@ -2,14 +2,11 @@
  * Tests for simplified toolset configuration loader
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { promises as fs } from "fs";
 import path from "path";
 import os from "os";
-import {
-  loadToolsetConfig,
-  saveToolsetConfig,
-} from "./loader.js";
+import { loadToolsetConfig, saveToolsetConfig } from "./loader.js";
 import { ToolsetConfig } from "./types.js";
 
 describe("ToolsetLoader", () => {
@@ -152,9 +149,7 @@ describe("ToolsetLoader", () => {
         description: "Configuration for save test",
         version: "2.0.0",
         createdAt: new Date(),
-        tools: [
-          { namespacedName: "git.status", refId: "hash123456789" },
-        ],
+        tools: [{ namespacedName: "git.status", refId: "hash123456789" }],
       };
 
       const filePath = path.join(tempDir, "saved.json");
@@ -179,7 +174,9 @@ describe("ToolsetLoader", () => {
       };
 
       const filePath = path.join(tempDir, "pretty.json");
-      const result = await saveToolsetConfig(config, filePath, { pretty: true });
+      const result = await saveToolsetConfig(config, filePath, {
+        pretty: true,
+      });
 
       expect(result.success).toBe(true);
 
@@ -198,13 +195,18 @@ describe("ToolsetLoader", () => {
       const subDir = path.join(tempDir, "nested", "deep");
       const filePath = path.join(subDir, "config.json");
 
-      const result = await saveToolsetConfig(config, filePath, { createDir: true });
+      const result = await saveToolsetConfig(config, filePath, {
+        createDir: true,
+      });
 
       expect(result.success).toBe(true);
       expect(result.error).toBeUndefined();
 
       // Verify file exists in created directory
-      const exists = await fs.access(filePath).then(() => true).catch(() => false);
+      const exists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false);
       expect(exists).toBe(true);
     });
 
@@ -260,7 +262,10 @@ describe("ToolsetLoader", () => {
       const config = {
         name: "special-chars",
         tools: [
-          { namespacedName: "server-1.tool_with-special.chars", refId: "hash123456789" }, // Valid refId length
+          {
+            namespacedName: "server-1.tool_with-special.chars",
+            refId: "hash123456789",
+          }, // Valid refId length
         ],
       };
 

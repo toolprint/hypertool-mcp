@@ -2,7 +2,7 @@
  * Tests for ToolsetManager with simplified structure
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { promises as fs } from "fs";
 import path from "path";
 import os from "os";
@@ -27,7 +27,10 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
   }
 
   async getToolByName(name: string): Promise<DiscoveredTool | null> {
-    return this.tools.find(t => t.name === name || t.namespacedName === name) || null;
+    return (
+      this.tools.find((t) => t.name === name || t.namespacedName === name) ||
+      null
+    );
   }
 
   async searchTools(): Promise<DiscoveredTool[]> {
@@ -38,24 +41,30 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
     return this.tools;
   }
 
-  resolveToolReference(ref: { namespacedName?: string; refId?: string }, options?: { allowStaleRefs?: boolean }) {
-    const tool = this.tools.find(t => 
-      t.namespacedName === ref.namespacedName || t.toolHash === ref.refId
+  resolveToolReference(
+    ref: { namespacedName?: string; refId?: string },
+    options?: { allowStaleRefs?: boolean }
+  ) {
+    const tool = this.tools.find(
+      (t) => t.namespacedName === ref.namespacedName || t.toolHash === ref.refId
     );
-    
+
     const exists = !!tool;
-    const namespacedNameMatch = !!tool && tool.namespacedName === ref.namespacedName;
+    const namespacedNameMatch =
+      !!tool && tool.namespacedName === ref.namespacedName;
     const refIdMatch = !!tool && tool.toolHash === ref.refId;
-    
+
     const warnings: string[] = [];
     const errors: string[] = [];
-    
+
     // Check for mismatches when both identifiers are provided
     if (exists && ref.namespacedName && ref.refId) {
       if (!namespacedNameMatch && !refIdMatch) {
-        errors.push(`Tool reference mismatch: neither namespacedName nor refId match`);
+        errors.push(
+          `Tool reference mismatch: neither namespacedName nor refId match`
+        );
       } else if (!namespacedNameMatch || !refIdMatch) {
-        const msg = `Tool reference partial mismatch: ${!namespacedNameMatch ? 'namespacedName' : 'refId'} doesn't match`;
+        const msg = `Tool reference partial mismatch: ${!namespacedNameMatch ? "namespacedName" : "refId"} doesn't match`;
         if (options?.allowStaleRefs) {
           warnings.push(msg);
         } else {
@@ -63,10 +72,10 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
         }
       }
     }
-    
+
     // In secure mode, reject tools with errors
     const shouldReject = !options?.allowStaleRefs && errors.length > 0;
-    
+
     return {
       exists: exists && !shouldReject,
       tool: shouldReject ? undefined : tool,
@@ -75,7 +84,7 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
       namespacedNameMatch,
       refIdMatch,
       warnings,
-      errors
+      errors,
     };
   }
 
@@ -154,9 +163,7 @@ describe("ToolsetManager", () => {
         description: "Test configuration",
         version: "1.0.0",
         createdAt: new Date(),
-        tools: [
-          { namespacedName: "git.status", refId: "full1234567890" }
-        ],
+        tools: [{ namespacedName: "git.status", refId: "full1234567890" }],
       };
 
       const filePath = path.join(tempDir, "config.json");
@@ -183,11 +190,15 @@ describe("ToolsetManager", () => {
       expect(result.success).toBe(false);
       expect(manager.getCurrentToolset()).toBeUndefined();
       expect(result.validation.valid).toBe(false);
-      expect(result.validation.errors).toContain("Configuration name must contain only lowercase letters, numbers, and hyphens");
+      expect(result.validation.errors).toContain(
+        "Configuration name must contain only lowercase letters, numbers, and hyphens"
+      );
     });
 
     it("should handle file read errors", async () => {
-      const result = await manager.loadToolsetFromConfig("/nonexistent/path.json");
+      const result = await manager.loadToolsetFromConfig(
+        "/nonexistent/path.json"
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -198,9 +209,7 @@ describe("ToolsetManager", () => {
     it("should save loaded configuration", async () => {
       const config: ToolsetConfig = {
         name: "test-config",
-        tools: [
-          { namespacedName: "git.status", refId: "full1234567890" }
-        ],
+        tools: [{ namespacedName: "git.status", refId: "full1234567890" }],
         version: "1.0.0",
         createdAt: new Date(),
       };
@@ -224,9 +233,7 @@ describe("ToolsetManager", () => {
     it("should save to previously loaded path", async () => {
       const config: ToolsetConfig = {
         name: "test-config",
-        tools: [
-          { namespacedName: "git.status", refId: "full1234567890" }
-        ],
+        tools: [{ namespacedName: "git.status", refId: "full1234567890" }],
         version: "1.0.0",
         createdAt: new Date(),
       };
@@ -248,7 +255,9 @@ describe("ToolsetManager", () => {
       // Reload and verify
       const reloadResult = await manager.loadToolsetFromConfig(filePath);
       expect(reloadResult.success).toBe(true);
-      expect(manager.getCurrentToolset()?.description).toBe("Modified description");
+      expect(manager.getCurrentToolset()?.description).toBe(
+        "Modified description"
+      );
     });
 
     it("should require path if no previous path", async () => {
@@ -312,9 +321,7 @@ describe("ToolsetManager", () => {
     it("should validate current configuration", () => {
       const config: ToolsetConfig = {
         name: "test-config",
-        tools: [
-          { namespacedName: "git.status" }
-        ],
+        tools: [{ namespacedName: "git.status" }],
         version: "1.0.0",
         createdAt: new Date(),
       };
@@ -362,7 +369,7 @@ describe("ToolsetManager", () => {
 
       const filePath = path.join(tempDir, "config.json");
       await fs.writeFile(filePath, JSON.stringify(config));
-      
+
       await manager.loadToolsetFromConfig(filePath);
       expect(manager.getConfigPath()).toBe(filePath);
 

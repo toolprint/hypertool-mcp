@@ -7,17 +7,24 @@ import { MetaMCPServerConfig, ServerInitOptions } from "./types.js";
 import { RuntimeOptions } from "../types/runtime.js";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { IRequestRouter, RequestRouter } from "../router/index.js";
-import { IToolDiscoveryEngine, ToolDiscoveryEngine } from "../discovery/index.js";
+import {
+  IToolDiscoveryEngine,
+  ToolDiscoveryEngine,
+} from "../discovery/index.js";
 import { IConnectionManager, ConnectionManager } from "../connection/index.js";
 import { MCPConfigParser, APP_NAME, ServerConfig } from "../config/index.js";
 import ora from "ora";
 import { createLogger } from "../logging/index.js";
 
-const logger = createLogger({ module: 'server/enhanced' });
+const logger = createLogger({ module: "server/enhanced" });
 // Note: All mcp-tools functionality now handled by ToolsetManager
 import { ToolsetManager, ToolsetChangeEvent } from "../toolset/manager.js";
 import { DiscoveredToolsChangedEvent } from "../discovery/types.js";
-import { ToolDependencies, ToolModule, TOOL_MODULE_FACTORIES } from "./tools/index.js";
+import {
+  ToolDependencies,
+  ToolModule,
+  TOOL_MODULE_FACTORIES,
+} from "./tools/index.js";
 import chalk from "chalk";
 import { output } from "../logging/output.js";
 /**
@@ -41,31 +48,36 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   /**
    * Enhanced start method with routing initialization
    */
-  async start(options: ServerInitOptions, runtimeOptions?: RuntimeOptions): Promise<void> {
+  async start(
+    options: ServerInitOptions,
+    runtimeOptions?: RuntimeOptions
+  ): Promise<void> {
     this.runtimeOptions = runtimeOptions;
 
     await this.initializeRouting(options);
     await super.start(options);
   }
 
-  private async loadMcpConfigOrExit(options: ServerInitOptions): Promise<Record<string, ServerConfig>> {
+  private async loadMcpConfigOrExit(
+    options: ServerInitOptions
+  ): Promise<Record<string, ServerConfig>> {
     // Initialize config parser
-    const mainSpinner = ora('Loading MCP configuration...').start();
+    const mainSpinner = ora("Loading MCP configuration...").start();
     this.configParser = new MCPConfigParser();
 
     // Load configuration if path provided
     let serverConfigs: Record<string, ServerConfig> = {};
     if (options.configPath) {
-      const parseResult = await this.configParser.parseFile(
-        options.configPath
-      );
+      const parseResult = await this.configParser.parseFile(options.configPath);
 
       if (parseResult.success && parseResult.config) {
         serverConfigs = parseResult.config.mcpServers || {};
         const serverCount = Object.keys(serverConfigs).length;
-        mainSpinner.succeed(`Loaded ${serverCount} MCP server${serverCount !== 1 ? 's' : ''} from config. | Path: ${chalk.yellow(options.configPath)}`);
+        mainSpinner.succeed(
+          `Loaded ${serverCount} MCP server${serverCount !== 1 ? "s" : ""} from config. | Path: ${chalk.yellow(options.configPath)}`
+        );
       } else {
-        mainSpinner.fail('Failed to load MCP configuration');
+        mainSpinner.fail("Failed to load MCP configuration");
         logger.error(`\n❌ FATAL ERROR: Failed to load MCP configuration`);
         if (parseResult.error) {
           logger.error(`   Error: ${parseResult.error}`);
@@ -76,35 +88,49 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             logger.error(`     • ${err}`);
           });
         }
-        logger.error(`\n💡 Resolution: Fix the configuration file and restart the server.`);
+        logger.error(
+          `\n💡 Resolution: Fix the configuration file and restart the server.`
+        );
         logger.error(`   Configuration file: ${options.configPath}`);
-        logger.error(`\n🚫 ${APP_NAME} server cannot start with invalid configuration.`);
+        logger.error(
+          `\n🚫 ${APP_NAME} server cannot start with invalid configuration.`
+        );
         process.exit(1);
       }
     } else {
-      mainSpinner.succeed('No configuration file specified - running without external servers');
+      mainSpinner.succeed(
+        "No configuration file specified - running without external servers"
+      );
     }
 
     return serverConfigs;
   }
 
-  private async connectToDownstreamServers(serverConfigs: Record<string, ServerConfig>): Promise<void> {
+  private async connectToDownstreamServers(
+    serverConfigs: Record<string, ServerConfig>
+  ): Promise<void> {
     this.connectionManager = new ConnectionManager();
-    let mainSpinner = ora('🔗 Setting up Connection Manager...').start();
+    let mainSpinner = ora("🔗 Setting up Connection Manager...").start();
     await this.connectionManager.initialize(serverConfigs);
-    mainSpinner.succeed('🔗 Connection manager initialized');
+    mainSpinner.succeed("🔗 Connection manager initialized");
 
     // Connect to each server individually with progress
     const serverEntries = Object.entries(serverConfigs);
     if (serverEntries.length > 0) {
       for (const [serverName, config] of serverEntries) {
-        const serverSpinner = ora(`Connecting to [${serverName}] MCP <-> [${config.type}]...`).start();
+        const serverSpinner = ora(
+          `Connecting to [${serverName}] MCP <-> [${config.type}]...`
+        ).start();
 
         try {
           await this.connectionManager.connect(serverName);
-          serverSpinner.succeed(`Connected to [${serverName}] MCP <-> [${config.type}]`);
+          serverSpinner.succeed(
+            `Connected to [${serverName}] MCP <-> [${config.type}]`
+          );
         } catch (error) {
-          serverSpinner.fail(`Failed to connect to ${serverName}: ${(error as Error).message}`);
+          serverSpinner.fail(
+            `Failed to connect to ${serverName}: ${(error as Error).message}`
+          );
           // Don't fail the entire startup for individual server connection failures
         }
       }
@@ -115,18 +141,19 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    * Initialize routing components
    */
   private async initializeRouting(options: ServerInitOptions): Promise<void> {
-    output.displaySubHeader('Initializing Routing and Discovery');
+    output.displaySubHeader("Initializing Routing and Discovery");
     output.displaySpaceBuffer();
 
     try {
       // Load server configs from MCP config.
-      const serverConfigs: Record<string, ServerConfig> = await this.loadMcpConfigOrExit(options);
+      const serverConfigs: Record<string, ServerConfig> =
+        await this.loadMcpConfigOrExit(options);
 
       // Initialize connection manager
       await this.connectToDownstreamServers(serverConfigs);
 
       // Initialize discovery engine with progress
-      let mainSpinner = ora('Initializing tool discovery engine...').start();
+      let mainSpinner = ora("Initializing tool discovery engine...").start();
       this.discoveryEngine = new ToolDiscoveryEngine(this.connectionManager!);
       await this.discoveryEngine.initialize({
         autoDiscovery: true,
@@ -137,17 +164,22 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       this.toolsetManager.setDiscoveryEngine(this.discoveryEngine);
 
       // Listen for toolset changes and notify clients
-      this.toolsetManager.on('toolsetChanged', async (event: ToolsetChangeEvent) => {
-        if (options.debug) {
-          logger.info(`Toolset ${event.changeType}: ${event.newToolset?.name || 'none'}`);
+      this.toolsetManager.on(
+        "toolsetChanged",
+        async (event: ToolsetChangeEvent) => {
+          if (options.debug) {
+            logger.info(
+              `Toolset ${event.changeType}: ${event.newToolset?.name || "none"}`
+            );
+          }
+          await this.notifyToolsChanged();
         }
-        await this.notifyToolsChanged();
-      });
+      );
 
-      mainSpinner.succeed('Tool discovery engine initialized');
+      mainSpinner.succeed("Tool discovery engine initialized");
 
       // Start discovery and show tool count
-      mainSpinner = ora('Discovering tools from connected servers...').start();
+      mainSpinner = ora("Discovering tools from connected servers...").start();
       await this.discoveryEngine.start();
 
       const discoveredTools = this.discoveryEngine.getAvailableTools(true);
@@ -155,14 +187,16 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const connectedServers = this.connectionManager!.getConnectedServers();
 
       if (toolCount > 0) {
-        mainSpinner.succeed(`Discovered ${toolCount} tool${toolCount !== 1 ? 's' : ''} from ${connectedServers.length} connected server${connectedServers.length !== 1 ? 's' : ''}`);
+        mainSpinner.succeed(
+          `Discovered ${toolCount} tool${toolCount !== 1 ? "s" : ""} from ${connectedServers.length} connected server${connectedServers.length !== 1 ? "s" : ""}`
+        );
         await this.discoveryEngine.outputToolServerStatus();
       } else {
-        mainSpinner.warn('No tools discovered from connected servers');
+        mainSpinner.warn("No tools discovered from connected servers");
       }
 
       // Initialize request router
-      mainSpinner = ora('Initializing request router...').start();
+      mainSpinner = ora("Initializing request router...").start();
       this.requestRouter = new RequestRouter(
         this.discoveryEngine,
         this.connectionManager!
@@ -171,26 +205,29 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         enableLogging: options.debug || false,
         enableMetrics: true,
       });
-      mainSpinner.succeed('Request router initialized');
+      mainSpinner.succeed("Request router initialized");
 
       // Listen for tool discovery changes and notify clients
-      (this.discoveryEngine as any).on?.("toolsChanged", async (event: DiscoveredToolsChangedEvent) => {
-        // If we have an active toolset, it might need re-validation
-        const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();
-        if (activeToolsetInfo) {
-          if (options.debug) {
-            logger.info(
-              `Tools changed while toolset "${activeToolsetInfo.name}" is equipped. ` +
-              `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
-            );
+      (this.discoveryEngine as any).on?.(
+        "toolsChanged",
+        async (event: DiscoveredToolsChangedEvent) => {
+          // If we have an active toolset, it might need re-validation
+          const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();
+          if (activeToolsetInfo) {
+            if (options.debug) {
+              logger.info(
+                `Tools changed while toolset "${activeToolsetInfo.name}" is equipped. ` +
+                  `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
+              );
+            }
           }
-        }
 
-        // Note: ToolsetManager will automatically handle toolset validation
-        // and emit toolsetChanged events if active tools are affected
-        // Always notify clients about tool changes
-        await this.notifyToolsChanged();
-      });
+          // Note: ToolsetManager will automatically handle toolset validation
+          // and emit toolsetChanged events if active tools are affected
+          // Always notify clients about tool changes
+          await this.notifyToolsChanged();
+        }
+      );
 
       // Initialize tool modules after all dependencies are set up
       this.initializeToolModules();
@@ -198,11 +235,12 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       // Check for toolset configuration and warn if none equipped
       if (this.runtimeOptions?.equipToolset) {
         logger.info(`Equipping toolset: ${this.runtimeOptions!.equipToolset!}`);
-        await this.toolsetManager.equipToolset(this.runtimeOptions!.equipToolset!);
+        await this.toolsetManager.equipToolset(
+          this.runtimeOptions!.equipToolset!
+        );
       }
 
       await this.checkToolsetStatus(options.debug);
-
     } catch (error) {
       logger.error("Failed to initialize routing:", error);
       throw error;
@@ -216,7 +254,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     const dependencies: ToolDependencies = {
       toolsetManager: this.toolsetManager,
       discoveryEngine: this.discoveryEngine,
-      runtimeOptions: this.runtimeOptions
+      runtimeOptions: this.runtimeOptions,
     };
 
     // Create tool modules using factory functions
@@ -235,7 +273,12 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   private async checkToolsetStatus(debug?: boolean): Promise<void> {
     try {
       const listResult = await this.toolsetManager.listSavedToolsets();
-      const storedToolsets = listResult.success ? listResult.toolsets.reduce((acc: any, t: any) => ({ ...acc, [t.name]: t }), {}) : {};
+      const storedToolsets = listResult.success
+        ? listResult.toolsets.reduce(
+            (acc: any, t: any) => ({ ...acc, [t.name]: t }),
+            {}
+          )
+        : {};
       const hasToolsets = Object.keys(storedToolsets).length > 0;
       const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();
 
@@ -254,17 +297,21 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    Example: Create a dev toolset with git and docker tools
    `);
       } else if (!activeToolsetInfo && hasToolsets) {
-        const toolsetNames = listResult.success ? listResult.toolsets.map((t: any) => t.name) : [];
+        const toolsetNames = listResult.success
+          ? listResult.toolsets.map((t: any) => t.name)
+          : [];
         logger.warn(`
 ⚠️  WARNING: No toolset equipped
    
    You have ${toolsetNames.length} saved toolset(s) but none are currently equipped.
-   Available toolsets: ${toolsetNames.join(', ')}
+   Available toolsets: ${toolsetNames.join(", ")}
    
    💡 Use the '--equip-toolset' flag or 'equip-toolset' tool to activate a toolset and expose its tools.
    `);
       } else if (debug && activeToolsetInfo) {
-        logger.info(`✅ Toolset "${activeToolsetInfo.name}" is equipped and active`);
+        logger.info(
+          `✅ Toolset "${activeToolsetInfo.name}" is equipped and active`
+        );
       }
     } catch (error) {
       if (debug) {
@@ -280,7 +327,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     const tools: Tool[] = [];
 
     // Add built-in toolset management tools from modules
-    tools.push(...this.toolModules.map(module => module.definition));
+    tools.push(...this.toolModules.map((module) => module.definition));
 
     // Add tools from toolset manager (handles filtering and formatting)
     try {

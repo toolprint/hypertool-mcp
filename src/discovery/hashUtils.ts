@@ -34,7 +34,7 @@ export class ToolHashUtils {
     serverName?: string
   ): string {
     const toolDef = "tool" in tool ? tool.tool : tool;
-    
+
     const hashData: ToolHashData = {
       name: (toolDef as any).name,
       serverName: serverName || (tool as DiscoveredTool).serverName,
@@ -42,8 +42,6 @@ export class ToolHashUtils {
       outputSchema: (toolDef as any).outputSchema,
       annotations: (toolDef as any).annotations,
     };
-    
-
 
     return this.hashObject(hashData);
   }
@@ -54,9 +52,7 @@ export class ToolHashUtils {
   static calculateServerToolsHash(tools: DiscoveredTool[]): string {
     // Sort tools by name for consistent hashing
     const sortedTools = [...tools].sort((a, b) => a.name.localeCompare(b.name));
-    const toolHashes = sortedTools.map((tool) =>
-      this.calculateToolHash(tool)
-    );
+    const toolHashes = sortedTools.map((tool) => this.calculateToolHash(tool));
 
     return this.hashObject(toolHashes);
   }

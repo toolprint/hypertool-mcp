@@ -8,7 +8,8 @@ import { toolsetInfoSchema } from "./schemas.js";
 
 export const listSavedToolsetsDefinition: Tool = {
   name: "list-saved-toolsets",
-  description: "List all saved toolset configurations with detailed information including server configurations and tool counts",
+  description:
+    "List all saved toolset configurations with detailed information including server configurations and tool counts",
   inputSchema: {
     type: "object" as const,
     properties: {},
@@ -19,23 +20,25 @@ export const listSavedToolsetsDefinition: Tool = {
     properties: {
       success: {
         type: "boolean",
-        description: "Whether the operation was successful"
+        description: "Whether the operation was successful",
       },
       toolsets: {
         type: "array",
         description: "Array of toolset information",
-        items: toolsetInfoSchema as any
+        items: toolsetInfoSchema as any,
       },
       error: {
         type: "string",
-        description: "Error message if the operation failed"
-      }
+        description: "Error message if the operation failed",
+      },
     },
-    required: ["success", "toolsets"]
-  }
+    required: ["success", "toolsets"],
+  },
 };
 
-export const createListSavedToolsetsModule: ToolModuleFactory = (deps): ToolModule => {
+export const createListSavedToolsetsModule: ToolModuleFactory = (
+  deps
+): ToolModule => {
   return {
     toolName: "list-saved-toolsets",
     definition: listSavedToolsetsDefinition,
@@ -45,11 +48,11 @@ export const createListSavedToolsetsModule: ToolModuleFactory = (deps): ToolModu
         content: [
           {
             type: "text",
-            text: JSON.stringify(listResult)
-          }
+            text: JSON.stringify(listResult),
+          },
         ],
-        structuredContent: listResult
+        structuredContent: listResult,
       };
-    }
+    },
   };
 };

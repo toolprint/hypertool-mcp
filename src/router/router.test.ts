@@ -2,7 +2,7 @@
  * Request router tests
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { RequestRouter } from "./router.js";
 import { ROUTER_ERROR_CODES } from "./types.js";
 import { CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
@@ -10,7 +10,7 @@ import { IToolDiscoveryEngine, DiscoveredTool } from "../discovery/types.js";
 import { IConnectionManager, Connection } from "../connection/types.js";
 import { createLogger } from "../logging/index.js";
 
-const logger = createLogger({ module: 'router/router.test' });
+const logger = createLogger({ module: "router/router.test" });
 
 // Mock implementations
 class MockDiscoveryEngine implements IToolDiscoveryEngine {
@@ -44,11 +44,14 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
     return this.tools;
   }
 
-  resolveToolReference(ref: { namespacedName?: string; refId?: string }, _options?: { allowStaleRefs?: boolean }) {
-    const tool = this.tools.find(t => 
-      t.namespacedName === ref.namespacedName || t.toolHash === ref.refId
+  resolveToolReference(
+    ref: { namespacedName?: string; refId?: string },
+    _options?: { allowStaleRefs?: boolean }
+  ) {
+    const tool = this.tools.find(
+      (t) => t.namespacedName === ref.namespacedName || t.toolHash === ref.refId
     );
-    
+
     return {
       exists: !!tool,
       tool,
@@ -57,7 +60,7 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
       namespacedNameMatch: !!tool && tool.namespacedName === ref.namespacedName,
       refIdMatch: !!tool && tool.toolHash === ref.refId,
       warnings: [],
-      errors: []
+      errors: [],
     };
   }
 
@@ -303,7 +306,9 @@ describe("RequestRouter", () => {
         arguments: {}, // Missing required 'path' parameter
       };
 
-      await expect(router.routeToolCall(request)).rejects.toThrow("Invalid request parameters");
+      await expect(router.routeToolCall(request)).rejects.toThrow(
+        "Invalid request parameters"
+      );
     });
 
     it("should handle tool call errors", async () => {
@@ -316,7 +321,9 @@ describe("RequestRouter", () => {
         arguments: { path: "/repo" },
       };
 
-      await expect(router.routeToolCall(request)).rejects.toThrow("Tool call failed on server 'git': Git error");
+      await expect(router.routeToolCall(request)).rejects.toThrow(
+        "Tool call failed on server 'git': Git error"
+      );
     });
 
     it("should pass through tool-level errors with isError flag", async () => {
@@ -485,7 +492,7 @@ describe("RequestRouter", () => {
       } catch (error) {
         // Expected to throw
       }
-      
+
       router.clearStats();
 
       const stats = router.getStats();
@@ -494,5 +501,4 @@ describe("RequestRouter", () => {
       expect(stats.failedRequests).toBe(0);
     });
   });
-
 });

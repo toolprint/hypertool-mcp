@@ -49,7 +49,8 @@ async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
         await setup.run(isDryRun);
         break;
       case 'cursor':
-        throw new Error(chalk.yellow('⚠️  Cursor integration not yet implemented'));
+        const { default: cursorSetup } = await import('./scripts/cursor/setup.js');
+        await cursorSetup({ dryRun: isDryRun });
         break;
       case 'claude-code':
         const { installClaudeCodeCommands } = await import('./scripts/claude-code/setup.js');
@@ -76,31 +77,33 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .description(chalk.blue(APP_DESCRIPTION))
     .version(APP_VERSION)
     .option(
-      '--transport <type>',
-      chalk.cyan('Transport protocol to use') + ' (http, stdio)',
-      'stdio'
+      "--transport <type>",
+      chalk.cyan("Transport protocol to use") + " (http, stdio)",
+      "stdio"
     )
     .option(
-      '--port <number>',
-      chalk.cyan('Port number for HTTP transport') + ' (only valid with --transport http)'
+      "--port <number>",
+      chalk.cyan("Port number for HTTP transport") +
+        " (only valid with --transport http)"
     )
     .option(
-      '--debug',
-      chalk.cyan('Enable debug mode with verbose logging'),
+      "--debug",
+      chalk.cyan("Enable debug mode with verbose logging"),
       false
     )
     .option(
-      '--insecure',
-      chalk.yellow('Allow tools with changed reference hashes') + chalk.red(' (insecure mode)'),
+      "--insecure",
+      chalk.yellow("Allow tools with changed reference hashes") +
+        chalk.red(" (insecure mode)"),
       false
     )
     .option(
-      '--equip-toolset <name>',
-      chalk.cyan('Toolset name to equip on startup')
+      "--equip-toolset <name>",
+      chalk.cyan("Toolset name to equip on startup")
     )
     .option(
-      '--mcp-config <path>',
-      chalk.cyan('Path to MCP configuration file') + ' (.mcp.json)'
+      "--mcp-config <path>",
+      chalk.cyan("Path to MCP configuration file") + " (.mcp.json)"
     )
     .option(
       '--log-level <level>',
@@ -145,37 +148,41 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
 
   // Validate transport type
   const transport = options.transport as RuntimeTransportType;
-  if (!['http', 'stdio'].includes(transport)) {
+  if (!["http", "stdio"].includes(transport)) {
     console.error(chalk.red(`❌ Invalid transport type: ${transport}`));
-    console.error(chalk.yellow('   Valid options: http, stdio'));
+    console.error(chalk.yellow("   Valid options: http, stdio"));
     process.exit(1);
   }
 
   // Validate port is only used with http transport
-  if (options.port && transport !== 'http') {
-    console.error(chalk.red('❌ --port flag can only be used with --transport http'));
+  if (options.port && transport !== "http") {
+    console.error(
+      chalk.red("❌ --port flag can only be used with --transport http")
+    );
     process.exit(1);
   }
 
   const port = options.port ? parseInt(options.port) : 3000;
   if (isNaN(port) || port < 1 || port > 65535) {
     console.error(chalk.red(`❌ Invalid port number: ${options.port}`));
-    console.error(chalk.yellow('   Port must be between 1 and 65535'));
+    console.error(chalk.yellow("   Port must be between 1 and 65535"));
     process.exit(1);
   }
 
   // Validate log level
   const logLevel = options.logLevel;
-  const validLogLevels = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'];
+  const validLogLevels = ["trace", "debug", "info", "warn", "error", "fatal"];
   if (!validLogLevels.includes(logLevel)) {
     console.error(chalk.red(`❌ Invalid log level: ${logLevel}`));
-    console.error(chalk.yellow(`   Valid options: ${validLogLevels.join(', ')}`));
+    console.error(
+      chalk.yellow(`   Valid options: ${validLogLevels.join(", ")}`)
+    );
     process.exit(1);
   }
 
   return {
     transport,
-    port: transport === 'http' ? port : undefined,
+    port: transport === "http" ? port : undefined,
     debug: options.debug || false,
     insecure: options.insecure || false,
     equipToolset: options.equipToolset,
@@ -212,9 +219,13 @@ async function main(): Promise<void> {
     if (!configResult.configPath) {
       console.error(chalk.red("❌ No MCP configuration found"));
       console.error("");
-      console.error(chalk.yellow(configResult.errorMessage || "Unknown configuration error"));
+      console.error(
+        chalk.yellow(configResult.errorMessage || "Unknown configuration error")
+      );
       console.error("");
-      console.error(chalk.cyan("💡 Use --mcp-config <path> to specify a configuration file"));
+      console.error(
+        chalk.cyan("💡 Use --mcp-config <path> to specify a configuration file")
+      );
       process.exit(1);
     }
 
@@ -224,7 +235,7 @@ async function main(): Promise<void> {
         cli: "command line argument",
         preference: "user preference",
         discovered: "automatic discovery",
-        none: "unknown source"
+        none: "unknown source",
       }[configResult.source];
     }
 
@@ -234,9 +245,9 @@ async function main(): Promise<void> {
 
     const transportConfig: TransportConfig = {
       type: runtimeOptions.transport,
-      ...(runtimeOptions.transport === 'http' && {
+      ...(runtimeOptions.transport === "http" && {
         port: runtimeOptions.port || 3000,
-        host: "localhost"
+        host: "localhost",
       }),
     };
 
@@ -265,7 +276,7 @@ async function main(): Promise<void> {
       APP_NAME,
       runtimeOptions.transport,
       runtimeOptions.port,
-      runtimeOptions.transport === 'http' ? 'localhost' : undefined
+      runtimeOptions.transport === "http" ? "localhost" : undefined
     );
 
     // Start server
@@ -278,7 +289,11 @@ async function main(): Promise<void> {
     await server.start(initOptions, runtimeOptions);
 
     if (runtimeOptions.insecure) {
-      logger.warn(chalk.red("⚠️  INSECURE MODE: Tools with changed reference hashes are allowed"));
+      logger.warn(
+        chalk.red(
+          "⚠️  INSECURE MODE: Tools with changed reference hashes are allowed"
+        )
+      );
     }
 
     output.displaySeparator();
@@ -289,8 +304,8 @@ async function main(): Promise<void> {
 }
 
 // Run if this file is executed directly
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

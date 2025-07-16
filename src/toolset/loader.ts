@@ -4,7 +4,11 @@
 
 import { promises as fs } from "fs";
 import path from "path";
-import { ToolsetConfig, ToolsetParserOptions, ValidationResult } from "./types.js";
+import {
+  ToolsetConfig,
+  ToolsetParserOptions,
+  ValidationResult,
+} from "./types.js";
 import { validateToolsetConfig } from "./validator.js";
 
 /**
@@ -138,8 +142,10 @@ function normalizeToolsetConfig(rawConfig: any): ToolsetConfig {
   // Normalize tools array
   if (Array.isArray(rawConfig.tools)) {
     config.tools = rawConfig.tools.filter((tool: any) => {
-      return (tool.namespacedName && typeof tool.namespacedName === 'string') ||
-             (tool.refId && typeof tool.refId === 'string');
+      return (
+        (tool.namespacedName && typeof tool.namespacedName === "string") ||
+        (tool.refId && typeof tool.refId === "string")
+      );
     });
   }
 

@@ -4,14 +4,17 @@
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { ListToolsResult, CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
+import {
+  ListToolsResult,
+  CallToolRequest,
+} from "@modelcontextprotocol/sdk/types.js";
 import { EventEmitter } from "events";
 import { StdioServerConfig } from "../../types/config.js";
 import { ConnectionOptions } from "../types.js";
 import { BaseConnection } from "./base.js";
 import { createLogger } from "../../logging/index.js";
 
-const logger = createLogger({ module: 'clients/stdio' });
+const logger = createLogger({ module: "clients/stdio" });
 
 /**
  * Stdio client wrapper using proper MCP SDK Client
@@ -43,20 +46,25 @@ export class StdioClient extends EventEmitter {
         env: this.config.env,
       });
 
-      this.client = new Client({
-        name: "hypertool-mcp-client",
-        version: "1.0.0",
-      }, {
-        capabilities: {
-          tools: {}
+      this.client = new Client(
+        {
+          name: "hypertool-mcp-client",
+          version: "1.0.0",
+        },
+        {
+          capabilities: {
+            tools: {},
+          },
         }
-      });
+      );
 
       await this.client.connect(transport);
       this.isConnected = true;
     } catch (error) {
       this.client = null;
-      throw new Error(`Failed to start stdio client: ${(error as Error).message}`);
+      throw new Error(
+        `Failed to start stdio client: ${(error as Error).message}`
+      );
     }
   }
 
@@ -179,5 +187,4 @@ export class StdioConnection extends BaseConnection<StdioClient> {
     }
     return await this._client.ping();
   }
-
 }

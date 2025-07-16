@@ -9,69 +9,101 @@ import { MetaMCPError, ERROR_CODES } from "./index.js";
  */
 export const ERROR_MESSAGES = {
   // Configuration errors
-  INVALID_CONFIG: "Configuration file is invalid or corrupted. Please check your .mcp.json file.",
-  MISSING_CONFIG: "Configuration file not found. Please create a .mcp.json file with your server configurations.",
-  INVALID_SERVER_CONFIG: "Server configuration is invalid. Please check the server settings in your configuration file.",
-  
+  INVALID_CONFIG:
+    "Configuration file is invalid or corrupted. Please check your .mcp.json file.",
+  MISSING_CONFIG:
+    "Configuration file not found. Please create a .mcp.json file with your server configurations.",
+  INVALID_SERVER_CONFIG:
+    "Server configuration is invalid. Please check the server settings in your configuration file.",
+
   // Connection errors
-  SERVER_NOT_FOUND: "The specified server could not be found. Please check that the server name is correct.",
-  CONNECTION_REFUSED: "Unable to connect to the server. Please ensure the server is running and accessible.",
-  CONNECTION_TIMEOUT: "Connection attempt timed out. The server may be overloaded or unreachable.",
-  CONNECTION_LOST: "Connection to the server was lost. The system will attempt to reconnect automatically.",
-  
+  SERVER_NOT_FOUND:
+    "The specified server could not be found. Please check that the server name is correct.",
+  CONNECTION_REFUSED:
+    "Unable to connect to the server. Please ensure the server is running and accessible.",
+  CONNECTION_TIMEOUT:
+    "Connection attempt timed out. The server may be overloaded or unreachable.",
+  CONNECTION_LOST:
+    "Connection to the server was lost. The system will attempt to reconnect automatically.",
+
   // Server availability
-  SERVER_UNAVAILABLE: "The server is temporarily unavailable. Please try again in a few moments.",
-  SERVER_MAINTENANCE: "The server is currently undergoing maintenance. Please try again later.",
-  SERVER_OVERLOADED: "The server is currently overloaded. Please try again in a few moments.",
-  
+  SERVER_UNAVAILABLE:
+    "The server is temporarily unavailable. Please try again in a few moments.",
+  SERVER_MAINTENANCE:
+    "The server is currently undergoing maintenance. Please try again later.",
+  SERVER_OVERLOADED:
+    "The server is currently overloaded. Please try again in a few moments.",
+
   // Tool errors
-  TOOL_NOT_FOUND: "The requested tool is not available. Please check the tool name or your configuration.",
-  TOOL_DISABLED: "This tool has been disabled. Please contact your administrator for assistance.",
-  TOOL_EXECUTION_FAILED: "The tool failed to execute. Please check your parameters and try again.",
-  INVALID_TOOL_PARAMS: "Invalid parameters provided to the tool. Please check the tool documentation.",
-  
+  TOOL_NOT_FOUND:
+    "The requested tool is not available. Please check the tool name or your configuration.",
+  TOOL_DISABLED:
+    "This tool has been disabled. Please contact your administrator for assistance.",
+  TOOL_EXECUTION_FAILED:
+    "The tool failed to execute. Please check your parameters and try again.",
+  INVALID_TOOL_PARAMS:
+    "Invalid parameters provided to the tool. Please check the tool documentation.",
+
   // Authentication and authorization
-  UNAUTHORIZED: "You are not authorized to perform this action. Please check your permissions.",
-  AUTHENTICATION_FAILED: "Authentication failed. Please check your credentials.",
+  UNAUTHORIZED:
+    "You are not authorized to perform this action. Please check your permissions.",
+  AUTHENTICATION_FAILED:
+    "Authentication failed. Please check your credentials.",
   TOKEN_EXPIRED: "Your session has expired. Please log in again.",
-  
+
   // Rate limiting
   RATE_LIMITED: "Too many requests. Please wait a moment before trying again.",
-  QUOTA_EXCEEDED: "You have exceeded your usage quota. Please contact your administrator.",
-  
+  QUOTA_EXCEEDED:
+    "You have exceeded your usage quota. Please contact your administrator.",
+
   // System errors
-  INTERNAL_ERROR: "An internal error occurred. Our team has been notified and is working to resolve the issue.",
-  SERVICE_DEGRADED: "The service is experiencing degraded performance. Some features may be unavailable.",
-  MAINTENANCE_MODE: "The system is currently in maintenance mode. Please try again later.",
-  
+  INTERNAL_ERROR:
+    "An internal error occurred. Our team has been notified and is working to resolve the issue.",
+  SERVICE_DEGRADED:
+    "The service is experiencing degraded performance. Some features may be unavailable.",
+  MAINTENANCE_MODE:
+    "The system is currently in maintenance mode. Please try again later.",
+
   // Network errors
-  NETWORK_ERROR: "A network error occurred. Please check your internet connection and try again.",
-  DNS_ERROR: "Unable to resolve server address. Please check your network configuration.",
+  NETWORK_ERROR:
+    "A network error occurred. Please check your internet connection and try again.",
+  DNS_ERROR:
+    "Unable to resolve server address. Please check your network configuration.",
   SSL_ERROR: "SSL/TLS connection error. Please check your security settings.",
-  
+
   // Validation errors
-  MISSING_REQUIRED_FIELD: "A required field is missing. Please provide all necessary information.",
-  INVALID_FORMAT: "The provided data is in an invalid format. Please check and correct your input.",
+  MISSING_REQUIRED_FIELD:
+    "A required field is missing. Please provide all necessary information.",
+  INVALID_FORMAT:
+    "The provided data is in an invalid format. Please check and correct your input.",
   VALUE_OUT_OF_RANGE: "The provided value is outside the acceptable range.",
-  
+
   // General fallback
-  UNKNOWN_ERROR: "An unexpected error occurred. Please try again, and contact support if the problem persists.",
+  UNKNOWN_ERROR:
+    "An unexpected error occurred. Please try again, and contact support if the problem persists.",
 } as const;
 
 /**
  * Error message templates with parameter substitution
  */
 export const ERROR_TEMPLATES = {
-  SERVER_UNAVAILABLE_WITH_NAME: "Server '{serverName}' is currently unavailable. Please try again later.",
-  TOOL_NOT_FOUND_WITH_NAME: "Tool '{toolName}' is not available. Please check your configuration.",
-  CONNECTION_FAILED_WITH_SERVER: "Failed to connect to server '{serverName}'. Please ensure it is running and accessible.",
-  TIMEOUT_WITH_OPERATION: "Operation '{operation}' timed out after {timeout}ms. Please try again.",
+  SERVER_UNAVAILABLE_WITH_NAME:
+    "Server '{serverName}' is currently unavailable. Please try again later.",
+  TOOL_NOT_FOUND_WITH_NAME:
+    "Tool '{toolName}' is not available. Please check your configuration.",
+  CONNECTION_FAILED_WITH_SERVER:
+    "Failed to connect to server '{serverName}'. Please ensure it is running and accessible.",
+  TIMEOUT_WITH_OPERATION:
+    "Operation '{operation}' timed out after {timeout}ms. Please try again.",
   VALIDATION_FAILED_WITH_FIELD: "Invalid value for field '{field}': {reason}",
   TOOL_ERROR_WITH_DETAILS: "Tool '{toolName}' failed: {error}",
   SERVER_ERROR_WITH_CODE: "Server error (code: {code}): {message}",
-  RATE_LIMITED_WITH_RETRY: "Too many requests. Please wait {retryAfter} seconds before trying again.",
-  QUOTA_EXCEEDED_WITH_LIMIT: "Usage quota exceeded. Limit: {limit}, Current: {current}. Resets at {resetTime}.",
-  CIRCUIT_BREAKER_OPEN: "Service '{serviceName}' is temporarily unavailable due to repeated failures. Please try again in {recoveryTime} seconds.",
+  RATE_LIMITED_WITH_RETRY:
+    "Too many requests. Please wait {retryAfter} seconds before trying again.",
+  QUOTA_EXCEEDED_WITH_LIMIT:
+    "Usage quota exceeded. Limit: {limit}, Current: {current}. Resets at {resetTime}.",
+  CIRCUIT_BREAKER_OPEN:
+    "Service '{serviceName}' is temporarily unavailable due to repeated failures. Please try again in {recoveryTime} seconds.",
 } as const;
 
 /**
@@ -145,27 +177,30 @@ export class ErrorMessageGenerator {
 
     // Try to map common error patterns to friendly messages
     const message = error.message.toLowerCase();
-    
-    if (message.includes("connection refused") || message.includes("econnrefused")) {
+
+    if (
+      message.includes("connection refused") ||
+      message.includes("econnrefused")
+    ) {
       return ERROR_MESSAGES.CONNECTION_REFUSED;
     }
-    
+
     if (message.includes("timeout") || message.includes("etimedout")) {
       return ERROR_MESSAGES.CONNECTION_TIMEOUT;
     }
-    
+
     if (message.includes("not found") || message.includes("404")) {
       return ERROR_MESSAGES.TOOL_NOT_FOUND;
     }
-    
+
     if (message.includes("unauthorized") || message.includes("401")) {
       return ERROR_MESSAGES.UNAUTHORIZED;
     }
-    
+
     if (message.includes("rate limit") || message.includes("429")) {
       return ERROR_MESSAGES.RATE_LIMITED;
     }
-    
+
     if (message.includes("network") || message.includes("dns")) {
       return ERROR_MESSAGES.NETWORK_ERROR;
     }
@@ -177,17 +212,14 @@ export class ErrorMessageGenerator {
   /**
    * Generate message from template with parameter substitution
    */
-  static fromTemplate(
-    template: string,
-    params: Record<string, any>
-  ): string {
+  static fromTemplate(template: string, params: Record<string, any>): string {
     let message = template;
-    
+
     for (const [key, value] of Object.entries(params)) {
       const placeholder = `{${key}}`;
-      message = message.replace(new RegExp(placeholder, 'g'), String(value));
+      message = message.replace(new RegExp(placeholder, "g"), String(value));
     }
-    
+
     return message;
   }
 
@@ -196,10 +228,11 @@ export class ErrorMessageGenerator {
    */
   static getSuggestions(error: Error): string[] {
     if (error instanceof MetaMCPError) {
-      const suggestions = ERROR_SUGGESTIONS[error.code as keyof typeof ERROR_SUGGESTIONS];
+      const suggestions =
+        ERROR_SUGGESTIONS[error.code as keyof typeof ERROR_SUGGESTIONS];
       return suggestions ? [...suggestions] : [];
     }
-    
+
     return [];
   }
 
@@ -209,7 +242,7 @@ export class ErrorMessageGenerator {
   static generateErrorResponse(error: Error, includeDetails: boolean = false) {
     const userMessage = this.getUserMessage(error);
     const suggestions = this.getSuggestions(error);
-    
+
     const response: any = {
       error: true,
       message: userMessage,
@@ -223,7 +256,7 @@ export class ErrorMessageGenerator {
     if (error instanceof MetaMCPError) {
       response.category = error.category;
       response.isRetryable = error.isRetryable;
-      
+
       if (includeDetails) {
         response.code = error.code;
         response.context = error.context;
@@ -264,13 +297,15 @@ export class ErrorMessageGenerator {
    */
   static shouldShowToUser(error: Error): boolean {
     // Don't show internal errors or sensitive information
-    if (error.message.includes("INTERNAL_") || 
-        error.message.includes("password") ||
-        error.message.includes("token") ||
-        error.message.includes("secret")) {
+    if (
+      error.message.includes("INTERNAL_") ||
+      error.message.includes("password") ||
+      error.message.includes("token") ||
+      error.message.includes("secret")
+    ) {
       return false;
     }
-    
+
     return true;
   }
 }
@@ -296,7 +331,7 @@ export const COMMON_ERROR_RESPONSES = {
   toolNotFound: (toolName: string) => ({
     content: [
       {
-        type: "text", 
+        type: "text",
         text: ErrorMessageGenerator.fromTemplate(
           ERROR_TEMPLATES.TOOL_NOT_FOUND_WITH_NAME,
           { toolName }
@@ -311,10 +346,11 @@ export const COMMON_ERROR_RESPONSES = {
     content: [
       {
         type: "text",
-        text: ErrorMessageGenerator.fromTemplate(
-          ERROR_TEMPLATES.CONNECTION_FAILED_WITH_SERVER,
-          { serverName }
-        ) + (reason ? ` Reason: ${reason}` : ""),
+        text:
+          ErrorMessageGenerator.fromTemplate(
+            ERROR_TEMPLATES.CONNECTION_FAILED_WITH_SERVER,
+            { serverName }
+          ) + (reason ? ` Reason: ${reason}` : ""),
       },
     ],
     isError: true,

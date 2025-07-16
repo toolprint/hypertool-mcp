@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ServerConfig } from "../../types/config.js";
 import { createLogger } from "../../logging/index.js";
 
-const logger = createLogger({ module: 'clients/base' });
+const logger = createLogger({ module: "clients/base" });
 import {
   Connection,
   ConnectionState,

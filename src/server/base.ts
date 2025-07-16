@@ -7,7 +7,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createLogger } from "../logging/index.js";
 
-const logger = createLogger({ module: 'server/base' });
+const logger = createLogger({ module: "server/base" });
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
@@ -212,11 +212,15 @@ export class MetaMCPServer extends EventEmitter {
       if (this.stdioTransport) {
         // stdio transport - send to single client
         await this.server.notification(toolsChangedNotification);
-        logger.debug("Tools list changed notification sent via stdio transport");
+        logger.debug(
+          "Tools list changed notification sent via stdio transport"
+        );
       } else if (this.httpServer) {
         // HTTP transport - broadcast to all connected clients
         await this.httpServer.broadcastNotification(toolsChangedNotification);
-        logger.debug("Tools list changed notification broadcasted via HTTP transport");
+        logger.debug(
+          "Tools list changed notification broadcasted via HTTP transport"
+        );
       }
     } catch (error) {
       logger.error("Failed to send tools list changed notification:", error);

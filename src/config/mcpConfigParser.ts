@@ -75,7 +75,7 @@ export class MCPConfigParser {
       const config: MCPConfig = { mcpServers: {} };
       const serverErrors: string[] = [];
       const serverNames = Object.keys(rawConfig.mcpServers);
-      
+
       // Check for potential duplicate server names (case sensitivity, whitespace, etc.)
       this.validateServerNameUniqueness(serverNames, serverErrors);
 
@@ -159,7 +159,11 @@ export class MCPConfigParser {
       return { errors };
     }
 
-    if (config.type !== "stdio" && config.type !== "http" && config.type !== "sse") {
+    if (
+      config.type !== "stdio" &&
+      config.type !== "http" &&
+      config.type !== "sse"
+    ) {
       errors.push(
         `Server "${name}" has invalid type "${config.type}". Must be "stdio", "http", or "sse"`
       );
@@ -367,38 +371,45 @@ export class MCPConfigParser {
   /**
    * Validate server name uniqueness and catch common naming issues
    */
-  private validateServerNameUniqueness(serverNames: string[], errors: string[]): void {
+  private validateServerNameUniqueness(
+    serverNames: string[],
+    errors: string[]
+  ): void {
     const normalizedNames = new Map<string, string[]>();
-    
+
     for (const name of serverNames) {
       // Normalize: lowercase, trim whitespace
       const normalized = name.toLowerCase().trim();
-      
+
       if (!normalizedNames.has(normalized)) {
         normalizedNames.set(normalized, []);
       }
       normalizedNames.get(normalized)!.push(name);
     }
-    
+
     // Check for conflicts
     for (const [, originalNames] of normalizedNames) {
       if (originalNames.length > 1) {
         errors.push(
-          `❌ Server name conflict detected: Multiple servers with similar names: [${originalNames.join(', ')}].\n` +
-          `   💡 Server names must be unique (case-insensitive, whitespace-normalized).\n` +
-          `   🚫 Please rename one of these servers to avoid conflicts.`
+          `❌ Server name conflict detected: Multiple servers with similar names: [${originalNames.join(", ")}].\n` +
+            `   💡 Server names must be unique (case-insensitive, whitespace-normalized).\n` +
+            `   🚫 Please rename one of these servers to avoid conflicts.`
         );
       }
     }
-    
+
     // Check for empty or invalid names
     for (const name of serverNames) {
-      if (!name || typeof name !== 'string' || name.trim() === '') {
-        errors.push(`❌ Invalid server name: Server names cannot be empty or whitespace-only.`);
+      if (!name || typeof name !== "string" || name.trim() === "") {
+        errors.push(
+          `❌ Invalid server name: Server names cannot be empty or whitespace-only.`
+        );
       }
-      
+
       if (name !== name.trim()) {
-        errors.push(`⚠️ Server name "${name}" has leading/trailing whitespace. Consider trimming it.`);
+        errors.push(
+          `⚠️ Server name "${name}" has leading/trailing whitespace. Consider trimming it.`
+        );
       }
     }
   }
