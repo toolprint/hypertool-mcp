@@ -57,6 +57,36 @@ function parseCliArguments(): RuntimeOptions {
       'info'
     );
 
+  // Add install subcommand
+  program
+    .command('install')
+    .description(chalk.blue('Install and configure integrations'))
+    .option(
+      'claude-desktop, cd',
+      chalk.cyan('Configure Claude Desktop to use HyperTool MCP proxy')
+    )
+    .option(
+      '--dry-run',
+      chalk.cyan('Show what would be done without making changes')
+    )
+    .action(async (options) => {
+      if (options.claudeDesktop) {
+        try {
+          const { ClaudeDesktopSetup } = await import('./scripts/claude-desktop-setup.js');
+          const setup = new ClaudeDesktopSetup();
+          await setup.run(options.dryRun);
+          process.exit(0);
+        } catch (error) {
+          console.error(chalk.red('❌ Failed to run Claude Desktop setup:'), error);
+          process.exit(1);
+        }
+      } else {
+        console.error(chalk.red('❌ No installation option specified'));
+        console.error(chalk.yellow('   Use claude-desktop or cd to configure Claude Desktop integration'));
+        process.exit(1);
+      }
+    });
+
   program.parse();
   const options = program.opts();
 
