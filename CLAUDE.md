@@ -30,10 +30,16 @@ Build a single MCP server that:
 4. **Set In Progress**: Use `mcp__task-master__set_task_status --id <task-id> --status in-progress`
 
 **Step 2: Get Full Context**
-1. **Read the PRD**: Check `.taskmaster/docs/prd.txt` for complete context
+1. **Read the Main PRD**: Check `.taskmaster/docs/prd.txt` for complete project context
 2. **Get Task Details**: Use `mcp__task-master__get_task --id <your-task-id>` to see your specific requirements
-3. **Review Dependencies**: Understand which tasks must complete before yours
-4. **Study Reference**: Look at https://github.com/toolprint/cco-mcp for TypeScript MCP patterns
+3. **Find Task-Specific PRD**: Look in `.taskmaster/docs/` directory for PRDs related to your task:
+   - **Task 29**: `prd.cursor.txt` - Cursor IDE integration
+   - **Task 30**: `prd.bin.txt` - NPM publishing workflow
+   - **Task 31**: `prd.claude-code.txt` - Claude Code integration
+   - **Task 32**: `prd.claude-desktop.txt` - Claude Desktop integration
+   - **Other tasks**: Check if a specific PRD exists for your task area
+4. **Review Dependencies**: Understand which tasks must complete before yours
+5. **Study Reference**: Look at https://github.com/toolprint/cco-mcp for TypeScript MCP patterns
 
 #### Development Standards:
 - **Language**: TypeScript only with full type safety
@@ -59,6 +65,7 @@ Create your code in logical directories under `src/`:
 - `src/discovery/` - Tool discovery and caching
 - `src/router/` - Request routing logic
 - `src/types/` - TypeScript type definitions
+- `src/scripts/` - Setup scripts for integration (Cursor, Claude Code, Claude Desktop)
 
 
 #### When You're Done:
@@ -97,7 +104,8 @@ else:
 ```
 
 ### 🔗 Quick References
-- **PRD**: `.taskmaster/docs/prd.txt` - Complete project requirements
+- **Main PRD**: `.taskmaster/docs/prd.txt` - Complete project requirements
+- **Task-Specific PRDs**: `.taskmaster/docs/` - Check for PRDs related to your task
 - **Tasks**: Use Task Master MCP tools to view your specific task
 - **Reference**: https://github.com/toolprint/cco-mcp - TypeScript MCP patterns
 - **Example Config**: `.mcp.json` - Shows target server types to support
