@@ -310,7 +310,7 @@
         "id": 29,
         "title": "Implement Cursor IDE integration with both one-click install badge and npx script setup",
         "description": "Add Cursor IDE integration through both a one-click install badge for README and an npx script setup command for automated configuration management. Complete implementation details and technical specifications are documented in .taskmaster/docs/prd.cursor.txt. [Updated: 7/16/2025]",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           20,
           22
@@ -372,7 +372,7 @@
     ],
     "metadata": {
       "created": "2025-07-09T21:55:09.811Z",
-      "updated": "2025-07-16T18:15:10.874Z",
+      "updated": "2025-07-16T21:05:57.193Z",
       "description": "Tasks for master context"
     }
   }
