@@ -44,7 +44,7 @@ async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
   try {
     switch (normalizedOption) {
       case 'claude-desktop':
-        const { ClaudeDesktopSetup } = await import('./scripts/claude-desktop-setup.js');
+        const { ClaudeDesktopSetup } = await import('./scripts/claude-desktop/setup.js');
         const setup = new ClaudeDesktopSetup();
         await setup.run(isDryRun);
         break;
