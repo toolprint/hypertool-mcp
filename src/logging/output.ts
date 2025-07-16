@@ -37,6 +37,12 @@ export const output = {
     return stdioDisplay;
   },
 
+  clearTerminal: () => {
+    /** Uses ANSI escape codes to clear the terminal so that it is not platform dependent. */
+    process.stdout.write("\x1b[2J"); // Clear the entire screen
+    process.stdout.write("\x1b[H"); // Move cursor to the home position (top-left corner)
+  },
+
   /**
    * Display an unformatted message to the console and NEVER to the logger
    * @param msg - The message to log
@@ -117,7 +123,7 @@ export const output = {
 
   displaySubHeader: (msg: string) => {
     const fmtMsg = `\n> ${msg}`;
-    stdioDisplay.log(chalk.bold.blueBright.italic(fmtMsg));
+    stdioDisplay.log(chalk.bold.blue.italic.underline(fmtMsg));
   },
 
   /**
@@ -167,8 +173,12 @@ export const output = {
    * Display an instruction to the console and NEVER to the logger
    * @param msg - The message to log
    */
-  displayInstruction: (msg: string) => {
-    stdioDisplay.log(chalk.blue.dim(msg));
+  displayInstruction: (msg: string, bright: boolean = false) => {
+    if (bright) {
+      stdioDisplay.log(chalk.yellow.bold(msg));
+    } else {
+      stdioDisplay.log(chalk.blue.dim(msg));
+    }
   },
 
   /**
@@ -205,11 +215,15 @@ export const output = {
   },
 
   /**
-   * Display a formatted info message to the console
+   * Display a formatted info message to the console. General purpose messages for humans.
    * @param msg - The message to display
    */
-  info: (msg: string) => {
-    stdioDisplay.info(chalk.blue(msg));
+  info: (msg: string, lowPriority: boolean = false) => {
+    if (lowPriority) {
+      stdioDisplay.info(chalk.dim(chalk.gray(msg)));
+    } else {
+      stdioDisplay.info(chalk.blue(msg));
+    }
   },
 
   /**
@@ -273,7 +287,7 @@ export function displayBanner(appName: string = APP_NAME): void {
  */
 function displayAppBanner(appName: string): void {
   // Handle app name - split into lines if too long, use same font as Toolprint
-  if (appName.length > 20) {
+  if (appName.length > 8) {
     const words = appName.split(' ');
     for (const word of words) {
       const wordBanner = getAsciiArt(word, PREFERRED_FONT);

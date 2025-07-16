@@ -119,12 +119,6 @@ export class MetaMCPServer extends EventEmitter {
 
       this.setState(ServerState.RUNNING);
       this.emit("started");
-
-      if (options.debug) {
-        logger.info(
-          `Meta-MCP server started with ${options.transport.type} transport`
-        );
-      }
     } catch (error) {
       this.setState(ServerState.ERROR);
       this.emit("error", error);

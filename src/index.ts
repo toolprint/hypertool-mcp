@@ -44,8 +44,8 @@ function parseCliArguments(): RuntimeOptions {
       false
     )
     .option(
-      '--use-toolset <name>',
-      chalk.cyan('Toolset name to load on startup')
+      '--equip-toolset <name>',
+      chalk.cyan('Toolset name to equip on startup')
     )
     .option(
       '--mcp-config <path>',
@@ -95,7 +95,7 @@ function parseCliArguments(): RuntimeOptions {
     port: transport === 'http' ? port : undefined,
     debug: options.debug || false,
     insecure: options.insecure || false,
-    useToolset: options.useToolset,
+    equipToolset: options.equipToolset,
     configPath: options.mcpConfig,
     logLevel,
   };
@@ -140,8 +140,6 @@ async function main(): Promise<void> {
         discovered: "automatic discovery",
         none: "unknown source"
       }[configResult.source];
-
-      console.log(chalk.green(`✅ Found MCP config via ${sourceText}: ${configResult.configPath}`));
     }
 
     // Create transport config from runtime options
@@ -164,7 +162,7 @@ async function main(): Promise<void> {
       // Remove process listeners to prevent memory leaks
       process.removeListener("SIGINT", shutdown);
       process.removeListener("SIGTERM", shutdown);
-      
+
       await server.stop();
       process.exit(0);
     };
@@ -173,6 +171,7 @@ async function main(): Promise<void> {
     process.on("SIGTERM", shutdown);
 
     // Display server banner before starting (especially important for stdio)
+    output.clearTerminal();
     displayServerBanner(
       APP_NAME,
       runtimeOptions.transport,
@@ -187,16 +186,10 @@ async function main(): Promise<void> {
       configPath: configResult.configPath,
     });
 
-    await server.start(initOptions);
-
-    // Display additional startup messages with colored output
-    logger.info(chalk.green(`✅ ${APP_NAME} server running on ${runtimeOptions.transport} transport`));
+    await server.start(initOptions, runtimeOptions);
 
     if (runtimeOptions.insecure) {
-      logger.info(chalk.red("⚠️  INSECURE MODE: Tools with changed reference hashes are allowed"));
-    }
-    if (runtimeOptions.useToolset) {
-      logger.info(chalk.cyan(`🛠️  Using toolset: ${runtimeOptions.useToolset}`));
+      logger.warn(chalk.red("⚠️  INSECURE MODE: Tools with changed reference hashes are allowed"));
     }
 
     output.displaySeparator();

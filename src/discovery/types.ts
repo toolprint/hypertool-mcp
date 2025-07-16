@@ -168,6 +168,11 @@ export interface IToolDiscoveryEngine {
   getServerStates(): ServerToolState[];
 
   /**
+   * Output tool server status
+   */
+  outputToolServerStatus(): Promise<void>;
+
+  /**
    * Clear cache for a specific server or all servers
    */
   clearCache(serverName?: string): Promise<void>;

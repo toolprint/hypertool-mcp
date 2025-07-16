@@ -9,6 +9,9 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { randomUUID } from "node:crypto";
 import { isInitializeRequest, Notification } from "@modelcontextprotocol/sdk/types.js";
 import { createLogger } from "../logging/index.js";
+import { output } from "../logging/output.js";
+import chalk from "chalk";
+import { APP_TECHNICAL_NAME } from "../config/appConfig.js";
 
 const logger = createLogger({ module: 'server/http-server' });
 
@@ -23,6 +26,7 @@ export class McpHttpServer {
   private port: number;
   private host: string;
   private transports: Record<string, StreamableHTTPServerTransport> = {};
+  private connectionString: string;
 
   constructor(mcpServer: Server, port: number = 3000, host: string = "localhost") {
     this.app = express();
@@ -31,6 +35,7 @@ export class McpHttpServer {
     this.host = host;
     this.setupMiddleware();
     this.setupRoutes();
+    this.connectionString = `http://${this.host}:${this.port}/mcp`;
   }
 
   /**
@@ -39,19 +44,19 @@ export class McpHttpServer {
   private setupMiddleware(): void {
     // Enable JSON parsing
     this.app.use(express.json());
-    
+
     // Enable CORS for development with MCP session support
     this.app.use((req, res, next) => {
       res.header("Access-Control-Allow-Origin", "*");
       res.header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
       res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Mcp-Session-Id");
       res.header("Access-Control-Expose-Headers", "Mcp-Session-Id");
-      
+
       if (req.method === "OPTIONS") {
         res.sendStatus(200);
         return;
       }
-      
+
       next();
     });
   }
@@ -62,8 +67,8 @@ export class McpHttpServer {
   private setupRoutes(): void {
     // Health check endpoint
     this.app.get("/health", (_req: Request, res: Response) => {
-      res.json({ 
-        status: "healthy", 
+      res.json({
+        status: "healthy",
         transport: "http",
         timestamp: new Date().toISOString()
       });
@@ -90,7 +95,7 @@ export class McpHttpServer {
 
     // Fallback for unsupported routes
     this.app.use((req: Request, res: Response) => {
-      res.status(404).json({ 
+      res.status(404).json({
         error: "Not found",
         message: `Route ${req.method} ${req.path} not found`
       });
@@ -155,8 +160,21 @@ export class McpHttpServer {
     return new Promise((resolve, reject) => {
       try {
         this.httpServer = this.app.listen(this.port, this.host, () => {
-          logger.info(`MCP HTTP server listening on http://${this.host}:${this.port}`);
-          logger.info(`MCP endpoint available at: http://${this.host}:${this.port}/mcp`);
+          output.displaySeparator();
+          output.displaySubHeader(`Connect to ${APP_TECHNICAL_NAME} Instructions\n`);
+          output.displayHelpContext(`Server available on [http]`);
+          output.displayInstruction(`http://${this.host}:${this.port}/mcp`, true)
+          output.displaySpaceBuffer();
+          output.displayHelpContext(`Connect using MCP Inspector`)
+          output.displayInstruction(`npx @modelcontextprotocol/inspector`, true);
+          output.displaySpaceBuffer();
+          output.displayHelpContext(`Add this to your MCP config:`)
+          output.displayInstruction(JSON.stringify({
+            "hypertool-mcp": {
+              type: "streamable-http",
+              url: this.connectionString,
+            }
+          }, null, 2), true)
           resolve();
         });
 

@@ -21,14 +21,14 @@ import {
 import { ToolCache } from "./cache.js";
 import { ToolLookupManager, SearchQuery, SearchResult } from "./lookup.js";
 import { ToolHashUtils, ToolHashManager } from "./hashUtils.js";
+import { output } from "../logging/output.js";
 
 /**
  * Tool discovery engine implementation
  */
 export class ToolDiscoveryEngine
   extends EventEmitter
-  implements IToolDiscoveryEngine
-{
+  implements IToolDiscoveryEngine {
   private connectionManager: IConnectionManager;
   private config: Required<DiscoveryConfig>;
   private cache: ToolCache;
@@ -195,6 +195,26 @@ export class ToolDiscoveryEngine
     }
 
     return null;
+  }
+
+  /**
+   * Output tool server status
+   */
+  async outputToolServerStatus(): Promise<void> {
+    this.ensureInitialized();
+    // Show tools by server in debug mode
+
+    const toolsByServerStr: Array<string> = []
+    const toolsByServer: Record<string, number> = {};
+    this.getAvailableTools().forEach((tool: DiscoveredTool) => {
+      toolsByServer[tool.serverName] = (toolsByServer[tool.serverName] || 0) + 1;
+    });
+
+    Object.entries(toolsByServer).forEach(([serverName, count]) => {
+      toolsByServerStr.push(`\t- ${serverName}: ${count} tool${count !== 1 ? 's' : ''}`);
+    });
+
+    output.info(`Tools discovered by server:\n${toolsByServerStr.join('\n')}`, true);
   }
 
   /**
@@ -497,15 +517,15 @@ export class ToolDiscoveryEngine
     // Listen for health-based tool availability changes
     this.connectionManager.on("serverToolsUnavailable" as any, (event: any) => {
       logger.info(`Server "${event.serverName}" tools unavailable due to health: ${event.reason}`);
-      
+
       this.updateServerState(event.serverName, {
         isConnected: false,
         lastError: event.error?.message,
       });
-      
+
       // Clear tools for unhealthy server from lookup
       this.lookupManager.clearServer(event.serverName);
-      
+
       // Emit tools unavailable event
       this.emit("toolsUnavailable", {
         serverName: event.serverName,
@@ -516,14 +536,14 @@ export class ToolDiscoveryEngine
 
     this.connectionManager.on("serverToolsAvailable" as any, (event: any) => {
       logger.info(`Server "${event.serverName}" tools available again, recovered from: ${event.recoveredFrom}`);
-      
+
       // Trigger tool rediscovery if auto-discovery is enabled
       if (this.config.autoDiscovery && this.isInitialized) {
         this.discoverTools(event.serverName).catch((error) => {
           logger.error(`Auto-discovery failed for recovered server "${event.serverName}":`, error);
         });
       }
-      
+
       // Emit tools available event
       this.emit("toolsAvailable", {
         serverName: event.serverName,
@@ -600,11 +620,11 @@ export class ToolDiscoveryEngine
     errors: string[];
   } {
     this.ensureInitialized();
-    
+
     const allowStaleRefs = options?.allowStaleRefs ?? false; // Default to secure mode
     const warnings: string[] = [];
     const errors: string[] = [];
-    
+
     if (!ref.namespacedName && !ref.refId) {
       return {
         exists: false,
@@ -615,27 +635,27 @@ export class ToolDiscoveryEngine
         serverStatus: undefined
       };
     }
-    
+
     const allTools = this.getAvailableTools(true);
-    
+
     // Helper function to get server status from connection manager
     const getServerStatus = (serverName: string) => {
       return this.connectionManager?.status?.[serverName];
     };
-    
+
     // Build optimized lookup maps for O(1) access
     const toolByNamespacedName = new Map<string, DiscoveredTool>();
     const toolByRefId = new Map<string, DiscoveredTool>();
-    
+
     for (const tool of allTools) {
       toolByNamespacedName.set(tool.namespacedName, tool);
       toolByRefId.set(tool.toolHash, tool);
     }
-    
+
     // Attempt resolution by both methods (refId is more reliable)
     const toolByRef = ref.refId ? toolByRefId.get(ref.refId) : undefined;
     const toolByName = ref.namespacedName ? toolByNamespacedName.get(ref.namespacedName) : undefined;
-    
+
     // Handle different resolution scenarios
     if (!toolByName && !toolByRef) {
       // Neither identifier found the tool
@@ -648,7 +668,7 @@ export class ToolDiscoveryEngine
         serverStatus: undefined
       };
     }
-    
+
     if (toolByName && toolByRef) {
       // Both identifiers found tools - check if they're the same
       if (toolByName.namespacedName === toolByRef.namespacedName && toolByName.toolHash === toolByRef.toolHash) {
@@ -666,7 +686,7 @@ export class ToolDiscoveryEngine
       } else {
         // Conflict - identifiers point to different tools
         const conflictMsg = `Tool reference conflict: refId '${ref.refId}' points to tool '${toolByRef.namespacedName}', but namespacedName '${ref.namespacedName}' points to different tool.`;
-        
+
         if (allowStaleRefs) {
           // INSECURE mode: Allow mismatch, prefer refId (more reliable)
           warnings.push(`${conflictMsg} Using refId match (more reliable). WARNING: This is insecure mode.`);
@@ -694,13 +714,13 @@ export class ToolDiscoveryEngine
         }
       }
     }
-    
+
     if (toolByRef) {
       // Found by refId but not by namespacedName (prefer refId - more reliable)
       const namespacedNameMatch = ref.namespacedName ? toolByRef.namespacedName === ref.namespacedName : true;
       if (!namespacedNameMatch) {
         const mismatchMsg = `Tool name changed: refId '${ref.refId}' found but namespacedName changed from '${ref.namespacedName}' to '${toolByRef.namespacedName}' (tool may have been renamed or moved)`;
-        
+
         if (allowStaleRefs) {
           // INSECURE mode: Allow name mismatch
           warnings.push(`${mismatchMsg}. WARNING: This is insecure mode.`);
@@ -727,7 +747,7 @@ export class ToolDiscoveryEngine
           };
         }
       }
-      
+
       // Name matches or no name provided - safe to return
       return {
         exists: true,
@@ -740,13 +760,13 @@ export class ToolDiscoveryEngine
         errors: []
       };
     }
-    
+
     if (toolByName) {
       // Found by namespacedName but not by refId (fallback - less reliable)
       const refIdMatch = ref.refId ? toolByName.toolHash === ref.refId : true;
       if (!refIdMatch) {
         const mismatchMsg = `Tool refId mismatch: '${ref.namespacedName}' found but refId changed from '${ref.refId}' to '${toolByName.toolHash}' (tool schema may have been updated)`;
-        
+
         if (allowStaleRefs) {
           // INSECURE mode: Allow refId mismatch
           warnings.push(`${mismatchMsg}. WARNING: This is insecure mode.`);
@@ -773,7 +793,7 @@ export class ToolDiscoveryEngine
           };
         }
       }
-      
+
       // RefId matches or no refId provided - safe to return
       return {
         exists: true,
@@ -786,7 +806,7 @@ export class ToolDiscoveryEngine
         errors: []
       };
     }
-    
+
     // Should never reach here, but safety fallback
     return {
       exists: false,

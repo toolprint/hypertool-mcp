@@ -15,22 +15,22 @@ export type RuntimeTransportType = ServerTransportType;
 export interface RuntimeOptions {
   /** Transport protocol to use */
   transport: RuntimeTransportType;
-  
+
   /** Port number for HTTP transport (only valid with transport=http) */
   port?: number;
-  
+
   /** Enable debug mode with verbose logging */
   debug: boolean;
-  
+
   /** Allow tools with changed reference hashes (insecure mode) */
   insecure: boolean;
-  
+
   /** Toolset name to load on startup */
-  useToolset?: string;
-  
+  equipToolset?: string;
+
   /** Path to MCP configuration file */
   configPath?: string;
-  
+
   /** Log level for the application */
   logLevel?: string;
 }

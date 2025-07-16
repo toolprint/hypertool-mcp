@@ -9,7 +9,7 @@ import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { IRequestRouter, RequestRouter } from "../router/index.js";
 import { IToolDiscoveryEngine, ToolDiscoveryEngine } from "../discovery/index.js";
 import { IConnectionManager, ConnectionManager } from "../connection/index.js";
-import { MCPConfigParser, APP_NAME } from "../config/index.js";
+import { MCPConfigParser, APP_NAME, ServerConfig } from "../config/index.js";
 import ora from "ora";
 import { createLogger } from "../logging/index.js";
 
@@ -18,6 +18,8 @@ const logger = createLogger({ module: 'server/enhanced' });
 import { ToolsetManager, ToolsetChangeEvent } from "../toolset/manager.js";
 import { DiscoveredToolsChangedEvent } from "../discovery/types.js";
 import { ToolDependencies, ToolModule, TOOL_MODULE_FACTORIES } from "./tools/index.js";
+import chalk from "chalk";
+import { output } from "../logging/output.js";
 /**
  * Enhanced Hypertool MCP server with routing capabilities
  */
@@ -46,73 +48,86 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     await super.start(options);
   }
 
+  private async loadMcpConfigOrExit(options: ServerInitOptions): Promise<Record<string, ServerConfig>> {
+    // Initialize config parser
+    const mainSpinner = ora('Loading MCP configuration...').start();
+    this.configParser = new MCPConfigParser();
+
+    // Load configuration if path provided
+    let serverConfigs: Record<string, ServerConfig> = {};
+    if (options.configPath) {
+      const parseResult = await this.configParser.parseFile(
+        options.configPath
+      );
+
+      if (parseResult.success && parseResult.config) {
+        serverConfigs = parseResult.config.mcpServers || {};
+        const serverCount = Object.keys(serverConfigs).length;
+        mainSpinner.succeed(`Loaded ${serverCount} MCP server${serverCount !== 1 ? 's' : ''} from config. | Path: ${chalk.yellow(options.configPath)}`);
+      } else {
+        mainSpinner.fail('Failed to load MCP configuration');
+        logger.error(`\n❌ FATAL ERROR: Failed to load MCP configuration`);
+        if (parseResult.error) {
+          logger.error(`   Error: ${parseResult.error}`);
+        }
+        if (parseResult.validationErrors) {
+          logger.error(`   Validation errors:`);
+          parseResult.validationErrors.forEach((err: string) => {
+            logger.error(`     • ${err}`);
+          });
+        }
+        logger.error(`\n💡 Resolution: Fix the configuration file and restart the server.`);
+        logger.error(`   Configuration file: ${options.configPath}`);
+        logger.error(`\n🚫 ${APP_NAME} server cannot start with invalid configuration.`);
+        process.exit(1);
+      }
+    } else {
+      mainSpinner.succeed('No configuration file specified - running without external servers');
+    }
+
+    return serverConfigs;
+  }
+
+  private async connectToDownstreamServers(serverConfigs: Record<string, ServerConfig>): Promise<void> {
+    this.connectionManager = new ConnectionManager();
+    let mainSpinner = ora('🔗 Setting up Connection Manager...').start();
+    await this.connectionManager.initialize(serverConfigs);
+    mainSpinner.succeed('🔗 Connection manager initialized');
+
+    // Connect to each server individually with progress
+    const serverEntries = Object.entries(serverConfigs);
+    if (serverEntries.length > 0) {
+      for (const [serverName, config] of serverEntries) {
+        const serverSpinner = ora(`Connecting to [${serverName}] MCP <-> [${config.type}]...`).start();
+
+        try {
+          await this.connectionManager.connect(serverName);
+          serverSpinner.succeed(`Connected to [${serverName}] MCP <-> [${config.type}]`);
+        } catch (error) {
+          serverSpinner.fail(`Failed to connect to ${serverName}: ${(error as Error).message}`);
+          // Don't fail the entire startup for individual server connection failures
+        }
+      }
+    }
+  }
+
   /**
    * Initialize routing components
    */
   private async initializeRouting(options: ServerInitOptions): Promise<void> {
-    try {
-      // Initialize config parser
-      let mainSpinner = ora('Loading MCP configuration...').start();
-      this.configParser = new MCPConfigParser();
+    output.displaySubHeader('Initializing Routing and Discovery');
+    output.displaySpaceBuffer();
 
-      // Load configuration if path provided
-      let serverConfigs = {};
-      if (options.configPath) {
-        const parseResult = await this.configParser.parseFile(
-          options.configPath
-        );
-        if (parseResult.success && parseResult.config) {
-          serverConfigs = parseResult.config.mcpServers || {};
-          const serverCount = Object.keys(serverConfigs).length;
-          mainSpinner.succeed(`Loaded configuration with ${serverCount} MCP server${serverCount !== 1 ? 's' : ''}`);
-        } else {
-          mainSpinner.fail('Failed to load MCP configuration');
-          logger.error(`\n❌ FATAL ERROR: Failed to load MCP configuration`);
-          if (parseResult.error) {
-            logger.error(`   Error: ${parseResult.error}`);
-          }
-          if (parseResult.validationErrors) {
-            logger.error(`   Validation errors:`);
-            parseResult.validationErrors.forEach((err: string) => {
-              logger.error(`     • ${err}`);
-            });
-          }
-          logger.error(`\n💡 Resolution: Fix the configuration file and restart the server.`);
-          logger.error(`   Configuration file: ${options.configPath}`);
-          logger.error(`\n🚫 ${APP_NAME} server cannot start with invalid configuration.`);
-          process.exit(1);
-        }
-      } else {
-        mainSpinner.succeed('No configuration file specified - running without external servers');
-      }
+    try {
+      // Load server configs from MCP config.
+      const serverConfigs: Record<string, ServerConfig> = await this.loadMcpConfigOrExit(options);
 
       // Initialize connection manager
-      mainSpinner = ora('Initializing connection manager...').start();
-      this.connectionManager = new ConnectionManager();
-      await this.connectionManager.initialize(serverConfigs);
-      mainSpinner.succeed('Connection manager initialized');
-
-      // Connect to each server individually with progress
-      const serverEntries = Object.entries(serverConfigs);
-      if (serverEntries.length > 0) {
-        logger.info('\n🔗 Connecting to MCP servers:');
-
-        for (const [serverName, config] of serverEntries) {
-          const serverSpinner = ora(`Connecting to ${serverName}...`).start();
-
-          try {
-            await this.connectionManager.connect(serverName);
-            serverSpinner.succeed(`Connected to ${serverName} (${(config as any).type})`);
-          } catch (error) {
-            serverSpinner.fail(`Failed to connect to ${serverName}: ${(error as Error).message}`);
-            // Don't fail the entire startup for individual server connection failures
-          }
-        }
-      }
+      await this.connectToDownstreamServers(serverConfigs);
 
       // Initialize discovery engine with progress
-      mainSpinner = ora('Initializing tool discovery engine...').start();
-      this.discoveryEngine = new ToolDiscoveryEngine(this.connectionManager);
+      let mainSpinner = ora('Initializing tool discovery engine...').start();
+      this.discoveryEngine = new ToolDiscoveryEngine(this.connectionManager!);
       await this.discoveryEngine.initialize({
         autoDiscovery: true,
         enableMetrics: true,
@@ -137,25 +152,11 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
       const discoveredTools = this.discoveryEngine.getAvailableTools(true);
       const toolCount = discoveredTools.length;
-      const connectedServers = this.connectionManager.getConnectedServers();
+      const connectedServers = this.connectionManager!.getConnectedServers();
 
       if (toolCount > 0) {
         mainSpinner.succeed(`Discovered ${toolCount} tool${toolCount !== 1 ? 's' : ''} from ${connectedServers.length} connected server${connectedServers.length !== 1 ? 's' : ''}`);
-
-        // Show tools by server in debug mode
-        if (options.debug && toolCount > 0) {
-          const toolsByServerStr: Array<string> = []
-          const toolsByServer: Record<string, number> = {};
-          discoveredTools.forEach((tool: any) => {
-            toolsByServer[tool.serverName] = (toolsByServer[tool.serverName] || 0) + 1;
-          });
-
-          Object.entries(toolsByServer).forEach(([serverName, count]) => {
-            toolsByServerStr.push(`   • ${serverName}: ${count} tool${count !== 1 ? 's' : ''}`);
-          });
-
-          logger.info(`\n📋 Tools discovered by server:\n${toolsByServerStr.join('\n')}`);
-        }
+        await this.discoveryEngine.outputToolServerStatus();
       } else {
         mainSpinner.warn('No tools discovered from connected servers');
       }
@@ -164,7 +165,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       mainSpinner = ora('Initializing request router...').start();
       this.requestRouter = new RequestRouter(
         this.discoveryEngine,
-        this.connectionManager
+        this.connectionManager!
       );
       await this.requestRouter.initialize({
         enableLogging: options.debug || false,
@@ -195,9 +196,13 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       this.initializeToolModules();
 
       // Check for toolset configuration and warn if none equipped
+      if (this.runtimeOptions?.equipToolset) {
+        logger.info(`Equipping toolset: ${this.runtimeOptions!.equipToolset!}`);
+        await this.toolsetManager.equipToolset(this.runtimeOptions!.equipToolset!);
+      }
+
       await this.checkToolsetStatus(options.debug);
 
-      logger.info(''); // Add spacing before final startup messages
     } catch (error) {
       logger.error("Failed to initialize routing:", error);
       throw error;
@@ -244,7 +249,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    💡 Next steps:
    1. Use 'list-available-tools' to see what tools are available
    2. Use 'build-toolset' to create a toolset with specific tools
-   3. Use 'equip-toolset' to activate a toolset
+   3. Use the '--equip-toolset' flag or 'equip-toolset' tool to activate a toolset
    
    Example: Create a dev toolset with git and docker tools
    `);
@@ -256,7 +261,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    You have ${toolsetNames.length} saved toolset(s) but none are currently equipped.
    Available toolsets: ${toolsetNames.join(', ')}
    
-   💡 Use 'equip-toolset' to activate a toolset and expose its tools.
+   💡 Use the '--equip-toolset' flag or 'equip-toolset' tool to activate a toolset and expose its tools.
    `);
       } else if (debug && activeToolsetInfo) {
         logger.info(`✅ Toolset "${activeToolsetInfo.name}" is equipped and active`);

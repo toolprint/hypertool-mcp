@@ -20,6 +20,7 @@ class MockDiscoveryEngine extends EventEmitter implements IToolDiscoveryEngine {
   async initialize() {}
   async start() {}
   async stop() {}
+  async outputToolServerStatus(): Promise<void> {}
   async discoverTools(): Promise<DiscoveredTool[]> { return this.tools; }
   async getToolByName(name: string): Promise<DiscoveredTool | null> {
     return this.tools.find(t => t.name === name || t.namespacedName === name) || null;

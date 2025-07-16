@@ -19,6 +19,7 @@ import { ConnectionFactory } from "./factory.js";
 import { HealthMonitor } from "./healthMonitor.js";
 import { Logger, createLogger } from "../logging/index.js";
 import { RecoveryCoordinator } from "../errors/recovery.js";
+import { APP_TECHNICAL_NAME } from "../config/appConfig.js";
 
 /**
  * Connection manager orchestrates connections to multiple MCP servers
@@ -79,11 +80,11 @@ export class ConnectionManager
       try {
         await this._pool.addConnection(serverName, config);
       } catch (error) {
-        console.error(`\n❌ FATAL ERROR: Failed to initialize server "${serverName}"`);
-        console.error(`   Error: ${(error as Error).message}`);
-        console.error(`\n💡 Resolution: Please check your MCP configuration and ensure all server names are unique.`);
-        console.error(`   Configuration file: Check for duplicate server names in mcpServers section.`);
-        console.error(`\n🚫 Meta-MCP server cannot start with conflicting server configurations.`);
+        this._logger.error(`\n❌ FATAL ERROR: Failed to initialize server "${serverName}"`);
+        this._logger.error(`   Error: ${(error as Error).message}`);
+        this._logger.error(`\n💡 Resolution: Please check your MCP configuration and ensure all server names are unique.`);
+        this._logger.error(`   Configuration file: Check for duplicate server names in mcpServers section.`);
+        this._logger.error(`\n🚫 ${APP_TECHNICAL_NAME} server cannot start with conflicting server configurations.`);
         process.exit(1);
       }
     }
