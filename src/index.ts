@@ -57,30 +57,63 @@ function parseCliArguments(): RuntimeOptions | undefined {
       'info'
     );
 
-  // Add install subcommand
-  program
-    .command('install <type>')
+  // Add install command with proper subcommands
+  const installCommand = program
+    .command('install')
     .description(chalk.blue('Install and configure integrations'))
+    .configureOutput({
+      writeErr: (str) => console.error(str),
+      writeOut: (str) => console.log(str)
+    });
+
+  // Claude Desktop integration subcommand
+  installCommand
+    .command('claude-desktop')
+    .alias('cd')
+    .description(chalk.blue('Configure Claude Desktop to use HyperTool MCP proxy'))
     .option(
       '--dry-run',
       chalk.cyan('Show what would be done without making changes')
     )
-    .action(async (type, options) => {
-      if (type === 'claude-desktop' || type === 'cd') {
-        try {
-          const { ClaudeDesktopSetup } = await import('./scripts/claude-desktop-setup.js');
-          const setup = new ClaudeDesktopSetup();
-          await setup.run(options.dryRun);
-          process.exit(0);
-        } catch (error) {
-          console.error(chalk.red('❌ Failed to run Claude Desktop setup:'), error);
-          process.exit(1);
-        }
-      } else {
-        console.error(chalk.red(`❌ Unknown installation type: ${type}`));
-        console.error(chalk.yellow('   Use claude-desktop or cd to configure Claude Desktop integration'));
+    .action(async (options) => {
+      try {
+        const { ClaudeDesktopSetup } = await import('./scripts/claude-desktop-setup.js');
+        const setup = new ClaudeDesktopSetup();
+        await setup.run(options.dryRun);
+        process.exit(0);
+      } catch (error) {
+        console.error(chalk.red('❌ Failed to run Claude Desktop setup:'), error);
         process.exit(1);
       }
+    });
+
+  // Cursor IDE integration subcommand (placeholder for task 29)
+  installCommand
+    .command('cursor')
+    .description(chalk.blue('Configure Cursor IDE to use HyperTool MCP proxy'))
+    .option(
+      '--dry-run',
+      chalk.cyan('Show what would be done without making changes')
+    )
+    .action(async (options) => {
+      console.error(chalk.yellow('⚠️  Cursor integration not yet implemented'));
+      console.error(chalk.cyan('   This feature is planned for Task 29'));
+      process.exit(1);
+    });
+
+  // Claude Code integration subcommand (placeholder for task 31)
+  installCommand
+    .command('claude-code')
+    .alias('cc')
+    .description(chalk.blue('Install HyperTool slash commands in Claude Code'))
+    .option(
+      '--dry-run',
+      chalk.cyan('Show what would be done without making changes')
+    )
+    .action(async (options) => {
+      console.error(chalk.yellow('⚠️  Claude Code integration not yet implemented'));
+      console.error(chalk.cyan('   This feature is planned for Task 31'));
+      process.exit(1);
     });
 
   program.parse();
