@@ -14,52 +14,13 @@ import { logger, createLogger } from "./logging/index.js";
 import { displayServerBanner, output } from "./logging/output.js";
 import type { LevelWithSilent } from 'pino';
 
-/**
- * Parse CLI arguments and return runtime options
- */
-function parseCliArguments(): RuntimeOptions | undefined {
-  const program = new Command();
 
-  program
-    .name(APP_TECHNICAL_NAME)
-    .description(chalk.blue(APP_DESCRIPTION))
-    .version(APP_VERSION)
-    .option(
-      '--transport <type>',
-      chalk.cyan('Transport protocol to use') + ' (http, stdio)',
-      'stdio'
-    )
-    .option(
-      '--port <number>',
-      chalk.cyan('Port number for HTTP transport') + ' (only valid with --transport http)'
-    )
-    .option(
-      '--debug',
-      chalk.cyan('Enable debug mode with verbose logging'),
-      false
-    )
-    .option(
-      '--insecure',
-      chalk.yellow('Allow tools with changed reference hashes') + chalk.red(' (insecure mode)'),
-      false
-    )
-    .option(
-      '--equip-toolset <name>',
-      chalk.cyan('Toolset name to equip on startup')
-    )
-    .option(
-      '--mcp-config <path>',
-      chalk.cyan('Path to MCP configuration file') + ' (.mcp.json)'
-    )
-    .option(
-      '--log-level <level>',
-      chalk.cyan('Log level') + ' (trace, debug, info, warn, error, fatal)',
-      'info'
-    );
+function createInstallCommand(): Command {
+  const installCommand = new Command()
 
   // Add install command with proper subcommands
-  const installCommand = program
-    .command('install')
+  installCommand
+    .name('install')
     .description(chalk.blue('Install and configure integrations'))
     .configureOutput({
       writeErr: (str) => console.error(str),
@@ -116,15 +77,55 @@ function parseCliArguments(): RuntimeOptions | undefined {
       process.exit(1);
     });
 
+  return installCommand;
+}
+
+/**
+ * Parse CLI arguments and return runtime options
+ */
+function parseCliArguments(): RuntimeOptions {
+  const program = new Command();
+
+  program
+    .name(APP_TECHNICAL_NAME)
+    .description(chalk.blue(APP_DESCRIPTION))
+    .version(APP_VERSION)
+    .option(
+      '--transport <type>',
+      chalk.cyan('Transport protocol to use') + ' (http, stdio)',
+      'stdio'
+    )
+    .option(
+      '--port <number>',
+      chalk.cyan('Port number for HTTP transport') + ' (only valid with --transport http)'
+    )
+    .option(
+      '--debug',
+      chalk.cyan('Enable debug mode with verbose logging'),
+      false
+    )
+    .option(
+      '--insecure',
+      chalk.yellow('Allow tools with changed reference hashes') + chalk.red(' (insecure mode)'),
+      false
+    )
+    .option(
+      '--equip-toolset <name>',
+      chalk.cyan('Toolset name to equip on startup')
+    )
+    .option(
+      '--mcp-config <path>',
+      chalk.cyan('Path to MCP configuration file') + ' (.mcp.json)'
+    )
+    .option(
+      '--log-level <level>',
+      chalk.cyan('Log level') + ' (trace, debug, info, warn, error, fatal)',
+      'info'
+    );
+
+  program.addCommand(createInstallCommand());
   program.parse();
-  
-  // Check if a subcommand was parsed - if so, don't continue with main server logic
-  const subcommand = program.args[0];
-  if (subcommand === 'install') {
-    // Subcommand will handle its own execution and exit
-    return;
-  }
-  
+
   const options = program.opts();
 
   // Validate transport type
@@ -175,18 +176,11 @@ async function main(): Promise<void> {
   try {
     // Parse CLI arguments
     const runtimeOptions = parseCliArguments();
-    
-    // If subcommand was handled, exit early
-    if (!runtimeOptions) {
-      return;
-    }
 
     // Update logger configuration
     logger.updateConfig({
       level: (runtimeOptions.logLevel || (runtimeOptions.debug ? 'debug' : 'info')) as LevelWithSilent,
     });
-
-    const mainLogger = createLogger({ module: 'main' });
 
     // Discover MCP configuration
     const configResult = await discoverMcpConfig(
@@ -279,6 +273,7 @@ async function main(): Promise<void> {
 // Run if this file is executed directly
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { isDefined } from './utils/helpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
