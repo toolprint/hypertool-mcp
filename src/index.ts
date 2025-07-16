@@ -17,7 +17,7 @@ import type { LevelWithSilent } from 'pino';
 /**
  * Parse CLI arguments and return runtime options
  */
-function parseCliArguments(): RuntimeOptions {
+function parseCliArguments(): RuntimeOptions | undefined {
   const program = new Command();
 
   program
@@ -57,7 +57,41 @@ function parseCliArguments(): RuntimeOptions {
       'info'
     );
 
+  // Add install subcommand
+  program
+    .command('install <type>')
+    .description(chalk.blue('Install and configure integrations'))
+    .option(
+      '--dry-run',
+      chalk.cyan('Show what would be done without making changes')
+    )
+    .action(async (type, options) => {
+      if (type === 'claude-desktop' || type === 'cd') {
+        try {
+          const { ClaudeDesktopSetup } = await import('./scripts/claude-desktop-setup.js');
+          const setup = new ClaudeDesktopSetup();
+          await setup.run(options.dryRun);
+          process.exit(0);
+        } catch (error) {
+          console.error(chalk.red('❌ Failed to run Claude Desktop setup:'), error);
+          process.exit(1);
+        }
+      } else {
+        console.error(chalk.red(`❌ Unknown installation type: ${type}`));
+        console.error(chalk.yellow('   Use claude-desktop or cd to configure Claude Desktop integration'));
+        process.exit(1);
+      }
+    });
+
   program.parse();
+  
+  // Check if a subcommand was parsed - if so, don't continue with main server logic
+  const subcommand = program.args[0];
+  if (subcommand === 'install') {
+    // Subcommand will handle its own execution and exit
+    return;
+  }
+  
   const options = program.opts();
 
   // Validate transport type
@@ -108,6 +142,11 @@ async function main(): Promise<void> {
   try {
     // Parse CLI arguments
     const runtimeOptions = parseCliArguments();
+    
+    // If subcommand was handled, exit early
+    if (!runtimeOptions) {
+      return;
+    }
 
     // Update logger configuration
     logger.updateConfig({
