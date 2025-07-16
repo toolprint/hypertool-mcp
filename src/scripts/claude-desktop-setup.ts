@@ -225,7 +225,7 @@ class ClaudeDesktopSetup {
       console.log(chalk.cyan('🔍 [DRY RUN] Would keep only HyperTool proxy in configuration'));
       return;
     }
-    
+
     // Read current config and keep only HyperTool
     const currentConfig = await this.readJsonFile(this.claudeConfigPath);
     const cleanConfig = {
@@ -249,30 +249,30 @@ class ClaudeDesktopSetup {
     }
     console.log('');
     console.log(chalk.blue('📋 Summary of changes:'));
-    
+
     if (this.dryRun) {
       // In dry run, read original config to show what would be migrated
       const originalConfig = await this.readJsonFile(this.claudeConfigPath);
       const serverCount = Object.keys(originalConfig.mcpServers || {}).length;
-      
+
       console.log(chalk.cyan(`🔍 ${serverCount} MCP server(s) would be migrated to HyperTool configuration`));
       console.log(chalk.cyan('🔍 HyperTool proxy would be added to Claude Desktop'));
       console.log(chalk.cyan('🔍 Original configuration would be backed up'));
     } else {
       const hyperToolConfig = await this.readJsonFile(this.hyperToolConfigPath);
       const serverCount = Object.keys(hyperToolConfig.mcpServers).length;
-      
+
       console.log(chalk.green(`✅ ${serverCount} MCP server(s) migrated to HyperTool configuration`));
       console.log(chalk.green('✅ HyperTool proxy added to Claude Desktop'));
       console.log(chalk.green('✅ Original configuration backed up'));
     }
-    
+
     console.log('');
     console.log(chalk.blue('📁 File locations:'));
     console.log(chalk.gray(`   Claude Desktop config: ${this.claudeConfigPath}`));
     console.log(chalk.gray(`   HyperTool config: ${this.hyperToolConfigPath}`));
     console.log(chalk.gray(`   Backup: ${this.backupPath}`));
-    
+
     if (!this.dryRun) {
       console.log('');
       console.log(chalk.blue('🔄 Next steps:'));
@@ -291,7 +291,7 @@ class ClaudeDesktopSetup {
 
   async run(dryRun: boolean = false): Promise<void> {
     this.dryRun = dryRun;
-    
+
     try {
       console.log(chalk.blue.bold('🚀 Claude Desktop + HyperTool Integration Setup'));
       if (this.dryRun) {
@@ -318,7 +318,7 @@ class ClaudeDesktopSetup {
       } else {
         console.log(chalk.cyan('🔍 [DRY RUN] Would prompt for cleanup options'));
       }
-      
+
       if (shouldCleanup) {
         await this.performCleanup();
       } else {

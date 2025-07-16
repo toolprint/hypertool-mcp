@@ -26,6 +26,10 @@ export const DEFAULT_LOGGING_CONFIG: LoggingConfig = {
   colorize: true,
 };
 
+// Singleton transport instances to prevent multiple worker threads
+let sharedConsoleTransport: any = null;
+let sharedFileTransport: any = null;
+
 export class Logger {
   private pinoLogger: pino.Logger;
   private config: LoggingConfig;
@@ -38,11 +42,11 @@ export class Logger {
   private createLogger(): pino.Logger {
     const streams: pino.StreamEntry[] = [];
 
-    // Console stream
+    // Console stream using shared transport
     if (this.config.enableConsole) {
       streams.push({
         level: this.config.level as pino.Level,
-        stream: this.createConsoleStream(),
+        stream: this.getSharedConsoleStream(),
       });
     }
 
@@ -57,11 +61,11 @@ export class Logger {
       }
     }
 
-    // If no streams, fallback to console
+    // If no streams, fallback to console with shared transport
     if (streams.length === 0) {
       streams.push({
         level: this.config.level as pino.Level,
-        stream: process.stdout,
+        stream: this.getSharedConsoleStream(),
       });
     }
 
@@ -79,17 +83,20 @@ export class Logger {
     );
   }
 
-  private createConsoleStream() {
-    // Always use pino-pretty for console output for better readability
-    return pino.transport({
-      target: 'pino-pretty',
-      options: {
-        colorize: this.config.colorize,
-        translateTime: 'SYS:standard',
-        include: 'level,time,msg',
-        ignore: 'pid,hostname', // Simplify output
-      },
-    });
+  private getSharedConsoleStream() {
+    // Create shared console transport only once
+    if (!sharedConsoleTransport) {
+      sharedConsoleTransport = pino.transport({
+        target: 'pino-pretty',
+        options: {
+          colorize: this.config.colorize,
+          translateTime: 'SYS:standard',
+          include: 'level,time,msg',
+          ignore: 'pid,hostname', // Simplify output
+        },
+      });
+    }
+    return sharedConsoleTransport;
   }
 
   private createFileStream() {
