@@ -160,10 +160,11 @@ test-install: build
 ## Implementation Requirements
 
 ### Package Structure
-- Ensure `dist/` directory contains all compiled assets
+- Ensure `dist/` directory contains all compiled assets including `dist/scripts/`
 - Include only necessary files in published package
 - Proper shebang line in main executable
 - Correct file permissions for executable
+- Setup scripts in `src/scripts/` compiled to `dist/scripts/` for npx execution
 
 ### Dependency Management
 - All runtime dependencies in `dependencies`

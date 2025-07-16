@@ -113,10 +113,11 @@ npx -y @toolprint/hypertool-mcp add-cursor
 - Add proper help text and documentation
 
 ### Configuration Utilities
-- Create `src/integrations/cursor/` directory structure
-- Implement `CursorConfigManager` class for config operations
+- Create `src/scripts/cursor/` directory structure for setup scripts
+- Implement `CursorConfigManager` class for config operations in `src/scripts/cursor/`
 - Add JSON validation and error handling
 - Implement backup and restore functionality
+- Ensure all scripts are packaged into `dist/scripts/` for npx execution
 
 ### User Interface
 - Interactive prompts using existing CLI framework
