@@ -2,7 +2,7 @@
  * Tests for hash utilities
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "vitest";
 import { ToolHashUtils } from "./hashUtils.js";
 import { DiscoveredTool } from "./types.js";
 
@@ -35,7 +35,7 @@ describe("ToolHashUtils", () => {
 
     it("should generate different hashes when functional fields change", () => {
       const originalHash = ToolHashUtils.calculateToolHash(mockTool);
-      
+
       // Change inputSchema - should change hash
       const modifiedTool = {
         ...mockTool,
@@ -50,14 +50,14 @@ describe("ToolHashUtils", () => {
           },
         },
       };
-      
+
       const modifiedHash = ToolHashUtils.calculateToolHash(modifiedTool);
       expect(modifiedHash).not.toBe(originalHash);
     });
 
     it("should generate same hash when non-functional fields change", () => {
       const originalHash = ToolHashUtils.calculateToolHash(mockTool);
-      
+
       // Change description - should NOT change hash (description is excluded)
       const modifiedTool = {
         ...mockTool,
@@ -66,7 +66,7 @@ describe("ToolHashUtils", () => {
           description: "Modified description",
         },
       };
-      
+
       const modifiedHash = ToolHashUtils.calculateToolHash(modifiedTool);
       expect(modifiedHash).toBe(originalHash);
     });
@@ -75,23 +75,36 @@ describe("ToolHashUtils", () => {
   describe("detectToolChanges", () => {
     it("should detect added tools", () => {
       const originalTools = [mockTool];
-      const newTool = { ...mockTool, name: "new_tool", namespacedName: "test-server.new_tool" };
+      const newTool = {
+        ...mockTool,
+        name: "new_tool",
+        namespacedName: "test-server.new_tool",
+      };
       const currentTools = [mockTool, newTool];
-      
-      const changes = ToolHashUtils.detectToolChanges(originalTools, currentTools);
+
+      const changes = ToolHashUtils.detectToolChanges(
+        originalTools,
+        currentTools
+      );
       const summary = ToolHashUtils.summarizeChanges(changes);
-      
+
       expect(summary.added).toBe(1);
       expect(summary.unchanged).toBe(1);
     });
 
     it("should detect removed tools", () => {
-      const originalTools = [mockTool, { ...mockTool, name: "tool2", namespacedName: "test-server.tool2" }];
+      const originalTools = [
+        mockTool,
+        { ...mockTool, name: "tool2", namespacedName: "test-server.tool2" },
+      ];
       const currentTools = [mockTool];
-      
-      const changes = ToolHashUtils.detectToolChanges(originalTools, currentTools);
+
+      const changes = ToolHashUtils.detectToolChanges(
+        originalTools,
+        currentTools
+      );
       const summary = ToolHashUtils.summarizeChanges(changes);
-      
+
       expect(summary.removed).toBe(1);
       expect(summary.unchanged).toBe(1);
     });

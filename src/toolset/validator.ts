@@ -24,7 +24,9 @@ export function validateToolsetConfig(config: ToolsetConfig): ValidationResult {
   } else if (config.name.length < 2 || config.name.length > 50) {
     errors.push("Configuration name must be between 2 and 50 characters");
   } else if (!/^[a-z0-9-]+$/.test(config.name)) {
-    errors.push("Configuration name must contain only lowercase letters, numbers, and hyphens");
+    errors.push(
+      "Configuration name must contain only lowercase letters, numbers, and hyphens"
+    );
   }
 
   // Tools validation
@@ -41,23 +43,25 @@ export function validateToolsetConfig(config: ToolsetConfig): ValidationResult {
 
     // Check for duplicate tool references
     const allRefs: string[] = [];
-    config.tools.forEach(ref => {
+    config.tools.forEach((ref) => {
       if (ref.namespacedName) allRefs.push(ref.namespacedName);
       if (ref.refId) allRefs.push(ref.refId);
     });
-    
+
     const seenRefs = new Set<string>();
     const duplicates = new Set<string>();
-    allRefs.forEach(ref => {
+    allRefs.forEach((ref) => {
       if (seenRefs.has(ref)) {
         duplicates.add(ref);
       } else {
         seenRefs.add(ref);
       }
     });
-    
+
     if (duplicates.size > 0) {
-      warnings.push(`Duplicate tool references found: ${Array.from(duplicates).join(', ')}`);
+      warnings.push(
+        `Duplicate tool references found: ${Array.from(duplicates).join(", ")}`
+      );
     }
   }
 
@@ -77,21 +81,29 @@ export function validateToolsetConfig(config: ToolsetConfig): ValidationResult {
       if (typeof config.createdAt === "string") {
         const parsedDate = new Date(config.createdAt);
         if (isNaN(parsedDate.getTime())) {
-          errors.push("createdAt must be a valid Date object or ISO string if provided");
+          errors.push(
+            "createdAt must be a valid Date object or ISO string if provided"
+          );
         }
       } else {
-        errors.push("createdAt must be a Date object or ISO string if provided");
+        errors.push(
+          "createdAt must be a Date object or ISO string if provided"
+        );
       }
     }
   }
 
   // Provide suggestions for improvement
   if (config.tools && config.tools.length > 50) {
-    suggestions.push("Consider breaking large toolsets into smaller, focused ones for better maintainability");
+    suggestions.push(
+      "Consider breaking large toolsets into smaller, focused ones for better maintainability"
+    );
   }
 
-  if (config.tools && config.tools.every(ref => !ref.refId)) {
-    suggestions.push("Consider adding refId values to tool references for better validation and security");
+  if (config.tools && config.tools.every((ref) => !ref.refId)) {
+    suggestions.push(
+      "Consider adding refId values to tool references for better validation and security"
+    );
   }
 
   return {
@@ -105,24 +117,39 @@ export function validateToolsetConfig(config: ToolsetConfig): ValidationResult {
 /**
  * Validate a single tool reference
  */
-function validateToolReference(ref: DynamicToolReference, index: number): string[] {
+function validateToolReference(
+  ref: DynamicToolReference,
+  index: number
+): string[] {
   const errors: string[] = [];
 
   // Check if at least one valid identifier is provided
-  const hasValidNamespacedName = ref.namespacedName && typeof ref.namespacedName === "string" && ref.namespacedName.trim().length > 0;
-  const hasValidRefId = ref.refId && typeof ref.refId === "string" && ref.refId.trim().length > 0;
+  const hasValidNamespacedName =
+    ref.namespacedName &&
+    typeof ref.namespacedName === "string" &&
+    ref.namespacedName.trim().length > 0;
+  const hasValidRefId =
+    ref.refId && typeof ref.refId === "string" && ref.refId.trim().length > 0;
 
   if (!hasValidNamespacedName && !hasValidRefId) {
-    errors.push(`Tool reference at index ${index} must have either namespacedName or refId`);
+    errors.push(
+      `Tool reference at index ${index} must have either namespacedName or refId`
+    );
   }
 
   if (ref.namespacedName !== undefined) {
     if (typeof ref.namespacedName !== "string") {
-      errors.push(`Tool reference at index ${index}: namespacedName must be a string`);
+      errors.push(
+        `Tool reference at index ${index}: namespacedName must be a string`
+      );
     } else if (ref.namespacedName.trim().length === 0) {
-      errors.push(`Tool reference at index ${index}: namespacedName cannot be empty`);
-    } else if (!ref.namespacedName.includes('.')) {
-      errors.push(`Tool reference at index ${index}: namespacedName should include server namespace (e.g., "server.tool")`);
+      errors.push(
+        `Tool reference at index ${index}: namespacedName cannot be empty`
+      );
+    } else if (!ref.namespacedName.includes(".")) {
+      errors.push(
+        `Tool reference at index ${index}: namespacedName should include server namespace (e.g., "server.tool")`
+      );
     }
   }
 
@@ -132,10 +159,11 @@ function validateToolReference(ref: DynamicToolReference, index: number): string
     } else if (ref.refId.trim().length === 0) {
       errors.push(`Tool reference at index ${index}: refId cannot be empty`);
     } else if (ref.refId.length < 10) {
-      errors.push(`Tool reference at index ${index}: refId appears too short to be a valid hash`);
+      errors.push(
+        `Tool reference at index ${index}: refId appears too short to be a valid hash`
+      );
     }
   }
 
   return errors;
 }
-

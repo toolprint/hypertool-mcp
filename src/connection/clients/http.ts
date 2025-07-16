@@ -4,14 +4,17 @@
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { ListToolsResult, CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
+import {
+  ListToolsResult,
+  CallToolRequest,
+} from "@modelcontextprotocol/sdk/types.js";
 import { EventEmitter } from "events";
 import { HttpServerConfig } from "../../types/config.js";
 import { ConnectionOptions } from "../types.js";
 import { BaseConnection } from "./base.js";
 import { createLogger } from "../../logging/index.js";
 
-const logger = createLogger({ module: 'clients/http' });
+const logger = createLogger({ module: "clients/http" });
 
 /**
  * HTTP client wrapper using proper MCP SDK Client
@@ -37,22 +40,29 @@ export class HttpClient extends EventEmitter {
     }
 
     try {
-      const transport = new StreamableHTTPClientTransport(new URL(this.config.url));
-      this.client = new Client({
-        name: "hypertool-mcp-client",
-        version: "1.0.0",
-      }, {
-        capabilities: {
-          tools: {}
+      const transport = new StreamableHTTPClientTransport(
+        new URL(this.config.url)
+      );
+      this.client = new Client(
+        {
+          name: "hypertool-mcp-client",
+          version: "1.0.0",
+        },
+        {
+          capabilities: {
+            tools: {},
+          },
         }
-      });
+      );
 
       await this.client.connect(transport);
       this.isConnected = true;
       this.emit("connect");
     } catch (error) {
       this.client = null;
-      throw new Error(`Failed to connect HTTP client: ${(error as Error).message}`);
+      throw new Error(
+        `Failed to connect HTTP client: ${(error as Error).message}`
+      );
     }
   }
 
@@ -175,5 +185,4 @@ export class HttpConnection extends BaseConnection<HttpClient> {
     }
     return await this._client.ping();
   }
-
 }

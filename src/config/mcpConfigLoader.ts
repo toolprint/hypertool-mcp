@@ -9,7 +9,7 @@ import { loadUserPreferences, updateMcpConfigPath } from "./preferenceStore.js";
 import { APP_TECHNICAL_NAME, BRAND_NAME } from "./appConfig.js";
 import { createLogger } from "../logging/index.js";
 
-const logger = createLogger({ module: 'config/discovery' });
+const logger = createLogger({ module: "config/discovery" });
 
 /**
  * Standard locations to search for MCP configuration files
@@ -51,7 +51,7 @@ async function fileExists(filePath: string): Promise<boolean> {
 
 /**
  * Discover MCP configuration file
- * 
+ *
  * @param cliConfigPath - Path provided via --mcp-config flag
  * @param updatePreference - Whether to update user preference when using CLI path
  * @returns Object with config path and source information
@@ -75,7 +75,10 @@ export async function discoverMcpConfig(
           await updateMcpConfigPath(resolvedPath);
         } catch (error) {
           // Don't fail if preference update fails
-          logger.warn("Warning: Could not update MCP config preference:", error);
+          logger.warn(
+            "Warning: Could not update MCP config preference:",
+            error
+          );
         }
       }
 
@@ -105,7 +108,9 @@ export async function discoverMcpConfig(
         };
       } else {
         // Preference points to non-existent file, continue to discovery
-        logger.warn(`Warning: Preferred MCP config file not found: ${resolvedPath}`);
+        logger.warn(
+          `Warning: Preferred MCP config file not found: ${resolvedPath}`
+        );
       }
     }
   } catch (error) {
@@ -137,7 +142,7 @@ export async function discoverMcpConfig(
  * Generate helpful error message when no config is found
  */
 function generateNoConfigFoundMessage(): string {
-  const locations = STANDARD_CONFIG_LOCATIONS.map(loc =>
+  const locations = STANDARD_CONFIG_LOCATIONS.map((loc) =>
     loc.startsWith("~/") ? loc : `./${loc}`
   ).join("\n  - ");
 

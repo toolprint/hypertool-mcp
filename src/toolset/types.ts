@@ -24,7 +24,9 @@ export function resolveToolReference(ref: DynamicToolReference): string {
   } else if (ref.refId) {
     return ref.refId;
   } else {
-    throw new Error("DynamicToolReference must have either namespacedName or refId");
+    throw new Error(
+      "DynamicToolReference must have either namespacedName or refId"
+    );
   }
 }
 
@@ -89,8 +91,7 @@ export interface ToolsetChangeEvent {
   /** The newly active toolset (null if toolset was unequipped) */
   newToolset: ToolsetConfig | null;
   /** Type of change that occurred */
-  changeType: 'equipped' | 'updated' | 'unequipped';
+  changeType: "equipped" | "updated" | "unequipped";
   /** Timestamp when the change occurred */
   timestamp?: Date;
 }
-

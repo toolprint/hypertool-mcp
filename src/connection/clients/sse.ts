@@ -5,14 +5,17 @@
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import { ListToolsResult, CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
+import {
+  ListToolsResult,
+  CallToolRequest,
+} from "@modelcontextprotocol/sdk/types.js";
 import { EventEmitter } from "events";
 import { BaseConnection } from "./base.js";
 import { SSEServerConfig } from "../../types/config.js";
 import { ConnectionOptions } from "../types.js";
 import { createLogger } from "../../logging/index.js";
 
-const logger = createLogger({ module: 'clients/sse' });
+const logger = createLogger({ module: "clients/sse" });
 
 /**
  * SSE client wrapper using proper MCP SDK Client
@@ -35,21 +38,26 @@ export class SSEClient extends EventEmitter {
 
     try {
       const transport = new SSEClientTransport(new URL(this.config.url));
-      this.client = new Client({
-        name: "hypertool-mcp-client",
-        version: "1.0.0",
-      }, {
-        capabilities: {
-          tools: {}
+      this.client = new Client(
+        {
+          name: "hypertool-mcp-client",
+          version: "1.0.0",
+        },
+        {
+          capabilities: {
+            tools: {},
+          },
         }
-      });
+      );
 
       await this.client.connect(transport);
       this.isConnected = true;
       this.emit("connected");
     } catch (error) {
       this.client = null;
-      throw new Error(`Failed to connect SSE client: ${(error as Error).message}`);
+      throw new Error(
+        `Failed to connect SSE client: ${(error as Error).message}`
+      );
     }
   }
 
@@ -171,5 +179,4 @@ export class SSEConnection extends BaseConnection<SSEClient> {
       return false;
     }
   }
-
 }

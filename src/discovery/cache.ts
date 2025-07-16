@@ -4,11 +4,7 @@
 
 import { EventEmitter } from "events";
 import NodeCache from "node-cache";
-import {
-  IToolCache,
-  DiscoveredTool,
-  DiscoveryConfig,
-} from "./types.js";
+import { IToolCache, DiscoveredTool, DiscoveryConfig } from "./types.js";
 
 /**
  * Tool cache implementation using node-cache with TTL and server indexing
@@ -27,7 +23,7 @@ export class ToolCache extends EventEmitter implements IToolCache {
   constructor(config: DiscoveryConfig) {
     super();
     this.config = config;
-    
+
     // Initialize node-cache with TTL in seconds
     const ttlSeconds = Math.floor((config.cacheTtl || 300000) / 1000);
     this.cache = new NodeCache({
@@ -79,7 +75,7 @@ export class ToolCache extends EventEmitter implements IToolCache {
    */
   async get(key: string): Promise<DiscoveredTool | null> {
     const tool = this.cache.get<DiscoveredTool>(key);
-    
+
     if (tool) {
       this.stats.hits++;
       this.emit("hit", { key, tool });
@@ -104,7 +100,7 @@ export class ToolCache extends EventEmitter implements IToolCache {
   async delete(key: string): Promise<void> {
     const tool = this.cache.get<DiscoveredTool>(key);
     const success = this.cache.del(key);
-    
+
     if (success && tool) {
       this.removeFromServerIndex(key, tool.serverName);
       this.stats.deletes++;
@@ -122,11 +118,11 @@ export class ToolCache extends EventEmitter implements IToolCache {
       this.cache.del(keys);
       this.serverIndex.delete(serverName);
       this.stats.deletes += toolCount;
-      
-      this.emit("serverCleared", { 
-        serverName, 
+
+      this.emit("serverCleared", {
+        serverName,
         toolCount,
-        clearedKeys: keys
+        clearedKeys: keys,
       });
     }
   }
@@ -219,12 +215,12 @@ export class ToolCache extends EventEmitter implements IToolCache {
     // node-cache handles this automatically, but we can emit a cleanup event
     const beforeKeys = this.cache.keys().length;
     // Force a check for expired keys
-    this.cache.keys().forEach(key => {
+    this.cache.keys().forEach((key) => {
       this.cache.get(key); // This will trigger expiration check
     });
     const afterKeys = this.cache.keys().length;
     const cleanedCount = beforeKeys - afterKeys;
-    
+
     if (cleanedCount > 0) {
       this.emit("cleanup", { cleanedCount });
     }
@@ -244,7 +240,7 @@ export class ToolCache extends EventEmitter implements IToolCache {
    */
   private removeFromServerIndex(key: string, serverName?: string): void {
     if (!serverName) return;
-    
+
     const serverTools = this.serverIndex.get(serverName);
     if (serverTools) {
       serverTools.delete(key);

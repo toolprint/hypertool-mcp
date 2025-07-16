@@ -2,7 +2,7 @@
  * Unit tests for tool discovery service
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { EventEmitter } from "events";
 import { ToolDiscoveryEngine } from "./service.js";
 import { DiscoveryConfig } from "./types.js";
@@ -71,7 +71,7 @@ class MockConnectionManager extends EventEmitter implements IConnectionManager {
     const connection = new MockConnection(serverName, tools);
     this.connections.set(serverName, connection);
     this.serverConfigs.set(serverName, { type: "stdio" });
-    
+
     // Set up event forwarding from connection to manager
     connection.on("connected", () => {
       this.emit("connected", {
@@ -81,7 +81,7 @@ class MockConnectionManager extends EventEmitter implements IConnectionManager {
         timestamp: new Date(),
       });
     });
-    
+
     connection.on("disconnected", () => {
       this.emit("disconnected", {
         type: "disconnected" as const,
@@ -105,10 +105,10 @@ class MockConnectionManager extends EventEmitter implements IConnectionManager {
 // Mock connection
 class MockConnection extends EventEmitter implements Connection {
   public readonly id: string;
-  public readonly config = { 
+  public readonly config = {
     type: "stdio" as const,
     command: "mock-command",
-    args: []
+    args: [],
   };
   private _isConnected = false;
   private _client: MockClient;
@@ -178,7 +178,7 @@ class MockConnection extends EventEmitter implements Connection {
 class MockClient extends EventEmitter {
   private tools: Tool[] = [];
   private notificationHandlers = new Map<string, Function>();
-  
+
   constructor(tools: Tool[] = []) {
     super();
     this.tools = tools;
@@ -194,8 +194,11 @@ class MockClient extends EventEmitter {
     return {
       listTools: () => this.listTools(),
       setNotificationHandler: (schema: any, handler: Function) => {
-        this.notificationHandlers.set(schema.shape.method.value || "tools/list_changed", handler);
-      }
+        this.notificationHandlers.set(
+          schema.shape.method.value || "tools/list_changed",
+          handler
+        );
+      },
     };
   }
 
@@ -205,11 +208,13 @@ class MockClient extends EventEmitter {
 
   triggerToolsChanged() {
     // Simulate receiving a tool list changed notification
-    const handler = this.notificationHandlers.get("notifications/tools/list_changed");
+    const handler = this.notificationHandlers.get(
+      "notifications/tools/list_changed"
+    );
     if (handler) {
       handler({
         method: "notifications/tools/list_changed",
-        params: {}
+        params: {},
       });
     }
   }
@@ -422,7 +427,6 @@ describe("ToolDiscoveryEngine", () => {
     });
   });
 
-
   describe("caching", () => {
     beforeEach(async () => {
       await discoveryEngine.initialize();
@@ -495,7 +499,6 @@ describe("ToolDiscoveryEngine", () => {
       expect(states[0].isConnected).toBe(true);
       expect(states[0].toolCount).toBe(1);
     });
-
   });
 
   describe("lifecycle management", () => {

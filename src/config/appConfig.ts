@@ -1,14 +1,14 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { readFileSync } from "fs";
+import { join } from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Read package.json to get version and other metadata
-const packageJsonPath = join(__dirname, '../../package.json');
-const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+const packageJsonPath = join(__dirname, "../../package.json");
+const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
 
 /**
  * Centralized application configuration
@@ -21,8 +21,8 @@ const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
 function toTechnicalName(name: string): string {
   return name
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export interface AppConfig {
@@ -39,15 +39,16 @@ export interface AppConfig {
 }
 
 export const APP_CONFIG: AppConfig = {
-  appName: 'Hypertool MCP',
+  appName: "Hypertool MCP",
   get technicalName() {
     return toTechnicalName(this.appName);
   },
   get version() {
     return packageJson.version;
   },
-  description: 'Hypertool MCP proxy server for routing requests between clients and multiple underlying MCP servers',
-  brandName: 'toolprint',
+  description:
+    "Hypertool MCP proxy server for routing requests between clients and multiple underlying MCP servers",
+  brandName: "toolprint",
 } as const;
 
 // Convenience exports for common usage patterns

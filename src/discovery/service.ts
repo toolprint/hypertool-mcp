@@ -4,10 +4,14 @@
 
 import { EventEmitter } from "events";
 import { IConnectionManager } from "../connection/types.js";
-import { Tool, ToolListChangedNotification, ToolListChangedNotificationSchema } from "@modelcontextprotocol/sdk/types.js";
+import {
+  Tool,
+  ToolListChangedNotification,
+  ToolListChangedNotificationSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 import { createLogger } from "../logging/index.js";
 
-const logger = createLogger({ module: 'discovery/service' });
+const logger = createLogger({ module: "discovery/service" });
 import {
   IToolDiscoveryEngine,
   DiscoveryConfig,
@@ -28,7 +32,8 @@ import { output } from "../logging/output.js";
  */
 export class ToolDiscoveryEngine
   extends EventEmitter
-  implements IToolDiscoveryEngine {
+  implements IToolDiscoveryEngine
+{
   private connectionManager: IConnectionManager;
   private config: Required<DiscoveryConfig>;
   private cache: ToolCache;
@@ -172,7 +177,6 @@ export class ToolDiscoveryEngine
     return discoveredTools;
   }
 
-
   /**
    * Get a tool by its name or namespaced name
    */
@@ -204,17 +208,23 @@ export class ToolDiscoveryEngine
     this.ensureInitialized();
     // Show tools by server in debug mode
 
-    const toolsByServerStr: Array<string> = []
+    const toolsByServerStr: Array<string> = [];
     const toolsByServer: Record<string, number> = {};
     this.getAvailableTools().forEach((tool: DiscoveredTool) => {
-      toolsByServer[tool.serverName] = (toolsByServer[tool.serverName] || 0) + 1;
+      toolsByServer[tool.serverName] =
+        (toolsByServer[tool.serverName] || 0) + 1;
     });
 
     Object.entries(toolsByServer).forEach(([serverName, count]) => {
-      toolsByServerStr.push(`\t- ${serverName}: ${count} tool${count !== 1 ? 's' : ''}`);
+      toolsByServerStr.push(
+        `\t- ${serverName}: ${count} tool${count !== 1 ? "s" : ""}`
+      );
     });
 
-    output.info(`Tools discovered by server:\n${toolsByServerStr.join('\n')}`, true);
+    output.info(
+      `Tools discovered by server:\n${toolsByServerStr.join("\n")}`,
+      true
+    );
   }
 
   /**
@@ -317,7 +327,6 @@ export class ToolDiscoveryEngine
   getServerStates(): ServerToolState[] {
     return Array.from(this.serverStates.values());
   }
-
 
   /**
    * Clear cache for a specific server or all servers
@@ -488,7 +497,10 @@ export class ToolDiscoveryEngine
               try {
                 await this.handleToolsListChanged(event.serverName);
               } catch (error) {
-                logger.error(`Failed to handle tools list changed for ${event.serverName}:`, error);
+                logger.error(
+                  `Failed to handle tools list changed for ${event.serverName}:`,
+                  error
+                );
               }
             }
           );
@@ -516,7 +528,9 @@ export class ToolDiscoveryEngine
 
     // Listen for health-based tool availability changes
     this.connectionManager.on("serverToolsUnavailable" as any, (event: any) => {
-      logger.info(`Server "${event.serverName}" tools unavailable due to health: ${event.reason}`);
+      logger.info(
+        `Server "${event.serverName}" tools unavailable due to health: ${event.reason}`
+      );
 
       this.updateServerState(event.serverName, {
         isConnected: false,
@@ -535,12 +549,17 @@ export class ToolDiscoveryEngine
     });
 
     this.connectionManager.on("serverToolsAvailable" as any, (event: any) => {
-      logger.info(`Server "${event.serverName}" tools available again, recovered from: ${event.recoveredFrom}`);
+      logger.info(
+        `Server "${event.serverName}" tools available again, recovered from: ${event.recoveredFrom}`
+      );
 
       // Trigger tool rediscovery if auto-discovery is enabled
       if (this.config.autoDiscovery && this.isInitialized) {
         this.discoverTools(event.serverName).catch((error) => {
-          logger.error(`Auto-discovery failed for recovered server "${event.serverName}":`, error);
+          logger.error(
+            `Auto-discovery failed for recovered server "${event.serverName}":`,
+            error
+          );
         });
       }
 
@@ -602,7 +621,7 @@ export class ToolDiscoveryEngine
   /**
    * Resolve a tool reference and return tool + server metadata
    * Uses optimized lookup maps and strict validation by default
-   * 
+   *
    * @param ref Tool reference with namespacedName and/or refId
    * @param options.allowStaleRefs If true, allows mismatched tools to continue (INSECURE)
    */
@@ -632,7 +651,7 @@ export class ToolDiscoveryEngine
         refIdMatch: false,
         warnings: [],
         errors: ["Tool reference must have either namespacedName or refId"],
-        serverStatus: undefined
+        serverStatus: undefined,
       };
     }
 
@@ -654,7 +673,9 @@ export class ToolDiscoveryEngine
 
     // Attempt resolution by both methods (refId is more reliable)
     const toolByRef = ref.refId ? toolByRefId.get(ref.refId) : undefined;
-    const toolByName = ref.namespacedName ? toolByNamespacedName.get(ref.namespacedName) : undefined;
+    const toolByName = ref.namespacedName
+      ? toolByNamespacedName.get(ref.namespacedName)
+      : undefined;
 
     // Handle different resolution scenarios
     if (!toolByName && !toolByRef) {
@@ -664,14 +685,19 @@ export class ToolDiscoveryEngine
         namespacedNameMatch: false,
         refIdMatch: false,
         warnings: [],
-        errors: [`Tool not found by any identifier: namespacedName='${ref.namespacedName}', refId='${ref.refId}'`],
-        serverStatus: undefined
+        errors: [
+          `Tool not found by any identifier: namespacedName='${ref.namespacedName}', refId='${ref.refId}'`,
+        ],
+        serverStatus: undefined,
       };
     }
 
     if (toolByName && toolByRef) {
       // Both identifiers found tools - check if they're the same
-      if (toolByName.namespacedName === toolByRef.namespacedName && toolByName.toolHash === toolByRef.toolHash) {
+      if (
+        toolByName.namespacedName === toolByRef.namespacedName &&
+        toolByName.toolHash === toolByRef.toolHash
+      ) {
         // Perfect match - both identifiers point to same tool
         return {
           exists: true,
@@ -681,7 +707,7 @@ export class ToolDiscoveryEngine
           namespacedNameMatch: true,
           refIdMatch: true,
           warnings: [],
-          errors: []
+          errors: [],
         };
       } else {
         // Conflict - identifiers point to different tools
@@ -689,7 +715,9 @@ export class ToolDiscoveryEngine
 
         if (allowStaleRefs) {
           // INSECURE mode: Allow mismatch, prefer refId (more reliable)
-          warnings.push(`${conflictMsg} Using refId match (more reliable). WARNING: This is insecure mode.`);
+          warnings.push(
+            `${conflictMsg} Using refId match (more reliable). WARNING: This is insecure mode.`
+          );
           return {
             exists: true,
             tool: toolByRef,
@@ -698,18 +726,20 @@ export class ToolDiscoveryEngine
             namespacedNameMatch: false,
             refIdMatch: true,
             warnings,
-            errors: []
+            errors: [],
           };
         } else {
           // SECURE mode: Reject mismatch
-          errors.push(`${conflictMsg} Tool reference rejected for security. Use allowStaleRefs=true to force.`);
+          errors.push(
+            `${conflictMsg} Tool reference rejected for security. Use allowStaleRefs=true to force.`
+          );
           return {
             exists: false,
             namespacedNameMatch: false,
             refIdMatch: false,
             warnings: [],
             errors,
-            serverStatus: undefined
+            serverStatus: undefined,
           };
         }
       }
@@ -717,7 +747,9 @@ export class ToolDiscoveryEngine
 
     if (toolByRef) {
       // Found by refId but not by namespacedName (prefer refId - more reliable)
-      const namespacedNameMatch = ref.namespacedName ? toolByRef.namespacedName === ref.namespacedName : true;
+      const namespacedNameMatch = ref.namespacedName
+        ? toolByRef.namespacedName === ref.namespacedName
+        : true;
       if (!namespacedNameMatch) {
         const mismatchMsg = `Tool name changed: refId '${ref.refId}' found but namespacedName changed from '${ref.namespacedName}' to '${toolByRef.namespacedName}' (tool may have been renamed or moved)`;
 
@@ -732,18 +764,20 @@ export class ToolDiscoveryEngine
             namespacedNameMatch: false,
             refIdMatch: true,
             warnings,
-            errors: []
+            errors: [],
           };
         } else {
           // SECURE mode: Reject name mismatch
-          errors.push(`${mismatchMsg}. Tool reference rejected for security. Use allowStaleRefs=true to force.`);
+          errors.push(
+            `${mismatchMsg}. Tool reference rejected for security. Use allowStaleRefs=true to force.`
+          );
           return {
             exists: false,
             namespacedNameMatch: false,
             refIdMatch: false,
             warnings: [],
             errors,
-            serverStatus: undefined
+            serverStatus: undefined,
           };
         }
       }
@@ -757,7 +791,7 @@ export class ToolDiscoveryEngine
         namespacedNameMatch,
         refIdMatch: true,
         warnings: [],
-        errors: []
+        errors: [],
       };
     }
 
@@ -778,18 +812,20 @@ export class ToolDiscoveryEngine
             namespacedNameMatch: true,
             refIdMatch: false,
             warnings,
-            errors: []
+            errors: [],
           };
         } else {
           // SECURE mode: Reject refId mismatch
-          errors.push(`${mismatchMsg}. Tool reference rejected for security. Use allowStaleRefs=true to force.`);
+          errors.push(
+            `${mismatchMsg}. Tool reference rejected for security. Use allowStaleRefs=true to force.`
+          );
           return {
             exists: false,
             namespacedNameMatch: false,
             refIdMatch: false,
             warnings: [],
             errors,
-            serverStatus: undefined
+            serverStatus: undefined,
           };
         }
       }
@@ -803,7 +839,7 @@ export class ToolDiscoveryEngine
         namespacedNameMatch: true,
         refIdMatch,
         warnings: [],
-        errors: []
+        errors: [],
       };
     }
 
@@ -814,7 +850,7 @@ export class ToolDiscoveryEngine
       refIdMatch: false,
       warnings: [],
       errors: ["Unexpected error in tool resolution"],
-      serverStatus: undefined
+      serverStatus: undefined,
     };
   }
 

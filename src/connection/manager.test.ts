@@ -2,7 +2,7 @@
  * Integration tests for Connection Manager
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { ConnectionManager } from "./manager.js";
 import { ConnectionFactory } from "./factory.js";
 import { StdioServerConfig, HttpServerConfig } from "../types/config.js";
@@ -270,7 +270,9 @@ describe("ConnectionManager", () => {
 
       await expect(
         manager.addServer("git-server", duplicateServer)
-      ).rejects.toThrow('Server name conflict detected: "git-server" already exists');
+      ).rejects.toThrow(
+        'Server name conflict detected: "git-server" already exists'
+      );
     });
   });
 

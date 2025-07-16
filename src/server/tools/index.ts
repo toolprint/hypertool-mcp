@@ -10,7 +10,11 @@ import { createDeleteToolsetModule } from "./delete-toolset.js";
 import { createUnequipToolsetModule } from "./unequip-toolset.js";
 import { createGetActiveToolsetModule } from "./get-active-toolset.js";
 
-export type { ToolModule, ToolDependencies, ToolModuleFactory } from "./types.js";
+export type {
+  ToolModule,
+  ToolDependencies,
+  ToolModuleFactory,
+} from "./types.js";
 
 /**
  * Default tool modules
@@ -22,5 +26,5 @@ export const TOOL_MODULE_FACTORIES = [
   createEquipToolsetModule,
   createDeleteToolsetModule,
   createUnequipToolsetModule,
-  createGetActiveToolsetModule
-]
+  createGetActiveToolsetModule,
+];

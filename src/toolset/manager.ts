@@ -16,23 +16,34 @@ export * from "./types.js";
 export { validateToolsetConfig } from "./validator.js";
 
 // Export loader functions
-export {
-  loadToolsetConfig,
-  saveToolsetConfig,
-} from "./loader.js";
+export { loadToolsetConfig, saveToolsetConfig } from "./loader.js";
 
 /**
  * Main toolset manager class
  */
 import { EventEmitter } from "events";
-import { DiscoveredTool, IToolDiscoveryEngine, DiscoveredToolsChangedEvent } from "../discovery/types.js";
-import { ToolsetConfig, ValidationResult, ToolsetChangeEvent, DynamicToolReference } from "./types.js";
+import {
+  DiscoveredTool,
+  IToolDiscoveryEngine,
+  DiscoveredToolsChangedEvent,
+} from "../discovery/types.js";
+import {
+  ToolsetConfig,
+  ValidationResult,
+  ToolsetChangeEvent,
+  DynamicToolReference,
+} from "./types.js";
 import { loadToolsetConfig, saveToolsetConfig } from "./loader.js";
 import { validateToolsetConfig } from "./validator.js";
 import { createLogger } from "../logging/index.js";
-import { BuildToolsetResponse, ListSavedToolsetsResponse, EquipToolsetResponse, ToolsetInfo } from "../server/tools/schemas.js";
+import {
+  BuildToolsetResponse,
+  ListSavedToolsetsResponse,
+  EquipToolsetResponse,
+  ToolsetInfo,
+} from "../server/tools/schemas.js";
 
-const logger = createLogger({ module: 'toolset' });
+const logger = createLogger({ module: "toolset" });
 
 export class ToolsetManager extends EventEmitter {
   private currentToolset?: ToolsetConfig;
@@ -46,9 +57,7 @@ export class ToolsetManager extends EventEmitter {
   /**
    * Load toolset configuration from file
    */
-  async loadToolsetFromConfig(
-    filePath: string
-  ): Promise<{
+  async loadToolsetFromConfig(filePath: string): Promise<{
     success: boolean;
     validation: ValidationResult;
     error?: string;
@@ -104,7 +113,8 @@ export class ToolsetManager extends EventEmitter {
     // Return empty toolset - users must select tools explicitly
     this.currentToolset = {
       name: options?.name || "empty-toolset",
-      description: options?.description || "Empty toolset - add tools explicitly",
+      description:
+        options?.description || "Empty toolset - add tools explicitly",
       version: "1.0.0",
       createdAt: new Date(),
       tools: [], // Intentionally empty - no default tools
@@ -125,11 +135,11 @@ export class ToolsetManager extends EventEmitter {
       const event: ToolsetChangeEvent = {
         previousToolset: previousConfig || null,
         newToolset: toolsetConfig,
-        changeType: previousConfig ? 'updated' : 'equipped',
-        timestamp: new Date()
+        changeType: previousConfig ? "updated" : "equipped",
+        timestamp: new Date(),
       };
-      logger.debug('toolsetChanged', event);
-      this.emit('toolsetChanged', event);
+      logger.debug("toolsetChanged", event);
+      this.emit("toolsetChanged", event);
     }
     return validation;
   }
@@ -188,16 +198,23 @@ export class ToolsetManager extends EventEmitter {
     this.discoveryEngine = discoveryEngine;
 
     // Listen for discovered tools changes and validate active toolset
-    (discoveryEngine as any).on('toolsChanged', (event: DiscoveredToolsChangedEvent) => {
-      this.handleDiscoveredToolsChanged(event);
-    });
+    (discoveryEngine as any).on(
+      "toolsChanged",
+      (event: DiscoveredToolsChangedEvent) => {
+        this.handleDiscoveredToolsChanged(event);
+      }
+    );
   }
 
   /**
    * Get currently active MCP tools based on loaded toolset
    * Returns all discovered tools if no toolset is active
    */
-  getMcpTools(): Array<{ name: string; description: string; inputSchema: any }> {
+  getMcpTools(): Array<{
+    name: string;
+    description: string;
+    inputSchema: any;
+  }> {
     if (!this.discoveryEngine) {
       return [];
     }
@@ -213,16 +230,19 @@ export class ToolsetManager extends EventEmitter {
     const filteredTools: DiscoveredTool[] = [];
 
     for (const toolRef of this.currentToolset.tools) {
-      const resolution = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
+      const resolution = this.discoveryEngine.resolveToolReference(toolRef, {
+        allowStaleRefs: false,
+      });
       if (resolution?.exists && resolution.tool) {
         filteredTools.push(resolution.tool);
       }
     }
 
     // Convert to MCP tool format with flattened names for external exposure
-    return filteredTools.map(tool => ({
+    return filteredTools.map((tool) => ({
       name: this.flattenToolName(tool.namespacedName),
-      description: tool.tool.description || `Tool from ${tool.serverName} server`,
+      description:
+        tool.tool.description || `Tool from ${tool.serverName} server`,
       inputSchema: {
         ...tool.tool.inputSchema,
         type: "object" as const,
@@ -250,7 +270,9 @@ export class ToolsetManager extends EventEmitter {
     const filteredTools: DiscoveredTool[] = [];
 
     for (const toolRef of this.currentToolset.tools) {
-      const resolution = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
+      const resolution = this.discoveryEngine.resolveToolReference(toolRef, {
+        allowStaleRefs: false,
+      });
       if (resolution?.exists && resolution.tool) {
         filteredTools.push(resolution.tool);
       }
@@ -263,7 +285,7 @@ export class ToolsetManager extends EventEmitter {
    * Flatten tool name for external exposure (git.status → git_status)
    */
   private flattenToolName(namespacedName: string): string {
-    return namespacedName.replace(/\./g, '_');
+    return namespacedName.replace(/\./g, "_");
   }
 
   /**
@@ -289,13 +311,21 @@ export class ToolsetManager extends EventEmitter {
    * Check if toolset is currently active
    */
   hasActiveToolset(): boolean {
-    return this.currentToolset !== undefined && this.currentToolset.tools.length > 0;
+    return (
+      this.currentToolset !== undefined && this.currentToolset.tools.length > 0
+    );
   }
 
   /**
    * Get active toolset information
    */
-  getActiveToolsetInfo(): { name: string; description?: string; toolCount: number; version?: string; createdAt?: string } | null {
+  getActiveToolsetInfo(): {
+    name: string;
+    description?: string;
+    toolCount: number;
+    version?: string;
+    createdAt?: string;
+  } | null {
     if (!this.currentToolset) {
       return null;
     }
@@ -305,9 +335,10 @@ export class ToolsetManager extends EventEmitter {
       description: this.currentToolset.description,
       toolCount: this.currentToolset.tools.length,
       version: this.currentToolset.version,
-      createdAt: this.currentToolset.createdAt instanceof Date
-        ? this.currentToolset.createdAt.toISOString()
-        : this.currentToolset.createdAt,
+      createdAt:
+        this.currentToolset.createdAt instanceof Date
+          ? this.currentToolset.createdAt.toISOString()
+          : this.currentToolset.createdAt,
     };
   }
 
@@ -329,8 +360,9 @@ export class ToolsetManager extends EventEmitter {
         return {
           meta: {
             success: false,
-            error: "Invalid toolset name format. Use only lowercase letters, numbers, and hyphens (a-z, 0-9, -)"
-          }
+            error:
+              "Invalid toolset name format. Use only lowercase letters, numbers, and hyphens (a-z, 0-9, -)",
+          },
         };
       }
 
@@ -338,8 +370,8 @@ export class ToolsetManager extends EventEmitter {
         return {
           meta: {
             success: false,
-            error: "Toolset name must be between 2 and 50 characters"
-          }
+            error: "Toolset name must be between 2 and 50 characters",
+          },
         };
       }
 
@@ -347,8 +379,8 @@ export class ToolsetManager extends EventEmitter {
         return {
           meta: {
             success: false,
-            error: "Toolset must include at least one tool"
-          }
+            error: "Toolset must include at least one tool",
+          },
         };
       }
 
@@ -359,8 +391,8 @@ export class ToolsetManager extends EventEmitter {
           return {
             meta: {
               success: false,
-              error: `Invalid tool references: ${validationResult.invalidReferences.join(', ')}`
-            }
+              error: `Invalid tool references: ${validationResult.invalidReferences.join(", ")}`,
+            },
           };
         }
       }
@@ -375,8 +407,8 @@ export class ToolsetManager extends EventEmitter {
         return {
           meta: {
             success: false,
-            error: `Toolset "${name}" already exists. Use a different name or delete the existing toolset first.`
-          }
+            error: `Toolset "${name}" already exists. Use a different name or delete the existing toolset first.`,
+          },
         };
       }
 
@@ -386,7 +418,7 @@ export class ToolsetManager extends EventEmitter {
         description: options.description,
         version: "1.0.0",
         createdAt: new Date(),
-        tools
+        tools,
       };
 
       // Validate configuration
@@ -395,8 +427,8 @@ export class ToolsetManager extends EventEmitter {
         return {
           meta: {
             success: false,
-            error: `Invalid toolset configuration: ${validation.errors.join(', ')}`
-          }
+            error: `Invalid toolset configuration: ${validation.errors.join(", ")}`,
+          },
         };
       }
 
@@ -411,9 +443,9 @@ export class ToolsetManager extends EventEmitter {
         meta: {
           success: true,
           toolsetName: name,
-          autoEquipped: false
+          autoEquipped: false,
         },
-        toolset: toolsetInfo
+        toolset: toolsetInfo,
       };
 
       // Auto-equip if requested
@@ -430,8 +462,8 @@ export class ToolsetManager extends EventEmitter {
       return {
         meta: {
           success: false,
-          error: `Failed to create toolset: ${error instanceof Error ? error.message : String(error)}`
-        }
+          error: `Failed to create toolset: ${error instanceof Error ? error.message : String(error)}`,
+        },
       };
     }
   }
@@ -457,14 +489,14 @@ export class ToolsetManager extends EventEmitter {
         const availableNames = Object.keys(stored);
         return {
           success: false,
-          error: `Toolset "${name}" not found. Available toolsets: ${availableNames.length > 0 ? availableNames.join(', ') : 'none'}`
+          error: `Toolset "${name}" not found. Available toolsets: ${availableNames.length > 0 ? availableNames.join(", ") : "none"}`,
         };
       }
 
       if (!options.confirm) {
         return {
           success: false,
-          error: `Deletion requires confirmation. Set confirm: true to delete toolset "${name}".`
+          error: `Deletion requires confirmation. Set confirm: true to delete toolset "${name}".`,
         };
       }
 
@@ -479,12 +511,12 @@ export class ToolsetManager extends EventEmitter {
 
       return {
         success: true,
-        message: `Toolset "${name}" has been deleted successfully.`
+        message: `Toolset "${name}" has been deleted successfully.`,
       };
     } catch (error) {
       return {
         success: false,
-        error: `Failed to delete toolset: ${error instanceof Error ? error.message : String(error)}`
+        error: `Failed to delete toolset: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
@@ -499,18 +531,18 @@ export class ToolsetManager extends EventEmitter {
       const stored = await loadToolsetsFromPreferences();
 
       const toolsets = await Promise.all(
-        Object.values(stored).map(config => this.generateToolsetInfo(config))
+        Object.values(stored).map((config) => this.generateToolsetInfo(config))
       );
 
       return {
         success: true,
-        toolsets
+        toolsets,
       };
     } catch (error) {
       return {
         success: false,
         toolsets: [],
-        error: `Failed to list toolsets: ${error instanceof Error ? error.message : String(error)}`
+        error: `Failed to list toolsets: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
@@ -538,18 +570,21 @@ export class ToolsetManager extends EventEmitter {
     if (!this.discoveryEngine) {
       return {
         summary: { totalTools: 0, totalServers: 0 },
-        toolsByServer: []
+        toolsByServer: [],
       };
     }
 
     const discoveredTools = this.discoveryEngine.getAvailableTools(true);
-    const serverToolsMap: Record<string, Array<{
-      name: string;
-      description?: string;
-      namespacedName: string;
-      serverName: string;
-      refId: string;
-    }>> = {};
+    const serverToolsMap: Record<
+      string,
+      Array<{
+        name: string;
+        description?: string;
+        namespacedName: string;
+        serverName: string;
+        refId: string;
+      }>
+    > = {};
 
     // Group tools by server
     for (const tool of discoveredTools) {
@@ -567,18 +602,22 @@ export class ToolsetManager extends EventEmitter {
     }
 
     // Convert to array format
-    const toolsByServer = Object.entries(serverToolsMap).map(([serverName, tools]) => ({
-      serverName,
-      toolCount: tools.length,
-      tools: tools.sort((a, b) => a.name.localeCompare(b.name))
-    }));
+    const toolsByServer = Object.entries(serverToolsMap).map(
+      ([serverName, tools]) => ({
+        serverName,
+        toolCount: tools.length,
+        tools: tools.sort((a, b) => a.name.localeCompare(b.name)),
+      })
+    );
 
     return {
       summary: {
         totalTools: discoveredTools.length,
-        totalServers: Object.keys(serverToolsMap).length
+        totalServers: Object.keys(serverToolsMap).length,
       },
-      toolsByServer: toolsByServer.sort((a, b) => a.serverName.localeCompare(b.serverName))
+      toolsByServer: toolsByServer.sort((a, b) =>
+        a.serverName.localeCompare(b.serverName)
+      ),
     };
   }
 
@@ -600,12 +639,14 @@ export class ToolsetManager extends EventEmitter {
         valid: false,
         validReferences: [],
         invalidReferences: tools,
-        resolvedTools: []
+        resolvedTools: [],
       };
     }
 
     for (const toolRef of tools) {
-      const resolution = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
+      const resolution = this.discoveryEngine.resolveToolReference(toolRef, {
+        allowStaleRefs: false,
+      });
 
       if (resolution?.exists && resolution.tool) {
         validReferences.push(toolRef);
@@ -619,7 +660,7 @@ export class ToolsetManager extends EventEmitter {
       valid: invalidReferences.length === 0,
       validReferences,
       invalidReferences,
-      resolvedTools
+      resolvedTools,
     };
   }
 
@@ -641,7 +682,10 @@ export class ToolsetManager extends EventEmitter {
 
       const validation = this.setCurrentToolset(toolsetConfig);
       if (!validation.valid) {
-        return { success: false, error: `Invalid toolset: ${validation.errors.join(", ")}` };
+        return {
+          success: false,
+          error: `Invalid toolset: ${validation.errors.join(", ")}`,
+        };
       }
 
       // Generate toolset info with current status
@@ -650,10 +694,13 @@ export class ToolsetManager extends EventEmitter {
       // Event is already emitted by setConfig()
       return {
         success: true,
-        toolset: toolsetInfo
+        toolset: toolsetInfo,
       };
     } catch (error) {
-      return { success: false, error: `Failed to load toolset: ${error instanceof Error ? error.message : String(error)}` };
+      return {
+        success: false,
+        error: `Failed to load toolset: ${error instanceof Error ? error.message : String(error)}`,
+      };
     }
   }
 
@@ -670,10 +717,10 @@ export class ToolsetManager extends EventEmitter {
       const event: ToolsetChangeEvent = {
         previousToolset: previousConfig,
         newToolset: null,
-        changeType: 'unequipped',
-        timestamp: new Date()
+        changeType: "unequipped",
+        timestamp: new Date(),
       };
-      this.emit('toolsetChanged', event);
+      this.emit("toolsetChanged", event);
     }
   }
 
@@ -699,61 +746,71 @@ export class ToolsetManager extends EventEmitter {
     if (this.discoveryEngine) {
       // Process each tool reference
       for (const toolRef of config.tools) {
-        const resolution: {
-          exists: boolean;
-          tool?: any;
-          serverName?: string;
-          serverStatus?: any;
-          namespacedNameMatch: boolean;
-          refIdMatch: boolean;
-          warnings: string[];
-          errors: string[];
-        } | undefined = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
+        const resolution:
+          | {
+              exists: boolean;
+              tool?: any;
+              serverName?: string;
+              serverStatus?: any;
+              namespacedNameMatch: boolean;
+              refIdMatch: boolean;
+              warnings: string[];
+              errors: string[];
+            }
+          | undefined = this.discoveryEngine.resolveToolReference(toolRef, {
+          allowStaleRefs: false,
+        });
 
         if (resolution?.exists && resolution.tool) {
           const serverName = resolution.tool.serverName;
-          serverToolCounts[serverName] = (serverToolCounts[serverName] || 0) + 1;
+          serverToolCounts[serverName] =
+            (serverToolCounts[serverName] || 0) + 1;
 
           // Add detailed tool information
           detailedTools.push({
             namespacedName: resolution.tool.namespacedName,
             refId: resolution.tool.toolHash,
             server: serverName,
-            active: true // Tool is available
+            active: true, // Tool is available
           });
         } else {
           // Tool is not available, but we can still include it with the info we have
           detailedTools.push({
-            namespacedName: toolRef.namespacedName || 'unknown',
-            refId: toolRef.refId || 'unknown',
-            server: 'unknown',
-            active: false // Tool is not available
+            namespacedName: toolRef.namespacedName || "unknown",
+            refId: toolRef.refId || "unknown",
+            server: "unknown",
+            active: false, // Tool is not available
           });
         }
       }
     } else {
       // No discovery engine available, create tools array with basic info
-      detailedTools.push(...config.tools.map(toolRef => ({
-        namespacedName: toolRef.namespacedName || 'unknown',
-        refId: toolRef.refId || 'unknown',
-        server: 'unknown',
-        active: false // Cannot determine availability without discovery engine
-      })));
+      detailedTools.push(
+        ...config.tools.map((toolRef) => ({
+          namespacedName: toolRef.namespacedName || "unknown",
+          refId: toolRef.refId || "unknown",
+          server: "unknown",
+          active: false, // Cannot determine availability without discovery engine
+        }))
+      );
     }
 
-    const servers = Object.entries(serverToolCounts).map(([name, toolCount]) => ({
-      name,
-      enabled: true,
-      toolCount
-    }));
+    const servers = Object.entries(serverToolCounts).map(
+      ([name, toolCount]) => ({
+        name,
+        enabled: true,
+        toolCount,
+      })
+    );
 
     return {
       name: config.name,
       description: config.description,
       version: config.version,
-      createdAt: config.createdAt instanceof Date
-        ? config.createdAt.toISOString()
-        : config.createdAt,
+      createdAt:
+        config.createdAt instanceof Date
+          ? config.createdAt.toISOString()
+          : config.createdAt,
       toolCount: config.tools.length,
       active: this.currentToolset?.name === config.name,
       location: `User preferences (${config.name})`,
@@ -761,14 +818,16 @@ export class ToolsetManager extends EventEmitter {
       enabledServers: servers.length,
       totalTools: config.tools.length,
       servers,
-      tools: detailedTools
+      tools: detailedTools,
     };
   }
 
   /**
    * Handle discovered tools changes and validate active toolset
    */
-  private handleDiscoveredToolsChanged(event: DiscoveredToolsChangedEvent): void {
+  private handleDiscoveredToolsChanged(
+    event: DiscoveredToolsChangedEvent
+  ): void {
     // Only validate if we have an active toolset
     if (!this.currentToolset || !this.discoveryEngine) {
       return;
@@ -778,19 +837,23 @@ export class ToolsetManager extends EventEmitter {
     const affectedTools: string[] = [];
 
     for (const toolRef of this.currentToolset.tools) {
-      const resolution = this.discoveryEngine.resolveToolReference(toolRef, { allowStaleRefs: false });
+      const resolution = this.discoveryEngine.resolveToolReference(toolRef, {
+        allowStaleRefs: false,
+      });
 
       // Check if this tool belongs to the server that changed
       if (resolution?.tool?.serverName === event.serverName) {
         // Check if this specific tool was removed or changed
-        const wasRemoved = event.changes.some(change =>
-          change.changeType === 'removed' &&
-          change.tool.namespacedName === resolution.tool!.namespacedName
+        const wasRemoved = event.changes.some(
+          (change) =>
+            change.changeType === "removed" &&
+            change.tool.namespacedName === resolution.tool!.namespacedName
         );
 
-        const wasChanged = event.changes.some(change =>
-          change.changeType === 'updated' &&
-          change.tool.namespacedName === resolution.tool!.namespacedName
+        const wasChanged = event.changes.some(
+          (change) =>
+            change.changeType === "updated" &&
+            change.tool.namespacedName === resolution.tool!.namespacedName
         );
 
         if (wasRemoved || wasChanged) {
@@ -805,11 +868,11 @@ export class ToolsetManager extends EventEmitter {
       const changeEvent: ToolsetChangeEvent = {
         previousToolset: this.currentToolset,
         newToolset: this.currentToolset, // Same toolset, but tools have changed
-        changeType: 'updated',
-        timestamp: new Date()
+        changeType: "updated",
+        timestamp: new Date(),
       };
 
-      this.emit('toolsetChanged', changeEvent);
+      this.emit("toolsetChanged", changeEvent);
     }
   }
 }

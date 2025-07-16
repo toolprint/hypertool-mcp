@@ -2,10 +2,14 @@
  * Test ToolsetManager integration with DiscoveryEngine toolsChanged events
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { ToolsetManager } from "./manager.js";
 import { ToolsetConfig, ToolsetChangeEvent } from "./types.js";
-import { DiscoveredTool, IToolDiscoveryEngine, DiscoveredToolsChangedEvent } from "../discovery/types.js";
+import {
+  DiscoveredTool,
+  IToolDiscoveryEngine,
+  DiscoveredToolsChangedEvent,
+} from "../discovery/types.js";
 import { EventEmitter } from "events";
 
 // Mock discovery engine that can emit toolsChanged events
@@ -21,17 +25,29 @@ class MockDiscoveryEngine extends EventEmitter implements IToolDiscoveryEngine {
   async start() {}
   async stop() {}
   async outputToolServerStatus(): Promise<void> {}
-  async discoverTools(): Promise<DiscoveredTool[]> { return this.tools; }
-  async getToolByName(name: string): Promise<DiscoveredTool | null> {
-    return this.tools.find(t => t.name === name || t.namespacedName === name) || null;
+  async discoverTools(): Promise<DiscoveredTool[]> {
+    return this.tools;
   }
-  async searchTools(): Promise<DiscoveredTool[]> { return this.tools; }
-  getAvailableTools(): DiscoveredTool[] { return this.tools; }
-  resolveToolReference(ref: { namespacedName?: string; refId?: string }, options?: { allowStaleRefs?: boolean }) {
-    const tool = this.tools.find(t => 
-      t.namespacedName === ref.namespacedName || t.toolHash === ref.refId
+  async getToolByName(name: string): Promise<DiscoveredTool | null> {
+    return (
+      this.tools.find((t) => t.name === name || t.namespacedName === name) ||
+      null
     );
-    
+  }
+  async searchTools(): Promise<DiscoveredTool[]> {
+    return this.tools;
+  }
+  getAvailableTools(): DiscoveredTool[] {
+    return this.tools;
+  }
+  resolveToolReference(
+    ref: { namespacedName?: string; refId?: string },
+    options?: { allowStaleRefs?: boolean }
+  ) {
+    const tool = this.tools.find(
+      (t) => t.namespacedName === ref.namespacedName || t.toolHash === ref.refId
+    );
+
     return {
       exists: !!tool,
       tool,
@@ -40,7 +56,7 @@ class MockDiscoveryEngine extends EventEmitter implements IToolDiscoveryEngine {
       namespacedNameMatch: !!tool && tool.namespacedName === ref.namespacedName,
       refIdMatch: !!tool && tool.toolHash === ref.refId,
       warnings: [],
-      errors: []
+      errors: [],
     };
   }
   async refreshCache() {}
@@ -58,17 +74,17 @@ class MockDiscoveryEngine extends EventEmitter implements IToolDiscoveryEngine {
   getServerStates() {
     return [];
   }
-  
+
   // Helper method to simulate toolsChanged events
   simulateToolsChanged(event: DiscoveredToolsChangedEvent) {
-    this.emit('toolsChanged', event);
+    this.emit("toolsChanged", event);
   }
 }
 
 describe("ToolsetManager Discovery Integration", () => {
   let toolsetManager: ToolsetManager;
   let mockDiscovery: MockDiscoveryEngine;
-  
+
   // Sample tool for testing
   const sampleTool: DiscoveredTool = {
     name: "status",
@@ -89,7 +105,7 @@ describe("ToolsetManager Discovery Integration", () => {
     toolsetManager = new ToolsetManager();
     mockDiscovery = new MockDiscoveryEngine();
     mockDiscovery.setTools([sampleTool]);
-    
+
     // Connect the toolset manager to the discovery engine
     toolsetManager.setDiscoveryEngine(mockDiscovery);
   });
@@ -102,7 +118,10 @@ describe("ToolsetManager Discovery Integration", () => {
       version: "1.0.0",
       createdAt: new Date(),
       tools: [
-        { namespacedName: "git.status", refId: "abcd1234567890abcdef1234567890abcdef12" }
+        {
+          namespacedName: "git.status",
+          refId: "abcd1234567890abcdef1234567890abcdef12",
+        },
       ],
     };
 
@@ -110,8 +129,8 @@ describe("ToolsetManager Discovery Integration", () => {
 
     // Listen for toolset change events
     const toolsetChangedPromise = new Promise<void>((resolve) => {
-      toolsetManager.on('toolsetChanged', (event: ToolsetChangeEvent) => {
-        expect(event.changeType).toBe('updated');
+      toolsetManager.on("toolsetChanged", (event: ToolsetChangeEvent) => {
+        expect(event.changeType).toBe("updated");
         expect(event.newToolset).toBe(toolsetConfig);
         expect(event.previousToolset).toBe(toolsetConfig);
         resolve();
@@ -127,7 +146,7 @@ describe("ToolsetManager Discovery Integration", () => {
           changeType: "updated",
           previousHash: "oldHash123456789012345678901234567890",
           currentHash: "abcd1234567890abcdef1234567890abcdef12",
-        }
+        },
       ],
       summary: {
         added: 0,
@@ -141,7 +160,7 @@ describe("ToolsetManager Discovery Integration", () => {
     };
 
     mockDiscovery.simulateToolsChanged(discoveryEvent);
-    
+
     // Wait for the event to be handled
     await toolsetChangedPromise;
   });
@@ -154,7 +173,10 @@ describe("ToolsetManager Discovery Integration", () => {
       version: "1.0.0",
       createdAt: new Date(),
       tools: [
-        { namespacedName: "git.status", refId: "abcd1234567890abcdef1234567890abcdef12" }
+        {
+          namespacedName: "git.status",
+          refId: "abcd1234567890abcdef1234567890abcdef12",
+        },
       ],
     };
 
@@ -162,8 +184,8 @@ describe("ToolsetManager Discovery Integration", () => {
 
     // Listen for toolset change events
     const toolsetChangedPromise = new Promise<void>((resolve) => {
-      toolsetManager.on('toolsetChanged', (event: ToolsetChangeEvent) => {
-        expect(event.changeType).toBe('updated');
+      toolsetManager.on("toolsetChanged", (event: ToolsetChangeEvent) => {
+        expect(event.changeType).toBe("updated");
         resolve();
       });
     });
@@ -176,7 +198,7 @@ describe("ToolsetManager Discovery Integration", () => {
           tool: sampleTool,
           changeType: "removed",
           previousHash: "abcd1234567890abcdef1234567890abcdef12",
-        }
+        },
       ],
       summary: {
         added: 0,
@@ -190,7 +212,7 @@ describe("ToolsetManager Discovery Integration", () => {
     };
 
     mockDiscovery.simulateToolsChanged(discoveryEvent);
-    
+
     // Wait for the event to be handled
     await toolsetChangedPromise;
   });
@@ -203,7 +225,7 @@ describe("ToolsetManager Discovery Integration", () => {
       version: "1.0.0",
       createdAt: new Date(),
       tools: [
-        { namespacedName: "docker.ps", refId: "dockerHashABCD1234567890" }
+        { namespacedName: "docker.ps", refId: "dockerHashABCD1234567890" },
       ],
     };
 
@@ -211,7 +233,7 @@ describe("ToolsetManager Discovery Integration", () => {
 
     // Listen for toolset change events (should not be called)
     let eventEmitted = false;
-    toolsetManager.on('toolsetChanged', () => {
+    toolsetManager.on("toolsetChanged", () => {
       eventEmitted = true;
     });
 
@@ -224,7 +246,7 @@ describe("ToolsetManager Discovery Integration", () => {
           changeType: "updated",
           previousHash: "oldHash123456789012345678901234567890",
           currentHash: "abcd1234567890abcdef1234567890abcdef12",
-        }
+        },
       ],
       summary: {
         added: 0,
@@ -240,8 +262,8 @@ describe("ToolsetManager Discovery Integration", () => {
     mockDiscovery.simulateToolsChanged(discoveryEvent);
 
     // Wait a short time to ensure no event is emitted
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     // Verify no event was emitted
     expect(eventEmitted).toBe(false);
   });
@@ -251,7 +273,7 @@ describe("ToolsetManager Discovery Integration", () => {
 
     // Listen for toolset change events (should not be called)
     const toolsetHandler = vi.fn();
-    toolsetManager.on('toolsetChanged', toolsetHandler);
+    toolsetManager.on("toolsetChanged", toolsetHandler);
 
     // Simulate discovery changes
     const discoveryEvent: DiscoveredToolsChangedEvent = {
@@ -261,7 +283,7 @@ describe("ToolsetManager Discovery Integration", () => {
           tool: sampleTool,
           changeType: "added",
           currentHash: "abcd1234567890abcdef1234567890abcdef12",
-        }
+        },
       ],
       summary: {
         added: 1,
@@ -277,8 +299,8 @@ describe("ToolsetManager Discovery Integration", () => {
     mockDiscovery.simulateToolsChanged(discoveryEvent);
 
     // Wait a short time to ensure no event is emitted
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     // Verify no event was emitted
     expect(toolsetHandler).not.toHaveBeenCalled();
   });

@@ -5,10 +5,13 @@
 
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
-import { CallToolRequest, CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import {
+  CallToolRequest,
+  CallToolResult,
+} from "@modelcontextprotocol/sdk/types.js";
 import { createLogger } from "../logging/index.js";
 
-const logger = createLogger({ module: 'router/router' });
+const logger = createLogger({ module: "router/router" });
 import {
   IRequestRouter,
   ToolRoute,

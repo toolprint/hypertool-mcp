@@ -13,7 +13,7 @@ export const equipToolsetDefinition: Tool = {
     properties: {
       name: {
         type: "string",
-        description: "Name of the toolset to equip"
+        description: "Name of the toolset to equip",
       },
     },
     required: ["name"],
@@ -21,7 +21,9 @@ export const equipToolsetDefinition: Tool = {
   },
 };
 
-export const createEquipToolsetModule: ToolModuleFactory = (deps): ToolModule => {
+export const createEquipToolsetModule: ToolModuleFactory = (
+  deps
+): ToolModule => {
   return {
     toolName: "equip-toolset",
     definition: equipToolsetDefinition,
@@ -38,15 +40,15 @@ export const createEquipToolsetModule: ToolModuleFactory = (deps): ToolModule =>
                 type: "text",
                 text: JSON.stringify({
                   success: true,
-                  message: `✅ Toolset "${args?.name}" equipped successfully. The server's tool list has been updated.`
-                })
-              }
+                  message: `✅ Toolset "${args?.name}" equipped successfully. The server's tool list has been updated.`,
+                }),
+              },
             ],
             structuredContent: {
               success: true,
               toolsetName: args?.name,
-              message: "Toolset equipped successfully"
-            }
+              message: "Toolset equipped successfully",
+            },
           };
         } else {
           return {
@@ -55,14 +57,14 @@ export const createEquipToolsetModule: ToolModuleFactory = (deps): ToolModule =>
                 type: "text",
                 text: JSON.stringify({
                   success: false,
-                  error: equipResult.error
-                })
-              }
+                  error: equipResult.error,
+                }),
+              },
             ],
             structuredContent: {
               success: false,
-              error: equipResult.error
-            }
+              error: equipResult.error,
+            },
           };
         }
       } else {
@@ -75,6 +77,6 @@ export const createEquipToolsetModule: ToolModuleFactory = (deps): ToolModule =>
           ],
         };
       }
-    }
+    },
   };
 };

@@ -10,8 +10,8 @@ import { Connection } from "./types.js";
  */
 export enum HealthState {
   HEALTHY = "healthy",
-  UNHEALTHY = "unhealthy", 
-  FAILED = "failed"
+  UNHEALTHY = "unhealthy",
+  FAILED = "failed",
 }
 
 /**
@@ -63,7 +63,7 @@ export class HealthMonitor extends EventEmitter {
    */
   addConnection(connection: Connection): void {
     this.connections.set(connection.serverName, connection);
-    
+
     // Initialize health result
     const isConnected = connection.isConnected();
     this.healthResults.set(connection.serverName, {
@@ -84,7 +84,11 @@ export class HealthMonitor extends EventEmitter {
     });
 
     connection.on("failed", (event) => {
-      this.updateHealthStatus(connection.serverName, HealthState.FAILED, event.error);
+      this.updateHealthStatus(
+        connection.serverName,
+        HealthState.FAILED,
+        event.error
+      );
     });
   }
 
@@ -117,7 +121,7 @@ export class HealthMonitor extends EventEmitter {
     }
 
     this.isRunning = false;
-    
+
     if (this.checkTimer) {
       clearInterval(this.checkTimer);
       this.checkTimer = undefined;
@@ -185,13 +189,15 @@ export class HealthMonitor extends EventEmitter {
   /**
    * Check health of a specific connection
    */
-  private async checkConnectionHealth(connection: Connection): Promise<HealthCheckResult> {
+  private async checkConnectionHealth(
+    connection: Connection
+  ): Promise<HealthCheckResult> {
     const previousResult = this.healthResults.get(connection.serverName);
 
     try {
       // Perform basic connectivity check
       const isConnected = connection.isConnected();
-      
+
       // Perform ping check if connected
       let pingResult = false;
       if (isConnected) {
@@ -200,7 +206,7 @@ export class HealthMonitor extends EventEmitter {
 
       const healthy = isConnected && pingResult;
       let state: HealthState;
-      
+
       if (healthy) {
         state = HealthState.HEALTHY;
       } else if (isConnected) {
@@ -219,7 +225,6 @@ export class HealthMonitor extends EventEmitter {
 
       this.processHealthResult(result, previousResult);
       return result;
-
     } catch (error) {
       const result: HealthCheckResult = {
         serverId: connection.id,
@@ -255,16 +260,23 @@ export class HealthMonitor extends EventEmitter {
   /**
    * Update health status based on connection events
    */
-  private updateHealthStatus(serverName: string, state: HealthState, error?: Error): void {
+  private updateHealthStatus(
+    serverName: string,
+    state: HealthState,
+    error?: Error
+  ): void {
     const previousResult = this.healthResults.get(serverName);
-    
+
     const result: HealthCheckResult = {
       serverId: previousResult?.serverId || "",
       serverName,
       state,
       timestamp: new Date(),
       error,
-      lastHealthyAt: state === HealthState.HEALTHY ? new Date() : previousResult?.lastHealthyAt,
+      lastHealthyAt:
+        state === HealthState.HEALTHY
+          ? new Date()
+          : previousResult?.lastHealthyAt,
     };
 
     this.processHealthResult(result, previousResult);
@@ -288,19 +300,28 @@ export class HealthMonitor extends EventEmitter {
   /**
    * Override EventEmitter methods for type safety
    */
-  on<K extends keyof HealthMonitorEvents>(event: K, listener: HealthMonitorEvents[K]): this;
+  on<K extends keyof HealthMonitorEvents>(
+    event: K,
+    listener: HealthMonitorEvents[K]
+  ): this;
   on(event: string, listener: (...args: any[]) => void): this;
   on(event: string, listener: any): this {
     return super.on(event, listener);
   }
 
-  off<K extends keyof HealthMonitorEvents>(event: K, listener: HealthMonitorEvents[K]): this;
+  off<K extends keyof HealthMonitorEvents>(
+    event: K,
+    listener: HealthMonitorEvents[K]
+  ): this;
   off(event: string, listener: (...args: any[]) => void): this;
   off(event: string, listener: any): this {
     return super.off(event, listener);
   }
 
-  emit<K extends keyof HealthMonitorEvents>(event: K, ...args: Parameters<HealthMonitorEvents[K]>): boolean;
+  emit<K extends keyof HealthMonitorEvents>(
+    event: K,
+    ...args: Parameters<HealthMonitorEvents[K]>
+  ): boolean;
   emit(event: string, ...args: any[]): boolean;
   emit(event: string, ...args: any[]): boolean {
     return super.emit(event, ...args);

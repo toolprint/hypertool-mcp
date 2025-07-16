@@ -39,7 +39,7 @@ export interface RuntimeOptions {
  * Default runtime options
  */
 export const DEFAULT_RUNTIME_OPTIONS: RuntimeOptions = {
-  transport: 'stdio',
+  transport: "stdio",
   debug: false,
   insecure: false,
 };

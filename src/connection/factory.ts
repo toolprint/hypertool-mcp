@@ -93,7 +93,9 @@ export class ConnectionFactory implements IConnectionFactory {
    * Validate if a server configuration is supported
    */
   isConfigSupported(config: ServerConfig): boolean {
-    return config.type === "stdio" || config.type === "http" || config.type === "sse";
+    return (
+      config.type === "stdio" || config.type === "http" || config.type === "sse"
+    );
   }
 
   /**

@@ -81,7 +81,9 @@ export async function loadUserPreferences(): Promise<UserPreferences> {
 /**
  * Save user preferences to config file
  */
-export async function saveUserPreferences(preferences: UserPreferences): Promise<void> {
+export async function saveUserPreferences(
+  preferences: UserPreferences
+): Promise<void> {
   await ensureConfigDir();
 
   const updatedPreferences = {
@@ -108,7 +110,9 @@ export async function updateMcpConfigPath(configPath: string): Promise<void> {
 /**
  * Get stored toolsets
  */
-export async function loadStoredToolsets(): Promise<Record<string, ToolsetConfig>> {
+export async function loadStoredToolsets(): Promise<
+  Record<string, ToolsetConfig>
+> {
   const preferences = await loadUserPreferences();
   return preferences.toolsets;
 }
@@ -116,7 +120,9 @@ export async function loadStoredToolsets(): Promise<Record<string, ToolsetConfig
 /**
  * Save toolsets
  */
-export async function saveStoredToolsets(toolsets: Record<string, ToolsetConfig>): Promise<void> {
+export async function saveStoredToolsets(
+  toolsets: Record<string, ToolsetConfig>
+): Promise<void> {
   const preferences = await loadUserPreferences();
   preferences.toolsets = toolsets;
   await saveUserPreferences(preferences);
@@ -132,4 +138,3 @@ export function getConfigPaths() {
     preferencesFile: PREFERENCES_FILE,
   };
 }
-

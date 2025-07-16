@@ -82,13 +82,10 @@ export class ConnectionError extends MetaMCPError {
     isRetryable: boolean = true,
     context?: Record<string, any>
   ) {
-    super(
-      message,
-      "CONNECTION_ERROR",
-      "connection",
-      isRetryable,
-      { ...context, serverName }
-    );
+    super(message, "CONNECTION_ERROR", "connection", isRetryable, {
+      ...context,
+      serverName,
+    });
     this.serverName = serverName;
   }
 
@@ -106,11 +103,15 @@ export class ConnectionError extends MetaMCPError {
 export class ServerUnavailableError extends MetaMCPError {
   public readonly serverName: string;
 
-  constructor(serverName: string, reason?: string, context?: Record<string, any>) {
+  constructor(
+    serverName: string,
+    reason?: string,
+    context?: Record<string, any>
+  ) {
     const message = reason
       ? `Server '${serverName}' is unavailable: ${reason}`
       : `Server '${serverName}' is unavailable`;
-    
+
     super(message, "SERVER_UNAVAILABLE", "availability", true, {
       ...context,
       serverName,
@@ -158,13 +159,10 @@ export class ToolNotFoundError extends MetaMCPError {
   public readonly toolName: string;
 
   constructor(toolName: string, context?: Record<string, any>) {
-    super(
-      `Tool '${toolName}' not found`,
-      "TOOL_NOT_FOUND",
-      "tool",
-      false,
-      { ...context, toolName }
-    );
+    super(`Tool '${toolName}' not found`, "TOOL_NOT_FOUND", "tool", false, {
+      ...context,
+      toolName,
+    });
     this.toolName = toolName;
   }
 

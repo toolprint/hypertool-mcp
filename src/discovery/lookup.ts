@@ -206,7 +206,10 @@ export class ToolLookupManager {
         }
 
         if (tool.tool.description) {
-          const score = this.calculateFuzzyScore(query.name, tool.tool.description);
+          const score = this.calculateFuzzyScore(
+            query.name,
+            tool.tool.description
+          );
           if (score > 0.3) {
             results.push({
               tool,

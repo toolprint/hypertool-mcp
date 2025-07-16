@@ -27,6 +27,30 @@
 
 ## 🚀 Quick Start
 
+### 🎯 Cursor IDE - One-Click Install
+
+[![Install Hypertool MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/install-mcp?name=hypertool&config=JTdCJTIydHlwZSUyMiUzQSUyMnN0cmVhbWFibGUtaHR0cCUyMiUyQyUyMmNvbW1hbmQlMjIlM0ElMjJucHglMjAteSUyMCU0MHRvb2xwcmludCUyRmh5cGVydG9vbC1tY3AlMjAtLWNvbmZpZyUyMH4lMkYuY3Vyc29yJTJGbWNwLmpzb24lMjIlN0Q%3D)
+
+Click the badge above to automatically install HyperTool MCP in Cursor IDE. This will add the server to your Cursor configuration and you can start using it immediately.
+
+### 🛠️ Advanced Cursor Setup
+
+For users who want to migrate existing MCP servers to work through HyperTool:
+
+```bash
+# Install and configure HyperTool for Cursor
+npx -y @toolprint/hypertool-mcp install cursor
+
+# Preview changes without making them (dry run)
+npx -y @toolprint/hypertool-mcp install cursor --dry-run
+```
+
+This command will:
+- Back up your current Cursor MCP configuration
+- Copy all existing servers to HyperTool's config
+- Add HyperTool as your main MCP server
+- Optionally clean up your original config
+
 ### 1. Add to Your MCP Configuration
 
 Add HyperTool to your existing `.mcp.json` or Claude Desktop config:

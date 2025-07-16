@@ -4,7 +4,12 @@
 
 import { EventEmitter } from "events";
 import { Logger, logger } from "../logging/index.js";
-import { MetaMCPError, isRetryableError, ConnectionError, ServerUnavailableError } from "./index.js";
+import {
+  MetaMCPError,
+  isRetryableError,
+  ConnectionError,
+  ServerUnavailableError,
+} from "./index.js";
 
 /**
  * Retry configuration
@@ -33,7 +38,7 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
  */
 export enum CircuitBreakerState {
   CLOSED = "closed",
-  OPEN = "open", 
+  OPEN = "open",
   HALF_OPEN = "half_open",
 }
 
@@ -106,7 +111,7 @@ export class RetryManager {
         });
 
         const result = await operation();
-        
+
         if (attempt > 1) {
           this.logger.info(`${operationName} succeeded after retry`, {
             attempt,
@@ -127,7 +132,10 @@ export class RetryManager {
         });
 
         // Don't retry if error is not retryable or we've reached max attempts
-        if (!isRetryableError(lastError) || attempt === this.config.maxAttempts) {
+        if (
+          !isRetryableError(lastError) ||
+          attempt === this.config.maxAttempts
+        ) {
           break;
         }
 
@@ -156,16 +164,18 @@ export class RetryManager {
    * Calculate retry delay with exponential backoff
    */
   private calculateDelay(attempt: number): number {
-    let delay = this.config.baseDelayMs * Math.pow(this.config.backoffMultiplier, attempt - 1);
-    
+    let delay =
+      this.config.baseDelayMs *
+      Math.pow(this.config.backoffMultiplier, attempt - 1);
+
     // Apply maximum delay limit
     delay = Math.min(delay, this.config.maxDelayMs);
-    
+
     // Add jitter to prevent thundering herd
     if (this.config.jitter) {
       delay = delay * (0.5 + Math.random() * 0.5);
     }
-    
+
     return Math.floor(delay);
   }
 
@@ -173,7 +183,7 @@ export class RetryManager {
    * Sleep for specified milliseconds
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
@@ -428,10 +438,15 @@ export class FallbackManager {
  * Default fallback strategy for server unavailable errors
  */
 export class ServerUnavailableFallback implements FallbackStrategy {
-  constructor(private fallbackMessage: string = "Service temporarily unavailable") {}
+  constructor(
+    private fallbackMessage: string = "Service temporarily unavailable"
+  ) {}
 
   canHandle(error: Error): boolean {
-    return error instanceof ServerUnavailableError || error instanceof ConnectionError;
+    return (
+      error instanceof ServerUnavailableError ||
+      error instanceof ConnectionError
+    );
   }
 
   async execute(context: FallbackContext): Promise<any> {
@@ -497,7 +512,7 @@ export class RecoveryCoordinator {
     circuitBreakerName: string
   ): Promise<T> {
     let circuitBreaker = this.circuitBreakers.get(circuitBreakerName);
-    
+
     if (!circuitBreaker) {
       circuitBreaker = new CircuitBreaker(circuitBreakerName);
       this.circuitBreakers.set(circuitBreakerName, circuitBreaker);
@@ -511,11 +526,11 @@ export class RecoveryCoordinator {
    */
   getCircuitBreakerMetrics(): Record<string, any> {
     const metrics: Record<string, any> = {};
-    
+
     for (const [name, breaker] of this.circuitBreakers) {
       metrics[name] = breaker.getMetrics();
     }
-    
+
     return metrics;
   }
 

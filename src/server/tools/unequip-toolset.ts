@@ -7,7 +7,8 @@ import { ToolModuleFactory, ToolModule } from "./types.js";
 
 export const unequipToolsetDefinition: Tool = {
   name: "unequip-toolset",
-  description: "Unequip the currently equipped toolset and show all available tools",
+  description:
+    "Unequip the currently equipped toolset and show all available tools",
   inputSchema: {
     type: "object" as const,
     properties: {},
@@ -15,7 +16,9 @@ export const unequipToolsetDefinition: Tool = {
   },
 };
 
-export const createUnequipToolsetModule: ToolModuleFactory = (deps): ToolModule => {
+export const createUnequipToolsetModule: ToolModuleFactory = (
+  deps
+): ToolModule => {
   return {
     toolName: "unequip-toolset",
     definition: unequipToolsetDefinition,
@@ -31,6 +34,6 @@ export const createUnequipToolsetModule: ToolModuleFactory = (deps): ToolModule 
           },
         ],
       };
-    }
+    },
   };
 };
