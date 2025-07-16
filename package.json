@@ -20,7 +20,20 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
-  "keywords": [],
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "mcp-client",
+    "mcp-proxy",
+    "mcp-router",
+    "mcp-server-proxy",
+    "mcp-client-proxy",
+    "dynamic-toolset",
+    "semantic-search",
+    "toolprint",
+    "onegrep",
+    "hypertool"
+  ],
   "author": "OneGrep, Inc.",
   "license": "ISC",
   "type": "module",
