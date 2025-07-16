@@ -39,10 +39,10 @@ For users who want to migrate existing MCP servers to work through HyperTool:
 
 ```bash
 # Install and configure HyperTool for Cursor
-npx -y @toolprint/hypertool-mcp install cursor
+npx -y @toolprint/hypertool-mcp --install cursor
 
 # Preview changes without making them (dry run)
-npx -y @toolprint/hypertool-mcp install cursor --dry-run
+npx -y @toolprint/hypertool-mcp --install cursor --dry-run
 ```
 
 This command will:
