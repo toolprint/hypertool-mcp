@@ -1,297 +1,273 @@
-# hypertool-mcp
+# 🛠️ HyperTool MCP
 
-A TypeScript MCP proxy server that routes requests between clients and multiple underlying MCP servers.
+> **Too many MCP servers? Too many tools? Poor LLM performance?**  
+> HyperTool creates dynamic toolsets that dramatically improve tool usage performance.
 
-## Overview
+[![Version](https://img.shields.io/npm/v/hypertool-mcp)](https://npmjs.com/package/hypertool-mcp)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/license-ISC-blue)](LICENSE)
 
-hypertool-mcp is a single MCP server that:
-1. Connects to multiple underlying MCP servers as a client
-2. Discovers available tools from those servers
-3. Exposes a configurable subset of those tools to its own clients
-4. Routes tool calls transparently to the correct underlying server
+## 🎯 Why HyperTool?
 
-**Simple Example**: If server A has tools (foo, bar) and server B has tools (bam, bee), this proxy can expose just (foo, bam) and route calls accordingly.
+**The Problem**: LLMs struggle when overwhelmed with too many tools. 50+ tools from multiple MCP servers? Your AI assistant becomes confused and ineffective.
 
-## Features
+**The Solution**: HyperTool lets you create focused, dynamic toolsets that expose only the tools you need for specific tasks. Think of it as "tool playlists" for your AI.
 
-- 🔧 **Multi-Server Connection**: Connect to multiple MCP servers simultaneously
-- 🔍 **Tool Discovery**: Automatically discover tools from connected servers
-- 🎯 **Toolset Configuration**: Create custom collections of tools from any servers
-- 🛡️ **Security Validation**: Secure-by-default tool reference validation
-- 🔄 **Request Routing**: Transparent routing of tool calls to the correct server
-- 📦 **TypeScript**: Full type safety with modern TypeScript
+```
+📦 Multiple MCP Servers → 🎯 Focused Toolsets → 🚀 Better Performance
+```
 
-## Getting Started
+## ✨ Key Features
 
-### Prerequisites
+- **🎯 Dynamic Toolsets**: Create custom tool collections from any MCP servers
+- **🔄 Hot-Swapping**: Switch between toolsets instantly - clients are notified automatically
+- **🌐 Universal Compatibility**: Works with any MCP client (Claude Desktop, etc.)
+- **🛡️ Secure by Default**: Tool reference validation prevents stale/malicious tools
+- **📡 Multiple Transports**: Supports both stdio and HTTP/SSE protocols
 
-- Node.js 16+ 
-- TypeScript
-- Git (for development)
+## 🚀 Quick Start
 
-### Installation
+### 1. Add to Your MCP Configuration
+
+Add HyperTool to your existing `.mcp.json` or Claude Desktop config:
+
+```json
+{
+  "mcpServers": {
+    "hypertool": {
+      "type": "stdio",
+      "command": "hypertool-mcp",
+      "args": ["--config", ".mcp.json"]
+    }
+  }
+}
+```
+
+### 2. Configure Your MCP Servers
+
+Create `.mcp.json` in your project to define underlying servers:
+
+```json
+{
+  "mcpServers": {
+    "everything": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"]
+    },
+    "context7": {
+      "type": "sse",
+      "url": "https://mcp.context7.com/sse"
+    }
+  }
+}
+```
+
+### 3. Start HyperTool
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd hypertool-mcp
+# Install globally
+npm install -g hypertool-mcp
 
-# Install dependencies
+# Or run directly
+npx hypertool-mcp --config .mcp.json
+
+# Try with the included test configuration
+npx hypertool-mcp --config test-mcp.json
+```
+
+## 🎭 Creating Your First Toolset
+
+Once HyperTool is running, you can use the built-in MCP tools to manage toolsets:
+
+1. **List available tools**: Use `list-available-tools` to see what's discovered
+2. **Build a toolset**: Use `build-toolset` to create a focused collection
+3. **Equip the toolset**: Use `equip-toolset` to activate it
+
+Your MCP client (like Claude) can now call these tools directly:
+
+```
+Claude: Use the build-toolset tool to create a development toolset with echo and add_numbers
+```
+
+**Result**: A focused toolset with only the tools you need!
+
+## 🔄 Hot-Swapping Toolsets
+
+The magic happens when you switch contexts using the MCP tools:
+
+```
+Claude: Use the equip-toolset tool to switch to "debugging" toolset
+
+# MCP clients are automatically notified
+# Tool list updates instantly - no restart needed!
+```
+
+**Your AI assistant now sees only debugging tools:**
+- `everything.echo` - For testing responses
+- `everything.error` - For error handling  
+- `everything.longRunning` - For async operations
+- `context7.search` - For finding information
+
+## 🌐 Multiple Transport Support
+
+### Stdio (Default)
+Perfect for Claude Desktop and most MCP clients:
+```bash
+hypertool-mcp --transport stdio
+```
+
+### HTTP/SSE
+Great for web applications and modern tooling:
+```bash
+hypertool-mcp --transport http --port 3000 --config test-mcp.json
+```
+
+Access via: `http://localhost:3000/mcp`
+
+## 🛡️ Security & Validation
+
+HyperTool validates tool references using cryptographic hashes:
+
+```json
+{
+  "name": "secure-toolset",
+  "tools": [
+    {
+      "namespacedName": "everything.echo",
+      "refId": "sha256:abc123...",
+      "server": "everything"
+    }
+  ]
+}
+```
+
+- **Secure by default**: Rejects tools with changed schemas
+- **Insecure mode**: Available with `--insecure` flag (use carefully!)
+- **Automatic validation**: Toolsets are re-validated when servers reconnect
+
+## 📋 Common Workflows
+
+### Development Setup
+```
+1. Start HyperTool: hypertool-mcp --config test-mcp.json
+2. Ask Claude: "Use build-toolset to create a frontend toolset with echo and add_numbers"
+3. Ask Claude: "Use equip-toolset to activate the frontend toolset"
+```
+
+### Production Debugging
+```
+1. Ask Claude: "Use equip-toolset to switch to debug toolset"
+2. Your AI now has access to focused debugging tools
+3. MCP clients are automatically notified of the change
+```
+
+### Team Collaboration
+```
+1. Ask Claude: "Use list-saved-toolsets to see available toolsets"
+2. Share toolset configurations via your preferred method
+3. Team members can equip the same toolsets for consistency
+```
+
+## 🔧 Configuration Reference
+
+### CLI Options
+```bash
+hypertool-mcp [options]
+
+Options:
+  --config <path>        MCP servers config file (default: .mcp.json)
+  --transport <type>     Transport type: stdio|http (default: stdio)
+  --port <number>        HTTP port (default: 3000)
+  --equip-toolset <name> Load toolset on startup
+  --debug                Verbose logging
+```
+
+### Server Configuration
+```json
+{
+  "mcpServers": {
+    "server-name": {
+      "type": "stdio|sse",
+      "command": "command-name",
+      "args": ["arg1", "arg2"],
+      "env": {
+        "ENV_VAR": "value"
+      }
+    }
+  }
+}
+```
+
+## 🤝 Integration Examples
+
+### Claude Desktop
+```json
+{
+  "mcpServers": {
+    "hypertool": {
+      "type": "stdio",
+      "command": "hypertool-mcp",
+      "args": ["--config", "/path/to/test-mcp.json", "--equip-toolset", "daily-dev"]
+    }
+  }
+}
+```
+
+### Continue.dev
+```json
+{
+  "mcp": {
+    "servers": {
+      "hypertool": {
+        "command": "hypertool-mcp",
+        "args": ["--transport", "http", "--port", "3001"]
+      }
+    }
+  }
+}
+```
+
+## 📊 Performance Impact
+
+**Before HyperTool:**
+- 🐌 50+ tools exposed to LLM
+- 😵 Confused tool selection
+- 🔄 Slow response times
+
+**After HyperTool:**
+- ⚡ 5-10 focused tools per context
+- 🎯 Precise tool selection  
+- 🚀 Faster, more accurate responses
+
+## 🛠️ Development
+
+```bash
+# Clone and setup
+git clone https://github.com/yourorg/hypertool-mcp
+cd hypertool-mcp
 npm install
 
-# Build the project
-npm run build
-
-# Run tests
-npm test
-```
-
-### Basic Usage
-
-1. **Configure underlying MCP servers** in `.mcp.json`:
-```json
-{
-  "mcpServers": {
-    "git": {
-      "type": "stdio",
-      "command": "git-mcp-server"
-    },
-    "docker": {
-      "type": "stdio", 
-      "command": "docker-mcp-server"
-    }
-  }
-}
-```
-
-2. **Create a toolset** to select which tools to expose:
-```json
-{
-  "name": "dev-essentials",
-  "description": "Essential development tools",
-  "tools": [
-    {"namespacedName": "git.status"},
-    {"namespacedName": "git.commit"},
-    {"namespacedName": "docker.ps"}
-  ]
-}
-```
-
-3. **Start the hypertool-mcp server**:
-```bash
-npm start
-```
-
-## CLI Usage
-
-hypertool-mcp provides a flexible command-line interface for different use cases:
-
-### Basic Usage (Most Common)
-
-**Start with stdio transport (default):**
-```bash
-hypertool-mcp
-```
-This is the most common usage for integrating with Claude Code or other MCP clients that use stdio transport.
-
-**Enable debug output:**
-```bash
-hypertool-mcp --debug
-```
-Shows detailed startup information and server status.
-
-### HTTP Transport
-
-**Start HTTP server with Express.js on default port (3000):**
-```bash
-hypertool-mcp --transport http
-```
-Starts an Express.js HTTP server with MCP endpoint at `/mcp` for modern MCP tooling and web-based clients.
-
-**Start HTTP server on custom port:**
-```bash
-hypertool-mcp --transport http --port 8080
-```
-
-**HTTP server with debug (shows Express.js startup details):**
-```bash
-hypertool-mcp --transport http --port 8080 --debug
-```
-
-### Tool Management
-
-**Load a specific toolset on startup:**
-```bash
-hypertool-mcp --use-toolset "development"
-```
-Automatically loads and applies the specified toolset configuration.
-
-**Enable tool calling capabilities:**
-```bash
-hypertool-mcp --enable-call-tool
-```
-Required to actually execute tools from underlying servers.
-
-### Advanced Options
-
-**Enable insecure mode (allow changed tool references):**
-```bash
-hypertool-mcp --insecure
-```
-⚠️  **Warning**: This allows tools with changed reference hashes, which may be unsafe.
-
-**Complex configuration example:**
-```bash
-hypertool-mcp --transport http --port 8080 --enable-call-tool --use-toolset "production" --debug
-```
-
-### CLI Options Reference
-
-| Option | Description | Default | Notes |
-|--------|-------------|---------|--------|
-| `--transport <type>` | Transport protocol (`http` or `stdio`) | `stdio` | Most clients use stdio |
-| `--port <number>` | Port for HTTP transport | `3000` | Only valid with `--transport http` |
-| `--debug` | Enable verbose logging | `false` | Shows startup and status info |
-| `--enable-call-tool` | Enable tool execution | `false` | Required for actual tool calls |
-| `--insecure` | Allow changed tool hashes | `false` | ⚠️ Security risk |
-| `--use-toolset <name>` | Load toolset on startup | - | Auto-applies toolset config |
-| `--help` | Show help information | - | Displays all options |
-| `--version` | Show version number | - | Current hypertool-mcp version |
-
-## Architecture
-
-### Core Components
-
-- **[Connection Manager](src/connection/README.md)**: Manages connections to underlying MCP servers
-- **[Tool Discovery](src/discovery/README.md)**: Discovers and caches available tools
-- **[Toolset System](src/toolset/README.md)**: User-defined tool collections with validation
-- **[Request Router](src/router/README.md)**: Routes requests to the correct underlying server
-- **[Configuration Parser](src/config/README.md)**: Parses and validates `.mcp.json` files
-
-### Tool Resolution Flow
-
-```
-Client Request → hypertool-mcp → Toolset Filter → Route to Server → Execute → Response
-```
-
-1. Client sends tool call to hypertool-mcp
-2. hypertool-mcp checks if tool is in active toolset
-3. Routes request to appropriate underlying server
-4. Executes tool on underlying server
-5. Returns response to client
-
-## Development
-
-### Project Structure
-
-```
-src/
-├── config/          # Configuration parsing and validation
-├── connection/      # Multi-server connection management  
-├── discovery/       # Tool discovery and caching
-├── router/          # Request routing logic
-├── server/          # Core MCP server implementation
-├── toolset/         # Toolset configuration system
-└── types/           # TypeScript type definitions
-```
-
-### Available Commands
-
-```bash
 # Development
-npm run dev          # Start in development mode
-npm run build        # Build TypeScript to JavaScript
-npm test             # Run test suite
-npm run test:watch   # Run tests in watch mode
-
-# Code Quality
-npm run lint         # Run ESLint
-npm run format       # Format code with Prettier
-npm run typecheck    # Check TypeScript types
-
-# Using Just (optional)
-just test           # Run tests
-just lint           # Run linting
-just format         # Format code
+npm run dev        # Start with hot reload
+npm test          # Run tests
+npm run lint      # Code quality
 ```
 
-### Testing
+## 🎨 Built With
 
-```bash
-# Run all tests
-npm test
+- **TypeScript** - Type safety and modern JS
+- **MCP SDK** - Official Model Context Protocol
+- **Zod** - Runtime validation
+- **Pino** - Structured logging
+- **Commander** - CLI interface
 
-# Run specific test suites
-npm test -- src/toolset    # Test toolset system
-npm test -- src/config     # Test configuration parser
-npm test -- src/connection # Test connection management
-```
+## 📄 License
 
-## Configuration
+ISC License - see [LICENSE](LICENSE) file for details.
 
-### Server Configuration (`.mcp.json`)
+---
 
-Define the underlying MCP servers to connect to:
+**Built by developers who got tired of overwhelming their AI with too many tools. Hope you find it useful!** 🚀
 
-```json
-{
-  "mcpServers": {
-    "git": {
-      "type": "stdio",
-      "command": "git-mcp-server",
-      "args": ["--verbose"]
-    },
-    "github": {
-      "type": "sse", 
-      "url": "https://api.github.com/mcp/events"
-    }
-  }
-}
-```
-
-### Toolset Configuration
-
-Create custom tool collections:
-
-```json
-{
-  "name": "web-dev-toolset",
-  "description": "Tools for web development",
-  "tools": [
-    {"namespacedName": "git.status", "refId": "abc123..."},
-    {"namespacedName": "git.commit", "refId": "def456..."},
-    {"namespacedName": "docker.ps", "refId": "ghi789..."}
-  ]
-}
-```
-
-## Security
-
-The toolset system implements **secure-by-default validation**:
-
-- Tool references are validated using both `namespacedName` and `refId`
-- Mismatched references are rejected in secure mode (default)
-- Insecure mode available with `allowStaleRefs: true` (use with caution)
-- All tool calls are routed through the configured toolset filter
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes with tests
-4. Run the test suite (`npm test`)
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-### Development Guidelines
-
-- Write tests for new features
-- Follow TypeScript best practices
-- Use conventional commit messages
-- Update documentation for significant changes
-- Ensure all tests pass before submitting PRs
-
-## License
-
-[Add license information]
+> 💡 **Pro Tip**: Start with 5-10 essential tools per toolset. You can always create multiple toolsets for different contexts!

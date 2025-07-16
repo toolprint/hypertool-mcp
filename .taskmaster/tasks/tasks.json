@@ -204,7 +204,7 @@
         "id": 28,
         "title": "Replace current logging system with Pino logger",
         "description": "Implement Pino as the primary logging system throughout the codebase as specified in the PRD's Logging System section. This includes structured logging with CLI configuration, file logging with ISO timestamps, and comprehensive migration from console.* calls to Pino logging.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           13,
           14,
@@ -225,7 +225,7 @@
             "id": 1,
             "title": "Install Pino dependencies and create initial logger module",
             "description": "Install pino and pino-pretty packages, create src/logging/index.ts with basic logger configuration",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "",
             "testStrategy": ""
@@ -234,7 +234,7 @@
             "id": 2,
             "title": "Implement CLI --log-level flag support",
             "description": "Add --log-level CLI flag with support for all log levels (trace, debug, info, warn, error, fatal)",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               1
             ],
@@ -245,7 +245,7 @@
             "id": 3,
             "title": "Implement file logging with ISO timestamp format",
             "description": "Create file transport with hypertool-mcp_{ISO_timestamp}.log naming convention",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               1
             ],
@@ -256,7 +256,7 @@
             "id": 4,
             "title": "Create migration script for console.* replacement",
             "description": "Build automated script to replace all console.log/warn/error calls with appropriate Pino logger calls",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               1
             ],
@@ -267,7 +267,7 @@
             "id": 5,
             "title": "Implement child loggers for module integration",
             "description": "Create child logger system for different modules with proper context and integrate across all modules",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               1,
               4
@@ -279,7 +279,7 @@
             "id": 6,
             "title": "Ensure transport mode compatibility",
             "description": "Verify logger works correctly in both stdio and HTTP transport modes with proper configuration",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               1,
               2,
@@ -292,7 +292,7 @@
             "id": 7,
             "title": "Implement comprehensive test suite",
             "description": "Create unit, integration, and performance tests covering all logging functionality as specified in PRD",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               1,
               2,
@@ -305,11 +305,40 @@
             "testStrategy": ""
           }
         ]
+      },
+      {
+        "id": 29,
+        "title": "Implement Cursor IDE integration with both one-click install badge and npx script setup",
+        "description": "Add Cursor IDE integration through both a one-click install badge for README and an npx script setup command for automated configuration management. Complete implementation details and technical specifications are documented in .taskmaster/docs/prd.cursor.txt.",
+        "status": "pending",
+        "dependencies": [
+          20,
+          22
+        ],
+        "priority": "medium",
+        "details": "Implement two installation methods for Cursor IDE integration as specified in .taskmaster/docs/prd.cursor.txt:\n\n1. **One-Click Badge Integration:**\n   - Add prominent installation badge to README.md with deep-link URL\n   - Include provided Cursor deep-link with encoded configuration\n   - Badge should be prominently displayed in installation section\n   - Follow exact specifications from PRD document\n\n2. **NPX Script Setup (`npx -y @toolprint/hypertool-mcp add-cursor`):**\n   - Add CLI argument parsing for 'add-cursor' command\n   - Create cursor configuration management utilities in src/cursor/\n   - Implement configuration workflow per PRD requirements:\n     * Read global Cursor config from ~/.cursor/mcp.json\n     * Create backup at ~/.cursor/mcp.backup.json\n     * Copy ALL existing MCP servers to ~/.cursor/.mcp.ht.json\n     * Add hypertool entry to original config with stdio transport\n   - Add user interaction prompts for config cleanup options\n   - Implement error handling for missing mcp.json files\n   - Create file system utilities for atomic configuration updates\n   - Add proper TypeScript interfaces for Cursor configuration structure\n   - Integrate with existing CLI framework and help system\n\n**Reference Documentation:** See .taskmaster/docs/prd.cursor.txt for complete technical specifications, user stories, implementation requirements, and configuration details.",
+        "testStrategy": "Create comprehensive test suite following requirements in .taskmaster/docs/prd.cursor.txt including: CLI argument parsing tests for add-cursor command, file system operation tests with mocked ~/.cursor directory, configuration backup and restore tests, user prompt interaction tests with mocked stdin/stdout, error handling tests for missing configuration files, integration tests with sample Cursor configurations, and end-to-end workflow tests covering both installation methods.",
+        "subtasks": []
+      },
+      {
+        "id": 30,
+        "title": "Implement npm publishing workflow and package configuration for @toolprint/hypertool-mcp",
+        "description": "Configure package.json for scoped npm publication and add justfile commands for publishing workflow with proper build and verification steps, following specifications in the comprehensive PRD document.",
+        "status": "pending",
+        "dependencies": [
+          14,
+          22,
+          28
+        ],
+        "priority": "medium",
+        "details": "Update package.json configuration for scoped package publication following detailed specifications in `.taskmaster/docs/prd.bin.txt`:\n\n1. **Package.json Updates (per PRD specifications):**\n   - Change `\"name\"` to `\"@toolprint/hypertool-mcp\"`\n   - Add `\"publishConfig\": {\"access\": \"public\"}` for scoped package\n   - Add proper `\"keywords\"`: [\"mcp\", \"model-context-protocol\", \"ai-tools\", \"toolset\", \"proxy\"]\n   - Update `\"repository\"` field with correct GitHub URL\n   - Ensure `\"bin\"` field points to correct executable\n   - Add `\"files\"` array to include only necessary files in published package\n   - Verify all dependencies are properly declared in dependencies/devDependencies\n   - Follow all package metadata requirements from PRD\n\n2. **Justfile Commands (per PRD publishing workflow):**\n   Add publishing commands to justfile following PRD specifications:\n   ```justfile\n   # Build and publish to npm\n   publish: build\n       npm publish --access public\n\n   # Build and publish debug/beta version  \n   publish-beta: build\n       npm version prerelease --preid=beta\n       npm publish --access public --tag beta\n\n   # Build and publish dry-run (test without actually publishing)\n   publish-dry: build\n       npm publish --dry-run --access public\n   ```\n\n3. **Pre-publish Checks (per PRD quality assurance):**\n   - Add pre-publish script to package.json that runs build, test, and lint\n   - Verify TypeScript compilation produces correct output\n   - Ensure binary executable is properly configured and functional\n   - Test scoped package installation and execution locally\n   - Follow all quality gates specified in PRD\n\n4. **Documentation (per PRD requirements):**\n   - Document publishing process for maintainers\n   - Add installation instructions for scoped package\n   - Include npx usage examples\n   - Follow documentation standards from PRD\n\n**Reference**: All technical specifications, package configuration details, publishing workflows, and quality assurance requirements are documented in `.taskmaster/docs/prd.bin.txt`",
+        "testStrategy": "Verification steps to ensure publishing workflow works correctly, following PRD quality assurance requirements:\n\n1. **Build Verification (per PRD standards):**\n   - Run `npm run build` and verify no TypeScript errors\n   - Check that dist/ directory contains all necessary files\n   - Verify `node dist/index.js --help` shows correct output\n   - Follow all build verification steps from PRD\n\n2. **Package Configuration (per PRD specifications):**\n   - Run `npm pack` to generate tarball and inspect contents\n   - Verify package.json fields are correctly set according to PRD\n   - Test `just publish-dry` completes successfully without errors\n   - Validate all package metadata meets PRD requirements\n\n3. **Installation Testing (per PRD test scenarios):**\n   - Test local installation: `npm install -g ./`\n   - Verify global command works: `hypertool-mcp --help`\n   - Test npx execution: `npx @toolprint/hypertool-mcp --help`\n   - Follow all installation test cases from PRD\n\n4. **Publishing Workflow (per PRD publishing process):**\n   - Test beta publishing workflow with `just publish-beta`\n   - Verify package appears correctly on npm registry\n   - Test installation from npm: `npm install -g @toolprint/hypertool-mcp`\n   - Confirm binary executable works after npm installation\n   - Execute all quality gates specified in PRD\n\n**Reference**: Comprehensive testing requirements and quality assurance procedures are detailed in `.taskmaster/docs/prd.bin.txt`",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-07-09T21:55:09.811Z",
-      "updated": "2025-07-15T15:09:20.058Z",
+      "updated": "2025-07-16T17:58:25.503Z",
       "description": "Tasks for master context"
     }
   }
