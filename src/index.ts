@@ -57,6 +57,22 @@ function parseCliArguments(): RuntimeOptions {
       'info'
     );
 
+  // Add install subcommand
+  const installCommand = program
+    .command('install')
+    .description(chalk.blue('Install integrations and extensions'));
+
+  installCommand
+    .command('claude-code')
+    .alias('cc')
+    .description(chalk.cyan('Install Claude Code integration commands'))
+    .option('--dry-run', chalk.cyan('Show what would be installed without actually installing'))
+    .action(async (options) => {
+      const { installClaudeCodeCommands } = await import('./scripts/claude-code/setup.js');
+      await installClaudeCodeCommands({ dryRun: options.dryRun });
+      process.exit(0);
+    });
+
   program.parse();
   const options = program.opts();
 
