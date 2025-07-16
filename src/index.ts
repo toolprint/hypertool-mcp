@@ -49,7 +49,8 @@ async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
         await setup.run(isDryRun);
         break;
       case 'cursor':
-        throw new Error(chalk.yellow('⚠️  Cursor integration not yet implemented'));
+        const { default: cursorSetup } = await import('./scripts/cursor/setup.js');
+        await cursorSetup({ dryRun: isDryRun });
         break;
       case 'claude-code':
         throw new Error(chalk.yellow('⚠️  Claude Code integration not yet implemented'));
