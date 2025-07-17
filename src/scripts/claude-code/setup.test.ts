@@ -7,6 +7,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { installClaudeCodeCommands } from './setup.js';
 import { createCommandTemplates } from './utils.js';
+import inquirer from 'inquirer';
 
 // Mock file system operations
 vi.mock('fs', async () => {
@@ -20,6 +21,7 @@ vi.mock('fs', async () => {
       access: vi.fn(),
       copyFile: vi.fn(),
       readFile: vi.fn(),
+      rmdir: vi.fn(),
     },
   };
 });
@@ -105,6 +107,11 @@ describe('Claude Code Integration Setup', () => {
     (displaySetupSummary as any).mockResolvedValue(undefined);
     (displaySetupPlan as any).mockResolvedValue(true);
     
+    // Mock inquirer prompt for component selection
+    (inquirer.prompt as any).mockResolvedValue({
+      components: ['updateMcpConfig', 'installSlashCommands']
+    });
+    
     // Mock fs.readFile to return valid JSON
     mockFs.readFile.mockResolvedValue(JSON.stringify({
       mcpServers: {
@@ -125,6 +132,7 @@ describe('Claude Code Integration Setup', () => {
       mockFs.mkdir.mockResolvedValue(undefined);
       mockFs.writeFile.mockResolvedValue(undefined);
       mockFs.access.mockRejectedValue(new Error('File not found'));
+      mockFs.rmdir.mockResolvedValue(undefined);
 
       await installClaudeCodeCommands();
 
@@ -138,6 +146,7 @@ describe('Claude Code Integration Setup', () => {
       mockFs.mkdir.mockResolvedValue(undefined);
       mockFs.writeFile.mockResolvedValue(undefined);
       mockFs.access.mockRejectedValue(new Error('File not found'));
+      mockFs.rmdir.mockResolvedValue(undefined);
 
       await installClaudeCodeCommands();
 
@@ -151,26 +160,31 @@ describe('Claude Code Integration Setup', () => {
       expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'hypertool', 'get-active-toolset.md'));
     });
 
-    it('should backup existing files before overwriting', async () => {
+    it('should clean and recreate hypertool commands directory', async () => {
       mockFs.mkdir.mockResolvedValue(undefined);
       mockFs.writeFile.mockResolvedValue(undefined);
       mockFs.access.mockResolvedValue(undefined); // File exists
       mockFs.copyFile.mockResolvedValue(undefined);
+      mockFs.rmdir.mockResolvedValue(undefined);
 
       await installClaudeCodeCommands();
 
-      expect(mockFs.copyFile).toHaveBeenCalledTimes(5);
+      expect(mockFs.rmdir).toHaveBeenCalledWith(
+        join('/test/project', '.claude', 'commands', 'hypertool'),
+        { recursive: true }
+      );
       
-      const backupCalls = mockFs.copyFile.mock.calls;
-      backupCalls.forEach(call => {
-        expect(call[1]).toMatch(/\.backup$/);
-      });
+      expect(mockFs.mkdir).toHaveBeenCalledWith(
+        join('/test/project', '.claude', 'commands', 'hypertool'),
+        { recursive: true }
+      );
     });
 
     it('should display success message with installation commands', async () => {
       mockFs.mkdir.mockResolvedValue(undefined);
       mockFs.writeFile.mockResolvedValue(undefined);
       mockFs.access.mockRejectedValue(new Error('File not found'));
+      mockFs.rmdir.mockResolvedValue(undefined);
 
       // Import the output mock
       const { output } = await import('../../logging/output.js');
