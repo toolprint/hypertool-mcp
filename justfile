@@ -89,6 +89,10 @@ lint:
 pre-publish-checks: build test lint typecheck
     @echo "✅ All pre-publish checks passed!"
 
+[group('publish')]
+publish: pre-publish-checks
+    npm publish --access public
+
 # Version bump and publish commands
 [group('publish')]
 publish-patch: pre-publish-checks
