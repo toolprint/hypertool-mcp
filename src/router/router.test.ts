@@ -8,9 +8,10 @@ import { ROUTER_ERROR_CODES } from "./types.js";
 import { CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
 import { IToolDiscoveryEngine, DiscoveredTool } from "../discovery/types.js";
 import { IConnectionManager, Connection } from "../connection/types.js";
-import { createLogger } from "../logging/index.js";
+// import { createLogger } from "../logging/index.js";
 
-const logger = createLogger({ module: "router/router.test" });
+// Logger reserved for debug logging if needed
+// const logger = createLogger({ module: "router/router.test" });
 
 // Mock implementations
 class MockDiscoveryEngine implements IToolDiscoveryEngine {
@@ -46,6 +47,7 @@ class MockDiscoveryEngine implements IToolDiscoveryEngine {
 
   resolveToolReference(
     ref: { namespacedName?: string; refId?: string },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _options?: { allowStaleRefs?: boolean }
   ) {
     const tool = this.tools.find(
@@ -471,7 +473,7 @@ describe("RequestRouter", () => {
 
       try {
         await router.routeToolCall(request);
-      } catch (error) {
+      } catch {
         // Expected to throw
       }
 
@@ -489,7 +491,7 @@ describe("RequestRouter", () => {
 
       try {
         await router.routeToolCall(request);
-      } catch (error) {
+      } catch {
         // Expected to throw
       }
 

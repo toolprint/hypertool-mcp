@@ -2,6 +2,7 @@
  * TypeScript interfaces for toolset configuration
  */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { DiscoveredTool } from "../discovery/types.js";
 
 /**

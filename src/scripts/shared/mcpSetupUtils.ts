@@ -149,7 +149,7 @@ export async function migrateToHyperToolConfig(context: SetupContext): Promise<M
   }
   
   output.displayHeader('🔄 Migrating MCP servers to HyperTool configuration...');
-  const serverCount = Object.keys(originalConfig.mcpServers).length;
+  // const serverCount = Object.keys(originalConfig.mcpServers).length;
 
   // Ensure HyperTool config directory exists
   const hyperToolConfigDir = context.hyperToolConfigPath.substring(0, context.hyperToolConfigPath.lastIndexOf('/'));

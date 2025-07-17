@@ -13,7 +13,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { createLogger } from "../logging/index.js";
 import { output } from "../logging/output.js";
-import chalk from "chalk";
+// import chalk from "chalk";
 import { APP_TECHNICAL_NAME } from "../config/appConfig.js";
 
 const logger = createLogger({ module: "server/http-server" });

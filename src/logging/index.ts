@@ -36,7 +36,8 @@ export const DEFAULT_LOGGING_CONFIG: LoggingConfig = {
 
 // Singleton transport instances to prevent multiple worker threads
 let sharedConsoleTransport: any = null;
-let sharedFileTransport: any = null;
+// sharedFileTransport reserved for future use
+// let sharedFileTransport: any = null;
 
 export class Logger {
   private pinoLogger: pino.Logger;
@@ -175,7 +176,7 @@ export class Logger {
             unlinkSync(filePath);
             console.info(`Deleted old log file: ${file}`);
           }
-        } catch (error) {
+        } catch {
           // Ignore errors for individual files
         }
       });

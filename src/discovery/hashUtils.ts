@@ -3,7 +3,7 @@
  */
 
 import { createHash } from "crypto";
-import { Tool } from "@modelcontextprotocol/sdk/types.js";
+// Tool type not used in hash utility functions
 import { DiscoveredTool, MCPToolDefinition, ToolChangeInfo } from "./types.js";
 
 /**

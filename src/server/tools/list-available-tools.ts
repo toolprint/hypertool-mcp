@@ -99,7 +99,10 @@ export const createListAvailableToolsModule: ToolModuleFactory = (
   return {
     toolName: "list-available-tools",
     definition: listAvailableToolsDefinition,
-    handler: async (_args: any) => {
+    handler: async (
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      args: any
+    ) => {
       if (deps.discoveryEngine) {
         const structured = deps.toolsetManager.formatAvailableTools();
 

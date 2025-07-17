@@ -233,6 +233,7 @@ async function main(): Promise<void> {
         discovered: "automatic discovery",
         none: "unknown source",
       }[configResult.source];
+      logger.debug(`Config source: ${sourceText}`);
     }
 
     // Create transport config from runtime options
@@ -300,11 +301,13 @@ async function main(): Promise<void> {
 }
 
 // Run if this file is executed directly
-import { fileURLToPath } from "url";
-import { dirname } from "path";
+// import { fileURLToPath } from "url";
+// import { dirname } from "path";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// __filename reserved for future use
+// const __filename = fileURLToPath(import.meta.url);
+// __dirname reserved for future use
+// const __dirname = dirname(__filename);
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);

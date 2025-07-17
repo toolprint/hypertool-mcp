@@ -2,7 +2,7 @@
  * Tests for error recovery mechanisms
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   RetryManager,
   CircuitBreaker,
@@ -10,8 +10,6 @@ import {
   FallbackManager,
   ServerUnavailableFallback,
   RecoveryCoordinator,
-  DEFAULT_RETRY_CONFIG,
-  DEFAULT_CIRCUIT_BREAKER_CONFIG,
 } from "./recovery.js";
 import {
   ConnectionError,
@@ -22,8 +20,7 @@ import {
 // Mock timers for testing
 vi.useFakeTimers();
 
-// Mock setTimeout globally
-const mockSetTimeout = vi.fn();
+// Mock setTimeout globally - not used in tests but kept for consistency
 
 describe("RetryManager", () => {
   beforeEach(() => {
@@ -471,7 +468,7 @@ describe("RecoveryCoordinator", () => {
           "test-operation",
           "test-circuit"
         );
-      } catch (error) {
+      } catch {
         // Expected to fail
       }
     }

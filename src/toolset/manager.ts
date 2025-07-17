@@ -219,6 +219,7 @@ export class ToolsetManager extends EventEmitter {
       return [];
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const discoveredTools = this.discoveryEngine.getAvailableTools(true);
 
     // If no toolset is active, return empty array (no tools should be exposed)

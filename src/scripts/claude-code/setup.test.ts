@@ -239,7 +239,7 @@ describe('Claude Code Integration Setup', () => {
     it('should generate valid markdown content for each template', async () => {
       const templates = await createCommandTemplates();
 
-      Object.entries(templates).forEach(([filename, content]) => {
+      Object.entries(templates).forEach(([, content]) => {
         // Check for YAML frontmatter
         expect(content).toMatch(/^---\nallowed-tools:/);
         expect(content).toContain('description:');

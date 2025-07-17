@@ -23,6 +23,7 @@ const PERFORMANCE_THRESHOLDS = {
 describe("Tool Discovery Performance Tests", () => {
   const generateMockTools = (
     count: number,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _serverName: string = "perf-server"
   ): MCPToolDefinition[] => {
     return Array.from({ length: count }, (_, i) => ({
@@ -49,7 +50,7 @@ describe("Tool Discovery Performance Tests", () => {
     serverName: string = "perf-server"
   ): DiscoveredTool[] => {
     const mcpTools = generateMockTools(count, serverName);
-    return mcpTools.map((tool, i) =>
+    return mcpTools.map((tool) =>
       ToolHashUtils.createHashedTool(
         tool,
         serverName,

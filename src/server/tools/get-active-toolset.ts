@@ -27,7 +27,10 @@ export const createGetActiveToolsetModule: ToolModuleFactory = (
   return {
     toolName: "get-active-toolset",
     definition: getActiveToolsetDefinition,
-    handler: async (_args: any) => {
+    handler: async (
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      args: any
+    ) => {
       const activeToolset = deps.toolsetManager.getActiveToolset();
       if (activeToolset) {
         // Get all discovered tools and active tools from toolset manager

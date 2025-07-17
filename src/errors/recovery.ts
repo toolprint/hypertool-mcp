@@ -5,7 +5,6 @@
 import { EventEmitter } from "events";
 import { Logger, logger } from "../logging/index.js";
 import {
-  MetaMCPError,
   isRetryableError,
   ConnectionError,
   ServerUnavailableError,
@@ -449,7 +448,10 @@ export class ServerUnavailableFallback implements FallbackStrategy {
     );
   }
 
-  async execute(context: FallbackContext): Promise<any> {
+  async execute(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    context: FallbackContext
+  ): Promise<any> {
     return {
       content: [
         {
@@ -474,6 +476,7 @@ export class RecoveryCoordinator {
 
   constructor(
     retryConfig?: Partial<RetryConfig>,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     circuitBreakerConfig?: Partial<CircuitBreakerConfig>
   ) {
     this.retryManager = new RetryManager(retryConfig);

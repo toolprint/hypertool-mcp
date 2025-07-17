@@ -493,7 +493,10 @@ export class ToolDiscoveryEngine
           // Register notification handler for tool list changes
           sdkClient.setNotificationHandler(
             ToolListChangedNotificationSchema,
-            async (_notification: ToolListChangedNotification) => {
+            async (
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              _notification: ToolListChangedNotification
+            ) => {
               try {
                 await this.handleToolsListChanged(event.serverName);
               } catch (error) {

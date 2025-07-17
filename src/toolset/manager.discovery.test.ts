@@ -2,7 +2,7 @@
  * Test ToolsetManager integration with DiscoveryEngine toolsChanged events
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ToolsetManager } from "./manager.js";
 import { ToolsetConfig, ToolsetChangeEvent } from "./types.js";
 import {
@@ -42,7 +42,8 @@ class MockDiscoveryEngine extends EventEmitter implements IToolDiscoveryEngine {
   }
   resolveToolReference(
     ref: { namespacedName?: string; refId?: string },
-    options?: { allowStaleRefs?: boolean }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _options?: { allowStaleRefs?: boolean }
   ) {
     const tool = this.tools.find(
       (t) => t.namespacedName === ref.namespacedName || t.toolHash === ref.refId

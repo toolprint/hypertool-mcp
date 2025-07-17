@@ -2,7 +2,7 @@
  * Unit tests for tool discovery service
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { EventEmitter } from "events";
 import { ToolDiscoveryEngine } from "./service.js";
 import { DiscoveryConfig } from "./types.js";
@@ -43,7 +43,10 @@ class MockConnectionManager extends EventEmitter implements IConnectionManager {
       conn.mockDisconnect();
     }
   }
-  async reconnect(_serverName: string) {}
+  async reconnect(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _serverName: string
+  ) {}
   async start() {}
   async stop() {}
 
@@ -53,8 +56,8 @@ class MockConnectionManager extends EventEmitter implements IConnectionManager {
 
   getConnectedServers(): string[] {
     return Array.from(this.connections.entries())
-      .filter(([_, conn]) => conn.isConnected())
-      .map(([name, _]) => name);
+      .filter(([, conn]) => conn.isConnected())
+      .map(([name]) => name);
   }
 
   isServerConnected(serverName: string): boolean {

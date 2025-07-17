@@ -7,10 +7,10 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import chalk from 'chalk';
-import inquirer from 'inquirer';
+// import inquirer from 'inquirer';
 import { output } from '../../logging/output.js';
 import {
-  MCPConfig,
+  // MCPConfig,
   SetupContext,
   validateMcpConfiguration,
   createConfigBackup,
@@ -21,15 +21,16 @@ import {
   displaySetupPlan
 } from '../shared/mcpSetupUtils.js';
 
-interface ClaudeDesktopConfig extends MCPConfig {
-  mcpServers: Record<string, {
-    type: string;
-    command: string;
-    args?: string[];
-    env?: Record<string, string>;
-    [key: string]: any;
-  }>;
-}
+// ClaudeDesktopConfig interface reserved for future use
+// interface ClaudeDesktopConfig extends MCPConfig {
+//   mcpServers: Record<string, {
+//     type: string;
+//     command: string;
+//     args?: string[];
+//     env?: Record<string, string>;
+//     [key: string]: any;
+//   }>;
+// }
 
 class ClaudeDesktopSetup {
   private readonly context: SetupContext;

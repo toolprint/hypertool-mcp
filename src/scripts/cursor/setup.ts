@@ -3,8 +3,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import chalk from "chalk";
-import inquirer from "inquirer";
+// import chalk from "chalk";
+// import inquirer from "inquirer";
 import { output } from "../../logging/output.js";
 import {
   MCPConfig,

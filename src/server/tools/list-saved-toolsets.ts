@@ -42,7 +42,10 @@ export const createListSavedToolsetsModule: ToolModuleFactory = (
   return {
     toolName: "list-saved-toolsets",
     definition: listSavedToolsetsDefinition,
-    handler: async (_args: any) => {
+    handler: async (
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      args: any
+    ) => {
       const listResult = await deps.toolsetManager.listSavedToolsets();
       return {
         content: [

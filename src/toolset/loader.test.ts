@@ -129,7 +129,10 @@ describe("ToolsetLoader", () => {
       const filePath = path.join(tempDir, "config.json");
       await fs.writeFile(filePath, JSON.stringify(config));
 
-      const customValidation = (config: ToolsetConfig) => ({
+      const customValidation = (
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _config: ToolsetConfig
+      ) => ({
         valid: false,
         errors: ["Custom validation failed"],
         warnings: ["Custom warning"],
