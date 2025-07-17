@@ -113,15 +113,16 @@ export async function installClaudeCodeCommands(options: InstallOptions = {}): P
     // Step 6: Update .mcp.json to add HyperTool
     await updateMcpConfigWithHyperTool(context, mcpConfig, shouldCleanup, '.mcp.ht.json');
     
-    // Step 7: Create .claude/commands directory and install slash commands
+    // Step 7: Create .claude/commands/hypertool directory and install slash commands
     const claudeDir = join(projectDir, '.claude');
     const commandsDir = join(claudeDir, 'commands');
+    const hyperToolCommandsDir = join(commandsDir, 'hypertool');
     
     if (dryRun) {
-      spinner.text = '[DRY RUN] Would create .claude/commands directory';
+      spinner.text = '[DRY RUN] Would create .claude/commands/hypertool directory';
     } else {
-      spinner.text = 'Creating .claude/commands directory...';
-      await fs.mkdir(commandsDir, { recursive: true });
+      spinner.text = 'Creating .claude/commands/hypertool directory...';
+      await fs.mkdir(hyperToolCommandsDir, { recursive: true });
     }
     
     // Generate command templates
@@ -133,7 +134,7 @@ export async function installClaudeCodeCommands(options: InstallOptions = {}): P
     const installedCommands: string[] = [];
     
     for (const [filename, content] of Object.entries(commandTemplates)) {
-      const filePath = join(commandsDir, filename);
+      const filePath = join(hyperToolCommandsDir, filename);
       
       if (!dryRun) {
         // Handle existing files gracefully
@@ -149,7 +150,7 @@ export async function installClaudeCodeCommands(options: InstallOptions = {}): P
         await fs.writeFile(filePath, content, 'utf8');
       }
       
-      installedCommands.push(filename.replace('.md', ''));
+      installedCommands.push('hypertool:' + filename.replace('.md', ''));
     }
     
     const successMessage = dryRun 
@@ -166,6 +167,11 @@ export async function installClaudeCodeCommands(options: InstallOptions = {}): P
       installedCommands.forEach(cmd => {
         output.displayInstruction(`/${cmd}`);
       });
+      output.displaySpaceBuffer(1);
+      
+      output.displaySubHeader('📁 Command Location');
+      output.displayInstruction('Commands are installed in: .claude/commands/hypertool/');
+      output.displayInstruction('This avoids conflicts with your existing commands');
       output.displaySpaceBuffer(1);
     }
     

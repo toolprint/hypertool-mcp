@@ -129,7 +129,7 @@ describe('Claude Code Integration Setup', () => {
       await installClaudeCodeCommands();
 
       expect(mockFs.mkdir).toHaveBeenCalledWith(
-        join('/test/project', '.claude', 'commands'),
+        join('/test/project', '.claude', 'commands', 'hypertool'),
         { recursive: true }
       );
     });
@@ -144,11 +144,11 @@ describe('Claude Code Integration Setup', () => {
       expect(mockFs.writeFile).toHaveBeenCalledTimes(5);
       
       const writtenFiles = mockFs.writeFile.mock.calls.map(call => call[0]);
-      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'list-available-tools.md'));
-      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'build-toolset.md'));
-      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'equip-toolset.md'));
-      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'list-saved-toolsets.md'));
-      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'get-active-toolset.md'));
+      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'hypertool', 'list-available-tools.md'));
+      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'hypertool', 'build-toolset.md'));
+      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'hypertool', 'equip-toolset.md'));
+      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'hypertool', 'list-saved-toolsets.md'));
+      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'hypertool', 'get-active-toolset.md'));
     });
 
     it('should backup existing files before overwriting', async () => {
@@ -226,7 +226,10 @@ describe('Claude Code Integration Setup', () => {
       const templates = await createCommandTemplates();
 
       Object.entries(templates).forEach(([filename, content]) => {
-        expect(content).toMatch(/^# .+/);
+        // Check for YAML frontmatter
+        expect(content).toMatch(/^---\nallowed-tools:/);
+        expect(content).toContain('description:');
+        expect(content).toMatch(/---\n\n# .+/);
         expect(content).toContain('## Usage');
         expect(content).toContain('## Parameters');
         expect(content).toContain('## Examples');
@@ -250,9 +253,9 @@ describe('Claude Code Integration Setup', () => {
       const templates = await createCommandTemplates();
 
       Object.values(templates).forEach(content => {
-        expect(content).toContain('```');
-        expect(content).toContain('Claude:');
         expect(content).toContain('Use the');
+        expect(content).toContain('tool');
+        expect(content).toContain('HyperTool');
       });
     });
 

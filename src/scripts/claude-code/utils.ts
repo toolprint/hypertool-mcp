@@ -27,15 +27,13 @@ export async function createCommandTemplates(): Promise<Record<string, string>> 
   // Template for list-available-tools.md
   commandTemplates['list-available-tools.md'] = generateCommandFile({
     name: 'List Available Tools',
-    description: 'Discover all tools from connected MCP servers and see what\'s available for toolset creation.',
+    description: 'Discover all tools from connected MCP servers via HyperTool proxy',
     toolName: 'list-available-tools',
-    usage: 'Use the list-available-tools tool to see all discovered tools',
+    usage: 'Use the list-available-tools tool from the HyperTool MCP server to see all discovered tools',
     parameters: 'None required - this command shows all available tools from connected servers.',
-    examples: `\`\`\`
-Claude: Use the list-available-tools tool
-\`\`\`
+    examples: `Use the list-available-tools tool to see all tools discovered from your configured MCP servers.
 
-This will show you all tools discovered from your configured MCP servers, including:
+This will show you:
 - Tool names (namespaced with server names)
 - Descriptions of what each tool does
 - Server sources
@@ -53,20 +51,18 @@ This will show you all tools discovered from your configured MCP servers, includ
   // Template for build-toolset.md
   commandTemplates['build-toolset.md'] = generateCommandFile({
     name: 'Build Toolset',
-    description: 'Creates new toolset with selected tools from available MCP servers.',
+    description: 'Creates new toolset with selected tools from available MCP servers via HyperTool',
     toolName: 'build-toolset',
-    usage: 'Use the build-toolset tool with toolset name and tool selections',
+    usage: 'Use the build-toolset tool from the HyperTool MCP server with toolset name and tool selections',
     parameters: `- toolsetName: Name for the new toolset (required)
 - toolList: Array of tool names to include (use namespaced names from list-available-tools)
 - description: Optional description for the toolset`,
-    examples: `\`\`\`
-Claude: Use the build-toolset tool with parameters:
+    examples: `Use the build-toolset tool with parameters:
 {
   "toolsetName": "development",
   "toolList": ["git.status", "git.commit", "docker.list_containers"],
   "description": "Essential development tools"
 }
-\`\`\`
 
 This will create a new toolset called "development" with the specified tools.`,
     useCases: `- Create project-specific toolsets for different workflows
@@ -83,16 +79,14 @@ This will create a new toolset called "development" with the specified tools.`,
   // Template for equip-toolset.md
   commandTemplates['equip-toolset.md'] = generateCommandFile({
     name: 'Equip Toolset',
-    description: 'Switches to a different toolset, making its tools available for use.',
+    description: 'Switches to a different toolset via HyperTool, making its tools available for use',
     toolName: 'equip-toolset',
-    usage: 'Use the equip-toolset tool with the name of the toolset to activate',
+    usage: 'Use the equip-toolset tool from the HyperTool MCP server with the name of the toolset to activate',
     parameters: `- toolsetName: Name of the toolset to activate (required)`,
-    examples: `\`\`\`
-Claude: Use the equip-toolset tool with parameters:
+    examples: `Use the equip-toolset tool with parameters:
 {
   "toolsetName": "development"
 }
-\`\`\`
 
 This will activate the "development" toolset and make its tools available.`,
     useCases: `- Switch between different tool configurations for different projects
@@ -109,15 +103,11 @@ This will activate the "development" toolset and make its tools available.`,
   // Template for list-saved-toolsets.md
   commandTemplates['list-saved-toolsets.md'] = generateCommandFile({
     name: 'List Saved Toolsets',
-    description: 'Shows all existing toolsets with their tool counts, descriptions, and metadata.',
+    description: 'Shows all existing toolsets with their tool counts, descriptions, and metadata via HyperTool',
     toolName: 'list-saved-toolsets',
-    usage: 'Use the list-saved-toolsets tool to see all your saved toolsets',
+    usage: 'Use the list-saved-toolsets tool from the HyperTool MCP server to see all your saved toolsets',
     parameters: 'None required - this command shows all saved toolsets.',
-    examples: `\`\`\`
-Claude: Use the list-saved-toolsets tool
-\`\`\`
-
-This will show you all your saved toolsets including:
+    examples: `Use the list-saved-toolsets tool to see all your saved toolsets including:
 - Toolset names and descriptions
 - Number of tools in each toolset
 - Creation dates and last modified times
@@ -136,15 +126,11 @@ This will show you all your saved toolsets including:
   // Template for get-active-toolset.md
   commandTemplates['get-active-toolset.md'] = generateCommandFile({
     name: 'Get Active Toolset',
-    description: 'Shows currently active toolset with detailed information about its tools and configuration.',
+    description: 'Shows currently active toolset with detailed information about its tools and configuration via HyperTool',
     toolName: 'get-active-toolset',
-    usage: 'Use the get-active-toolset tool to see details about the current toolset',
+    usage: 'Use the get-active-toolset tool from the HyperTool MCP server to see details about the current toolset',
     parameters: 'None required - this command shows the currently active toolset.',
-    examples: `\`\`\`
-Claude: Use the get-active-toolset tool
-\`\`\`
-
-This will show you detailed information about the currently active toolset:
+    examples: `Use the get-active-toolset tool to see detailed information about the currently active toolset:
 - Toolset name and description
 - Complete list of active tools
 - Server sources for each tool
@@ -165,15 +151,21 @@ This will show you detailed information about the currently active toolset:
 }
 
 /**
- * Generate a command file from template data
+ * Generate a command file from template data with proper YAML frontmatter
  */
 function generateCommandFile(template: CommandTemplate): string {
-  return `# ${template.name}
+  return `---
+allowed-tools:
+  - ${template.toolName}
+description: ${template.description}
+---
+
+# ${template.name}
 
 ${template.description}
 
 ## Usage
-\`${template.usage}\`
+${template.usage}
 
 ## Parameters
 ${template.parameters}
