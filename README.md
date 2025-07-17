@@ -5,7 +5,7 @@
 
 [![Version](https://img.shields.io/npm/v/hypertool-mcp)](https://npmjs.com/package/hypertool-mcp)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/license-ISC-blue)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 ## 🎯 Why HyperTool?
 
@@ -288,10 +288,25 @@ npm run lint      # Code quality
 
 ## 📄 License
 
-ISC License - see [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
+
+<div align="center">
 
 **Built by developers who got tired of overwhelming their AI with too many tools. Hope you find it useful!** 🚀
 
 > 💡 **Pro Tip**: Start with 5-10 essential tools per toolset. You can always create multiple toolsets for different contexts!
+
+<br>
+
+<a href="https://toolprint.dev">
+  <img src="./assets/toolprint.png" alt="Toolprint" width="200">
+</a>
+
+<p>
+  <strong>Built with ❤️ by <a href="https://toolprint.dev">Toolprint</a></strong><br>
+  <sub>© 2025 OneGrep, Inc.</sub>
+</p>
+
+</div>

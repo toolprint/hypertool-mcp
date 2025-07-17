@@ -38,7 +38,7 @@
     "hypertool"
   ],
   "author": "OneGrep, Inc.",
-  "license": "ISC",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/toolprint/hypertool-mcp"
@@ -54,7 +54,11 @@
   "files": [
     "dist/**/*",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "SECURITY.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "assets/toolprint.png"
   ],
   "publishConfig": {
     "access": "public"
