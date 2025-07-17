@@ -300,18 +300,7 @@ async function main(): Promise<void> {
   }
 }
 
-// Run if this file is executed directly
-// import { fileURLToPath } from "url";
-// import { dirname } from "path";
-
-// __filename reserved for future use
-// const __filename = fileURLToPath(import.meta.url);
-// __dirname reserved for future use
-// const __dirname = dirname(__filename);
-
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(console.error);
-}
+// This file is now used as a library - binary entry point is in bin.ts
 
 export { main };
 export * from "./server/index.js";
