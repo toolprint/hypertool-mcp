@@ -1,20 +1,24 @@
+---
+allowed-tools:
+  - equip-toolset
+description: Switches to a different toolset via HyperTool, making its tools available for use
+---
+
 # Equip Toolset
 
-Switches to a different toolset, making its tools available for use.
+Switches to a different toolset via HyperTool, making its tools available for use
 
 ## Usage
-`Use the equip-toolset tool with the name of the toolset to activate`
+Use the equip-toolset tool from the HyperTool MCP server with the name of the toolset to activate
 
 ## Parameters
 - toolsetName: Name of the toolset to activate (required)
 
 ## Examples
-```
-Claude: Use the equip-toolset tool with parameters:
+Use the equip-toolset tool with parameters:
 {
   "toolsetName": "development"
 }
-```
 
 This will activate the "development" toolset and make its tools available.
 

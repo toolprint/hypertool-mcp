@@ -1,9 +1,15 @@
+---
+allowed-tools:
+  - build-toolset
+description: Creates new toolset with selected tools from available MCP servers via HyperTool
+---
+
 # Build Toolset
 
-Creates new toolset with selected tools from available MCP servers.
+Creates new toolset with selected tools from available MCP servers via HyperTool
 
 ## Usage
-`Use the build-toolset tool with toolset name and tool selections`
+Use the build-toolset tool from the HyperTool MCP server with toolset name and tool selections
 
 ## Parameters
 - toolsetName: Name for the new toolset (required)
@@ -11,14 +17,12 @@ Creates new toolset with selected tools from available MCP servers.
 - description: Optional description for the toolset
 
 ## Examples
-```
-Claude: Use the build-toolset tool with parameters:
+Use the build-toolset tool with parameters:
 {
   "toolsetName": "development",
   "toolList": ["git.status", "git.commit", "docker.list_containers"],
   "description": "Essential development tools"
 }
-```
 
 This will create a new toolset called "development" with the specified tools.
 

@@ -1,6 +1,6 @@
 {
-  "name": "hypertool-mcp",
-  "version": "0.0.1",
+  "name": "@toolprint/hypertool-mcp",
+  "version": "0.0.2",
   "description": "HyperTool MCP proxy server for routing requests between clients and multiple underlying MCP servers",
   "main": "dist/index.js",
   "bin": {
@@ -22,21 +22,42 @@
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
+    "ai-tools",
+    "toolset",
+    "proxy",
+    "claude",
+    "cursor",
+    "ai-assistant",
+    "dynamic-toolset",
     "mcp-server",
     "mcp-client",
     "mcp-proxy",
-    "mcp-router",
-    "mcp-server-proxy",
-    "mcp-client-proxy",
-    "dynamic-toolset",
-    "semantic-search",
     "toolprint",
-    "onegrep",
     "hypertool"
   ],
   "author": "OneGrep, Inc.",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/toolprint/hypertool-mcp"
+  },
+  "homepage": "https://github.com/toolprint/hypertool-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/toolprint/hypertool-mcp/issues"
+  },
   "type": "module",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@types/node": "^24.0.12",
     "@types/ora": "^3.1.0",

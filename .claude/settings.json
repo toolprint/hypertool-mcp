@@ -1,18 +1,24 @@
 {
-  "allowedCommands": [
-    "npm test",
-    "npm run test",
-    "npm run build", 
-    "npm run lint",
-    "npm run format",
-    "npm start",
-    "npm run start:dev",
-    "npm run start:http",
-    "npm install",
-    "tsc",
-    "jest",
-    "eslint",
-    "prettier",
-    "task-"
+  "permissions": {
+    "allow": [
+      "Bash(claude-task --help)",
+      "Bash(ls:*)",
+      "Bash(git worktree:*)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:spec.modelcontextprotocol.io)",
+      "WebFetch(domain:modelcontextprotocol.io)",
+      "Bash(npm test)",
+      "Bash(npm test:*)",
+      "Bash(grep:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "git",
+    "docker",
+    "context7",
+    "task-master",
+    "claude-task"
   ]
 }

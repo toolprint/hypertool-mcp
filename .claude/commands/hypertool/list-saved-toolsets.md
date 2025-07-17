@@ -1,19 +1,21 @@
+---
+allowed-tools:
+  - list-saved-toolsets
+description: Shows all existing toolsets with their tool counts, descriptions, and metadata via HyperTool
+---
+
 # List Saved Toolsets
 
-Shows all existing toolsets with their tool counts, descriptions, and metadata.
+Shows all existing toolsets with their tool counts, descriptions, and metadata via HyperTool
 
 ## Usage
-`Use the list-saved-toolsets tool to see all your saved toolsets`
+Use the list-saved-toolsets tool from the HyperTool MCP server to see all your saved toolsets
 
 ## Parameters
 None required - this command shows all saved toolsets.
 
 ## Examples
-```
-Claude: Use the list-saved-toolsets tool
-```
-
-This will show you all your saved toolsets including:
+Use the list-saved-toolsets tool to see all your saved toolsets including:
 - Toolset names and descriptions
 - Number of tools in each toolset
 - Creation dates and last modified times
