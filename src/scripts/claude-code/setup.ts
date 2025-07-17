@@ -10,20 +10,24 @@ import ora from 'ora';
 import inquirer from 'inquirer';
 import { createCommandTemplates } from './utils.js';
 import { output } from '../../logging/output.js';
+import {
+  MCPConfig,
+  SetupContext,
+  validateMcpConfiguration,
+  createConfigBackup,
+  migrateToHyperToolConfig,
+  promptForCleanupOptions,
+  updateMcpConfigWithHyperTool,
+  displaySetupSummary,
+  displaySetupPlan,
+  fileExists
+} from '../shared/mcpSetupUtils.js';
 
 /**
  * Installation options interface
  */
 interface InstallOptions {
   dryRun?: boolean;
-}
-
-/**
- * MCP configuration interface
- */
-interface MCPConfig {
-  mcpServers?: Record<string, any>;
-  [key: string]: any;
 }
 
 /**
@@ -36,24 +40,18 @@ export async function installClaudeCodeCommands(options: InstallOptions = {}): P
   const mcpBackupPath = join(projectDir, '.mcp.backup.json');
   const hyperToolConfigPath = join(projectDir, '.mcp.ht.json');
   
+  const context: SetupContext = {
+    originalConfigPath: mcpConfigPath,
+    backupPath: mcpBackupPath,
+    hyperToolConfigPath,
+    dryRun
+  };
+
   // Step 1: Check for .mcp.json in current directory
-  output.displayHeader('🔍 Checking for Claude Code MCP configuration...');
-  
   let mcpConfig: MCPConfig = {};
   
   try {
-    await fs.access(mcpConfigPath);
-    const configContent = await fs.readFile(mcpConfigPath, 'utf8');
-    mcpConfig = JSON.parse(configContent);
-    output.success(`✅ Found .mcp.json in current directory`);
-    
-    // Display current servers
-    const serverCount = Object.keys(mcpConfig.mcpServers || {}).length;
-    if (serverCount > 0) {
-      output.info(`📋 Current MCP servers: ${Object.keys(mcpConfig.mcpServers || {}).join(', ')}`);
-    }
-  } catch (error) {
-    if ((error as any).code === 'ENOENT') {
+    if (!(await fileExists(mcpConfigPath))) {
       output.warn(`⚠️  No .mcp.json found in current directory`);
       output.info(`📁 Current directory: ${chalk.yellow(projectDir)}`);
       output.displaySpaceBuffer(1);
@@ -72,51 +70,27 @@ export async function installClaudeCodeCommands(options: InstallOptions = {}): P
   }
 }`);
       process.exit(1);
-    } else {
-      output.error(`❌ Error reading .mcp.json: ${error instanceof Error ? error.message : String(error)}`);
-      process.exit(1);
     }
+
+    await validateMcpConfiguration(mcpConfigPath);
+    
+    const configContent = await fs.readFile(mcpConfigPath, 'utf8');
+    mcpConfig = JSON.parse(configContent);
+    
+    // Display current servers
+    const serverCount = Object.keys(mcpConfig.mcpServers || {}).length;
+    if (serverCount > 0) {
+      output.info(`📋 Current MCP servers: ${Object.keys(mcpConfig.mcpServers || {}).join(', ')}`);
+    }
+  } catch (error) {
+    output.error(`❌ Error reading .mcp.json: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
   }
   
-  // Step 2: Interactive prompts (skip in dry-run)
-  if (!dryRun) {
-    output.displaySpaceBuffer(1);
-    
-    // Check if HyperTool already exists
-    if (mcpConfig.mcpServers?.hypertool) {
-      output.warn('⚠️  HyperTool is already configured in .mcp.json');
-      const { shouldContinue } = await inquirer.prompt([{
-        type: 'confirm',
-        name: 'shouldContinue',
-        message: 'Do you want to reinstall and update the configuration?',
-        default: true
-      }]);
-      
-      if (!shouldContinue) {
-        output.info('Installation cancelled.');
-        process.exit(0);
-      }
-    } else {
-      // Show what will happen
-      output.displaySubHeader('This installer will:');
-      output.displayInstruction(`1. Backup your current .mcp.json to .mcp.backup.json`);
-      output.displayInstruction(`2. Move your ${Object.keys(mcpConfig.mcpServers || {}).length} existing MCP servers to .mcp.ht.json`);
-      output.displayInstruction(`3. Configure Claude Code to use HyperTool as a proxy`);
-      output.displayInstruction(`4. Install slash commands in .claude/commands/`);
-      output.displaySpaceBuffer(1);
-      
-      const { shouldProceed } = await inquirer.prompt([{
-        type: 'confirm',
-        name: 'shouldProceed',
-        message: 'Proceed with installation?',
-        default: true
-      }]);
-      
-      if (!shouldProceed) {
-        output.info('Installation cancelled.');
-        process.exit(0);
-      }
-    }
+  // Step 2: Get user consent for the setup plan
+  const shouldProceed = await displaySetupPlan(context, mcpConfig, 'Claude Code');
+  if (!shouldProceed) {
+    process.exit(0);
   }
   
   const actionText = dryRun ? 'Simulating Claude Code integration...' : 'Installing Claude Code integration...';
@@ -124,61 +98,22 @@ export async function installClaudeCodeCommands(options: InstallOptions = {}): P
   
   try {
     // Step 3: Create backup of .mcp.json
-    if (!dryRun) {
-      spinner.text = 'Creating backup of .mcp.json...';
-      try {
-        await fs.copyFile(mcpConfigPath, mcpBackupPath);
-        spinner.text = 'Backup created successfully';
-      } catch (error) {
-        spinner.fail('Could not create backup of .mcp.json');
-        output.error(`❌ Failed to backup .mcp.json: ${error instanceof Error ? error.message : String(error)}`);
-        output.displayInstruction('Please check file permissions and try again');
-        process.exit(1);
-      }
-    } else {
-      spinner.text = '[DRY RUN] Would create backup of .mcp.json';
-    }
-    // Step 4: Create .mcp.ht.json with existing servers
-    if (!dryRun) {
-      spinner.text = 'Creating HyperTool configuration...';
-      
-      // Copy existing servers (excluding hypertool itself)
-      const existingServers = { ...mcpConfig.mcpServers };
-      delete existingServers.hypertool;
-      
-      const hyperToolConfig = {
-        mcpServers: existingServers
-      };
-      
-      await fs.writeFile(hyperToolConfigPath, JSON.stringify(hyperToolConfig, null, 2), 'utf8');
-      spinner.text = 'Created .mcp.ht.json with existing servers';
-    } else {
-      spinner.text = '[DRY RUN] Would create .mcp.ht.json with existing servers';
-    }
+    spinner.text = 'Creating backup...';
+    await createConfigBackup(context);
     
-    // Step 5: Update .mcp.json to add HyperTool
-    if (!dryRun) {
-      spinner.text = 'Updating .mcp.json with HyperTool configuration...';
-      
-      // Create new config with only HyperTool
-      const newMcpConfig = {
-        ...mcpConfig,
-        mcpServers: {
-          hypertool: {
-            type: "stdio",
-            command: "npx",
-            args: ["-y", "@toolprint/hypertool-mcp", "--mcp-config", hyperToolConfigPath]
-          }
-        }
-      };
-      
-      await fs.writeFile(mcpConfigPath, JSON.stringify(newMcpConfig, null, 2), 'utf8');
-      spinner.text = 'Updated .mcp.json with HyperTool proxy';
-    } else {
-      spinner.text = '[DRY RUN] Would update .mcp.json with HyperTool configuration';
-    }
+    // Step 4: Migrate to HyperTool configuration
+    spinner.text = 'Migrating servers...';
+    await migrateToHyperToolConfig(context);
     
-    // Step 6: Create .claude/commands directory in current project
+    // Step 5: Ask about cleanup options
+    spinner.stop();
+    const shouldCleanup = await promptForCleanupOptions(context);
+    spinner.start('Updating configuration...');
+    
+    // Step 6: Update .mcp.json to add HyperTool
+    await updateMcpConfigWithHyperTool(context, mcpConfig, shouldCleanup, '.mcp.ht.json');
+    
+    // Step 7: Create .claude/commands directory and install slash commands
     const claudeDir = join(projectDir, '.claude');
     const commandsDir = join(claudeDir, 'commands');
     
@@ -200,9 +135,7 @@ export async function installClaudeCodeCommands(options: InstallOptions = {}): P
     for (const [filename, content] of Object.entries(commandTemplates)) {
       const filePath = join(commandsDir, filename);
       
-      if (dryRun) {
-        // Just track it, don't log each file
-      } else {
+      if (!dryRun) {
         // Handle existing files gracefully
         try {
           await fs.access(filePath);
@@ -224,42 +157,15 @@ export async function installClaudeCodeCommands(options: InstallOptions = {}): P
       : 'Claude Code integration completed successfully!';
     spinner.succeed(successMessage);
     
-    // Display success message using output helpers
-    output.displaySpaceBuffer(1);
-    const completionMessage = dryRun 
-      ? '✅ Dry Run Complete!' 
-      : '✅ Installation Complete!';
-    output.success(completionMessage);
-    output.displaySpaceBuffer(1);
+    // Display setup summary
+    await displaySetupSummary(context, shouldCleanup, 'Claude Code');
     
-    const locationMessage = dryRun 
-      ? `📁 Commands would be installed to: ${chalk.yellow(commandsDir)}`
-      : `📁 Commands installed to: ${chalk.yellow(commandsDir)}`;
-    output.info(locationMessage);
-    output.displaySpaceBuffer(1);
-    
-    // Display what was done
+    // Display Claude Code specific information
     if (!dryRun) {
-      output.displayHeader('📦 What was installed:');
-      output.success(`✅ Created backup: ${chalk.yellow('.mcp.backup.json')}`);
-      output.success(`✅ Created HyperTool config: ${chalk.yellow('.mcp.ht.json')}`);
-      output.success(`✅ Updated .mcp.json to use HyperTool proxy`);
-      output.success(`✅ Installed ${installedCommands.length} slash commands`);
-      output.displaySpaceBuffer(1);
-    }
-    
-    output.displayHeader('🎯 Available slash commands in Claude Code:');
-    installedCommands.forEach(cmd => {
-      output.log(`  ${chalk.yellow('/' + cmd)}`);
-    });
-    output.displaySpaceBuffer(1);
-    
-    if (dryRun) {
-      output.displaySubHeader('🔍 Dry Run Summary');
-      const serverCount = Object.keys(mcpConfig.mcpServers || {}).length;
-      output.info(`Would migrate ${serverCount} existing MCP server(s) to HyperTool configuration`);
-      output.info(`Would install ${installedCommands.length} slash commands`);
-      output.info('Run without --dry-run to perform actual installation');
+      output.displayHeader('🎯 Available slash commands in Claude Code:');
+      installedCommands.forEach(cmd => {
+        output.displayInstruction(`/${cmd}`);
+      });
       output.displaySpaceBuffer(1);
     }
     
@@ -267,19 +173,6 @@ export async function installClaudeCodeCommands(options: InstallOptions = {}): P
     output.displayInstruction('Claude Code will now use HyperTool as a proxy for all MCP servers');
     output.displayInstruction('Use the slash commands to manage toolsets and filter available tools');
     output.displaySpaceBuffer(1);
-    
-    output.displaySubHeader('📖 Next Steps');
-    output.displayInstruction('1. Restart Claude Code to load the new configuration');
-    output.displayInstruction('2. Use slash commands to create and manage toolsets');
-    output.displayInstruction('3. Your existing MCP servers are still available through HyperTool');
-    output.displaySpaceBuffer(1);
-    
-    if (!dryRun) {
-      output.displaySubHeader('🔄 Restore Original Configuration');
-      output.displayInstruction('To revert to your original .mcp.json:');
-      output.displayTerminalInstruction(`cp .mcp.backup.json .mcp.json`);
-      output.displaySpaceBuffer(1);
-    }
     
     output.displaySubHeader('🔧 Installation Commands');
     output.displayInstruction('Full command:');

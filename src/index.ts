@@ -84,7 +84,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--port <number>",
       chalk.cyan("Port number for HTTP transport") +
-        " (only valid with --transport http)"
+      " (only valid with --transport http)"
     )
     .option(
       "--debug",
@@ -94,7 +94,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--insecure",
       chalk.yellow("Allow tools with changed reference hashes") +
-        chalk.red(" (insecure mode)"),
+      chalk.red(" (insecure mode)"),
       false
     )
     .option(
@@ -129,7 +129,6 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   await program.parseAsync();
 
   const options = program.opts();
-  console.log(options)
 
   // Validate that --dry-run is only used with --install
   if (options.dryRun && !options.install) {
@@ -139,12 +138,9 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   }
 
   if (options.install) {
-    console.log('HERE INSTALL')
     await handleInstallOption([options.install], options.dryRun);
     process.exit(0);
   }
-
-  console.log('HERE NO INSTALL')
 
   // Validate transport type
   const transport = options.transport as RuntimeTransportType;

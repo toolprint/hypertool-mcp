@@ -19,9 +19,29 @@ vi.mock('fs', async () => {
       writeFile: vi.fn(),
       access: vi.fn(),
       copyFile: vi.fn(),
+      readFile: vi.fn(),
     },
   };
 });
+
+// Mock inquirer
+vi.mock('inquirer', () => ({
+  default: {
+    prompt: vi.fn()
+  }
+}));
+
+// Mock shared utilities
+vi.mock('../shared/mcpSetupUtils.js', () => ({
+  fileExists: vi.fn(),
+  validateMcpConfiguration: vi.fn(),
+  createConfigBackup: vi.fn(),
+  migrateToHyperToolConfig: vi.fn(),
+  promptForCleanupOptions: vi.fn(),
+  updateMcpConfigWithHyperTool: vi.fn(),
+  displaySetupSummary: vi.fn(),
+  displaySetupPlan: vi.fn(),
+}));
 
 // Mock process.cwd
 const mockCwd = vi.fn(() => '/test/project');
@@ -36,6 +56,7 @@ vi.mock('ora', () => ({
     start: vi.fn().mockReturnThis(),
     succeed: vi.fn().mockReturnThis(),
     fail: vi.fn().mockReturnThis(),
+    stop: vi.fn().mockReturnThis(),
     text: '',
   })),
 }));
@@ -47,14 +68,52 @@ const consoleMock = {
 };
 vi.stubGlobal('console', consoleMock);
 
+// Mock output utilities
+vi.mock('../../logging/output.js', () => ({
+  output: {
+    displayHeader: vi.fn(),
+    displaySpaceBuffer: vi.fn(),
+    displaySubHeader: vi.fn(),
+    displayInstruction: vi.fn(),
+    displayTerminalInstruction: vi.fn(),
+    info: vi.fn(),
+    success: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    log: vi.fn(),
+  }
+}));
+
 describe('Claude Code Integration Setup', () => {
   const mockFs = fs as any;
   
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     consoleMock.log.mockClear();
     consoleMock.error.mockClear();
     mockCwd.mockReturnValue('/test/project');
+    
+    // Setup default mocks for shared utilities
+    const { fileExists, validateMcpConfiguration, createConfigBackup, migrateToHyperToolConfig, promptForCleanupOptions, updateMcpConfigWithHyperTool, displaySetupSummary, displaySetupPlan } = await import('../shared/mcpSetupUtils.js');
+    
+    (fileExists as any).mockResolvedValue(true);
+    (validateMcpConfiguration as any).mockResolvedValue(undefined);
+    (createConfigBackup as any).mockResolvedValue(undefined);
+    (migrateToHyperToolConfig as any).mockResolvedValue(undefined);
+    (promptForCleanupOptions as any).mockResolvedValue(true);
+    (updateMcpConfigWithHyperTool as any).mockResolvedValue(undefined);
+    (displaySetupSummary as any).mockResolvedValue(undefined);
+    (displaySetupPlan as any).mockResolvedValue(true);
+    
+    // Mock fs.readFile to return valid JSON
+    mockFs.readFile.mockResolvedValue(JSON.stringify({
+      mcpServers: {
+        "test-server": {
+          type: "stdio",
+          command: "test-command"
+        }
+      }
+    }));
   });
 
   afterEach(() => {
@@ -113,16 +172,16 @@ describe('Claude Code Integration Setup', () => {
       mockFs.writeFile.mockResolvedValue(undefined);
       mockFs.access.mockRejectedValue(new Error('File not found'));
 
+      // Import the output mock
+      const { output } = await import('../../logging/output.js');
+
       await installClaudeCodeCommands();
 
-      expect(consoleMock.log).toHaveBeenCalledWith(
-        expect.stringContaining('✅ Installation Complete!')
+      expect(output.displayTerminalInstruction).toHaveBeenCalledWith(
+        'npx @toolprint/hypertool-mcp install claude-code'
       );
-      expect(consoleMock.log).toHaveBeenCalledWith(
-        expect.stringContaining('npx @toolprint/hypertool-mcp install --claude-code')
-      );
-      expect(consoleMock.log).toHaveBeenCalledWith(
-        expect.stringContaining('npx @toolprint/hypertool-mcp install --cc')
+      expect(output.displayTerminalInstruction).toHaveBeenCalledWith(
+        'npx @toolprint/hypertool-mcp install cc'
       );
     });
 
@@ -135,13 +194,17 @@ describe('Claude Code Integration Setup', () => {
         exit: mockExit,
       });
       
-      mockFs.mkdir.mockRejectedValue(new Error('Permission denied'));
+      // Import the output mock
+      const { output } = await import('../../logging/output.js');
+      
+      // Mock the shared utilities to throw an error
+      const { createConfigBackup } = await import('../shared/mcpSetupUtils.js');
+      (createConfigBackup as any).mockRejectedValue(new Error('Permission denied'));
 
       await expect(installClaudeCodeCommands()).rejects.toThrow('process.exit called');
       
-      expect(consoleMock.error).toHaveBeenCalledWith(
-        expect.stringContaining('❌ Error:'),
-        expect.stringContaining('Permission denied')
+      expect(output.error).toHaveBeenCalledWith(
+        expect.stringContaining('❌ Error: Permission denied')
       );
       expect(mockExit).toHaveBeenCalledWith(1);
     });
