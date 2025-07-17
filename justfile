@@ -4,8 +4,7 @@
 # Recommend installing vscode extension: https://just.systems/man/en/visual-studio-code.html
 
 # Common commands
-doppler_run := "doppler run --"
-doppler_run_preserve := "doppler run --preserve-env --"
+# (No external dependencies required)
 
 # Default recipe - show available commands
 _default:
@@ -16,10 +15,6 @@ _default:
 brew:
     brew update & brew bundle install --file=./Brewfile
 
-[group('setup')]
-doppler-install:
-    brew install gnupg
-    brew install dopplerhq/cli/doppler
 
 # Recursively sync git submodules
 [group('git')]
@@ -38,8 +33,10 @@ git-branch name:
 
 # Initial project setup
 [group('setup')]
-setup:
-    @echo "TODO: Add your setup command here"
+setup: brew
+    npm install
+    npm run build
+    @echo "✅ Setup complete!"
 
 # Run development mode
 [group('dev')]
@@ -64,7 +61,11 @@ typecheck:
 # Clean build artifacts and dependencies
 [group('clean')]
 clean:
-    @echo "TODO: Add your clean command here"
+    rm -rf dist/
+    rm -rf node_modules/
+    rm -rf coverage/
+    rm -f *.tgz
+    @echo "✅ Clean complete!"
 
 # Format code
 [group('lint')]

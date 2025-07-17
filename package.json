@@ -18,8 +18,10 @@
     "build": "tsc && chmod +x dist/bin.js",
     "build:watch": "tsc --watch",
     "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
-    "prepublishOnly": "npm run build"
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "prepublishOnly": "npm run build && npm run lint && npm run format:check"
   },
   "keywords": [
     "mcp",
@@ -58,6 +60,7 @@
     "SECURITY.md",
     "CODE_OF_CONDUCT.md",
     "CONTRIBUTING.md",
+    "CHANGELOG.md",
     "assets/toolprint.png"
   ],
   "publishConfig": {
