@@ -1,16 +1,16 @@
 {
   "name": "@toolprint/hypertool-mcp",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "description": "HyperTool MCP proxy server for routing requests between clients and multiple underlying MCP servers",
   "main": "dist/index.js",
   "bin": {
     "hypertool-mcp": "dist/bin.js"
   },
   "scripts": {
-    "start": "node dist/index.js --debug",
-    "start:stdio": "node dist/index.js --debug",
-    "start:http": "node dist/index.js --transport http --debug",
-    "dev": "npm run build && node dist/index.js --debug",
+    "start": "node dist/bin.js",
+    "start:stdio": "node dist/bin.js --mcp-config test-mcp.json --debug",
+    "start:http": "node dist/bin.js --transport http --mcp-config test-mcp.json --debug",
+    "dev": "npm run build && node dist/bin.js --debug",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
@@ -19,7 +19,7 @@
     "build:watch": "tsc --watch",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
-    "postinstall": "node -e \"const fs = require('fs'); const path = require('path'); try { const binPath = path.join(__dirname, 'dist', 'bin.js'); if (fs.existsSync(binPath)) { fs.chmodSync(binPath, '755'); } } catch (e) { /* ignore */ }\""
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",

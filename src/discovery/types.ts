@@ -18,7 +18,7 @@ export interface ToolSchema {
  * MCP tool definition from list_tools response
  * Using the official Tool type from MCP SDK
  */
-export { Tool as MCPToolDefinition } from "@modelcontextprotocol/sdk/types.js";
+export type { Tool as MCPToolDefinition } from "@modelcontextprotocol/sdk/types.js";
 
 /**
  * Enhanced tool metadata with discovery information
