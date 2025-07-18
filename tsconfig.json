@@ -26,7 +26,7 @@
     "declarationMap": true,
     "types": ["node"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/**/*.js"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"],
   "ts-node": {
     "esm": true,
