@@ -8,7 +8,6 @@ import { promises as fs } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import chalk from "chalk";
-import ora from "ora";
 import inquirer from "inquirer";
 import { displayBanner, output } from "../../logging/output.js";
 import {

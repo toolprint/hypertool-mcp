@@ -7,7 +7,6 @@ import { promises as fs } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import chalk from "chalk";
-import ora from "ora";
 import inquirer from "inquirer";
 import { createCommandTemplates } from "./utils.js";
 import { output } from "../../logging/output.js";
@@ -209,16 +208,24 @@ export class ClaudeCodeSetup {
       );
 
       // Check if hypertool is already fully configured
-      const hasHypertool = Object.keys(mcpConfig.mcpServers || {}).some(
-        key => key.toLowerCase().includes("hypertool")
+      const hasHypertool = Object.keys(mcpConfig.mcpServers || {}).some((key) =>
+        key.toLowerCase().includes("hypertool")
       );
-      const hyperToolConfigExists = await fileExists(this.context.hyperToolConfigPath);
+      const hyperToolConfigExists = await fileExists(
+        this.context.hyperToolConfigPath
+      );
       let isFullyConfigured = false;
-      
-      if (hasHypertool && hyperToolConfigExists && existingServers.length === 0) {
-        const hyperToolConfig: MCPConfig = await readJsonFile(this.context.hyperToolConfigPath);
+
+      if (
+        hasHypertool &&
+        hyperToolConfigExists &&
+        existingServers.length === 0
+      ) {
+        const hyperToolConfig: MCPConfig = await readJsonFile(
+          this.context.hyperToolConfigPath
+        );
         const hyperToolServers = Object.keys(hyperToolConfig.mcpServers || {});
-        
+
         if (hyperToolServers.length > 0) {
           output.success("✅ Hypertool is already configured for this project");
           output.info(
@@ -268,7 +275,7 @@ export class ClaudeCodeSetup {
               default: true,
             },
           ]);
-          
+
           if (installCommands) {
             selectedComponents = {
               updateMcpConfig: false,
@@ -284,7 +291,8 @@ export class ClaudeCodeSetup {
           return;
         }
       } else {
-        selectedComponents = await this.promptForSetupComponents(hasGlobalCommands);
+        selectedComponents =
+          await this.promptForSetupComponents(hasGlobalCommands);
       }
 
       if (

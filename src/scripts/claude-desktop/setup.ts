@@ -3,12 +3,10 @@
  * Usage: npx -y @toolprint/hypertool-mcp --install claude-desktop
  */
 
-import { promises as fs } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import chalk from "chalk";
 import inquirer from "inquirer";
-import ora from "ora";
 import { output } from "../../logging/output.js";
 import {
   MCPConfig,
@@ -71,16 +69,26 @@ export class ClaudeDesktopSetup {
 
       // Check if hypertool is already fully configured
       const hasHypertool = Object.keys(originalConfig.mcpServers || {}).some(
-        key => key.toLowerCase().includes("hypertool")
+        (key) => key.toLowerCase().includes("hypertool")
       );
-      const hyperToolConfigExists = await fileExists(this.context.hyperToolConfigPath);
-      
-      if (hasHypertool && hyperToolConfigExists && existingServers.length === 0) {
-        const hyperToolConfig: MCPConfig = await readJsonFile(this.context.hyperToolConfigPath);
+      const hyperToolConfigExists = await fileExists(
+        this.context.hyperToolConfigPath
+      );
+
+      if (
+        hasHypertool &&
+        hyperToolConfigExists &&
+        existingServers.length === 0
+      ) {
+        const hyperToolConfig: MCPConfig = await readJsonFile(
+          this.context.hyperToolConfigPath
+        );
         const hyperToolServers = Object.keys(hyperToolConfig.mcpServers || {});
-        
+
         if (hyperToolServers.length > 0) {
-          output.success("✅ Hypertool is already configured for Claude Desktop");
+          output.success(
+            "✅ Hypertool is already configured for Claude Desktop"
+          );
           output.info(
             `📍 Managing ${hyperToolServers.length} MCP servers: ${hyperToolServers.join(", ")}`
           );
