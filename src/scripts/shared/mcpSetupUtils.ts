@@ -116,7 +116,7 @@ export async function createConfigBackup(context: SetupContext): Promise<void> {
     const currentConfig: MCPConfig = await readJsonFile(context.originalConfigPath);
     const serverNames = Object.keys(currentConfig.mcpServers || {});
     
-    if (serverNames.length === 1 && serverNames[0] === "toolprint-hypertool") {
+    if (serverNames.length === 1 && serverNames[0].toLowerCase().includes("hypertool")) {
       // Hypertool is already configured and backup exists - no need to overwrite
       return;
     }
@@ -169,7 +169,7 @@ export async function migrateToHyperToolConfig(
     const serverNames = Object.keys(originalConfig.mcpServers || {});
     
     // If current config only has hypertool and hyperToolConfig has servers, we're already configured
-    if (serverNames.length === 1 && serverNames[0] === "toolprint-hypertool" && 
+    if (serverNames.length === 1 && serverNames[0].toLowerCase().includes("hypertool") && 
         Object.keys(hyperToolConfig.mcpServers || {}).length > 0) {
       return originalConfig;
     }
@@ -177,7 +177,12 @@ export async function migrateToHyperToolConfig(
 
   // Copy all existing servers to HyperTool config (excluding hypertool itself)
   const existingServers = { ...originalConfig.mcpServers };
-  delete existingServers["toolprint-hypertool"];
+  // Remove any server with "hypertool" in the name
+  Object.keys(existingServers).forEach(key => {
+    if (key.toLowerCase().includes("hypertool")) {
+      delete existingServers[key];
+    }
+  });
 
   if (context.dryRun) {
     output.info(
@@ -339,8 +344,11 @@ export async function displaySetupPlan(
     return true;
   }
 
-  // Check if HyperTool already exists
-  if (originalConfig.mcpServers?.["toolprint-hypertool"]) {
+  // Check if HyperTool already exists (check for any server with "hypertool" in the name)
+  const hasHypertool = Object.keys(originalConfig.mcpServers || {}).some(
+    key => key.toLowerCase().includes("hypertool")
+  );
+  if (hasHypertool) {
     output.warn("⚠️  HyperTool is already configured in MCP configuration");
     const { shouldContinue } = await inquirer.prompt([
       {

@@ -1,20 +1,14 @@
 {
   "mcpServers": {
-    "docker": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": ["mcp-server-docker"],
-      "env": {}
-    },
-    "context7": {
-      "type": "sse",
-      "url": "https://mcp.context7.com/sse"
-    },
-    "task-master": {
+    "toolprint-hypertool": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "--package=task-master-ai", "task-master-ai"],
-      "env": {}
+      "args": [
+        "-y",
+        "@toolprint/hypertool-mcp",
+        "--mcp-config",
+        "/Users/achintyaashok/Documents/MyProjects/cc_workspace/onegrep/meta-mcp/mcp.hypertool.json"
+      ]
     }
   }
 }

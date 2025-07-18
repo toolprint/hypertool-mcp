@@ -205,11 +205,13 @@ export class ClaudeCodeSetup {
 
       // Step 2: Analyze existing configuration
       const existingServers = Object.keys(mcpConfig.mcpServers || {}).filter(
-        (name) => name !== "toolprint-hypertool"
+        (name) => !name.toLowerCase().includes("hypertool")
       );
 
       // Check if hypertool is already fully configured
-      const hasHypertool = mcpConfig.mcpServers?.["toolprint-hypertool"] !== undefined;
+      const hasHypertool = Object.keys(mcpConfig.mcpServers || {}).some(
+        key => key.toLowerCase().includes("hypertool")
+      );
       const hyperToolConfigExists = await fileExists(this.context.hyperToolConfigPath);
       let isFullyConfigured = false;
       
