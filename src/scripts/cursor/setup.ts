@@ -58,10 +58,10 @@ export class CursorSetup {
       );
       const existingServers = Object.keys(
         originalConfig.mcpServers || {}
-      ).filter((name) => name !== "hypertool");
+      ).filter((name) => name !== "toolprint-hypertool");
 
       // Check if hypertool is already fully configured
-      const hasHypertool = originalConfig.mcpServers?.hypertool !== undefined;
+      const hasHypertool = originalConfig.mcpServers?.["toolprint-hypertool"] !== undefined;
       const hyperToolConfigExists = await fileExists(this.context.hyperToolConfigPath);
       
       if (hasHypertool && hyperToolConfigExists && existingServers.length === 0) {

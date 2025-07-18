@@ -116,7 +116,7 @@ export async function createConfigBackup(context: SetupContext): Promise<void> {
     const currentConfig: MCPConfig = await readJsonFile(context.originalConfigPath);
     const serverNames = Object.keys(currentConfig.mcpServers || {});
     
-    if (serverNames.length === 1 && serverNames[0] === "hypertool") {
+    if (serverNames.length === 1 && serverNames[0] === "toolprint-hypertool") {
       // Hypertool is already configured and backup exists - no need to overwrite
       return;
     }
@@ -169,7 +169,7 @@ export async function migrateToHyperToolConfig(
     const serverNames = Object.keys(originalConfig.mcpServers || {});
     
     // If current config only has hypertool and hyperToolConfig has servers, we're already configured
-    if (serverNames.length === 1 && serverNames[0] === "hypertool" && 
+    if (serverNames.length === 1 && serverNames[0] === "toolprint-hypertool" && 
         Object.keys(hyperToolConfig.mcpServers || {}).length > 0) {
       return originalConfig;
     }
@@ -177,7 +177,7 @@ export async function migrateToHyperToolConfig(
 
   // Copy all existing servers to HyperTool config (excluding hypertool itself)
   const existingServers = { ...originalConfig.mcpServers };
-  delete existingServers.hypertool;
+  delete existingServers["toolprint-hypertool"];
 
   if (context.dryRun) {
     output.info(
@@ -211,7 +211,7 @@ export async function promptForCleanupOptions(
  */
 export function createHyperToolProxyConfig(hyperToolConfigPath: string): any {
   return {
-    hypertool: {
+    "toolprint-hypertool": {
       type: "stdio",
       command: "npx",
       args: [
@@ -340,7 +340,7 @@ export async function displaySetupPlan(
   }
 
   // Check if HyperTool already exists
-  if (originalConfig.mcpServers?.hypertool) {
+  if (originalConfig.mcpServers?.["toolprint-hypertool"]) {
     output.warn("⚠️  HyperTool is already configured in MCP configuration");
     const { shouldContinue } = await inquirer.prompt([
       {

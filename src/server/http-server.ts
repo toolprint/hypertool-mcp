@@ -199,7 +199,7 @@ export class McpHttpServer {
           output.displayInstruction(
             JSON.stringify(
               {
-                "hypertool-mcp": {
+                "toolprint-hypertool": {
                   type: "streamable-http",
                   url: this.connectionString,
                 },
