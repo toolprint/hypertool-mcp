@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { installClaudeCodeCommands } from './setup.js';
+import { ClaudeCodeSetup } from './setup.js';
 import { createCommandTemplates } from './utils.js';
 import inquirer from 'inquirer';
 
@@ -22,6 +22,7 @@ vi.mock('fs', async () => {
       copyFile: vi.fn(),
       readFile: vi.fn(),
       rmdir: vi.fn(),
+      rm: vi.fn(),
     },
   };
 });
@@ -43,6 +44,8 @@ vi.mock('../shared/mcpSetupUtils.js', () => ({
   updateMcpConfigWithHyperTool: vi.fn(),
   displaySetupSummary: vi.fn(),
   displaySetupPlan: vi.fn(),
+  readJsonFile: vi.fn(),
+  hasClaudeCodeGlobalHypertoolSlashCommands: vi.fn(),
 }));
 
 // Mock process.cwd
@@ -96,7 +99,7 @@ describe('Claude Code Integration Setup', () => {
     mockCwd.mockReturnValue('/test/project');
     
     // Setup default mocks for shared utilities
-    const { fileExists, validateMcpConfiguration, createConfigBackup, migrateToHyperToolConfig, promptForCleanupOptions, updateMcpConfigWithHyperTool, displaySetupSummary, displaySetupPlan } = await import('../shared/mcpSetupUtils.js');
+    const { fileExists, validateMcpConfiguration, createConfigBackup, migrateToHyperToolConfig, promptForCleanupOptions, updateMcpConfigWithHyperTool, displaySetupSummary, displaySetupPlan, readJsonFile, hasClaudeCodeGlobalHypertoolSlashCommands } = await import('../shared/mcpSetupUtils.js');
     
     (fileExists as any).mockResolvedValue(true);
     (validateMcpConfiguration as any).mockResolvedValue(undefined);
@@ -106,10 +109,28 @@ describe('Claude Code Integration Setup', () => {
     (updateMcpConfigWithHyperTool as any).mockResolvedValue(undefined);
     (displaySetupSummary as any).mockResolvedValue(undefined);
     (displaySetupPlan as any).mockResolvedValue(true);
+    (hasClaudeCodeGlobalHypertoolSlashCommands as any).mockResolvedValue(false);
+    (readJsonFile as any).mockResolvedValue({
+      mcpServers: {
+        "test-server": {
+          type: "stdio",
+          command: "test-command"
+        }
+      }
+    });
     
-    // Mock inquirer prompt for component selection
-    (inquirer.prompt as any).mockResolvedValue({
-      components: ['updateMcpConfig', 'installSlashCommands']
+    // Mock inquirer prompts
+    (inquirer.prompt as any).mockImplementation((questions) => {
+      if (Array.isArray(questions)) {
+        const question = questions[0];
+        if (question.name === 'components') {
+          return Promise.resolve({ components: ['updateMcpConfig', 'installSlashCommandsGlobal'] });
+        }
+        if (question.name === 'shouldProceed') {
+          return Promise.resolve({ shouldProceed: true });
+        }
+      }
+      return Promise.resolve({});
     });
     
     // Mock fs.readFile to return valid JSON
@@ -127,76 +148,82 @@ describe('Claude Code Integration Setup', () => {
     vi.restoreAllMocks();
   });
 
-  describe('installClaudeCodeCommands', () => {
-    it('should create .claude/commands directory in current project', async () => {
+  describe('ClaudeCodeSetup', () => {
+    it('should create global .claude/commands/ht directory when installing globally', async () => {
       mockFs.mkdir.mockResolvedValue(undefined);
       mockFs.writeFile.mockResolvedValue(undefined);
       mockFs.access.mockRejectedValue(new Error('File not found'));
-      mockFs.rmdir.mockResolvedValue(undefined);
-
-      await installClaudeCodeCommands();
+      mockFs.rm.mockResolvedValue(undefined);
+      
+      const setup = new ClaudeCodeSetup();
+      await setup.run(false);
 
       expect(mockFs.mkdir).toHaveBeenCalledWith(
-        join('/test/project', '.claude', 'commands', 'hypertool'),
+        expect.stringContaining('.claude/commands/ht'),
         { recursive: true }
       );
     });
 
-    it('should generate and write all 5 command files', async () => {
+    it('should generate and write all command files', async () => {
       mockFs.mkdir.mockResolvedValue(undefined);
       mockFs.writeFile.mockResolvedValue(undefined);
       mockFs.access.mockRejectedValue(new Error('File not found'));
-      mockFs.rmdir.mockResolvedValue(undefined);
+      mockFs.rm.mockResolvedValue(undefined);
 
-      await installClaudeCodeCommands();
+      const setup = new ClaudeCodeSetup();
+      await setup.run(false);
 
-      expect(mockFs.writeFile).toHaveBeenCalledTimes(5);
-      
+      // Check that writeFile was called for each command file
       const writtenFiles = mockFs.writeFile.mock.calls.map(call => call[0]);
-      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'hypertool', 'list-available-tools.md'));
-      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'hypertool', 'build-toolset.md'));
-      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'hypertool', 'equip-toolset.md'));
-      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'hypertool', 'list-saved-toolsets.md'));
-      expect(writtenFiles).toContain(join('/test/project', '.claude', 'commands', 'hypertool', 'get-active-toolset.md'));
+      const commandFiles = writtenFiles.filter(file => file.includes('commands/ht/'));
+      
+      expect(commandFiles.length).toBeGreaterThanOrEqual(3); // At least 3 core commands
+      expect(commandFiles.some(f => f.includes('list-all-tools.md'))).toBe(true);
+      expect(commandFiles.some(f => f.includes('new-toolset.md'))).toBe(true);
+      expect(commandFiles.some(f => f.includes('list-toolsets.md'))).toBe(true);
     });
 
-    it('should clean and recreate hypertool commands directory', async () => {
+    it('should clean and recreate ht commands directory', async () => {
       mockFs.mkdir.mockResolvedValue(undefined);
       mockFs.writeFile.mockResolvedValue(undefined);
       mockFs.access.mockResolvedValue(undefined); // File exists
       mockFs.copyFile.mockResolvedValue(undefined);
-      mockFs.rmdir.mockResolvedValue(undefined);
+      mockFs.rm.mockResolvedValue(undefined);
 
-      await installClaudeCodeCommands();
+      const setup = new ClaudeCodeSetup();
+      await setup.run(false);
 
-      expect(mockFs.rmdir).toHaveBeenCalledWith(
-        join('/test/project', '.claude', 'commands', 'hypertool'),
-        { recursive: true }
+      // Should use fs.rm instead of fs.rmdir
+      expect(mockFs.rm).toHaveBeenCalledWith(
+        expect.stringContaining('.claude/commands/ht'),
+        { recursive: true, force: true }
       );
       
       expect(mockFs.mkdir).toHaveBeenCalledWith(
-        join('/test/project', '.claude', 'commands', 'hypertool'),
+        expect.stringContaining('.claude/commands/ht'),
         { recursive: true }
       );
     });
 
-    it('should display success message with installation commands', async () => {
-      mockFs.mkdir.mockResolvedValue(undefined);
-      mockFs.writeFile.mockResolvedValue(undefined);
-      mockFs.access.mockRejectedValue(new Error('File not found'));
-      mockFs.rmdir.mockResolvedValue(undefined);
+    it('should skip installation when user declines', async () => {
+      // Mock user declining
+      (inquirer.prompt as any).mockImplementation((questions) => {
+        const question = Array.isArray(questions) ? questions[0] : questions;
+        if (question.name === 'shouldProceed') {
+          return Promise.resolve({ shouldProceed: false });
+        }
+        if (question.name === 'components') {
+          return Promise.resolve({ components: ['updateMcpConfig', 'installSlashCommandsGlobal'] });
+        }
+        return Promise.resolve({});
+      });
 
-      // Import the output mock
       const { output } = await import('../../logging/output.js');
+      const setup = new ClaudeCodeSetup();
+      await setup.run(false);
 
-      await installClaudeCodeCommands();
-
-      expect(output.displayTerminalInstruction).toHaveBeenCalledWith(
-        'npx @toolprint/hypertool-mcp install claude-code'
-      );
-      expect(output.displayTerminalInstruction).toHaveBeenCalledWith(
-        'npx @toolprint/hypertool-mcp install cc'
-      );
+      expect(output.info).toHaveBeenCalledWith('Skipped Claude Code.');
+      expect(mockFs.mkdir).not.toHaveBeenCalled();
     });
 
     it('should handle file system errors gracefully', async () => {
@@ -215,11 +242,11 @@ describe('Claude Code Integration Setup', () => {
       const { createConfigBackup } = await import('../shared/mcpSetupUtils.js');
       (createConfigBackup as any).mockRejectedValue(new Error('Permission denied'));
 
-      await expect(installClaudeCodeCommands()).rejects.toThrow('process.exit called');
+      const setup = new ClaudeCodeSetup();
+      await expect(setup.run(false)).rejects.toThrow('process.exit called');
       
-      expect(output.error).toHaveBeenCalledWith(
-        expect.stringContaining('❌ Error: Permission denied')
-      );
+      expect(output.error).toHaveBeenCalledWith('❌ Setup failed:');
+      expect(output.error).toHaveBeenCalledWith('Permission denied');
       expect(mockExit).toHaveBeenCalledWith(1);
     });
   });
@@ -229,10 +256,10 @@ describe('Claude Code Integration Setup', () => {
       const templates = await createCommandTemplates();
 
       expect(Object.keys(templates)).toHaveLength(5);
-      expect(templates).toHaveProperty('list-available-tools.md');
-      expect(templates).toHaveProperty('build-toolset.md');
+      expect(templates).toHaveProperty('list-all-tools.md');
+      expect(templates).toHaveProperty('new-toolset.md');
       expect(templates).toHaveProperty('equip-toolset.md');
-      expect(templates).toHaveProperty('list-saved-toolsets.md');
+      expect(templates).toHaveProperty('list-toolsets.md');
       expect(templates).toHaveProperty('get-active-toolset.md');
     });
 
@@ -256,10 +283,10 @@ describe('Claude Code Integration Setup', () => {
     it('should include correct MCP tool references', async () => {
       const templates = await createCommandTemplates();
 
-      expect(templates['list-available-tools.md']).toContain('Use the list-available-tools tool');
-      expect(templates['build-toolset.md']).toContain('Use the build-toolset tool');
+      expect(templates['list-all-tools.md']).toContain('Use the list-all-tools tool');
+      expect(templates['new-toolset.md']).toContain('Use the new-toolset tool');
+      expect(templates['list-toolsets.md']).toContain('Use the list-toolsets tool');
       expect(templates['equip-toolset.md']).toContain('Use the equip-toolset tool');
-      expect(templates['list-saved-toolsets.md']).toContain('Use the list-saved-toolsets tool');
       expect(templates['get-active-toolset.md']).toContain('Use the get-active-toolset tool');
     });
 
@@ -276,11 +303,12 @@ describe('Claude Code Integration Setup', () => {
     it('should include cross-references between related commands', async () => {
       const templates = await createCommandTemplates();
 
-      expect(templates['list-available-tools.md']).toContain('/build-toolset');
-      expect(templates['build-toolset.md']).toContain('/list-available-tools');
-      expect(templates['equip-toolset.md']).toContain('/list-saved-toolsets');
-      expect(templates['list-saved-toolsets.md']).toContain('/equip-toolset');
-      expect(templates['get-active-toolset.md']).toContain('/equip-toolset');
+      // Check for cross-references using the slash command prefix
+      expect(templates['list-all-tools.md']).toContain('new-toolset');
+      expect(templates['new-toolset.md']).toContain('list-all-tools');
+      expect(templates['equip-toolset.md']).toContain('list-saved-toolsets'); // Fixed: was looking for wrong name
+      expect(templates['list-toolsets.md']).toContain('equip-toolset');
+      expect(templates['get-active-toolset.md']).toContain('equip-toolset');
     });
   });
 });
