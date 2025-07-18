@@ -18,6 +18,7 @@ import {
   migrateToHyperToolConfig,
   updateMcpConfigWithHyperTool,
   readJsonFile,
+  fileExists,
 } from "../shared/mcpSetupUtils.js";
 
 export class CursorSetup {
@@ -59,7 +60,24 @@ export class CursorSetup {
         originalConfig.mcpServers || {}
       ).filter((name) => name !== "hypertool");
 
-      if (existingServers.length === 0) {
+      // Check if hypertool is already fully configured
+      const hasHypertool = originalConfig.mcpServers?.hypertool !== undefined;
+      const hyperToolConfigExists = await fileExists(this.context.hyperToolConfigPath);
+      
+      if (hasHypertool && hyperToolConfigExists && existingServers.length === 0) {
+        const hyperToolConfig: MCPConfig = await readJsonFile(this.context.hyperToolConfigPath);
+        const hyperToolServers = Object.keys(hyperToolConfig.mcpServers || {});
+        
+        if (hyperToolServers.length > 0) {
+          output.success("✅ Hypertool is already configured for Cursor");
+          output.info(
+            `📍 Managing ${hyperToolServers.length} MCP servers: ${hyperToolServers.join(", ")}`
+          );
+          output.displaySpaceBuffer(1);
+          output.info("Nothing to do - Hypertool is already fully configured.");
+          return;
+        }
+      } else if (existingServers.length === 0) {
         output.warn("⚠️  No MCP servers found");
         output.info(
           "💡 Hypertool will be configured for future server additions"

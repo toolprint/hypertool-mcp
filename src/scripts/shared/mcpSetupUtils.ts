@@ -112,6 +112,15 @@ export async function createConfigBackup(context: SetupContext): Promise<void> {
 
   // Check if backup already exists
   if (await fileExists(context.backupPath)) {
+    // If backup exists and current config only has hypertool, skip backup
+    const currentConfig: MCPConfig = await readJsonFile(context.originalConfigPath);
+    const serverNames = Object.keys(currentConfig.mcpServers || {});
+    
+    if (serverNames.length === 1 && serverNames[0] === "hypertool") {
+      // Hypertool is already configured and backup exists - no need to overwrite
+      return;
+    }
+
     const { overwrite } = await inquirer.prompt([
       {
         type: "confirm",
@@ -152,6 +161,18 @@ export async function migrateToHyperToolConfig(
 
   if (!originalConfig.mcpServers) {
     originalConfig.mcpServers = {};
+  }
+
+  // If hypertool config already exists, check if we should update it
+  if (await fileExists(context.hyperToolConfigPath)) {
+    const hyperToolConfig: MCPConfig = await readJsonFile(context.hyperToolConfigPath);
+    const serverNames = Object.keys(originalConfig.mcpServers || {});
+    
+    // If current config only has hypertool and hyperToolConfig has servers, we're already configured
+    if (serverNames.length === 1 && serverNames[0] === "hypertool" && 
+        Object.keys(hyperToolConfig.mcpServers || {}).length > 0) {
+      return originalConfig;
+    }
   }
 
   // Copy all existing servers to HyperTool config (excluding hypertool itself)

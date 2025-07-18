@@ -208,7 +208,24 @@ export class ClaudeCodeSetup {
         (name) => name !== "hypertool"
       );
 
-      if (existingServers.length === 0 && hasExistingConfig) {
+      // Check if hypertool is already fully configured
+      const hasHypertool = mcpConfig.mcpServers?.hypertool !== undefined;
+      const hyperToolConfigExists = await fileExists(this.context.hyperToolConfigPath);
+      let isFullyConfigured = false;
+      
+      if (hasHypertool && hyperToolConfigExists && existingServers.length === 0) {
+        const hyperToolConfig: MCPConfig = await readJsonFile(this.context.hyperToolConfigPath);
+        const hyperToolServers = Object.keys(hyperToolConfig.mcpServers || {});
+        
+        if (hyperToolServers.length > 0) {
+          output.success("✅ Hypertool is already configured for this project");
+          output.info(
+            `📍 Managing ${hyperToolServers.length} MCP servers: ${hyperToolServers.join(", ")}`
+          );
+          output.displaySpaceBuffer(1);
+          isFullyConfigured = true;
+        }
+      } else if (existingServers.length === 0 && hasExistingConfig) {
         output.warn("⚠️  No MCP servers found in .mcp.json");
         output.info("💡 You can still install Hypertool to add servers later");
         output.displaySpaceBuffer(1);
@@ -230,9 +247,43 @@ export class ClaudeCodeSetup {
         output.displaySpaceBuffer(1);
       }
 
+      // If fully configured and has commands, nothing to do
+      if (isFullyConfigured && hasGlobalCommands) {
+        output.info("Nothing to do - Hypertool is already fully configured.");
+        return;
+      }
+
       // Step 3: Let user select which components to install
-      const selectedComponents =
-        await this.promptForSetupComponents(hasGlobalCommands);
+      let selectedComponents;
+      if (isFullyConfigured) {
+        // Only offer slash commands if not already installed
+        if (!hasGlobalCommands) {
+          const { installCommands } = await inquirer.prompt([
+            {
+              type: "confirm",
+              name: "installCommands",
+              message: chalk.yellow("Install global slash commands?"),
+              default: true,
+            },
+          ]);
+          
+          if (installCommands) {
+            selectedComponents = {
+              updateMcpConfig: false,
+              installSlashCommands: true,
+              installGlobally: true,
+            };
+          } else {
+            output.info("Installation cancelled.");
+            return;
+          }
+        } else {
+          output.info("Nothing to do - Hypertool is already fully configured.");
+          return;
+        }
+      } else {
+        selectedComponents = await this.promptForSetupComponents(hasGlobalCommands);
+      }
 
       if (
         !selectedComponents.updateMcpConfig &&
