@@ -96,12 +96,12 @@ export class Logger {
     // Create shared console transport only once
     if (!sharedConsoleTransport) {
       sharedConsoleTransport = pino.transport({
-        target: 'pino-pretty',
+        target: "pino-pretty",
         options: {
           colorize: this.config.colorize,
-          translateTime: 'SYS:standard',
-          include: 'level,time,msg',
-          ignore: 'pid,hostname', // Simplify output
+          translateTime: "SYS:standard",
+          include: "level,time,msg",
+          ignore: "pid,hostname", // Simplify output
         },
       });
     }

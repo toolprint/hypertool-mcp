@@ -2,7 +2,6 @@
  * Utility functions for Claude Code integration
  */
 
-
 /**
  * Command template data structure
  */
@@ -21,16 +20,21 @@ interface CommandTemplate {
 /**
  * Generate command templates for all MCP tools
  */
-export async function createCommandTemplates(): Promise<Record<string, string>> {
+export async function createCommandTemplates(): Promise<
+  Record<string, string>
+> {
   const commandTemplates: Record<string, string> = {};
-  
+
   // Template for list-all-tools.md
-  commandTemplates['list-all-tools.md'] = generateCommandFile({
-    name: 'List All Tools',
-    description: 'Discover all tools from connected MCP servers via HyperTool proxy',
-    toolName: 'list-all-tools',
-    usage: 'Use the list-all-tools tool from the HyperTool MCP server to see all discovered tools',
-    parameters: 'None required - this command shows all available tools from connected servers.',
+  commandTemplates["list-all-tools.md"] = generateCommandFile({
+    name: "List All Tools",
+    description:
+      "Discover all tools from connected MCP servers via HyperTool proxy",
+    toolName: "list-all-tools",
+    usage:
+      "Use the list-all-tools tool from the HyperTool MCP server to see all discovered tools",
+    parameters:
+      "None required - this command shows all available tools from connected servers.",
     examples: `Use the list-all-tools tool to see all tools discovered from your configured MCP servers.
 
 This will show you:
@@ -45,15 +49,17 @@ This will show you:
 - Use the output to select tools for new toolsets
 - Tools are namespaced (e.g., "git.status") to avoid conflicts`,
     relatedCommands: `- Use /new-toolset to create toolsets with discovered tools
-- Use /equip-toolset to activate toolsets with these tools`
+- Use /equip-toolset to activate toolsets with these tools`,
   });
 
   // Template for new-toolset.md
-  commandTemplates['new-toolset.md'] = generateCommandFile({
-    name: 'New Toolset',
-    description: 'Creates new toolset with selected tools from available MCP servers via HyperTool',
-    toolName: 'new-toolset',
-    usage: 'Use the new-toolset tool from the HyperTool MCP server with toolset name and tool selections',
+  commandTemplates["new-toolset.md"] = generateCommandFile({
+    name: "New Toolset",
+    description:
+      "Creates new toolset with selected tools from available MCP servers via HyperTool",
+    toolName: "new-toolset",
+    usage:
+      "Use the new-toolset tool from the HyperTool MCP server with toolset name and tool selections",
     parameters: `- toolsetName: Name for the new toolset (required)
 - toolList: Array of tool names to include (use namespaced names from list-available-tools)
 - description: Optional description for the toolset`,
@@ -73,15 +79,17 @@ This will create a new toolset called "development" with the specified tools.`,
 - Run list-all-tools first to see what tools are available`,
     relatedCommands: `- Use /list-all-tools to see available tools before building
 - Use /equip-toolset to activate your new toolset
-- Use /list-toolsets to see all your created toolsets`
+- Use /list-toolsets to see all your created toolsets`,
   });
 
   // Template for equip-toolset.md
-  commandTemplates['equip-toolset.md'] = generateCommandFile({
-    name: 'Equip Toolset',
-    description: 'Switches to a different toolset via HyperTool, making its tools available for use',
-    toolName: 'equip-toolset',
-    usage: 'Use the equip-toolset tool from the HyperTool MCP server with the name of the toolset to activate',
+  commandTemplates["equip-toolset.md"] = generateCommandFile({
+    name: "Equip Toolset",
+    description:
+      "Switches to a different toolset via HyperTool, making its tools available for use",
+    toolName: "equip-toolset",
+    usage:
+      "Use the equip-toolset tool from the HyperTool MCP server with the name of the toolset to activate",
     parameters: `- toolsetName: Name of the toolset to activate (required)`,
     examples: `Use the equip-toolset tool with parameters:
 {
@@ -97,16 +105,18 @@ This will activate the "development" toolset and make its tools available.`,
 - Use get-active-toolset to see what's currently equipped`,
     relatedCommands: `- Use /list-saved-toolsets to see available toolsets
 - Use /get-active-toolset to see what's currently active
-- Use /build-toolset to create new toolsets`
+- Use /build-toolset to create new toolsets`,
   });
 
   // Template for list-toolsets.md
-  commandTemplates['list-toolsets.md'] = generateCommandFile({
-    name: 'List Toolsets',
-    description: 'Shows all existing toolsets with their tool counts, descriptions, and metadata via HyperTool',
-    toolName: 'list-toolsets',
-    usage: 'Use the list-toolsets tool from the HyperTool MCP server to see all your saved toolsets',
-    parameters: 'None required - this command shows all saved toolsets.',
+  commandTemplates["list-toolsets.md"] = generateCommandFile({
+    name: "List Toolsets",
+    description:
+      "Shows all existing toolsets with their tool counts, descriptions, and metadata via HyperTool",
+    toolName: "list-toolsets",
+    usage:
+      "Use the list-toolsets tool from the HyperTool MCP server to see all your saved toolsets",
+    parameters: "None required - this command shows all saved toolsets.",
     examples: `Use the list-toolsets tool to see all your saved toolsets including:
 - Toolset names and descriptions
 - Number of tools in each toolset
@@ -120,16 +130,19 @@ This will activate the "development" toolset and make its tools available.`,
 - Check creation dates to identify outdated toolsets`,
     relatedCommands: `- Use /equip-toolset to activate any of the listed toolsets
 - Use /new-toolset to create new toolsets
-- Use /get-active-toolset to see detailed info about the active toolset`
+- Use /get-active-toolset to see detailed info about the active toolset`,
   });
 
   // Template for get-active-toolset.md
-  commandTemplates['get-active-toolset.md'] = generateCommandFile({
-    name: 'Get Active Toolset',
-    description: 'Shows currently active toolset with detailed information about its tools and configuration via HyperTool',
-    toolName: 'get-active-toolset',
-    usage: 'Use the get-active-toolset tool from the HyperTool MCP server to see details about the current toolset',
-    parameters: 'None required - this command shows the currently active toolset.',
+  commandTemplates["get-active-toolset.md"] = generateCommandFile({
+    name: "Get Active Toolset",
+    description:
+      "Shows currently active toolset with detailed information about its tools and configuration via HyperTool",
+    toolName: "get-active-toolset",
+    usage:
+      "Use the get-active-toolset tool from the HyperTool MCP server to see details about the current toolset",
+    parameters:
+      "None required - this command shows the currently active toolset.",
     examples: `Use the get-active-toolset tool to see detailed information about the currently active toolset:
 - Toolset name and description
 - Complete list of active tools
@@ -144,7 +157,7 @@ This will activate the "development" toolset and make its tools available.`,
 - Check this before using specific tools to verify they're available`,
     relatedCommands: `- Use /equip-toolset to change the active toolset
 - Use /list-toolsets to see other available toolsets
-- Use /list-all-tools to see all discoverable tools`
+- Use /list-all-tools to see all discoverable tools`,
   });
 
   return commandTemplates;

@@ -3,70 +3,84 @@
  * HyperTool MCP server main entry point
  */
 
-import { Command } from 'commander';
-import chalk from 'chalk';
+import { Command } from "commander";
+import chalk from "chalk";
 import { RuntimeOptions, RuntimeTransportType } from "./types/runtime.js";
-import { APP_DESCRIPTION, APP_VERSION, APP_TECHNICAL_NAME, APP_NAME } from "./config/appConfig.js";
+import {
+  APP_DESCRIPTION,
+  APP_VERSION,
+  APP_TECHNICAL_NAME,
+  APP_NAME,
+} from "./config/appConfig.js";
 import type { TransportConfig } from "./server/types.js";
 
 async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
   // Default to 'all' if no option provided
-  const option = installArgs && installArgs.length > 0 ? installArgs[0] : 'all';
+  const option = installArgs && installArgs.length > 0 ? installArgs[0] : "all";
 
   // Normalize option aliases
   const normalizedOption = (() => {
     switch (option.toLowerCase()) {
-      case 'all':
-        return 'all';
-      case 'claude-desktop':
-      case 'cd':
-        return 'claude-desktop';
-      case 'cursor':
-        return 'cursor';
-      case 'claude-code':
-      case 'cc':
-        return 'claude-code';
+      case "all":
+        return "all";
+      case "claude-desktop":
+      case "cd":
+        return "claude-desktop";
+      case "cursor":
+        return "cursor";
+      case "claude-code":
+      case "cc":
+        return "claude-code";
       default:
         return null;
     }
   })();
 
   if (!normalizedOption) {
-    console.error(chalk.red('❌ Invalid install option: ' + option));
-    console.error(chalk.yellow('   Valid options: all (default), claude-desktop (cd), cursor, claude-code (cc)'));
-    throw new Error('Invalid install option');
+    console.error(chalk.red("❌ Invalid install option: " + option));
+    console.error(
+      chalk.yellow(
+        "   Valid options: all (default), claude-desktop (cd), cursor, claude-code (cc)"
+      )
+    );
+    throw new Error("Invalid install option");
   }
 
   try {
     switch (normalizedOption) {
-      case 'all':
-        const { GlobalSetup } = await import('./scripts/global/setup.js');
+      case "all":
+        const { GlobalSetup } = await import("./scripts/global/setup.js");
         const globalSetup = new GlobalSetup();
         await globalSetup.run(isDryRun);
         break;
-      case 'claude-desktop':
-        const { ClaudeDesktopSetup } = await import('./scripts/claude-desktop/setup.js');
+      case "claude-desktop":
+        const { ClaudeDesktopSetup } = await import(
+          "./scripts/claude-desktop/setup.js"
+        );
         const setup = new ClaudeDesktopSetup();
         await setup.run(isDryRun);
         break;
-      case 'cursor':
-        const { CursorSetup } = await import('./scripts/cursor/setup.js');
+      case "cursor":
+        const { CursorSetup } = await import("./scripts/cursor/setup.js");
         const cursorSetup = new CursorSetup();
         await cursorSetup.run(isDryRun);
         break;
-      case 'claude-code':
-        const { installClaudeCodeCommands } = await import('./scripts/claude-code/setup.js');
+      case "claude-code":
+        const { installClaudeCodeCommands } = await import(
+          "./scripts/claude-code/setup.js"
+        );
         await installClaudeCodeCommands({ dryRun: isDryRun });
         break;
       default:
-        throw new Error(chalk.red('❌ Invalid install option: ' + option));
+        throw new Error(chalk.red("❌ Invalid install option: " + option));
     }
-
   } catch (error) {
-    throw new Error(chalk.red(`❌ Failed to run ${normalizedOption} setup:`), error as Error);
+    throw new Error(
+      chalk.red(`❌ Failed to run ${normalizedOption} setup:`),
+      error as Error
+    );
   }
 }
-
 
 /**
  * Parse CLI arguments and return runtime options
@@ -86,7 +100,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--port <number>",
       chalk.cyan("Port number for HTTP transport") +
-      " (only valid with --transport http)"
+        " (only valid with --transport http)"
     )
     .option(
       "--debug",
@@ -96,7 +110,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--insecure",
       chalk.yellow("Allow tools with changed reference hashes") +
-      chalk.red(" (insecure mode)"),
+        chalk.red(" (insecure mode)"),
       false
     )
     .option(
@@ -108,25 +122,30 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
       chalk.cyan("Path to MCP configuration file") + " (.mcp.json)"
     )
     .option(
-      '--log-level <level>',
-      chalk.cyan('Log level') + ' (trace, debug, info, warn, error, fatal)',
-      'info'
+      "--log-level <level>",
+      chalk.cyan("Log level") + " (trace, debug, info, warn, error, fatal)",
+      "info"
     )
     .option(
-      '--dry-run',
-      chalk.cyan('Show what would be done without making changes') + chalk.yellow(' (only valid with --install)'),
+      "--dry-run",
+      chalk.cyan("Show what would be done without making changes") +
+        chalk.yellow(" (only valid with --install)"),
       false
     )
     .option(
-      '--install [app]',
-      chalk.cyan('Install and configure integrations.\n') +
-      chalk.white('Options: all (default), claude-desktop (cd), cursor, claude-code (cc)\n') +
-      chalk.yellow('Examples:\n') +
-      chalk.gray('  hypertool-mcp --install            # Install for all detected apps\n') +
-      chalk.gray('  hypertool-mcp --install claude-desktop\n') +
-      chalk.gray('  hypertool-mcp --install cursor --dry-run\n') +
-      chalk.gray('  hypertool-mcp --install cc --dry-run')
-    )
+      "--install [app]",
+      chalk.cyan("Install and configure integrations.\n") +
+        chalk.white(
+          "Options: all (default), claude-desktop (cd), cursor, claude-code (cc)\n"
+        ) +
+        chalk.yellow("Examples:\n") +
+        chalk.gray(
+          "  hypertool-mcp --install            # Install for all detected apps\n"
+        ) +
+        chalk.gray("  hypertool-mcp --install claude-desktop\n") +
+        chalk.gray("  hypertool-mcp --install cursor --dry-run\n") +
+        chalk.gray("  hypertool-mcp --install cc --dry-run")
+    );
 
   // program.addCommand(createInstallCommand());
   await program.parseAsync();
@@ -135,14 +154,19 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
 
   // Validate that --dry-run is only used with --install
   if (options.dryRun && !options.install) {
-    console.error(chalk.red('❌ --dry-run flag can only be used with --install'));
-    console.error(chalk.yellow('   Usage: hypertool-mcp --install claude-desktop --dry-run'));
-    throw new Error('Invalid install option');
+    console.error(
+      chalk.red("❌ --dry-run flag can only be used with --install")
+    );
+    console.error(
+      chalk.yellow("   Usage: hypertool-mcp --install claude-desktop --dry-run")
+    );
+    throw new Error("Invalid install option");
   }
 
   if (options.install !== undefined) {
     // options.install will be true if no app specified, or a string if app specified
-    const installApp = typeof options.install === 'string' ? options.install : 'all';
+    const installApp =
+      typeof options.install === "string" ? options.install : "all";
     await handleInstallOption([installApp], options.dryRun);
     process.exit(0);
   }
@@ -207,7 +231,8 @@ async function main(): Promise<void> {
 
     // Update logger configuration
     logger.updateConfig({
-      level: (runtimeOptions.logLevel || (runtimeOptions.debug ? 'debug' : 'info')) as any,
+      level: (runtimeOptions.logLevel ||
+        (runtimeOptions.debug ? "debug" : "info")) as any,
     });
 
     // Discover MCP configuration

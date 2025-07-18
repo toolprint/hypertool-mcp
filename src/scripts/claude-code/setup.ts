@@ -3,14 +3,14 @@
  * Usage: npx -y @toolprint/hypertool-mcp --install claude-code
  */
 
-import { promises as fs } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
-import chalk from 'chalk';
-import ora from 'ora';
-import inquirer from 'inquirer';
-import { createCommandTemplates } from './utils.js';
-import { output } from '../../logging/output.js';
+import { promises as fs } from "fs";
+import { join } from "path";
+import { homedir } from "os";
+import chalk from "chalk";
+import ora from "ora";
+import inquirer from "inquirer";
+import { createCommandTemplates } from "./utils.js";
+import { output } from "../../logging/output.js";
 import {
   MCPConfig,
   SetupContext,
@@ -20,8 +20,8 @@ import {
   updateMcpConfigWithHyperTool,
   readJsonFile,
   fileExists,
-  hasClaudeCodeGlobalHypertoolSlashCommands
-} from '../shared/mcpSetupUtils.js';
+  hasClaudeCodeGlobalHypertoolSlashCommands,
+} from "../shared/mcpSetupUtils.js";
 
 export class ClaudeCodeSetup {
   private readonly context: SetupContext;
@@ -30,15 +30,15 @@ export class ClaudeCodeSetup {
   constructor() {
     // Claude Code uses project-local configuration
     const projectDir = process.cwd();
-    const mcpConfigPath = join(projectDir, '.mcp.json');
-    const backupPath = join(projectDir, '.mcp.backup.json');
-    const hyperToolConfigPath = join(projectDir, 'mcp.hypertool.json');
+    const mcpConfigPath = join(projectDir, ".mcp.json");
+    const backupPath = join(projectDir, ".mcp.backup.json");
+    const hyperToolConfigPath = join(projectDir, "mcp.hypertool.json");
 
     this.context = {
       originalConfigPath: mcpConfigPath,
       backupPath,
       hyperToolConfigPath,
-      dryRun: false
+      dryRun: false,
     };
   }
 
@@ -47,11 +47,10 @@ export class ClaudeCodeSetup {
    */
   private async isValidProjectDirectory(): Promise<boolean> {
     const projectDir = process.cwd();
-    const hasGit = await fileExists(join(projectDir, '.git'));
+    const hasGit = await fileExists(join(projectDir, ".git"));
     const hasMcpJson = await fileExists(this.context.originalConfigPath);
     return hasGit || hasMcpJson;
   }
-
 
   /**
    * Prompt user to select which setup components to install
@@ -65,29 +64,29 @@ export class ClaudeCodeSetup {
       // In dry run mode, default to all components selected
       return {
         updateMcpConfig: true,
-        installSlashCommands: !hasGlobalCommands
+        installSlashCommands: !hasGlobalCommands,
       };
     }
 
     const choices = [
       {
-        name: 'Update .mcp.json configuration (setup HyperTool proxy)',
-        value: 'updateMcpConfig',
-        checked: true
-      }
+        name: "Update .mcp.json configuration (setup HyperTool proxy)",
+        value: "updateMcpConfig",
+        checked: true,
+      },
     ];
 
     // Only offer slash command installation if not already installed globally
     if (!hasGlobalCommands) {
       choices.push({
-        name: 'Install slash commands globally in ~/.claude/commands/ht/ (recommended)',
-        value: 'installSlashCommandsGlobal',
-        checked: true
+        name: "Install slash commands globally in ~/.claude/commands/ht/ (recommended)",
+        value: "installSlashCommandsGlobal",
+        checked: true,
       });
       choices.push({
-        name: 'Install slash commands locally in .claude/commands/ht/',
-        value: 'installSlashCommandsLocal',
-        checked: false
+        name: "Install slash commands locally in .claude/commands/ht/",
+        value: "installSlashCommandsLocal",
+        checked: false,
       });
     }
 
@@ -96,27 +95,31 @@ export class ClaudeCodeSetup {
       return {
         updateMcpConfig: true,
         installSlashCommands: false,
-        installGlobally: false
+        installGlobally: false,
       };
     }
 
-    const { components } = await inquirer.prompt([{
-      type: 'checkbox',
-      name: 'components',
-      message: 'Select components to install:',
-      choices,
-      validate: (answers) => {
-        if (answers.length === 0) {
-          return 'Please select at least one component to install';
-        }
-        return true;
-      }
-    }]);
+    const { components } = await inquirer.prompt([
+      {
+        type: "checkbox",
+        name: "components",
+        message: "Select components to install:",
+        choices,
+        validate: (answers) => {
+          if (answers.length === 0) {
+            return "Please select at least one component to install";
+          }
+          return true;
+        },
+      },
+    ]);
 
     return {
-      updateMcpConfig: components.includes('updateMcpConfig'),
-      installSlashCommands: components.includes('installSlashCommandsGlobal') || components.includes('installSlashCommandsLocal'),
-      installGlobally: components.includes('installSlashCommandsGlobal')
+      updateMcpConfig: components.includes("updateMcpConfig"),
+      installSlashCommands:
+        components.includes("installSlashCommandsGlobal") ||
+        components.includes("installSlashCommandsLocal"),
+      installGlobally: components.includes("installSlashCommandsGlobal"),
     };
   }
 
@@ -127,15 +130,19 @@ export class ClaudeCodeSetup {
 
     try {
       if (this.dryRun) {
-        output.info(chalk.cyan('🔍 [DRY RUN MODE] - No changes will be made'));
+        output.info(chalk.cyan("🔍 [DRY RUN MODE] - No changes will be made"));
         output.displaySpaceBuffer(1);
       }
 
       // Check if we're in a valid project directory
       if (!(await this.isValidProjectDirectory())) {
-        output.error('❌ Not in a project directory');
-        output.warn('   Claude Code installation must be run from within a project.');
-        output.info('   Please navigate to a project directory with .git or .mcp.json');
+        output.error("❌ Not in a project directory");
+        output.warn(
+          "   Claude Code installation must be run from within a project."
+        );
+        output.info(
+          "   Please navigate to a project directory with .git or .mcp.json"
+        );
         process.exit(1);
       }
 
@@ -147,12 +154,14 @@ export class ClaudeCodeSetup {
         output.warn(`⚠️  No .mcp.json found in current directory`);
         output.info(`📁 Current directory: ${chalk.yellow(projectDir)}`);
         output.displaySpaceBuffer(1);
-        output.displaySubHeader('To use HyperTool with Claude Code:');
-        output.displayInstruction('1. Create a .mcp.json file in your project root');
-        output.displayInstruction('2. Add your MCP server configurations');
-        output.displayInstruction('3. Run this installer again');
+        output.displaySubHeader("To use HyperTool with Claude Code:");
+        output.displayInstruction(
+          "1. Create a .mcp.json file in your project root"
+        );
+        output.displayInstruction("2. Add your MCP server configurations");
+        output.displayInstruction("3. Run this installer again");
         output.displaySpaceBuffer(1);
-        output.displaySubHeader('Example .mcp.json:');
+        output.displaySubHeader("Example .mcp.json:");
         output.displayTerminalInstruction(`{
   "mcpServers": {
     "git": {
@@ -164,20 +173,25 @@ export class ClaudeCodeSetup {
         output.displaySpaceBuffer(1);
 
         // Offer to create a basic .mcp.json
-        const { createBasic } = await inquirer.prompt([{
-          type: 'confirm',
-          name: 'createBasic',
-          message: 'Would you like to create a basic .mcp.json file?',
-          default: true
-        }]);
+        const { createBasic } = await inquirer.prompt([
+          {
+            type: "confirm",
+            name: "createBasic",
+            message: "Would you like to create a basic .mcp.json file?",
+            default: true,
+          },
+        ]);
 
         if (createBasic) {
           const basicConfig = {
-            mcpServers: {}
+            mcpServers: {},
           };
-          await fs.writeFile(this.context.originalConfigPath, JSON.stringify(basicConfig, null, 2));
-          output.success('✅ Created basic .mcp.json file');
-          output.info('   You can add MCP servers to this file later');
+          await fs.writeFile(
+            this.context.originalConfigPath,
+            JSON.stringify(basicConfig, null, 2)
+          );
+          output.success("✅ Created basic .mcp.json file");
+          output.info("   You can add MCP servers to this file later");
           mcpConfig = basicConfig;
           hasExistingConfig = false;
         } else {
@@ -190,49 +204,66 @@ export class ClaudeCodeSetup {
       }
 
       // Step 2: Analyze existing configuration
-      const existingServers = Object.keys(mcpConfig.mcpServers || {}).filter(name => name !== 'hypertool');
+      const existingServers = Object.keys(mcpConfig.mcpServers || {}).filter(
+        (name) => name !== "hypertool"
+      );
 
       if (existingServers.length === 0 && hasExistingConfig) {
-        output.warn('⚠️  No MCP servers found in .mcp.json');
-        output.info('💡 You can still install Hypertool to add servers later');
+        output.warn("⚠️  No MCP servers found in .mcp.json");
+        output.info("💡 You can still install Hypertool to add servers later");
         output.displaySpaceBuffer(1);
       } else if (existingServers.length > 0) {
         // Show existing servers
-        output.info(`📍 Project ${projectDir.split('/').pop()} has ${existingServers.length} MCP servers: ${existingServers.join(', ')}`);
+        output.info(
+          `📍 Project ${projectDir.split("/").pop()} has ${existingServers.length} MCP servers: ${existingServers.join(", ")}`
+        );
         output.displaySpaceBuffer(1);
       }
 
       // Check if slash commands are already installed globally
-      const hasGlobalCommands = await hasClaudeCodeGlobalHypertoolSlashCommands();
+      const hasGlobalCommands =
+        await hasClaudeCodeGlobalHypertoolSlashCommands();
       if (hasGlobalCommands) {
-        output.info('✅ Global slash commands already installed in ~/.claude/commands/ht/');
+        output.info(
+          "✅ Global slash commands already installed in ~/.claude/commands/ht/"
+        );
         output.displaySpaceBuffer(1);
       }
 
       // Step 3: Let user select which components to install
-      const selectedComponents = await this.promptForSetupComponents(hasGlobalCommands);
+      const selectedComponents =
+        await this.promptForSetupComponents(hasGlobalCommands);
 
-      if (!selectedComponents.updateMcpConfig && !selectedComponents.installSlashCommands) {
-        output.warn('🛑 No components selected. Exiting without changes.');
+      if (
+        !selectedComponents.updateMcpConfig &&
+        !selectedComponents.installSlashCommands
+      ) {
+        output.warn("🛑 No components selected. Exiting without changes.");
         return;
       }
 
       if (selectedComponents.updateMcpConfig && existingServers.length > 0) {
-        output.warn('⚠️  Important: This will replace ALL existing servers with Hypertool proxy.');
-        output.info('   Your servers will remain accessible through Hypertool.');
+        output.warn(
+          "⚠️  Important: This will replace ALL existing servers with Hypertool proxy."
+        );
+        output.info(
+          "   Your servers will remain accessible through Hypertool."
+        );
         output.displaySpaceBuffer(1);
       }
 
       // Step 4: Get user confirmation
-      const { shouldProceed } = await inquirer.prompt([{
-        type: 'confirm',
-        name: 'shouldProceed',
-        message: chalk.yellow('Configure Claude Code?'),
-        default: true
-      }]);
+      const { shouldProceed } = await inquirer.prompt([
+        {
+          type: "confirm",
+          name: "shouldProceed",
+          message: chalk.yellow("Continue?"),
+          default: true,
+        },
+      ]);
 
       if (!shouldProceed) {
-        output.info('Skipped Claude Code.');
+        output.info("Skipped.");
         return;
       }
 
@@ -240,48 +271,43 @@ export class ClaudeCodeSetup {
 
       // MCP Configuration (only if selected)
       if (selectedComponents.updateMcpConfig) {
-        // Create backup
-        const backupSpinner = this.dryRun ? null : ora('Creating configuration backup...').start();
-        await createConfigBackup(this.context);
         if (!this.dryRun) {
-          backupSpinner?.succeed('Configuration backed up');
-          output.success(`✅ Backup created: ${chalk.gray('.mcp.backup.json')}`);
-          output.displaySpaceBuffer(1);
+          output.info("📦 Configuring Hypertool...");
         }
+
+        // Create backup
+        await createConfigBackup(this.context);
 
         // Migrate servers
-        const migrateSpinner = this.dryRun ? null : ora('Migrating MCP servers...').start();
         await migrateToHyperToolConfig(this.context);
-        if (!this.dryRun) {
-          migrateSpinner?.stop();
-        }
 
         // Update configuration
-        const updateSpinner = this.dryRun ? null : ora('Updating .mcp.json configuration...').start();
-        await updateMcpConfigWithHyperTool(this.context, mcpConfig, true, this.context.hyperToolConfigPath);
-        if (!this.dryRun) {
-          updateSpinner?.stop();
-        }
+        await updateMcpConfigWithHyperTool(
+          this.context,
+          mcpConfig,
+          true,
+          this.context.hyperToolConfigPath
+        );
       }
 
       // Install slash commands (only if selected)
-      const installedCommands: string[] = [];
-
       if (selectedComponents.installSlashCommands) {
-        const commandsSpinner = this.dryRun ? null : ora('Installing slash commands...').start();
-
         // Determine installation directory
         const isGlobal = selectedComponents.installGlobally;
         const baseDir = isGlobal ? homedir() : projectDir;
-        const claudeDir = join(baseDir, '.claude');
-        const commandsDir = join(claudeDir, 'commands');
-        const hyperToolCommandsDir = join(commandsDir, 'ht');
+        const claudeDir = join(baseDir, ".claude");
+        const commandsDir = join(claudeDir, "commands");
+        const hyperToolCommandsDir = join(commandsDir, "ht");
 
         if (this.dryRun) {
-          const location = isGlobal ? '~/.claude/commands/ht/' : '.claude/commands/ht/';
+          const location = isGlobal
+            ? "~/.claude/commands/ht/"
+            : ".claude/commands/ht/";
           output.info(`[DRY RUN] Would install slash commands to: ${location}`);
         } else {
-          commandsSpinner!.text = isGlobal ? 'Installing global slash commands...' : 'Installing local slash commands...';
+          if (!selectedComponents.updateMcpConfig) {
+            output.info("📦 Installing slash commands...");
+          }
 
           // Clean existing commands and install fresh ones
           try {
@@ -299,11 +325,8 @@ export class ClaudeCodeSetup {
           // Write all command files
           for (const [filename, content] of Object.entries(commandTemplates)) {
             const filePath = join(hyperToolCommandsDir, filename);
-            await fs.writeFile(filePath, content, 'utf8');
-            installedCommands.push('ht:' + filename.replace('.md', ''));
+            await fs.writeFile(filePath, content, "utf8");
           }
-
-          commandsSpinner!.stop();
         }
       }
 
@@ -311,53 +334,31 @@ export class ClaudeCodeSetup {
       output.displaySpaceBuffer(1);
 
       if (this.dryRun) {
-        console.log(chalk.yellow('🔍 [DRY RUN] Installation simulation complete'));
+        console.log(
+          chalk.yellow("🔍 [DRY RUN] Installation simulation complete")
+        );
         output.displaySpaceBuffer(1);
-        output.info('No actual changes were made to your system.');
+        output.info("No actual changes were made to your system.");
       } else {
-        console.log(chalk.green('✨ Claude Code installation complete!'));
-        output.displaySpaceBuffer(1);
-
-        // Show file locations
-        output.displaySubHeader('📁 Important File Locations:');
-        if (selectedComponents.updateMcpConfig) {
-          output.info('• Config: .mcp.json');
-          output.info('• Backup: .mcp.backup.json');
-          output.info('• Servers: mcp.hypertool.json');
-        }
-        if (selectedComponents.installSlashCommands) {
-          const location = selectedComponents.installGlobally ? '~/.claude/commands/ht/' : '.claude/commands/ht/';
-          output.info(`• Commands: ${location}`);
-        }
+        console.log(chalk.green("✨ Claude Code configuration complete!"));
         output.displaySpaceBuffer(1);
 
         // Next steps
-        output.displaySubHeader('🎯 Next Steps:');
-        if (selectedComponents.updateMcpConfig) {
-          output.displayInstruction('1. Open this project in Claude Code');
-          output.displayInstruction('2. Use slash commands to manage tools:');
-          output.displayInstruction('   /ht:list-all-tools');
-          output.displayInstruction('   /ht:new-toolset dev');
-          output.displayInstruction('   /ht:list-toolsets');
-        } else if (selectedComponents.installSlashCommands) {
-          output.displayInstruction('1. Open this project in Claude Code');
-          output.displayInstruction('2. Use the installed slash commands:');
-          installedCommands.forEach(cmd => {
-            output.displayInstruction(`   /${cmd}`);
-          });
-        }
-        output.displaySpaceBuffer(1);
-
-        // Recovery
-        if (selectedComponents.updateMcpConfig) {
-          output.displaySubHeader('🔄 To Restore Original Configuration:');
-          output.displayTerminalInstruction('cp .mcp.backup.json .mcp.json');
+        if (
+          selectedComponents.updateMcpConfig ||
+          selectedComponents.installSlashCommands
+        ) {
+          output.info("🎯 Open this project in Claude Code and use:");
+          if (selectedComponents.installSlashCommands) {
+            output.displayInstruction("   /ht:list-all-tools");
+          } else {
+            output.displayInstruction("   (Use installed slash commands)");
+          }
           output.displaySpaceBuffer(1);
         }
       }
-
     } catch (error) {
-      output.error('❌ Setup failed:');
+      output.error("❌ Setup failed:");
       output.error(error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
@@ -379,4 +380,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const setup = new ClaudeCodeSetup();
   setup.run().catch(console.error);
 }
-
