@@ -1,94 +1,141 @@
 /**
  * Claude Desktop integration setup script
- * Usage: npx -y @toolprint/hypertool-mcp claude-desktop
+ * Usage: npx -y @toolprint/hypertool-mcp --install claude-desktop
  */
 
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import chalk from 'chalk';
-// import inquirer from 'inquirer';
+import inquirer from 'inquirer';
+import ora from 'ora';
 import { output } from '../../logging/output.js';
 import {
-  // MCPConfig,
+  MCPConfig,
   SetupContext,
   validateMcpConfiguration,
   createConfigBackup,
   migrateToHyperToolConfig,
-  promptForCleanupOptions,
   updateMcpConfigWithHyperTool,
-  displaySetupSummary,
-  displaySetupPlan
+  readJsonFile
 } from '../shared/mcpSetupUtils.js';
 
-// ClaudeDesktopConfig interface reserved for future use
-// interface ClaudeDesktopConfig extends MCPConfig {
-//   mcpServers: Record<string, {
-//     type: string;
-//     command: string;
-//     args?: string[];
-//     env?: Record<string, string>;
-//     [key: string]: any;
-//   }>;
-// }
-
-class ClaudeDesktopSetup {
+export class ClaudeDesktopSetup {
   private readonly context: SetupContext;
   private dryRun: boolean = false;
 
   constructor() {
-    // macOS paths as specified in PRD
+    // macOS paths
     const claudeConfigPath = join(homedir(), 'Library/Application Support/Claude/claude_desktop_config.json');
     const backupPath = join(homedir(), 'Library/Application Support/Claude/claude_desktop_config.backup.json');
-    const hyperToolConfigPath = join(homedir(), 'Library/Application Support/Claude/.mcp.ht.json');
+    const hyperToolConfigPath = join(homedir(), 'Library/Application Support/Claude/mcp.hypertool.json');
     
     this.context = {
       originalConfigPath: claudeConfigPath,
       backupPath,
       hyperToolConfigPath,
-      dryRun: false // Will be set in run method
+      dryRun: false
     };
   }
-
-  // All the shared functionality is now in mcpSetupUtils.ts
 
   async run(dryRun: boolean = false): Promise<void> {
     this.dryRun = dryRun;
     this.context.dryRun = dryRun;
 
     try {
-      output.displayHeader('🚀 Claude Desktop + HyperTool Integration Setup');
       if (this.dryRun) {
         output.info(chalk.cyan('🔍 [DRY RUN MODE] - No changes will be made'));
+        output.displaySpaceBuffer(1);
       }
-      output.displaySpaceBuffer(1);
 
-      // Step 1: Validate configuration
+      // Step 1: Validate configuration exists
       await validateMcpConfiguration(this.context.originalConfigPath);
 
-      // Step 2: Read original configuration
-      const originalConfig = JSON.parse(await fs.readFile(this.context.originalConfigPath, 'utf8'));
-
-      // Step 3: Get user consent for the setup plan
-      const shouldProceed = await displaySetupPlan(this.context, originalConfig, 'Claude Desktop');
-      if (!shouldProceed) {
-        process.exit(0);
+      // Step 2: Read and analyze configuration
+      const originalConfig: MCPConfig = await readJsonFile(this.context.originalConfigPath);
+      const existingServers = Object.keys(originalConfig.mcpServers || {}).filter(name => name !== 'hypertool');
+      
+      if (existingServers.length === 0) {
+        output.warn('⚠️  No MCP servers found');
+        output.info('💡 Hypertool will be configured for future server additions');
+        output.displaySpaceBuffer(1);
+      } else {
+        // Show existing servers
+        output.info(`📍 Claude Desktop has ${existingServers.length} MCP servers: ${existingServers.join(', ')}`);
+        output.displaySpaceBuffer(1);
       }
 
+      // Step 3: Get user confirmation
+      const { shouldProceed } = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'shouldProceed',
+        message: chalk.yellow('Configure Claude Desktop?'),
+        default: true
+      }]);
+
+      if (!shouldProceed) {
+        output.info('Skipped Claude Desktop.');
+        return;
+      }
+
+      output.displaySpaceBuffer(1);
+
       // Step 4: Create backup
+      const backupSpinner = this.dryRun ? null : ora('Creating configuration backup...').start();
       await createConfigBackup(this.context);
+      if (!this.dryRun) {
+        backupSpinner?.succeed('Configuration backed up');
+        output.success(`✅ Backup created: ${chalk.gray('claude_desktop_config.backup.json')}`);
+        output.displaySpaceBuffer(1);
+      }
 
-      // Step 5: Migrate configuration
+      // Step 5: Migrate servers
+      const migrateSpinner = this.dryRun ? null : ora('Migrating MCP servers...').start();
       await migrateToHyperToolConfig(this.context);
+      if (!this.dryRun) {
+        migrateSpinner?.stop();
+      }
 
-      // Step 6: Ask about cleanup options
-      const shouldCleanup = await promptForCleanupOptions(this.context);
+      // Step 6: Update configuration
+      const updateSpinner = this.dryRun ? null : ora('Updating Claude Desktop configuration...').start();
+      await updateMcpConfigWithHyperTool(this.context, originalConfig, true, this.context.hyperToolConfigPath);
+      if (!this.dryRun) {
+        updateSpinner?.stop();
+      }
 
-      // Step 7: Add HyperTool proxy with absolute path (Claude Desktop uses absolute paths)
-      await updateMcpConfigWithHyperTool(this.context, originalConfig, shouldCleanup, this.context.hyperToolConfigPath);
+      // Success!
+      output.displaySpaceBuffer(1);
+      
+      if (this.dryRun) {
+        console.log(chalk.yellow('🔍 [DRY RUN] Installation simulation complete'));
+        output.displaySpaceBuffer(1);
+        output.info('No actual changes were made to your system.');
+      } else {
+        console.log(chalk.green('✨ Claude Desktop installation complete!'));
+        output.displaySpaceBuffer(1);
 
-      // Step 8: Display summary
-      await displaySetupSummary(this.context, shouldCleanup, 'Claude Desktop');
+        // Show file locations
+        output.displaySubHeader('📁 Important File Locations:');
+        output.info('• Config: ~/Library/Application Support/Claude/claude_desktop_config.json');
+        output.info('• Backup: ~/Library/Application Support/Claude/claude_desktop_config.backup.json');
+        output.info('• Servers: ~/Library/Application Support/Claude/mcp.hypertool.json');
+        output.displaySpaceBuffer(1);
+
+        // Next steps
+        output.displaySubHeader('🎯 Next Steps:');
+        output.displayInstruction('1. Restart Claude Desktop to load the new configuration');
+        output.displayInstruction('2. Ask Claude:');
+        output.displayInstruction('   "Use the list-all-tools tool to show all MCP tools"');
+        output.displayInstruction('3. Create a toolset:');
+        output.displayInstruction('   "Use the new-toolset tool to create a \'dev\' toolset"');
+        output.displaySpaceBuffer(1);
+
+        // Recovery
+        output.displaySubHeader('🔄 To Restore Original Configuration:');
+        output.displayTerminalInstruction('cp "~/Library/Application Support/Claude/claude_desktop_config.backup.json" \\');
+        output.displayTerminalInstruction('   "~/Library/Application Support/Claude/claude_desktop_config.json"');
+        output.displaySpaceBuffer(1);
+      }
 
     } catch (error) {
       output.error('❌ Setup failed:');
@@ -103,5 +150,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const setup = new ClaudeDesktopSetup();
   setup.run().catch(console.error);
 }
-
-export { ClaudeDesktopSetup };

@@ -4,6 +4,8 @@
  */
 
 import { promises as fs } from 'fs';
+import { join } from 'path';
+import { homedir } from 'os';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { output } from '../../logging/output.js';
@@ -76,8 +78,6 @@ export async function ensureDirectoryExists(path: string): Promise<void> {
  * Validate that an MCP configuration exists and is valid
  */
 export async function validateMcpConfiguration(configPath: string): Promise<void> {
-  output.displayHeader('🔍 Validating MCP configuration...');
-  
   // Check if config exists
   if (!(await fileExists(configPath))) {
     output.error('❌ No MCP configuration found.');
@@ -88,7 +88,6 @@ export async function validateMcpConfiguration(configPath: string): Promise<void
   // Try to parse the JSON
   try {
     await readJsonFile(configPath);
-    output.success('✅ MCP configuration found and valid');
   } catch (error) {
     output.error('❌ Invalid MCP configuration:');
     output.warn(`   ${error}`);
@@ -102,11 +101,11 @@ export async function validateMcpConfiguration(configPath: string): Promise<void
  */
 export async function createConfigBackup(context: SetupContext): Promise<void> {
   if (context.dryRun) {
-    return; // Skip output in dry run - handled by displaySetupPlan
+    output.info(`[DRY RUN] Would create backup: ${context.backupPath}`);
+    return;
   }
-  
-  output.displayHeader('💾 Creating backup of MCP configuration...');
-  
+
+
   // Check if backup already exists
   if (await fileExists(context.backupPath)) {
     const { overwrite } = await inquirer.prompt([{
@@ -115,7 +114,7 @@ export async function createConfigBackup(context: SetupContext): Promise<void> {
       message: chalk.yellow('⚠️  Backup file already exists. Overwrite?'),
       default: false
     }]);
-    
+
     if (!overwrite) {
       output.warn('🛑 Backup skipped. Exiting without changes.');
       process.exit(0);
@@ -139,70 +138,41 @@ export async function createConfigBackup(context: SetupContext): Promise<void> {
  */
 export async function migrateToHyperToolConfig(context: SetupContext): Promise<MCPConfig> {
   const originalConfig: MCPConfig = await readJsonFile(context.originalConfigPath);
-  
+
   if (!originalConfig.mcpServers) {
     originalConfig.mcpServers = {};
   }
 
-  if (context.dryRun) {
-    return originalConfig; // Skip output in dry run - handled by displaySetupPlan
-  }
-  
-  output.displayHeader('🔄 Migrating MCP servers to HyperTool configuration...');
-  // const serverCount = Object.keys(originalConfig.mcpServers).length;
-
-  // Ensure HyperTool config directory exists
-  const hyperToolConfigDir = context.hyperToolConfigPath.substring(0, context.hyperToolConfigPath.lastIndexOf('/'));
-  await ensureDirectoryExists(hyperToolConfigDir);
-
   // Copy all existing servers to HyperTool config (excluding hypertool itself)
   const existingServers = { ...originalConfig.mcpServers };
   delete existingServers.hypertool;
+
+  if (context.dryRun) {
+    output.info(`[DRY RUN] Would migrate ${Object.keys(existingServers).length} servers to: ${context.hyperToolConfigPath}`);
+    return originalConfig;
+  }
+
+  output.info('Migrating MCP servers...');
 
   const hyperToolConfig = {
     mcpServers: existingServers
   };
 
   await writeJsonFile(context.hyperToolConfigPath, hyperToolConfig);
-  
-  output.success(`✅ Migrated ${Object.keys(existingServers).length} MCP server(s) to HyperTool configuration`);
-  output.info(`   Location: ${chalk.gray(context.hyperToolConfigPath)}`);
+
+  output.success(`✅ Created ${context.hyperToolConfigPath.split('/').pop()}`);
+  output.success(`✅ Migrated ${Object.keys(existingServers).length} MCP server(s)`);
 
   return originalConfig;
 }
 
 /**
  * Prompt user for cleanup options (automatic vs manual)
+ * Note: We're simplifying to always do automated cleanup
  */
-export async function promptForCleanupOptions(context: SetupContext): Promise<boolean> {
-  if (context.dryRun) {
-    return true; // Default to automated in dry run - handled by displaySetupPlan
-  }
-
-  output.displaySpaceBuffer(1);
-  output.displaySubHeader('🧹 Configuration Management Options:');
-  output.displaySpaceBuffer(1);
-  
-  output.info('Option 1: Automated (Recommended)');
-  output.displayInstruction('- MCP client will only see HyperTool proxy');
-  output.displayInstruction('- All original servers accessible through HyperTool');
-  output.displayInstruction('- Cleaner configuration management');
-  output.displaySpaceBuffer(1);
-  
-  output.info('Option 2: Manual');
-  output.displayInstruction('- Keep both HyperTool and original servers in config');
-  output.displayInstruction('- You manage duplicate servers manually');
-  output.displayInstruction('- More complex but gives you full control');
-  output.displaySpaceBuffer(1);
-  
-  const { shouldCleanup } = await inquirer.prompt([{
-    type: 'confirm',
-    name: 'shouldCleanup',
-    message: chalk.yellow('Would you like automated cleanup (recommended)?'),
-    default: true
-  }]);
-  
-  return shouldCleanup;
+export async function promptForCleanupOptions(_context: SetupContext): Promise<boolean> {
+  // Always return true for automated cleanup - we've removed the manual option
+  return true;
 }
 
 /**
@@ -224,40 +194,26 @@ export function createHyperToolProxyConfig(hyperToolConfigPath: string): any {
 export async function updateMcpConfigWithHyperTool(
   context: SetupContext,
   originalConfig: MCPConfig,
-  shouldCleanup: boolean,
+  _shouldCleanup: boolean,
   hyperToolConfigPath: string
 ): Promise<void> {
-  if (context.dryRun) {
-    return; // Skip output in dry run - handled by displaySetupPlan
-  }
-  
-  output.displayHeader('🔗 Adding HyperTool proxy to MCP configuration...');
-
   const hyperToolProxy = createHyperToolProxyConfig(hyperToolConfigPath);
-  
-  if (shouldCleanup) {
-    // Create new config with only HyperTool (automated cleanup)
-    const newConfig = {
-      ...originalConfig,
-      mcpServers: hyperToolProxy
-    };
-    
-    await writeJsonFile(context.originalConfigPath, newConfig);
-    output.success('✅ HyperTool proxy added to MCP configuration (automated cleanup)');
-  } else {
-    // Add HyperTool to existing servers (manual cleanup)
-    const newConfig = {
-      ...originalConfig,
-      mcpServers: {
-        ...originalConfig.mcpServers,
-        ...hyperToolProxy
-      }
-    };
-    
-    await writeJsonFile(context.originalConfigPath, newConfig);
-    output.success('✅ HyperTool proxy added to MCP configuration (manual cleanup)');
-    output.warn('⚠️  Note: You may have duplicate servers in your configuration');
+
+  if (context.dryRun) {
+    output.info(`[DRY RUN] Would update config with Hypertool proxy: ${context.originalConfigPath}`);
+    return;
   }
+
+  output.info('Updating configuration...');
+
+  // Always do automated cleanup (only HyperTool in config)
+  const newConfig = {
+    ...originalConfig,
+    mcpServers: hyperToolProxy
+  };
+
+  await writeJsonFile(context.originalConfigPath, newConfig);
+  output.success('✅ Updated configuration to use Hypertool proxy');
 }
 
 /**
@@ -275,7 +231,7 @@ export async function displaySetupSummary(
   output.displaySpaceBuffer(1);
   output.success(`🎉 ${integrationName} integration setup complete!`);
   output.displaySpaceBuffer(1);
-  
+
   const hyperToolConfig = await readJsonFile(context.hyperToolConfigPath);
   const serverCount = Object.keys(hyperToolConfig.mcpServers).length;
 
@@ -283,7 +239,7 @@ export async function displaySetupSummary(
   output.success(`✅ ${serverCount} MCP server(s) migrated to HyperTool configuration`);
   output.success('✅ HyperTool proxy added to MCP configuration');
   output.success('✅ Original configuration backed up');
-  
+
   if (shouldCleanup) {
     output.success('✅ Automated cleanup completed');
   } else {
@@ -310,17 +266,17 @@ export async function displaySetupPlan(
 ): Promise<boolean> {
   const serverCount = Object.keys(originalConfig.mcpServers || {}).length;
   const serverNames = Object.keys(originalConfig.mcpServers || {});
-  
+
   if (context.dryRun) {
     output.displayHeader('📋 Dry Run - Changes Preview');
     output.displaySpaceBuffer(1);
-    
+
     output.info('📁 Files that would be created/modified:');
     output.displayInstruction(`• Backup: ${context.backupPath}`);
     output.displayInstruction(`• HyperTool config: ${context.hyperToolConfigPath}`);
     output.displayInstruction(`• Updated MCP config: ${context.originalConfigPath}`);
     output.displaySpaceBuffer(1);
-    
+
     output.info(`🔄 ${serverCount} MCP server(s) would be migrated:`);
     if (serverCount > 0) {
       serverNames.forEach(name => {
@@ -330,11 +286,11 @@ export async function displaySetupPlan(
       output.displayInstruction('• No existing servers to migrate');
     }
     output.displaySpaceBuffer(1);
-    
+
     output.info('✨ Result: HyperTool proxy replaces all servers in .mcp.json');
     output.info('💡 Original servers remain accessible through HyperTool');
     output.displaySpaceBuffer(1);
-    
+
     return true;
   }
 
@@ -347,7 +303,7 @@ export async function displaySetupPlan(
       message: 'Do you want to reinstall and update the configuration?',
       default: true
     }]);
-    
+
     if (!shouldContinue) {
       output.info('Installation cancelled.');
       return false;
@@ -360,14 +316,14 @@ export async function displaySetupPlan(
     output.displayInstruction(`3. Configure ${integrationName} to use HyperTool as a proxy`);
     output.displayInstruction(`4. Provide options for configuration cleanup`);
     output.displaySpaceBuffer(1);
-    
+
     const { shouldProceed } = await inquirer.prompt([{
       type: 'confirm',
       name: 'shouldProceed',
       message: 'Proceed with installation?',
       default: true
     }]);
-    
+
     if (!shouldProceed) {
       output.info('Installation cancelled.');
       return false;
@@ -375,4 +331,27 @@ export async function displaySetupPlan(
   }
 
   return true;
+}
+
+/**
+ * Check if Hypertool slash commands are already installed globally
+ */
+export async function hasClaudeCodeGlobalHypertoolSlashCommands(): Promise<boolean> {
+  const globalCommandsDir = join(homedir(), '.claude/commands/ht');
+  try {
+    const exists = await fileExists(globalCommandsDir);
+    if (!exists) return false;
+
+    // Check if the directory has command files
+    const files = await fs.readdir(globalCommandsDir);
+    const mdFiles = files.filter(f => f.endsWith('.md'));
+
+    // We expect at least the core commands
+    const expectedCommands = ['list-all-tools.md', 'new-toolset.md', 'list-toolsets.md'];
+    const hasAllCommands = expectedCommands.every(cmd => mdFiles.includes(cmd));
+
+    return hasAllCommands;
+  } catch {
+    return false;
+  }
 }
