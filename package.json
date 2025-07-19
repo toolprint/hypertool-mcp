@@ -1,6 +1,6 @@
 {
   "name": "@toolprint/hypertool-mcp",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "description": "HyperTool MCP proxy server for routing requests between clients and multiple underlying MCP servers",
   "main": "./dist/index.js",
   "bin": {
