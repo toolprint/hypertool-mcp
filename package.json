@@ -1,9 +1,11 @@
 {
   "name": "@toolprint/hypertool-mcp",
-  "version": "0.0.8",
+  "version": "0.0.16",
   "description": "HyperTool MCP proxy server for routing requests between clients and multiple underlying MCP servers",
   "main": "dist/index.js",
-  "bin": "dist/bin.js",
+  "bin": {
+    "hypertool-mcp": "dist/bin.js"
+  },
   "scripts": {
     "start": "node dist/bin.js",
     "start:stdio": "node dist/bin.js --mcp-config test-mcp.json --debug",
