@@ -332,9 +332,4 @@ async function main(): Promise<void> {
 
 // This file is now used as a library - binary entry point is in bin.ts
 
-export { main };
-export * from "./server/index.js";
-export * from "./config/index.js";
-export * from "./types/config.js";
-export * from "./types/runtime.js";
-export * from "./router/index.js";
+await main()
