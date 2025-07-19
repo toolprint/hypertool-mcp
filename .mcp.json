@@ -3,7 +3,9 @@
     "docker": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["mcp-server-docker"],
+      "args": [
+        "mcp-server-docker"
+      ],
       "env": {}
     },
     "context7": {
@@ -13,7 +15,20 @@
     "task-master": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "--package=task-master-ai", "task-master-ai"],
+      "args": [
+        "-y",
+        "--package=task-master-ai",
+        "task-master-ai"
+      ],
+      "env": {}
+    },
+    "mcping": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@toolprint/mcping-mcp"
+      ],
       "env": {}
     }
   }
