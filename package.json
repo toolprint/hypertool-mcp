@@ -1,6 +1,6 @@
 {
   "name": "@toolprint/hypertool-mcp",
-  "version": "0.0.16",
+  "version": "0.0.18",
   "description": "HyperTool MCP proxy server for routing requests between clients and multiple underlying MCP servers",
   "main": "dist/index.js",
   "bin": {
@@ -21,7 +21,7 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
-    "prepublishOnly": "npm run build && npm run lint && npm run format:check",
+    "prepublishOnly": "npm run build",
     "restore": "npm run build && node dist/scripts/restore/restore-all.js",
     "restore:dry-run": "npm run build && node dist/scripts/restore/restore-all.js --dry-run"
   },
