@@ -368,11 +368,22 @@
         ],
         "priority": "medium",
         "subtasks": []
+      },
+      {
+        "id": 33,
+        "title": "Fix stdio transport output corruption in MCP protocol",
+        "description": "Console output is corrupting MCP protocol messages on stdout when using stdio transport, causing JSON parsing errors in MCP clients like Claude Code",
+        "details": "## Problem\nWhen running hypertool-mcp with stdio transport (default), initialization messages written to stdout corrupt the JSON-RPC protocol stream, causing client connection failures.\n\n## Solution\nRedirect all console output to stderr when in stdio mode, keeping stdout clean for protocol messages only.\n\n## Implementation Steps\n1. Add STDIO_LOGGING_CONFIG to src/logging/index.ts with console disabled\n2. Update src/logging/output.ts to detect stdio mode and redirect Console to stderr\n3. Ensure early detection of stdio transport in src/index.ts before any output\n4. Handle ora spinners in src/server/enhanced.ts (Phase 2)\n5. Add integration test to verify stdout contains only JSON-RPC\n\n## Reference\nSee detailed PRD: .taskmaster/docs/prd-stdio-fix.md\n\n## Success Criteria\n- No non-JSON-RPC data on stdout in stdio mode\n- All diagnostic messages available via stderr\n- Successfully connects with Claude Code and other MCP clients",
+        "testStrategy": "Create automated test that spawns stdio server, captures stdout/stderr separately, and verifies protocol integrity",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-07-09T21:55:09.811Z",
-      "updated": "2025-07-16T21:06:30.252Z",
+      "updated": "2025-07-19T17:03:11.837Z",
       "description": "Tasks for master context"
     }
   }
