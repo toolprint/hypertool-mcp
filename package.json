@@ -1,10 +1,10 @@
 {
   "name": "@toolprint/hypertool-mcp",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "HyperTool MCP proxy server for routing requests between clients and multiple underlying MCP servers",
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
   "bin": {
-    "hypertool-mcp": "dist/bin.js"
+    "hypertool-mcp": "./dist/bin.js"
   },
   "scripts": {
     "start": "node dist/bin.js",
@@ -15,7 +15,7 @@
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
-    "build": "rm -rf dist &&tsc && chmod +x dist/bin.js",
+    "build": "rm -rf dist && tsc && chmod +x dist/bin.js",
     "build:watch": "tsc --watch",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
