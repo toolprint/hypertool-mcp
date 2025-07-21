@@ -1,0 +1,59 @@
+# Development files
+src/
+scripts/dev.js
+*.test.ts
+*.test.js
+vitest.config.ts
+tsconfig.json
+eslint.config.js
+
+# Documentation development
+.github/
+.taskmaster/
+CLAUDE.md
+CLAUDE.local.md
+
+# Build tools
+justfile
+Brewfile
+
+# Test files
+test-mcp.json
+coverage/
+.coverage
+
+# IDE and editor files
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git files
+.git/
+.gitignore
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Package files
+*.tgz

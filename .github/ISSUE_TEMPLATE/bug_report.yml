@@ -1,0 +1,130 @@
+name: Bug Report
+description: Report a bug in Hypertool MCP
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this bug! Please fill out the information below to help us understand and fix the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: "When I try to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Configure HyperTool with...
+        2. Run the command...
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Any relevant error messages or logs
+      render: shell
+      placeholder: "Paste error logs here..."
+
+  - type: input
+    id: version
+    attributes:
+      label: Hypertool MCP Version
+      description: "Run `hypertool-mcp --version` to get the version"
+      placeholder: "0.0.5"
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js Version
+      description: "Run `node --version` to get the version"
+      placeholder: "v18.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: transport
+    attributes:
+      label: Transport Mode
+      description: Which transport mode are you using?
+      options:
+        - STDIO
+        - HTTP
+        - Both
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - macOS
+        - Windows
+        - Linux
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: Relevant parts of your .mcp.json configuration (remove sensitive data)
+      render: json
+      placeholder: |
+        {
+          "clients": {
+            "example": {
+              "transport": "stdio",
+              "command": "..."
+            }
+          }
+        }
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched for similar issues and this is not a duplicate
+          required: true
+        - label: I have included all relevant information above
+          required: true
+        - label: I have removed any sensitive information from logs and configuration
+          required: true

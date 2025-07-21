@@ -1,36 +1,26 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(claude-task --help)",
+      "Bash(ls:*)",
+      "Bash(git worktree:*)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:spec.modelcontextprotocol.io)",
+      "WebFetch(domain:modelcontextprotocol.io)",
+      "Bash(npm test)",
+      "Bash(npm test:*)",
+      "Bash(grep:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "git",
     "docker",
     "context7",
     "task-master",
-    "claude-task"
-  ],
-  "enableAllProjectMcpServers": true,
-  "additionalDirectories": [],
-  "permissions": {
-    "allow": [
-      "Bash(brew:*)",
-      "Bash(uv:*)",
-      "Bash(pnpm:*)",
-      "Bash(just:*)",
-      "Bash(mkdir:*)",
-      "Bash(cd:*)",
-      "Bash(find:*)",
-      "Glob(*)",
-      "Grep(*)",
-      "LS(*)",
-      "Read(*)",
-      "Write(*)",
-      "TodoRead(*)",
-      "TodoWrite(*)",
-      "WebFetch(*)",
-      "mcp__git",
-      "mcp__docker",
-      "mcp__context7",
-      "mcp__task-master",
-      "mcp__claude-task"
-    ],
-    "deny": []
-  }
+    "claude-task",
+    "mcping",
+    "toolprint-hypertool"
+  ]
 }

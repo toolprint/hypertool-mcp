@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📧 Email Support
+    url: mailto:support@onegrep.dev
+    about: Contact us directly for sensitive issues
+  - name: 📚 Documentation
+    url: https://github.com/toolprint/hypertool-mcp#readme
+    about: Check our documentation for guides and examples
