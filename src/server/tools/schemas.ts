@@ -224,3 +224,48 @@ export const getActiveToolsetResponseSchema = zodToJsonSchema(
     $refStrategy: "none",
   }
 );
+
+/**
+ * Zod schema for add tool annotation response
+ */
+export const addToolAnnotationResponseZodSchema = z.object({
+  toolset: z.string().describe("Name of the toolset that was updated"),
+  tool: toolsetToolRefZodSchema
+    .omit({ active: true })
+    .describe("Tool that was annotated"),
+  addedNotes: z
+    .array(
+      z.object({
+        name: z.string().describe("Annotation identifier"),
+        note: z.string().describe("Annotation content"),
+      })
+    )
+    .describe("Notes that were successfully added"),
+  successCount: z
+    .number()
+    .describe("Number of annotations successfully added"),
+  errorCount: z
+    .number()
+    .describe("Number of annotations that failed to be added"),
+  errors: z
+    .array(z.string())
+    .optional()
+    .describe("Error messages for failed annotations"),
+});
+
+/**
+ * TypeScript type inferred from Zod schema
+ */
+export type AddToolAnnotationResponse = z.infer<
+  typeof addToolAnnotationResponseZodSchema
+>;
+
+/**
+ * JSON Schema generated from Zod schema
+ */
+export const addToolAnnotationResponseSchema = zodToJsonSchema(
+  addToolAnnotationResponseZodSchema,
+  {
+    $refStrategy: "none",
+  }
+);

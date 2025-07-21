@@ -9,6 +9,7 @@ import { createEquipToolsetModule } from "./equip-toolset.js";
 import { createDeleteToolsetModule } from "./delete-toolset.js";
 import { createUnequipToolsetModule } from "./unequip-toolset.js";
 import { createGetActiveToolsetModule } from "./get-active-toolset.js";
+import { createAddToolAnnotationModule } from "./add-tool-annotation.js";
 
 export type {
   ToolModule,
@@ -27,4 +28,5 @@ export const TOOL_MODULE_FACTORIES = [
   createDeleteToolsetModule,
   createUnequipToolsetModule,
   createGetActiveToolsetModule,
+  createAddToolAnnotationModule,
 ];

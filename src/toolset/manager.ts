@@ -32,6 +32,7 @@ import {
   ValidationResult,
   ToolsetChangeEvent,
   DynamicToolReference,
+  ToolsetToolNote,
 } from "./types.js";
 import { loadToolsetConfig, saveToolsetConfig } from "./loader.js";
 import { validateToolsetConfig } from "./validator.js";
@@ -208,9 +209,43 @@ export class ToolsetManager extends EventEmitter {
   }
 
   /** Hydrates the tool with any notes loaded from the toolset configuration. */
-  _hydateToolNotes(tool: Tool): Tool {
-    // TODO: Implement
-    return tool
+  _hydrateToolNotes(tool: Tool): Tool {
+    if (!this.currentToolset?.toolNotes) {
+      return tool;
+    }
+
+    // Find the original discovered tool to get its reference
+    const discoveredTool = this.findDiscoveredToolByFlattenedName(tool.name);
+    if (!discoveredTool) {
+      return tool;
+    }
+
+    // Look for notes matching this tool by checking both namespacedName and refId
+    const toolNotesEntry = this.currentToolset.toolNotes.find(entry => {
+      // Match by namespacedName if provided
+      if (entry.toolRef.namespacedName && 
+          entry.toolRef.namespacedName === discoveredTool.namespacedName) {
+        return true;
+      }
+      // Match by refId if provided
+      if (entry.toolRef.refId && 
+          entry.toolRef.refId === discoveredTool.toolHash) {
+        return true;
+      }
+      return false;
+    });
+
+    if (!toolNotesEntry || toolNotesEntry.notes.length === 0) {
+      return tool;
+    }
+
+    // Format and append notes
+    const notesSection = this.formatNotesForLLM(toolNotesEntry.notes);
+    tool.description = tool.description 
+      ? `${tool.description}\n\n${notesSection}`
+      : notesSection;
+
+    return tool;
   }
 
   /** Formats a discovered tool into an MCP tool. */
@@ -252,7 +287,7 @@ export class ToolsetManager extends EventEmitter {
     // Convert to MCP tool format with flattened names for external exposure
     const generatedTools: Tool[] = filteredTools.map((dt: DiscoveredTool) => {
       let t = this._getToolFromDiscoveredTool(dt)
-      t = this._hydateToolNotes(t);
+      t = this._hydrateToolNotes(t);
 
       return t;
     });
@@ -830,6 +865,38 @@ export class ToolsetManager extends EventEmitter {
       servers,
       tools: detailedTools,
     };
+  }
+
+  /**
+   * Format tool notes for LLM consumption
+   */
+  private formatNotesForLLM(notes: ToolsetToolNote[]): string {
+    const formattedNotes = notes
+      .map(note => `• **${note.name}**: ${note.note}`)
+      .join('\n');
+    
+    return `### Additional Tool Notes\n\n${formattedNotes}`;
+  }
+
+  /**
+   * Find a discovered tool by its flattened name
+   */
+  private findDiscoveredToolByFlattenedName(flattenedName: string): DiscoveredTool | null {
+    if (!this.discoveryEngine) {
+      return null;
+    }
+
+    // Get all discovered tools (not filtered by toolset) since we need to find
+    // the tool to check if it has notes
+    const allTools = this.discoveryEngine.getAvailableTools(true);
+    
+    for (const tool of allTools) {
+      if (this.flattenToolName(tool.namespacedName) === flattenedName) {
+        return tool;
+      }
+    }
+    
+    return null;
   }
 
   /**
