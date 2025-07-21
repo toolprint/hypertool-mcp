@@ -31,6 +31,17 @@ export function resolveToolReference(ref: DynamicToolReference): string {
   }
 }
 
+export interface ToolsetToolNote {
+  name: string
+  note: string
+}
+
+
+export interface ToolsetToolNotes {
+  toolRef: DynamicToolReference;
+  notes: ToolsetToolNote[];
+}
+
 /**
  * Complete toolset configuration for user-generated toolsets
  */
@@ -47,6 +58,8 @@ export interface ToolsetConfig {
   lastModified?: Date | string;
   /** Array of tool references in this toolset */
   tools: DynamicToolReference[];
+  /** Array of tool notes for this toolset */
+  toolNotes?: ToolsetToolNotes[];
 }
 
 // Note: ResolvedTool has been removed - use DiscoveredTool instead
