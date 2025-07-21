@@ -27,7 +27,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "@toolprint/mcping-mcp"
+        "@toolprint/mcping-mcp@latest"
       ],
       "env": {}
     }

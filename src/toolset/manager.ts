@@ -42,6 +42,7 @@ import {
   EquipToolsetResponse,
   ToolsetInfo,
 } from "../server/tools/schemas.js";
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 const logger = createLogger({ module: "toolset" });
 
@@ -206,21 +207,30 @@ export class ToolsetManager extends EventEmitter {
     );
   }
 
+  /** Hydrates the tool with any notes loaded from the toolset configuration. */
+  _hydateToolNotes(tool: Tool): Tool {
+    // TODO: Implement
+    return tool
+  }
+
+  /** Formats a discovered tool into an MCP tool. */
+  _getToolFromDiscoveredTool(dt: DiscoveredTool): Tool {
+    let t = dt.tool
+
+    t.name = this.flattenToolName(dt.namespacedName)
+    t.description = dt.tool.description || `Tool from ${dt.serverName} server`
+
+    return t
+  }
+
   /**
    * Get currently active MCP tools based on loaded toolset
    * Returns all discovered tools if no toolset is active
    */
-  getMcpTools(): Array<{
-    name: string;
-    description: string;
-    inputSchema: any;
-  }> {
+  getMcpTools(): Array<Tool> {
     if (!this.discoveryEngine) {
       return [];
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const discoveredTools = this.discoveryEngine.getAvailableTools(true);
 
     // If no toolset is active, return empty array (no tools should be exposed)
     if (!this.currentToolset || this.currentToolset.tools.length === 0) {
@@ -240,15 +250,14 @@ export class ToolsetManager extends EventEmitter {
     }
 
     // Convert to MCP tool format with flattened names for external exposure
-    return filteredTools.map((tool) => ({
-      name: this.flattenToolName(tool.namespacedName),
-      description:
-        tool.tool.description || `Tool from ${tool.serverName} server`,
-      inputSchema: {
-        ...tool.tool.inputSchema,
-        type: "object" as const,
-      },
-    }));
+    const generatedTools: Tool[] = filteredTools.map((dt: DiscoveredTool) => {
+      let t = this._getToolFromDiscoveredTool(dt)
+      t = this._hydateToolNotes(t);
+
+      return t;
+    });
+
+    return generatedTools;
   }
 
   /**
@@ -749,18 +758,18 @@ export class ToolsetManager extends EventEmitter {
       for (const toolRef of config.tools) {
         const resolution:
           | {
-              exists: boolean;
-              tool?: any;
-              serverName?: string;
-              serverStatus?: any;
-              namespacedNameMatch: boolean;
-              refIdMatch: boolean;
-              warnings: string[];
-              errors: string[];
-            }
+            exists: boolean;
+            tool?: any;
+            serverName?: string;
+            serverStatus?: any;
+            namespacedNameMatch: boolean;
+            refIdMatch: boolean;
+            warnings: string[];
+            errors: string[];
+          }
           | undefined = this.discoveryEngine.resolveToolReference(toolRef, {
-          allowStaleRefs: false,
-        });
+            allowStaleRefs: false,
+          });
 
         if (resolution?.exists && resolution.tool) {
           const serverName = resolution.tool.serverName;

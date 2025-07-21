@@ -19,6 +19,8 @@
     "docker",
     "context7",
     "task-master",
-    "claude-task"
+    "claude-task",
+    "mcping",
+    "toolprint-hypertool"
   ]
 }
