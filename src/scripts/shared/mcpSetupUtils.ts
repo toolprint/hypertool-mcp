@@ -8,7 +8,7 @@ import { join } from "path";
 import { homedir } from "os";
 import inquirer from "inquirer";
 import chalk from "chalk";
-import { output } from "../../logging/output.js";
+import { output } from "../../utils/output.js";
 
 export interface MCPConfig {
   mcpServers?: Record<

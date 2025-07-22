@@ -4,22 +4,46 @@ import { Console } from "console";
 import { spawnSync } from "child_process";
 import { isDefined } from "../utils/helpers.js";
 import { APP_CONFIG, APP_NAME, BRAND_NAME } from "../config/appConfig.js";
+import { getActiveLoggingConfig } from "./logging.js";
 
-const stdioDisplay = new Console({
-  stdout: process.stdout,
-  stderr: process.stderr,
-});
+// For stdio transport, use stderr for all display output to avoid interfering with MCP protocol
+const getStdioDisplay = () => {
+  const currentLoggingConfig = getActiveLoggingConfig()
+  // When enableConsole is false (stdio mode), use stderr for all output
+  // When enableConsole is true (HTTP mode), use stdout
+  if (currentLoggingConfig && !currentLoggingConfig.enableConsole) {
+    return new Console({
+      stdout: process.stderr,
+      stderr: process.stderr,
+    });
+  }
+
+  return new Console({
+    stdout: process.stdout,
+    stderr: process.stderr,
+  })
+}
+
+const getPreferredOutputStream = () => {
+  const currentLoggingConfig = getActiveLoggingConfig()
+  // When enableConsole is false (stdio mode), use stderr
+  // When enableConsole is true (HTTP mode), use stdout
+  if (currentLoggingConfig && !currentLoggingConfig.enableConsole) {
+    return process.stderr
+  }
+  return process.stdout
+}
 
 enum FigletFont {
-  Standard = "Standard",
-  SubZero = "Sub-Zero",
-  Slant = "Slant",
-  ANSIShadow = "ANSI Shadow",
-  Block = "Block",
-  Doom = "Doom",
-  ThreeDASCII = "3D-ASCII",
-  Small = "Small",
-  Speed = "Speed",
+  Standard = 'Standard',
+  SubZero = 'Sub-Zero',
+  Slant = 'Slant',
+  ANSIShadow = 'ANSI Shadow',
+  Block = 'Block',
+  Doom = 'Doom',
+  ThreeDASCII = '3D-ASCII',
+  Small = 'Small',
+  Speed = 'Speed',
 }
 
 const PREFERRED_FONT = FigletFont.SubZero;
@@ -34,13 +58,13 @@ export const output = {
    * @returns The console object
    */
   get console(): Console {
-    return stdioDisplay;
+    return getStdioDisplay();
   },
 
   clearTerminal: () => {
     /** Uses ANSI escape codes to clear the terminal so that it is not platform dependent. */
-    process.stdout.write("\x1b[2J"); // Clear the entire screen
-    process.stdout.write("\x1b[H"); // Move cursor to the home position (top-left corner)
+    getPreferredOutputStream().write("\x1b[2J"); // Clear the entire screen
+    getPreferredOutputStream().write("\x1b[H"); // Move cursor to the home position (top-left corner)
   },
 
   /**
@@ -48,7 +72,7 @@ export const output = {
    * @param msg - The message to log
    */
   display: (msg: string) => {
-    stdioDisplay.log(msg);
+    getStdioDisplay().log(msg);
   },
 
   /**
@@ -56,7 +80,7 @@ export const output = {
    * @param msg - The message to display
    */
   displaySameLine: (msg: string) => {
-    process.stdout.write(msg);
+    getPreferredOutputStream().write(msg);
   },
 
   displayTypewriter: async (
@@ -100,7 +124,7 @@ export const output = {
 
   displaySpaceBuffer: (numLines: number = 2) => {
     for (let i = 0; i < numLines; i++) {
-      stdioDisplay.log("");
+      getStdioDisplay().log("");
     }
   },
 
@@ -109,8 +133,8 @@ export const output = {
    * @param length - The length of the separator
    */
   displaySeparator: (length: number = 80) => {
-    stdioDisplay.log(chalk.bold.blueBright.underline(" ".repeat(length)));
-    stdioDisplay.log(chalk.bold.blueBright.underline("".repeat(length)));
+    getStdioDisplay().log(chalk.bold.blueBright.underline(" ".repeat(length)));
+    getStdioDisplay().log(chalk.bold.blueBright.underline("".repeat(length)));
   },
 
   /**
@@ -118,12 +142,12 @@ export const output = {
    * @param msg - The message to log
    */
   displayHeader: (msg: string) => {
-    stdioDisplay.log(chalk.bold.blueBright.underline(msg));
+    getStdioDisplay().log(chalk.bold.blueBright.underline(msg));
   },
 
   displaySubHeader: (msg: string) => {
     const fmtMsg = `\n> ${msg}`;
-    stdioDisplay.log(chalk.bold.blue.italic.underline(fmtMsg));
+    getStdioDisplay().log(chalk.bold.blue.italic.underline(fmtMsg));
   },
 
   /**
@@ -146,14 +170,14 @@ export const output = {
 
       // Display with padding and notification
       output.displaySpaceBuffer(1);
-      stdioDisplay.log(`${promptSymbol} ${command}`);
+      getStdioDisplay().log(`${promptSymbol} ${command}`);
       output.displaySpaceBuffer(1);
-      stdioDisplay.log(chalk.dim.italic("Command copied to clipboard!"));
+      getStdioDisplay().log(chalk.dim.italic("Command copied to clipboard!"));
       output.displaySpaceBuffer(1);
     } else {
       // Display with padding only
       output.displaySpaceBuffer(1);
-      stdioDisplay.log(`${promptSymbol} ${command}`);
+      getStdioDisplay().log(`${promptSymbol} ${command}`);
       output.displaySpaceBuffer(1);
     }
   },
@@ -165,7 +189,7 @@ export const output = {
   displayCodeBlock: (code: string) => {
     const lines = code.split("\n");
     for (const line of lines) {
-      stdioDisplay.log(`\t${chalk.white.dim(line)}`);
+      getStdioDisplay().log(`\t${chalk.white.dim(line)}`);
     }
   },
 
@@ -175,9 +199,9 @@ export const output = {
    */
   displayInstruction: (msg: string, bright: boolean = false) => {
     if (bright) {
-      stdioDisplay.log(chalk.yellow.bold(msg));
+      getStdioDisplay().log(chalk.yellow.bold(msg));
     } else {
-      stdioDisplay.log(chalk.blue.dim(msg));
+      getStdioDisplay().log(chalk.blue.dim(msg));
     }
   },
 
@@ -186,7 +210,7 @@ export const output = {
    * @param msg - The message to log
    */
   displayHelpContext: (msg: string) => {
-    stdioDisplay.log(chalk.gray.dim.italic(msg));
+    getStdioDisplay().log(chalk.gray.dim.italic(msg));
   },
 
   /**
@@ -195,7 +219,7 @@ export const output = {
    * @param link - The link to display
    */
   displayLinkWithPrefix: (prefix: string, link: string) => {
-    stdioDisplay.log(`${chalk.dim(prefix)} ${chalk.blue.bold(link)}`);
+    getStdioDisplay().log(`${chalk.dim(prefix)} ${chalk.blue.bold(link)}`);
   },
 
   /**
@@ -203,7 +227,7 @@ export const output = {
    * @param msg - The message to display
    */
   log: (msg: string) => {
-    stdioDisplay.log(msg);
+    getStdioDisplay().log(msg);
   },
 
   /**
@@ -211,7 +235,7 @@ export const output = {
    * @param msg - The message to display
    */
   debug: (msg: string) => {
-    stdioDisplay.debug(chalk.dim(chalk.yellow(msg)));
+    getStdioDisplay().debug(chalk.dim(chalk.yellow(msg)));
   },
 
   /**
@@ -220,9 +244,9 @@ export const output = {
    */
   info: (msg: string, lowPriority: boolean = false) => {
     if (lowPriority) {
-      stdioDisplay.info(chalk.dim(chalk.gray(msg)));
+      getStdioDisplay().info(chalk.dim(chalk.gray(msg)));
     } else {
-      stdioDisplay.info(chalk.blue(msg));
+      getStdioDisplay().info(chalk.blue(msg));
     }
   },
 
@@ -231,7 +255,7 @@ export const output = {
    * @param msg - The message to display
    */
   success: (msg: string) => {
-    stdioDisplay.log(chalk.green(msg));
+    getStdioDisplay().log(chalk.green(msg));
   },
 
   /**
@@ -239,7 +263,7 @@ export const output = {
    * @param msg - The message to display
    */
   warn: (msg: string) => {
-    stdioDisplay.warn(chalk.magenta(msg));
+    getStdioDisplay().warn(chalk.magenta(msg));
   },
 
   /**
@@ -247,7 +271,7 @@ export const output = {
    * @param msg - The message to display
    */
   error: (msg: string) => {
-    stdioDisplay.error(chalk.red(msg));
+    getStdioDisplay().error(chalk.red(msg));
   },
 } as const;
 
@@ -260,8 +284,8 @@ export const output = {
 function getAsciiArt(text: string, font: FigletFont = PREFERRED_FONT): string {
   return figlet.textSync(text, {
     font: font,
-    horizontalLayout: "fitted",
-    verticalLayout: "default",
+    horizontalLayout: 'fitted',
+    verticalLayout: 'default',
   });
 }
 
@@ -269,32 +293,28 @@ function getAsciiArt(text: string, font: FigletFont = PREFERRED_FONT): string {
  * Display the complete Toolprint brand banner with app name
  * This is the canonical function that shows both Toolprint branding and app-specific banner
  * @param appName - The name of the specific application (optional, defaults to APP_NAME)
+ * @param useStderr - Whether to output to stderr instead of stdout
  */
 export function displayBanner(appName: string = APP_NAME): void {
   // 2. Display the app-specific banner (light blue)
   displayAppBanner(appName);
+  output.displaySpaceBuffer(1);
+  output.displayLinkWithPrefix('Built and supported by the devs @ ', 'https://toolprint.ai');
+  output.displayLinkWithPrefix('Check out more of our stuff at ', 'https://github.com/toolprint');
 
-  output.displaySpaceBuffer(1);
-  output.displayLinkWithPrefix(
-    "Built and supported by the devs @ ",
-    "https://toolprint.ai"
-  );
-  output.displayLinkWithPrefix(
-    "Check out more of our stuff at ",
-    "https://github.com/toolprint"
-  );
+  // 3. Add separator and spacing
   output.displaySeparator(80);
-  output.displaySpaceBuffer(1);
+  output.displaySpaceBuffer(1); // Extra newline for spacing
 }
 
 /**
  * Display just the app-specific banner (used by displayBanner)
  * @param appName - The name of the specific application
  */
-function displayAppBanner(appName: string): void {
+function displayAppBanner(appName: string, maxLenNewLine: number = 10): void {
   // Handle app name - split into lines if too long, use same font as Toolprint
-  if (appName.length > 8) {
-    const words = appName.split(" ");
+  if (appName.length > maxLenNewLine) {
+    const words = appName.split(' ');
     for (const word of words) {
       const wordBanner = getAsciiArt(word, PREFERRED_FONT);
       output.log(chalk.blueBright.bold(wordBanner));
@@ -321,25 +341,17 @@ export function displayMinimalBanner(appName: string = APP_NAME): void {
  * @param port - The port number (for HTTP transport)
  * @param host - The host address (for HTTP transport)
  */
-export function displayServerBanner(
+export function displayServerRuntimeInfo(
   appName: string = APP_NAME,
   transport: string,
   port?: number,
   host?: string
 ): void {
-  // Always use stdout for banner display
-  displayBanner(appName);
-
-  // Server info without figlet
-  output.log(chalk.blue.bold("Server Configuration:"));
+  output.log(chalk.blue.bold('Server Configuration:'));
   output.log(chalk.white(`  Transport: ${chalk.yellow(transport)}`));
 
-  if (transport === "http" && port && host) {
-    output.log(
-      chalk.white(`  Address:   ${chalk.yellow(`http://${host}:${port}`)}`)
-    );
-  } else if (transport === "stdio") {
-    output.log(chalk.white(`  Mode:      ${chalk.yellow("Standard I/O")}`));
+  if (transport === 'http' && port && host) {
+    output.log(chalk.white(`  Address:   ${chalk.yellow(`http://${host}:${port}`)}`));
   }
 
   output.log(chalk.white(`  Version:   ${chalk.yellow(APP_CONFIG.version)}`));

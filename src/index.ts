@@ -100,7 +100,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--port <number>",
       chalk.cyan("Port number for HTTP transport") +
-        " (only valid with --transport http)"
+      " (only valid with --transport http)"
     )
     .option(
       "--debug",
@@ -110,7 +110,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--insecure",
       chalk.yellow("Allow tools with changed reference hashes") +
-        chalk.red(" (insecure mode)"),
+      chalk.red(" (insecure mode)"),
       false
     )
     .option(
@@ -129,22 +129,22 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--dry-run",
       chalk.cyan("Show what would be done without making changes") +
-        chalk.yellow(" (only valid with --install)"),
+      chalk.yellow(" (only valid with --install)"),
       false
     )
     .option(
       "--install [app]",
       chalk.cyan("Install and configure integrations.\n") +
-        chalk.white(
-          "Options: all (default), claude-desktop (cd), cursor, claude-code (cc)\n"
-        ) +
-        chalk.yellow("Examples:\n") +
-        chalk.gray(
-          "  hypertool-mcp --install            # Install for all detected apps\n"
-        ) +
-        chalk.gray("  hypertool-mcp --install claude-desktop\n") +
-        chalk.gray("  hypertool-mcp --install cursor --dry-run\n") +
-        chalk.gray("  hypertool-mcp --install cc --dry-run")
+      chalk.white(
+        "Options: all (default), claude-desktop (cd), cursor, claude-code (cc)\n"
+      ) +
+      chalk.yellow("Examples:\n") +
+      chalk.gray(
+        "  hypertool-mcp --install            # Install for all detected apps\n"
+      ) +
+      chalk.gray("  hypertool-mcp --install claude-desktop\n") +
+      chalk.gray("  hypertool-mcp --install cursor --dry-run\n") +
+      chalk.gray("  hypertool-mcp --install cc --dry-run")
     );
 
   // program.addCommand(createInstallCommand());
@@ -224,9 +224,16 @@ async function main(): Promise<void> {
     // Parse CLI arguments
     const runtimeOptions = await parseCliArguments();
 
+    // Initialize logger based on transport type
+    const { getLogger, STDIO_LOGGING_CONFIG } = await import("./utils/logging.js");
+    // ! This is the universal entrypoint to instantiate the logger correctly.
+    // We perform dynamic imports to ensure that other modules only get the logger instance that we generate here.
+    const logger = runtimeOptions.transport === 'stdio'
+      ? getLogger(STDIO_LOGGING_CONFIG)  // only file-based logging for stdio transport
+      : getLogger();
+
     // Dynamic imports for all modules that might create worker threads
-    const { logger } = await import("./logging/index.js");
-    const { displayServerBanner, output } = await import("./logging/output.js");
+    const { displayBanner, displayServerRuntimeInfo, output } = await import("./utils/output.js");
     const { discoverMcpConfig } = await import("./config/mcpConfigLoader.js");
 
     // Update logger configuration
@@ -297,14 +304,11 @@ async function main(): Promise<void> {
     process.on("SIGINT", shutdown);
     process.on("SIGTERM", shutdown);
 
-    // Display server banner before starting (especially important for stdio)
     output.clearTerminal();
-    displayServerBanner(
-      APP_NAME,
-      runtimeOptions.transport,
-      runtimeOptions.port,
-      runtimeOptions.transport === "http" ? "localhost" : undefined
-    );
+    displayBanner(APP_NAME);
+    if (runtimeOptions.transport === 'http') {
+      displayServerRuntimeInfo(APP_NAME, runtimeOptions.transport, runtimeOptions.port, runtimeOptions.transport === "http" ? "localhost" : undefined);
+    }
 
     // Start server
     const initOptions = MetaMCPServerFactory.createInitOptions({

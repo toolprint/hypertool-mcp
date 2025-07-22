@@ -14,9 +14,9 @@ import {
 import { IConnectionManager, ConnectionManager } from "../connection/index.js";
 import { MCPConfigParser, APP_NAME, ServerConfig } from "../config/index.js";
 import ora from "ora";
-import { createLogger } from "../logging/index.js";
+import { createChildLogger } from "../utils/logging.js";
 
-const logger = createLogger({ module: "server/enhanced" });
+const logger = createChildLogger({ module: "server/enhanced" });
 // Note: All mcp-tools functionality now handled by ToolsetManager
 import { ToolsetManager, ToolsetChangeEvent } from "../toolset/manager.js";
 import { DiscoveredToolsChangedEvent } from "../discovery/types.js";
@@ -26,7 +26,7 @@ import {
   TOOL_MODULE_FACTORIES,
 } from "./tools/index.js";
 import chalk from "chalk";
-import { output } from "../logging/output.js";
+import { output } from "../utils/output.js";
 /**
  * Enhanced Hypertool MCP server with routing capabilities
  */
@@ -217,7 +217,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             if (options.debug) {
               logger.info(
                 `Tools changed while toolset "${activeToolsetInfo.name}" is equipped. ` +
-                  `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
+                `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
               );
             }
           }
@@ -275,9 +275,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const listResult = await this.toolsetManager.listSavedToolsets();
       const storedToolsets = listResult.success
         ? listResult.toolsets.reduce(
-            (acc: any, t: any) => ({ ...acc, [t.name]: t }),
-            {}
-          )
+          (acc: any, t: any) => ({ ...acc, [t.name]: t }),
+          {}
+        )
         : {};
       const hasToolsets = Object.keys(storedToolsets).length > 0;
       const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();

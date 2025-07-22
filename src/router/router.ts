@@ -9,9 +9,9 @@ import {
   CallToolRequest,
   CallToolResult,
 } from "@modelcontextprotocol/sdk/types.js";
-import { createLogger } from "../logging/index.js";
+import { createChildLogger } from "../utils/logging.js";
 
-const logger = createLogger({ module: "router/router" });
+const logger = createChildLogger({ module: "router/router" });
 import {
   IRequestRouter,
   ToolRoute,
@@ -269,8 +269,7 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
       return await connection.client.callTool(toolCallArgs);
     } catch (error) {
       throw new Error(
-        `Tool call failed on server '${route.serverName}': ${
-          error instanceof Error ? error.message : String(error)
+        `Tool call failed on server '${route.serverName}': ${error instanceof Error ? error.message : String(error)
         }`
       );
     }

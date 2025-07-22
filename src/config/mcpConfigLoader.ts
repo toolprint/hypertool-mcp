@@ -7,9 +7,9 @@ import * as path from "path";
 import * as os from "os";
 import { loadUserPreferences, updateMcpConfigPath } from "./preferenceStore.js";
 import { APP_TECHNICAL_NAME, BRAND_NAME } from "./appConfig.js";
-import { createLogger } from "../logging/index.js";
+import { createChildLogger } from "../utils/logging.js";
 
-const logger = createLogger({ module: "config/discovery" });
+const logger = createChildLogger({ module: "config/discovery" });
 
 /**
  * Standard locations to search for MCP configuration files

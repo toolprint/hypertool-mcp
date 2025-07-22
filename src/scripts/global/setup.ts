@@ -9,7 +9,7 @@ import { join } from "path";
 import { homedir } from "os";
 import chalk from "chalk";
 import inquirer from "inquirer";
-import { displayBanner, output } from "../../logging/output.js";
+import { displayBanner, output } from "../../utils/output.js";
 import {
   fileExists,
   hasClaudeCodeGlobalHypertoolSlashCommands,

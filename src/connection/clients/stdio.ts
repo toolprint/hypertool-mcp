@@ -12,9 +12,9 @@ import { EventEmitter } from "events";
 import { StdioServerConfig } from "../../types/config.js";
 import { ConnectionOptions } from "../types.js";
 import { BaseConnection } from "./base.js";
-import { createLogger } from "../../logging/index.js";
+import { createChildLogger } from "../../utils/logging.js";
 
-const logger = createLogger({ module: "clients/stdio" });
+const logger = createChildLogger({ module: "clients/stdio" });
 
 /**
  * Stdio client wrapper using proper MCP SDK Client

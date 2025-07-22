@@ -9,9 +9,9 @@ import {
   ToolListChangedNotification,
   ToolListChangedNotificationSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { createLogger } from "../logging/index.js";
+import { createChildLogger } from "../utils/logging.js";
 
-const logger = createLogger({ module: "discovery/service" });
+const logger = createChildLogger({ module: "discovery/service" });
 import {
   IToolDiscoveryEngine,
   DiscoveryConfig,
@@ -25,15 +25,14 @@ import {
 import { ToolCache } from "./cache.js";
 import { ToolLookupManager, SearchQuery, SearchResult } from "./lookup.js";
 import { ToolHashUtils, ToolHashManager } from "./hashUtils.js";
-import { output } from "../logging/output.js";
+import { output } from "../utils/output.js";
 
 /**
  * Tool discovery engine implementation
  */
 export class ToolDiscoveryEngine
   extends EventEmitter
-  implements IToolDiscoveryEngine
-{
+  implements IToolDiscoveryEngine {
   private connectionManager: IConnectionManager;
   private config: Required<DiscoveryConfig>;
   private cache: ToolCache;

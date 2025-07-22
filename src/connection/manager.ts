@@ -17,7 +17,7 @@ import {
 import { ConnectionPool } from "./pool.js";
 import { ConnectionFactory } from "./factory.js";
 import { HealthMonitor } from "./healthMonitor.js";
-import { Logger, createLogger } from "../logging/index.js";
+import { Logger, createChildLogger } from "../utils/logging.js";
 import { RecoveryCoordinator } from "../errors/recovery.js";
 import { APP_TECHNICAL_NAME } from "../config/appConfig.js";
 
@@ -26,8 +26,7 @@ import { APP_TECHNICAL_NAME } from "../config/appConfig.js";
  */
 export class ConnectionManager
   extends EventEmitter
-  implements IConnectionManager
-{
+  implements IConnectionManager {
   private _pool: IConnectionPool;
   private _healthMonitor: HealthMonitor;
   private _logger: Logger;
@@ -43,7 +42,7 @@ export class ConnectionManager
     super();
     this._pool = new ConnectionPool(poolConfig, connectionFactory);
     this._healthMonitor = new HealthMonitor();
-    this._logger = createLogger({ module: "ConnectionManager" });
+    this._logger = createChildLogger({ module: "ConnectionManager" });
     this._recoveryCoordinator = new RecoveryCoordinator();
     this.setupPoolEventForwarding();
   }
@@ -234,8 +233,8 @@ export class ConnectionManager
     if (this.servers[serverName]) {
       const error = new Error(
         `❌ Server name conflict detected: "${serverName}" already exists.\n` +
-          `💡 Resolution: Use a unique server name or remove the existing server first.\n` +
-          `📋 Existing servers: ${Object.keys(this.servers).join(", ")}`
+        `💡 Resolution: Use a unique server name or remove the existing server first.\n` +
+        `📋 Existing servers: ${Object.keys(this.servers).join(", ")}`
       );
       console.error(error.message);
       throw error;

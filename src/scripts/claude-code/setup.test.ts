@@ -73,7 +73,7 @@ const consoleMock = {
 vi.stubGlobal("console", consoleMock);
 
 // Mock output utilities
-vi.mock("../../logging/output.js", () => ({
+vi.mock("../../utils/output.js", () => ({
   output: {
     displayHeader: vi.fn(),
     displaySpaceBuffer: vi.fn(),
@@ -240,7 +240,7 @@ describe("Claude Code Integration Setup", () => {
         return Promise.resolve({});
       });
 
-      const { output } = await import("../../logging/output.js");
+      const { output } = await import("../../utils/output.js");
       const setup = new ClaudeCodeSetup();
       await setup.run(false);
 
@@ -258,7 +258,7 @@ describe("Claude Code Integration Setup", () => {
       });
 
       // Import the output mock
-      const { output } = await import("../../logging/output.js");
+      const { output } = await import("../../utils/output.js");
 
       // Mock the shared utilities to throw an error
       const { createConfigBackup } = await import("../shared/mcpSetupUtils.js");

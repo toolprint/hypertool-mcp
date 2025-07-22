@@ -11,12 +11,12 @@ import {
   isInitializeRequest,
   Notification,
 } from "@modelcontextprotocol/sdk/types.js";
-import { createLogger } from "../logging/index.js";
-import { output } from "../logging/output.js";
+import { createChildLogger } from "../utils/logging.js";
+import { output } from "../utils/output.js";
 // import chalk from "chalk";
 import { APP_TECHNICAL_NAME } from "../config/appConfig.js";
 
-const logger = createLogger({ module: "server/http-server" });
+const logger = createChildLogger({ module: "server/http-server" });
 
 /**
  * Express.js-based HTTP server for MCP protocol with streamable transport

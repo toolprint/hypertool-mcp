@@ -36,7 +36,7 @@ import {
 } from "./types.js";
 import { loadToolsetConfig, saveToolsetConfig } from "./loader.js";
 import { validateToolsetConfig } from "./validator.js";
-import { createLogger } from "../logging/index.js";
+import { createChildLogger } from "../utils/logging.js";
 import {
   BuildToolsetResponse,
   ListSavedToolsetsResponse,
@@ -45,7 +45,7 @@ import {
 } from "../server/tools/schemas.js";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 
-const logger = createLogger({ module: "toolset" });
+const logger = createChildLogger({ module: "toolset" });
 
 export class ToolsetManager extends EventEmitter {
   private currentToolset?: ToolsetConfig;
@@ -223,13 +223,13 @@ export class ToolsetManager extends EventEmitter {
     // Look for notes matching this tool by checking both namespacedName and refId
     const toolNotesEntry = this.currentToolset.toolNotes.find(entry => {
       // Match by namespacedName if provided
-      if (entry.toolRef.namespacedName && 
-          entry.toolRef.namespacedName === discoveredTool.namespacedName) {
+      if (entry.toolRef.namespacedName &&
+        entry.toolRef.namespacedName === discoveredTool.namespacedName) {
         return true;
       }
       // Match by refId if provided
-      if (entry.toolRef.refId && 
-          entry.toolRef.refId === discoveredTool.toolHash) {
+      if (entry.toolRef.refId &&
+        entry.toolRef.refId === discoveredTool.toolHash) {
         return true;
       }
       return false;
@@ -241,7 +241,7 @@ export class ToolsetManager extends EventEmitter {
 
     // Format and append notes
     const notesSection = this.formatNotesForLLM(toolNotesEntry.notes);
-    tool.description = tool.description 
+    tool.description = tool.description
       ? `${tool.description}\n\n${notesSection}`
       : notesSection;
 
@@ -874,7 +874,7 @@ export class ToolsetManager extends EventEmitter {
     const formattedNotes = notes
       .map(note => `• **${note.name}**: ${note.note}`)
       .join('\n');
-    
+
     return `### Additional Tool Notes\n\n${formattedNotes}`;
   }
 
@@ -889,13 +889,13 @@ export class ToolsetManager extends EventEmitter {
     // Get all discovered tools (not filtered by toolset) since we need to find
     // the tool to check if it has notes
     const allTools = this.discoveryEngine.getAvailableTools(true);
-    
+
     for (const tool of allTools) {
       if (this.flattenToolName(tool.namespacedName) === flattenedName) {
         return tool;
       }
     }
-    
+
     return null;
   }
 

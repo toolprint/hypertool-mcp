@@ -36,6 +36,7 @@ class MockDiscoveryEngine extends EventEmitter implements IToolDiscoveryEngine {
     return this.tools;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getAvailableTools(_includeDisabled?: boolean): DiscoveredTool[] {
     return this.tools;
   }
