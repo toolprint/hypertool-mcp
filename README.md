@@ -3,9 +3,9 @@
 > **Too many MCP servers? Too many tools? Poor LLM performance?**  
 > Hypertool creates dynamic toolsets that dramatically improve tool usage performance.
 
-[![Version](https://img.shields.io/npm/v/hypertool-mcp)](https://npmjs.com/package/hypertool-mcp)
+[![Version](https://img.shields.io/npm/v/hypertool-mcp)](https://npmjs.com/package/@toolprint/hypertool-mcp)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT%20with%20Commons%20Clause-yellow.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## 🎯 Why Hypertool?
 
@@ -70,10 +70,13 @@ npx -y @toolprint/hypertool-mcp@latest --install claude-code
 }
 ```
 
+> **Claude Code Dynamic Toolset Support** - Currently CC doesn't support [MCP tool change notifications](https://modelcontextprotocol.io/docs/concepts/tools#tool-discovery-and-updates) (we know, it surprised us too) but we suspect this is coming soon. We've opened an issue [here](https://github.com/anthropics/claude-code/issues/411). Please give it an upvote if you want this too. 
+
+> In the meantime, just restart your claude code session to pick up your newly equipped toolset OR run your hypertool-mcp with the `--equip-toolset {name}` flag and it will autoequip on boot.
+
 ### 🎯 Cursor
 **Option 1 - One command install**
 ```bash
-# Updates your cursor settings to include the hypertool MCP and backs up your original MCP settings.
 npx -y @toolprint/hypertool-mcp@latest --install cursor
 ```
 
@@ -83,11 +86,12 @@ This will:
 - Add Hypertool as your main MCP server
 
 **Option 2**
+
 [![Install Hypertool MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/install-mcp?name=hypertool&config=JTdCJTIydHlwZSUyMiUzQSUyMnN0cmVhbWFibGUtaHR0cCUyMiUyQyUyMmNvbW1hbmQlMjIlM0ElMjJucHglMjAteSUyMCU0MHRvb2xwcmludCUyRmh5cGVydG9vbC1tY3AlMjAtLWNvbmZpZyUyMH4lMkYuY3Vyc29yJTJGbWNwLmpzb24lMjIlN0Q%3D)
 
 Click the badge above to automatically install Hypertool MCP in Cursor IDE. This will add the server to your Cursor configuration and you can start using it immediately.
 
-**Note** you will need to update the runtime flag for the hypertool mcp server `--mcp-config` to point to a copied version of Cursor's MCP settings. All of this is done automatically in **Option 1**
+**Note** you will need to update the runtime flag for the hypertool mcp server `--mcp-config` to point to a copied version of Cursor's MCP settings. All of this is done automatically in **Option 1**.
 
 
 ## Other Projects
@@ -127,33 +131,29 @@ Claude: Use the build-toolset tool to create a development toolset with echo and
 
 **Result**: A focused toolset with only the tools you need!
 
-## 🔄 Hot-Swapping Toolsets
+## 🔄 Hot-Swapping Toolsets Example
 
-The magic happens when you switch contexts using the MCP tools:
+Just chat with your assistant to swap toolsets using the `equip-toolset` tool.
 
-```
-Claude: Use the equip-toolset tool to switch to "debugging" toolset
+Hypertool will equip the tools and send a change notification so that your assistant can read and use the newly executable tools.
 
-# MCP clients are automatically notified
-# Tool list updates instantly - no restart needed!
-```
 
-**Your AI assistant now sees only debugging tools:**
-- `everything.echo` - For testing responses
-- `everything.error` - For error handling  
-- `everything.longRunning` - For async operations
-- `context7.search` - For finding information
+## Add Notes to tools!
+
+Sometimes descriptions and reading input parameters isn't enough for an LLM to figure out how to use a tool.
+
+Hypertool gives your agents a `add-tool-annotation` tool that lets them add notes to reflect on better usage the next time so that they don't need to keep spinning in circles in new contexts.
 
 ## 🌐 Multiple Transport Support
 
 ### Stdio (Default)
 Perfect for Claude Desktop and most MCP clients:
 ```bash
-hypertool-mcp --transport stdio
+hypertool-mcp --mcp-config {path_to_config}
 ```
 
 ### HTTP/SSE
-Great for web applications and modern tooling:
+Have it run separately and listen on a port over HTTP:
 ```bash
 hypertool-mcp --transport http --port 3000 --config test-mcp.json
 ```
