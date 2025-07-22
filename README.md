@@ -1,18 +1,23 @@
-# 🛠️ HyperTool MCP
+# 🛠️ Hypertool MCP
 
 > **Too many MCP servers? Too many tools? Poor LLM performance?**  
-> HyperTool creates dynamic toolsets that dramatically improve tool usage performance.
+> Hypertool creates dynamic toolsets that dramatically improve tool usage performance.
 
 [![Version](https://img.shields.io/npm/v/hypertool-mcp)](https://npmjs.com/package/hypertool-mcp)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT%20with%20Commons%20Clause-yellow.svg)](LICENSE)
 
-## 🎯 Why HyperTool?
+## 🎯 Why Hypertool?
 
 **The Problem**: LLMs struggle when overwhelmed with too many tools. 50+ tools from multiple MCP servers? Your AI assistant becomes confused and ineffective.
 
-**The Solution**: HyperTool lets you create focused, dynamic toolsets that expose only the tools you need for specific tasks. Think of it as "tool playlists" for your AI.
+**The Solution**: Hypertool lets you create focused, dynamic toolsets that expose only the tools you need for specific tasks. Think of it as "tool playlists" for your AI.
 
+**Only one MCP in mcp.json**: Hypertool will read your mcp configuration and run as both a server (to cursor/claude code, etc.) and run or connect to your MCPs regardless of transport.
+
+```
+Cursor / Claude Code → Hypertool MCP → Your MCPs
+```
 ```
 📦 Multiple MCP Servers → 🎯 Focused Toolsets → 🚀 Better Performance
 ```
@@ -20,89 +25,95 @@
 ## ✨ Key Features
 
 - **🎯 Dynamic Toolsets**: Create custom tool collections from any MCP servers
-- **🔄 Hot-Swapping**: Switch between toolsets instantly - clients are notified automatically
+- **🔄 Hot-Swapping**: Switch between toolsets instantly - clients are notified automatically using MCP list tools changed notifications.
 - **🌐 Universal Compatibility**: Works with any MCP client (Claude Desktop, etc.)
-- **🛡️ Secure by Default**: Tool reference validation prevents stale/malicious tools
+- **🛡️ Tool Checks**: Toolsets capture a hashed tool reference to validate that the right tool gets exposed.
 - **📡 Multiple Transports**: Supports both stdio and HTTP/SSE protocols
 
 ## 🚀 Quick Start
 
-### 🎯 Cursor IDE - One-Click Install
-
-[![Install Hypertool MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/install-mcp?name=hypertool&config=JTdCJTIydHlwZSUyMiUzQSUyMnN0cmVhbWFibGUtaHR0cCUyMiUyQyUyMmNvbW1hbmQlMjIlM0ElMjJucHglMjAteSUyMCU0MHRvb2xwcmludCUyRmh5cGVydG9vbC1tY3AlMjAtLWNvbmZpZyUyMH4lMkYuY3Vyc29yJTJGbWNwLmpzb24lMjIlN0Q%3D)
-
-Click the badge above to automatically install HyperTool MCP in Cursor IDE. This will add the server to your Cursor configuration and you can start using it immediately.
-
-### 🛠️ Advanced Cursor Setup
-
-For users who want to migrate existing MCP servers to work through HyperTool:
-
+Install hypertool in all your agentic apps.
 ```bash
-# Install and configure HyperTool for Cursor
-npx -y @toolprint/hypertool-mcp --install cursor
+npx -y @toolprint/hypertool-mcp@latest --install
 
-# Preview changes without making them (dry run)
-npx -y @toolprint/hypertool-mcp --install cursor --dry-run
+# use the --dry-run flag to see what will be installed.
 ```
 
-This command will:
-- Back up your current Cursor MCP configuration
-- Copy all existing servers to HyperTool's config
-- Add HyperTool as your main MCP server
-- Optionally clean up your original config
+Just restart Cursor/Claude Code and it will pick up hypertool. All your MCP configs get automatically backed up so that you can restore them at any time.
 
-### 1. Add to Your MCP Configuration
+## Add Hypertool to your project
 
-Add HyperTool to your existing `.mcp.json` or Claude Desktop config:
+### Claude Code
+**Option 1 - quick add**
+```bash
+# In your project directory:
+npx -y @toolprint/hypertool-mcp@latest --install claude-code
+```
 
+**Option 2 - manual add**
+1. Copy your `.mcp.json` to `.mcp.hypertool.json`
+2. Update your `.mcp.json` with only the hypertool MCP:
 ```json
 {
   "mcpServers": {
     "hypertool": {
       "type": "stdio",
-      "command": "hypertool-mcp",
-      "args": ["--config", ".mcp.json"]
+      "command": "npx",
+      "args": [
+          "-y", 
+          "@toolprint/hypertool-mcp@latest", 
+          "--mcp-config", 
+          ".mcp.hypertool.json"
+      ]
     }
   }
 }
 ```
 
-### 2. Configure Your MCP Servers
+### 🎯 Cursor
+**Option 1 - One command install**
+```bash
+# Updates your cursor settings to include the hypertool MCP and backs up your original MCP settings.
+npx -y @toolprint/hypertool-mcp@latest --install cursor
+```
 
-Create `.mcp.json` in your project to define underlying servers:
+This will:
+- Back up your current Cursor MCP configuration
+- Copy all existing servers to Hypertool's config
+- Add Hypertool as your main MCP server
 
+**Option 2**
+[![Install Hypertool MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/install-mcp?name=hypertool&config=JTdCJTIydHlwZSUyMiUzQSUyMnN0cmVhbWFibGUtaHR0cCUyMiUyQyUyMmNvbW1hbmQlMjIlM0ElMjJucHglMjAteSUyMCU0MHRvb2xwcmludCUyRmh5cGVydG9vbC1tY3AlMjAtLWNvbmZpZyUyMH4lMkYuY3Vyc29yJTJGbWNwLmpzb24lMjIlN0Q%3D)
+
+Click the badge above to automatically install Hypertool MCP in Cursor IDE. This will add the server to your Cursor configuration and you can start using it immediately.
+
+**Note** you will need to update the runtime flag for the hypertool mcp server `--mcp-config` to point to a copied version of Cursor's MCP settings. All of this is done automatically in **Option 1**
+
+
+## Other Projects
+1. Copy your `mcp.json` to `.mcp.hypertool.json`
+2. Update your `mcp.json` with only the hypertool MCP:
 ```json
 {
   "mcpServers": {
-    "everything": {
+    "hypertool": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-everything"]
-    },
-    "context7": {
-      "type": "sse",
-      "url": "https://mcp.context7.com/sse"
+      "args": [
+          "-y", 
+          "@toolprint/hypertool-mcp@latest", 
+          "--mcp-config", 
+          ".mcp.hypertool.json"
+      ]
     }
   }
 }
 ```
 
-### 3. Start HyperTool
-
-```bash
-# Install globally
-npm install -g hypertool-mcp
-
-# Or run directly
-npx hypertool-mcp --config .mcp.json
-
-# Try with the included test configuration
-npx hypertool-mcp --config test-mcp.json
-```
 
 ## 🎭 Creating Your First Toolset
 
-Once HyperTool is running, you can use the built-in MCP tools to manage toolsets:
+Once Hypertool is running, you can use the built-in MCP tools to manage toolsets:
 
 1. **List available tools**: Use `list-available-tools` to see what's discovered
 2. **Build a toolset**: Use `build-toolset` to create a focused collection
@@ -151,7 +162,7 @@ Access via: `http://localhost:3000/mcp`
 
 ## 🛡️ Security & Validation
 
-HyperTool validates tool references using cryptographic hashes:
+Hypertool validates tool references using cryptographic hashes:
 
 ```json
 {
@@ -174,7 +185,7 @@ HyperTool validates tool references using cryptographic hashes:
 
 ### Development Setup
 ```
-1. Start HyperTool: hypertool-mcp --config test-mcp.json
+1. Start Hypertool: hypertool-mcp --config test-mcp.json
 2. Ask Claude: "Use build-toolset to create a frontend toolset with echo and add_numbers"
 3. Ask Claude: "Use equip-toolset to activate the frontend toolset"
 ```
@@ -225,7 +236,7 @@ Options:
 
 ## 🤝 Integration Examples
 
-### Claude Desktop
+### Equip a specific toolset on server spawn
 ```json
 {
   "mcpServers": {
@@ -238,28 +249,15 @@ Options:
 }
 ```
 
-### Continue.dev
-```json
-{
-  "mcp": {
-    "servers": {
-      "hypertool": {
-        "command": "hypertool-mcp",
-        "args": ["--transport", "http", "--port", "3001"]
-      }
-    }
-  }
-}
-```
 
 ## 📊 Performance Impact
 
-**Before HyperTool:**
+**Before Hypertool:**
 - 🐌 50+ tools exposed to LLM
 - 😵 Confused tool selection
 - 🔄 Slow response times
 
-**After HyperTool:**
+**After Hypertool:**
 - ⚡ 5-10 focused tools per context
 - 🎯 Precise tool selection  
 - 🚀 Faster, more accurate responses
@@ -278,14 +276,6 @@ npm test          # Run tests
 npm run lint      # Code quality
 ```
 
-## 🎨 Built With
-
-- **TypeScript** - Type safety and modern JS
-- **MCP SDK** - Official Model Context Protocol
-- **Zod** - Runtime validation
-- **Pino** - Structured logging
-- **Commander** - CLI interface
-
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
@@ -296,9 +286,6 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 **Built by developers who got tired of overwhelming their AI with too many tools. Hope you find it useful!** 🚀
 
-> 💡 **Pro Tip**: Start with 5-10 essential tools per toolset. You can always create multiple toolsets for different contexts!
-
-<br>
 
 <a href="https://toolprint.dev">
   <img src="./assets/toolprint.png" alt="Toolprint" width="200">
