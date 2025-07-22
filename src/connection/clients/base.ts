@@ -5,9 +5,9 @@
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
 import { ServerConfig } from "../../types/config.js";
-import { createLogger } from "../../logging/index.js";
+import { createChildLogger } from "../../utils/logging.js";
 
-const logger = createLogger({ module: "clients/base" });
+const logger = createChildLogger({ module: "clients/base" });
 import {
   Connection,
   ConnectionState,
@@ -24,8 +24,7 @@ import {
  */
 export abstract class BaseConnection<T = any>
   extends EventEmitter
-  implements Connection<T>
-{
+  implements Connection<T> {
   public readonly id: string;
   public readonly serverName: string;
   public readonly config: ServerConfig;
@@ -214,10 +213,10 @@ export abstract class BaseConnection<T = any>
 
     const delay = Math.min(
       this.options.retryDelay *
-        Math.pow(
-          this.options.backoffMultiplier,
-          this.connectionStatus.retryCount - 1
-        ),
+      Math.pow(
+        this.options.backoffMultiplier,
+        this.connectionStatus.retryCount - 1
+      ),
       this.options.maxRetryDelay
     );
 

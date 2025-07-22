@@ -34,6 +34,15 @@ export const DEFAULT_LOGGING_CONFIG: LoggingConfig = {
   colorize: true,
 };
 
+export const STDIO_LOGGING_CONFIG: LoggingConfig = {
+  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+  enableConsole: false,
+  enableFile: true,
+  serverName: APP_TECHNICAL_NAME,
+  format: 'pretty', // Always use pretty format for console
+  colorize: true,
+};
+
 // Singleton transport instances to prevent multiple worker threads
 let sharedConsoleTransport: any = null;
 // sharedFileTransport reserved for future use
@@ -268,15 +277,33 @@ export class Logger {
 }
 
 // Global logger instance
-export const logger = new Logger();
+let logger: Logger;
+let selectedLoggingConfig: Partial<LoggingConfig> | null = null;
 
-// Convenience function to create a child logger
-export function createLogger(
-  context: pino.Bindings,
-  config?: Partial<LoggingConfig>
-): Logger {
+
+/** This is what should be used to get a logger instance. */
+export function getLogger(config?: Partial<LoggingConfig>): Logger {
   if (config) {
-    return new Logger(config).child(context);
+    logger = new Logger(config);
+    selectedLoggingConfig = config;
+    return logger;
   }
-  return logger.child(context);
+
+  if (!logger) {
+    logger = new Logger();
+  }
+
+  return logger;
+}
+
+export function getActiveLoggingConfig(): Partial<LoggingConfig> | null {
+  return selectedLoggingConfig;
+}
+
+/**
+ * Convenience function to create a child logger with module context
+ * This replaces the old createLogger({ module: "name" }) pattern
+ */
+export function createChildLogger(bindings: { module: string }): Logger {
+  return getLogger().child(bindings);
 }

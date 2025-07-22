@@ -7,9 +7,9 @@ import { MCPToolDefinition, DiscoveredTool } from "./types.js";
 import { ToolCache } from "./cache.js";
 import { ToolLookupManager } from "./lookup.js";
 import { ToolHashUtils } from "./hashUtils.js";
-import { createLogger } from "../logging/index.js";
+import { createChildLogger } from "../utils/logging.js";
 
-const logger = createLogger({ module: "discovery/performance.test" });
+const logger = createChildLogger({ module: "discovery/performance.test" });
 
 // Performance thresholds for tests
 const PERFORMANCE_THRESHOLDS = {

@@ -7,7 +7,7 @@ import { join } from "path";
 import { homedir } from "os";
 import chalk from "chalk";
 import inquirer from "inquirer";
-import { output } from "../../logging/output.js";
+import { output } from "../../utils/output.js";
 import {
   MCPConfig,
   SetupContext,

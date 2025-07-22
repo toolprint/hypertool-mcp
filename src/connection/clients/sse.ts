@@ -13,9 +13,9 @@ import { EventEmitter } from "events";
 import { BaseConnection } from "./base.js";
 import { SSEServerConfig } from "../../types/config.js";
 import { ConnectionOptions } from "../types.js";
-import { createLogger } from "../../logging/index.js";
+import { createChildLogger } from "../../utils/logging.js";
 
-const logger = createLogger({ module: "clients/sse" });
+const logger = createChildLogger({ module: "clients/sse" });
 
 /**
  * SSE client wrapper using proper MCP SDK Client

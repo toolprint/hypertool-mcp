@@ -3,7 +3,7 @@
  */
 
 import { EventEmitter } from "events";
-import { Logger, logger } from "../logging/index.js";
+import { Logger, getLogger } from "../utils/logging.js";
 import {
   isRetryableError,
   ConnectionError,
@@ -88,7 +88,7 @@ export class RetryManager {
 
   constructor(config: Partial<RetryConfig> = {}) {
     this.config = { ...DEFAULT_RETRY_CONFIG, ...config };
-    this.logger = logger.child({ module: "RetryManager" });
+    this.logger = getLogger().child({ module: "RetryManager" });
   }
 
   /**
@@ -204,7 +204,7 @@ export class CircuitBreaker extends EventEmitter {
   ) {
     super();
     this.config = { ...DEFAULT_CIRCUIT_BREAKER_CONFIG, ...config };
-    this.logger = logger.child({ module: "CircuitBreaker" });
+    this.logger = getLogger().child({ module: "CircuitBreaker" });
     this.startMonitoring();
   }
 
@@ -354,7 +354,7 @@ export class FallbackManager {
   private logger: Logger;
 
   constructor() {
-    this.logger = logger.child({ module: "FallbackManager" });
+    this.logger = getLogger().child({ module: "FallbackManager" });
   }
 
   /**
@@ -439,7 +439,7 @@ export class FallbackManager {
 export class ServerUnavailableFallback implements FallbackStrategy {
   constructor(
     private fallbackMessage: string = "Service temporarily unavailable"
-  ) {}
+  ) { }
 
   canHandle(error: Error): boolean {
     return (
@@ -481,7 +481,7 @@ export class RecoveryCoordinator {
   ) {
     this.retryManager = new RetryManager(retryConfig);
     this.fallbackManager = new FallbackManager();
-    this.logger = logger.child({ module: "RecoveryCoordinator" });
+    this.logger = getLogger().child({ module: "RecoveryCoordinator" });
 
     // Register default fallback strategies
     this.fallbackManager.registerStrategy(new ServerUnavailableFallback());

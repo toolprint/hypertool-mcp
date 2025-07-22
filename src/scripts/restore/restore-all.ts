@@ -14,7 +14,7 @@ import { join } from "path";
 import { homedir } from "os";
 import chalk from "chalk";
 import { Command } from "commander";
-import { output } from "../../logging/output.js";
+import { output } from "../../utils/output.js";
 import { fileExists } from "../shared/mcpSetupUtils.js";
 
 interface RestoreResult {

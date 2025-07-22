@@ -8,10 +8,10 @@ import { ROUTER_ERROR_CODES } from "./types.js";
 import { CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
 import { IToolDiscoveryEngine, DiscoveredTool } from "../discovery/types.js";
 import { IConnectionManager, Connection } from "../connection/types.js";
-// import { createLogger } from "../logging/index.js";
+// import { createChildLogger } from "../logging/index.js";
 
 // Logger reserved for debug logging if needed
-// const logger = createLogger({ module: "router/router.test" });
+// const logger = createChildLogger({ module: "router/router.test" });
 
 // Mock implementations
 class MockDiscoveryEngine implements IToolDiscoveryEngine {

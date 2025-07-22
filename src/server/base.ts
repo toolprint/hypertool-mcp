@@ -5,9 +5,9 @@
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { createLogger } from "../logging/index.js";
+import { createChildLogger } from "../utils/logging.js";
 
-const logger = createLogger({ module: "server/base" });
+const logger = createChildLogger({ module: "server/base" });
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
