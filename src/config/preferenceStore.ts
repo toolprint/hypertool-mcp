@@ -23,6 +23,9 @@ export interface UserPreferences {
   /** User's preferred path to their MCP server configuration file */
   mcpConfigPath?: string;
 
+  /** Name of the last equipped toolset */
+  lastEquippedToolset?: string;
+
   /** Last updated timestamp */
   lastUpdated?: string;
 
@@ -125,6 +128,25 @@ export async function saveStoredToolsets(
 ): Promise<void> {
   const preferences = await loadUserPreferences();
   preferences.toolsets = toolsets;
+  await saveUserPreferences(preferences);
+}
+
+/**
+ * Get the last equipped toolset name
+ */
+export async function getLastEquippedToolset(): Promise<string | undefined> {
+  const preferences = await loadUserPreferences();
+  return preferences.lastEquippedToolset;
+}
+
+/**
+ * Save the last equipped toolset name
+ */
+export async function saveLastEquippedToolset(
+  toolsetName: string | undefined
+): Promise<void> {
+  const preferences = await loadUserPreferences();
+  preferences.lastEquippedToolset = toolsetName;
   await saveUserPreferences(preferences);
 }
 

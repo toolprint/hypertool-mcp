@@ -26,7 +26,7 @@ export const createUnequipToolsetModule: ToolModuleFactory = (
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       args: any
     ) => {
-      deps.toolsetManager.unequipToolset();
+      await deps.toolsetManager.unequipToolset();
       // ToolsetManager will emit 'toolsetChanged' event which triggers notifyToolsChanged()
 
       return {

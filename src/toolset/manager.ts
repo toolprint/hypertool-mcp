@@ -547,7 +547,7 @@ export class ToolsetManager extends EventEmitter {
 
       // Unequip if currently active
       if (this.currentToolset?.name === name) {
-        this.unequipToolset();
+        await this.unequipToolset();
       }
 
       // Delete from storage
@@ -717,6 +717,7 @@ export class ToolsetManager extends EventEmitter {
       // Import the function here to avoid circular imports
       const preferences = await import("../config/preferenceStore.js");
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
+      const saveLastEquippedToolset = preferences.saveLastEquippedToolset;
 
       const stored = await loadToolsetsFromPreferences();
       const toolsetConfig = stored[toolsetName];
@@ -732,6 +733,9 @@ export class ToolsetManager extends EventEmitter {
           error: `Invalid toolset: ${validation.errors.join(", ")}`,
         };
       }
+
+      // Save this as the last equipped toolset
+      await saveLastEquippedToolset(toolsetName);
 
       // Generate toolset info with current status
       const toolsetInfo = await this.generateToolsetInfo(toolsetConfig);
@@ -752,10 +756,19 @@ export class ToolsetManager extends EventEmitter {
   /**
    * Unequip the current toolset
    */
-  unequipToolset(): void {
+  async unequipToolset(): Promise<void> {
     const previousConfig = this.currentToolset;
     this.currentToolset = undefined;
     this.configPath = undefined;
+
+    // Clear the last equipped toolset from preferences
+    try {
+      const preferences = await import("../config/preferenceStore.js");
+      const saveLastEquippedToolset = preferences.saveLastEquippedToolset;
+      await saveLastEquippedToolset(undefined);
+    } catch (error) {
+      logger.error("Failed to clear last equipped toolset from preferences", error);
+    }
 
     // Emit toolset change event
     if (previousConfig) {
@@ -774,6 +787,36 @@ export class ToolsetManager extends EventEmitter {
    */
   getActiveToolset(): ToolsetConfig | null {
     return this.currentToolset || null;
+  }
+
+  /**
+   * Restore the last equipped toolset from preferences
+   */
+  async restoreLastEquippedToolset(): Promise<boolean> {
+    try {
+      const preferences = await import("../config/preferenceStore.js");
+      const getLastEquippedToolset = preferences.getLastEquippedToolset;
+      
+      const lastToolsetName = await getLastEquippedToolset();
+      if (!lastToolsetName) {
+        logger.debug("No last equipped toolset found in preferences");
+        return false;
+      }
+
+      logger.info(`Restoring last equipped toolset: ${lastToolsetName}`);
+      const result = await this.equipToolset(lastToolsetName);
+      
+      if (result.success) {
+        logger.info(`Successfully restored toolset: ${lastToolsetName}`);
+        return true;
+      } else {
+        logger.warn(`Failed to restore toolset: ${result.error}`);
+        return false;
+      }
+    } catch (error) {
+      logger.error("Failed to restore last equipped toolset", error);
+      return false;
+    }
   }
 
   /**
