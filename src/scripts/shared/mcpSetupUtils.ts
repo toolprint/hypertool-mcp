@@ -229,7 +229,7 @@ export function createHyperToolProxyConfig(hyperToolConfigPath: string): any {
       command: "npx",
       args: [
         "-y",
-        "@toolprint/hypertool-mcp",
+        "@toolprint/hypertool-mcp@latest",
         "--mcp-config",
         hyperToolConfigPath,
       ],
