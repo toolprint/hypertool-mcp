@@ -232,12 +232,22 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       // Initialize tool modules after all dependencies are set up
       this.initializeToolModules();
 
-      // Check for toolset configuration and warn if none equipped
+      // Check for toolset configuration
       if (this.runtimeOptions?.equipToolset) {
+        // User explicitly specified a toolset to equip
         logger.info(`Equipping toolset: ${this.runtimeOptions!.equipToolset!}`);
-        await this.toolsetManager.equipToolset(
+        const result = await this.toolsetManager.equipToolset(
           this.runtimeOptions!.equipToolset!
         );
+        if (!result.success) {
+          logger.error(`Failed to equip toolset: ${result.error}`);
+        }
+      } else {
+        // No explicit toolset specified, try to restore the last equipped one
+        const restored = await this.toolsetManager.restoreLastEquippedToolset();
+        if (!restored) {
+          logger.debug("No previously equipped toolset to restore");
+        }
       }
 
       await this.checkToolsetStatus(options.debug);
