@@ -122,21 +122,25 @@ describe("MCPConfigParser", () => {
       );
     });
 
-    it("should validate missing server type", () => {
+    it("should default to stdio when type field is missing", () => {
       const content = JSON.stringify({
         mcpServers: {
           git: {
             command: "uvx",
+            args: ["mcp-server-git"],
           },
         },
       });
 
       const result = parser.parseContent(content);
 
-      expect(result.success).toBe(false);
-      expect(result.validationErrors).toContain(
-        'Server "git" must have a "type" field'
-      );
+      expect(result.success).toBe(true);
+      expect(result.config?.mcpServers.git).toMatchObject({
+        type: "stdio",
+        command: "uvx",
+        args: ["mcp-server-git"],
+        env: {},
+      });
     });
 
     it("should validate invalid server type", () => {
@@ -300,6 +304,76 @@ describe("MCPConfigParser", () => {
       expect(result.validationErrors).toContain(
         'Stdio server "invalid" must have a "command" string'
       );
+    });
+
+    it("should continue parsing when one server has invalid configuration", () => {
+      const parser = new MCPConfigParser({ strict: false });
+
+      const content = JSON.stringify({
+        mcpServers: {
+          good1: {
+            type: "stdio",
+            command: "uvx",
+            args: ["mcp-server-1"],
+          },
+          malformed: {
+            type: "stdio",
+            // Missing required command field
+          },
+          good2: {
+            type: "sse",
+            url: "https://example.com/sse",
+          },
+        },
+      });
+
+      const result = parser.parseContent(content);
+
+      expect(result.success).toBe(false);
+      expect(result.config?.mcpServers.good1).toBeDefined();
+      expect(result.config?.mcpServers.good2).toBeDefined();
+      expect(result.config?.mcpServers.malformed).toBeUndefined();
+      expect(result.validationErrors).toContain(
+        'Stdio server "malformed" must have a "command" string'
+      );
+    });
+
+    it("should handle mix of missing types and invalid configs", () => {
+      const parser = new MCPConfigParser({ strict: false });
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      const content = JSON.stringify({
+        mcpServers: {
+          defaultsToStdio: {
+            // Missing type, should default to stdio
+            command: "uvx",
+            args: ["mcp-server-git"],
+          },
+          invalidStdio: {
+            type: "stdio",
+            // Missing required command
+          },
+          validSse: {
+            type: "sse",
+            url: "https://example.com/sse",
+          },
+        },
+      });
+
+      const result = parser.parseContent(content);
+
+      expect(result.success).toBe(false);
+      expect(result.config?.mcpServers.defaultsToStdio).toBeDefined();
+      expect(result.config?.mcpServers.defaultsToStdio.type).toBe("stdio");
+      expect(result.config?.mcpServers.invalidStdio).toBeUndefined();
+      expect(result.config?.mcpServers.validSse).toBeDefined();
+      expect(result.validationErrors).toContain(
+        'Stdio server "invalidStdio" must have a "command" string'
+      );
+
+      consoleSpy.mockRestore();
     });
 
     it("should fail completely in strict mode with any error", () => {

@@ -26,7 +26,8 @@ import { APP_TECHNICAL_NAME } from "../config/appConfig.js";
  */
 export class ConnectionManager
   extends EventEmitter
-  implements IConnectionManager {
+  implements IConnectionManager
+{
   private _pool: IConnectionPool;
   private _healthMonitor: HealthMonitor;
   private _logger: Logger;
@@ -233,8 +234,8 @@ export class ConnectionManager
     if (this.servers[serverName]) {
       const error = new Error(
         `❌ Server name conflict detected: "${serverName}" already exists.\n` +
-        `💡 Resolution: Use a unique server name or remove the existing server first.\n` +
-        `📋 Existing servers: ${Object.keys(this.servers).join(", ")}`
+          `💡 Resolution: Use a unique server name or remove the existing server first.\n` +
+          `📋 Existing servers: ${Object.keys(this.servers).join(", ")}`
       );
       console.error(error.message);
       throw error;

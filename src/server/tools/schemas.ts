@@ -241,9 +241,7 @@ export const addToolAnnotationResponseZodSchema = z.object({
       })
     )
     .describe("Notes that were successfully added"),
-  successCount: z
-    .number()
-    .describe("Number of annotations successfully added"),
+  successCount: z.number().describe("Number of annotations successfully added"),
   errorCount: z
     .number()
     .describe("Number of annotations that failed to be added"),

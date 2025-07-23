@@ -217,7 +217,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             if (options.debug) {
               logger.info(
                 `Tools changed while toolset "${activeToolsetInfo.name}" is equipped. ` +
-                `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
+                  `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
               );
             }
           }
@@ -285,9 +285,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const listResult = await this.toolsetManager.listSavedToolsets();
       const storedToolsets = listResult.success
         ? listResult.toolsets.reduce(
-          (acc: any, t: any) => ({ ...acc, [t.name]: t }),
-          {}
-        )
+            (acc: any, t: any) => ({ ...acc, [t.name]: t }),
+            {}
+          )
         : {};
       const hasToolsets = Object.keys(storedToolsets).length > 0;
       const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();

@@ -383,10 +383,10 @@
       {
         "id": 34,
         "title": "Fix MCP parser missing type field handling",
-        "description": "The MCP configuration parser needs two critical fixes:\n1. Default to 'stdio' transport when type field is missing (per MCP spec)\n2. Continue parsing other configs when one fails (graceful degradation)\n\nSee PRD: docs/bugs/mcp-parser-bug.md",
-        "details": "Implementation requirements:\n- Modify src/config/mcpConfigParser.ts to handle missing type field\n- Default to 'stdio' when type is not specified\n- Wrap individual server parsing in try-catch for error isolation\n- Log clear errors for failed configs but continue with valid ones\n- Return partial results with error summary\n- Maintain backward compatibility\n\nRefer to the full PRD at docs/bugs/mcp-parser-bug.md for complete specifications, testing requirements, and implementation approach.",
+        "description": "The MCP configuration parser needs two critical fixes:\n1. Default to 'stdio' transport when type field is missing (per MCP spec)\n2. Continue parsing other configs when one fails (graceful degradation)\n\nSee PRD: docs/bugs/mcp-parser-bug.md [Updated: 7/23/2025]",
+        "details": "Implementation requirements:\n- Modify src/config/mcpConfigParser.ts to handle missing type field\n- Default to 'stdio' when type is not specified\n- Wrap individual server parsing in try-catch for error isolation\n- Log clear errors for failed configs but continue with valid ones\n- Return partial results with error summary\n- Maintain backward compatibility\n\nRefer to the full PRD at docs/bugs/mcp-parser-bug.md for complete specifications, testing requirements, and implementation approach.\n<info added on 2025-07-23T17:02:52.673Z>\nAssigned to claude-squad session-1737665472\n</info added on 2025-07-23T17:02:52.673Z>",
         "testStrategy": "1. Test configs with missing type field default to stdio\n2. Test explicit type fields still work correctly\n3. Test mix of valid and invalid configs (partial success)\n4. Test error messages include server names\n5. Verify all existing parser tests still pass",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [],
         "priority": "high",
         "subtasks": []
@@ -405,7 +405,7 @@
     ],
     "metadata": {
       "created": "2025-07-09T21:55:09.811Z",
-      "updated": "2025-07-23T16:54:07.846Z",
+      "updated": "2025-07-23T17:02:59.768Z",
       "description": "Tasks for master context"
     }
   }

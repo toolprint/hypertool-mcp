@@ -8,7 +8,7 @@ import { getActiveLoggingConfig } from "./logging.js";
 
 // For stdio transport, use stderr for all display output to avoid interfering with MCP protocol
 const getStdioDisplay = () => {
-  const currentLoggingConfig = getActiveLoggingConfig()
+  const currentLoggingConfig = getActiveLoggingConfig();
   // When enableConsole is false (stdio mode), use stderr for all output
   // When enableConsole is true (HTTP mode), use stdout
   if (currentLoggingConfig && !currentLoggingConfig.enableConsole) {
@@ -21,29 +21,29 @@ const getStdioDisplay = () => {
   return new Console({
     stdout: process.stdout,
     stderr: process.stderr,
-  })
-}
+  });
+};
 
 const getPreferredOutputStream = () => {
-  const currentLoggingConfig = getActiveLoggingConfig()
+  const currentLoggingConfig = getActiveLoggingConfig();
   // When enableConsole is false (stdio mode), use stderr
   // When enableConsole is true (HTTP mode), use stdout
   if (currentLoggingConfig && !currentLoggingConfig.enableConsole) {
-    return process.stderr
+    return process.stderr;
   }
-  return process.stdout
-}
+  return process.stdout;
+};
 
 enum FigletFont {
-  Standard = 'Standard',
-  SubZero = 'Sub-Zero',
-  Slant = 'Slant',
-  ANSIShadow = 'ANSI Shadow',
-  Block = 'Block',
-  Doom = 'Doom',
-  ThreeDASCII = '3D-ASCII',
-  Small = 'Small',
-  Speed = 'Speed',
+  Standard = "Standard",
+  SubZero = "Sub-Zero",
+  Slant = "Slant",
+  ANSIShadow = "ANSI Shadow",
+  Block = "Block",
+  Doom = "Doom",
+  ThreeDASCII = "3D-ASCII",
+  Small = "Small",
+  Speed = "Speed",
 }
 
 const PREFERRED_FONT = FigletFont.SubZero;
@@ -284,8 +284,8 @@ export const output = {
 function getAsciiArt(text: string, font: FigletFont = PREFERRED_FONT): string {
   return figlet.textSync(text, {
     font: font,
-    horizontalLayout: 'fitted',
-    verticalLayout: 'default',
+    horizontalLayout: "fitted",
+    verticalLayout: "default",
   });
 }
 
@@ -299,8 +299,14 @@ export function displayBanner(appName: string = APP_NAME): void {
   // 2. Display the app-specific banner (light blue)
   displayAppBanner(appName);
   output.displaySpaceBuffer(1);
-  output.displayLinkWithPrefix('Built and supported by the devs @ ', 'https://toolprint.ai');
-  output.displayLinkWithPrefix('Check out more of our stuff at ', 'https://github.com/toolprint');
+  output.displayLinkWithPrefix(
+    "Built and supported by the devs @ ",
+    "https://toolprint.ai"
+  );
+  output.displayLinkWithPrefix(
+    "Check out more of our stuff at ",
+    "https://github.com/toolprint"
+  );
 
   // 3. Add separator and spacing
   output.displaySeparator(80);
@@ -314,7 +320,7 @@ export function displayBanner(appName: string = APP_NAME): void {
 function displayAppBanner(appName: string, maxLenNewLine: number = 10): void {
   // Handle app name - split into lines if too long, use same font as Toolprint
   if (appName.length > maxLenNewLine) {
-    const words = appName.split(' ');
+    const words = appName.split(" ");
     for (const word of words) {
       const wordBanner = getAsciiArt(word, PREFERRED_FONT);
       output.log(chalk.blueBright.bold(wordBanner));
@@ -347,11 +353,13 @@ export function displayServerRuntimeInfo(
   port?: number,
   host?: string
 ): void {
-  output.log(chalk.blue.bold('Server Configuration:'));
+  output.log(chalk.blue.bold("Server Configuration:"));
   output.log(chalk.white(`  Transport: ${chalk.yellow(transport)}`));
 
-  if (transport === 'http' && port && host) {
-    output.log(chalk.white(`  Address:   ${chalk.yellow(`http://${host}:${port}`)}`));
+  if (transport === "http" && port && host) {
+    output.log(
+      chalk.white(`  Address:   ${chalk.yellow(`http://${host}:${port}`)}`)
+    );
   }
 
   output.log(chalk.white(`  Version:   ${chalk.yellow(APP_CONFIG.version)}`));

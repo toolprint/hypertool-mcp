@@ -24,7 +24,8 @@ import {
  */
 export abstract class BaseConnection<T = any>
   extends EventEmitter
-  implements Connection<T> {
+  implements Connection<T>
+{
   public readonly id: string;
   public readonly serverName: string;
   public readonly config: ServerConfig;
@@ -213,10 +214,10 @@ export abstract class BaseConnection<T = any>
 
     const delay = Math.min(
       this.options.retryDelay *
-      Math.pow(
-        this.options.backoffMultiplier,
-        this.connectionStatus.retryCount - 1
-      ),
+        Math.pow(
+          this.options.backoffMultiplier,
+          this.connectionStatus.retryCount - 1
+        ),
       this.options.maxRetryDelay
     );
 
