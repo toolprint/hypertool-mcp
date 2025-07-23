@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ClaudeCodeSetup } from "./setup.js";
-import { homedir } from "os";
-import { join } from "path";
 
 // Mock all the dependencies
 vi.mock("inquirer", () => ({

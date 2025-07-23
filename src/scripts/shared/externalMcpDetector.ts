@@ -2,7 +2,6 @@
  * Utility functions for detecting MCP servers configured outside of HyperTool
  */
 
-import { promises as fs } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import { fileExists, readJsonFile, MCPConfig } from "./mcpSetupUtils.js";

@@ -3,7 +3,6 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { promises as fs } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import {
@@ -26,7 +25,6 @@ vi.mock("./mcpSetupUtils.js", () => ({
 }));
 
 describe("externalMcpDetector", () => {
-  const mockFs = fs as any;
   const mockUtils = mcpSetupUtils as any;
 
   beforeEach(() => {
