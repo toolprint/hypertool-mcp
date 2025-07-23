@@ -221,15 +221,19 @@ export class ToolsetManager extends EventEmitter {
     }
 
     // Look for notes matching this tool by checking both namespacedName and refId
-    const toolNotesEntry = this.currentToolset.toolNotes.find(entry => {
+    const toolNotesEntry = this.currentToolset.toolNotes.find((entry) => {
       // Match by namespacedName if provided
-      if (entry.toolRef.namespacedName &&
-        entry.toolRef.namespacedName === discoveredTool.namespacedName) {
+      if (
+        entry.toolRef.namespacedName &&
+        entry.toolRef.namespacedName === discoveredTool.namespacedName
+      ) {
         return true;
       }
       // Match by refId if provided
-      if (entry.toolRef.refId &&
-        entry.toolRef.refId === discoveredTool.toolHash) {
+      if (
+        entry.toolRef.refId &&
+        entry.toolRef.refId === discoveredTool.toolHash
+      ) {
         return true;
       }
       return false;
@@ -250,12 +254,12 @@ export class ToolsetManager extends EventEmitter {
 
   /** Formats a discovered tool into an MCP tool. */
   _getToolFromDiscoveredTool(dt: DiscoveredTool): Tool {
-    let t = dt.tool
+    let t = dt.tool;
 
-    t.name = this.flattenToolName(dt.namespacedName)
-    t.description = dt.tool.description || `Tool from ${dt.serverName} server`
+    t.name = this.flattenToolName(dt.namespacedName);
+    t.description = dt.tool.description || `Tool from ${dt.serverName} server`;
 
-    return t
+    return t;
   }
 
   /**
@@ -286,7 +290,7 @@ export class ToolsetManager extends EventEmitter {
 
     // Convert to MCP tool format with flattened names for external exposure
     const generatedTools: Tool[] = filteredTools.map((dt: DiscoveredTool) => {
-      let t = this._getToolFromDiscoveredTool(dt)
+      let t = this._getToolFromDiscoveredTool(dt);
       t = this._hydrateToolNotes(t);
 
       return t;
@@ -767,7 +771,10 @@ export class ToolsetManager extends EventEmitter {
       const saveLastEquippedToolset = preferences.saveLastEquippedToolset;
       await saveLastEquippedToolset(undefined);
     } catch (error) {
-      logger.error("Failed to clear last equipped toolset from preferences", error);
+      logger.error(
+        "Failed to clear last equipped toolset from preferences",
+        error
+      );
     }
 
     // Emit toolset change event
@@ -796,7 +803,7 @@ export class ToolsetManager extends EventEmitter {
     try {
       const preferences = await import("../config/preferenceStore.js");
       const getLastEquippedToolset = preferences.getLastEquippedToolset;
-      
+
       const lastToolsetName = await getLastEquippedToolset();
       if (!lastToolsetName) {
         logger.debug("No last equipped toolset found in preferences");
@@ -805,7 +812,7 @@ export class ToolsetManager extends EventEmitter {
 
       logger.info(`Restoring last equipped toolset: ${lastToolsetName}`);
       const result = await this.equipToolset(lastToolsetName);
-      
+
       if (result.success) {
         logger.info(`Successfully restored toolset: ${lastToolsetName}`);
         return true;
@@ -836,18 +843,18 @@ export class ToolsetManager extends EventEmitter {
       for (const toolRef of config.tools) {
         const resolution:
           | {
-            exists: boolean;
-            tool?: any;
-            serverName?: string;
-            serverStatus?: any;
-            namespacedNameMatch: boolean;
-            refIdMatch: boolean;
-            warnings: string[];
-            errors: string[];
-          }
+              exists: boolean;
+              tool?: any;
+              serverName?: string;
+              serverStatus?: any;
+              namespacedNameMatch: boolean;
+              refIdMatch: boolean;
+              warnings: string[];
+              errors: string[];
+            }
           | undefined = this.discoveryEngine.resolveToolReference(toolRef, {
-            allowStaleRefs: false,
-          });
+          allowStaleRefs: false,
+        });
 
         if (resolution?.exists && resolution.tool) {
           const serverName = resolution.tool.serverName;
@@ -915,8 +922,8 @@ export class ToolsetManager extends EventEmitter {
    */
   private formatNotesForLLM(notes: ToolsetToolNote[]): string {
     const formattedNotes = notes
-      .map(note => `• **${note.name}**: ${note.note}`)
-      .join('\n');
+      .map((note) => `• **${note.name}**: ${note.note}`)
+      .join("\n");
 
     return `### Additional Tool Notes\n\n${formattedNotes}`;
   }
@@ -924,7 +931,9 @@ export class ToolsetManager extends EventEmitter {
   /**
    * Find a discovered tool by its flattened name
    */
-  private findDiscoveredToolByFlattenedName(flattenedName: string): DiscoveredTool | null {
+  private findDiscoveredToolByFlattenedName(
+    flattenedName: string
+  ): DiscoveredTool | null {
     if (!this.discoveryEngine) {
       return null;
     }

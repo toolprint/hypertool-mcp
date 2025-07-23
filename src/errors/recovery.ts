@@ -439,7 +439,7 @@ export class FallbackManager {
 export class ServerUnavailableFallback implements FallbackStrategy {
   constructor(
     private fallbackMessage: string = "Service temporarily unavailable"
-  ) { }
+  ) {}
 
   canHandle(error: Error): boolean {
     return (

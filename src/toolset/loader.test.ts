@@ -17,7 +17,7 @@ describe("ToolsetLoader", () => {
   });
 
   afterEach(async () => {
-    await fs.rmdir(tempDir, { recursive: true }).catch(() => {
+    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {
       // Ignore cleanup errors in tests
     });
   });

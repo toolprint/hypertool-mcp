@@ -32,7 +32,8 @@ import { output } from "../utils/output.js";
  */
 export class ToolDiscoveryEngine
   extends EventEmitter
-  implements IToolDiscoveryEngine {
+  implements IToolDiscoveryEngine
+{
   private connectionManager: IConnectionManager;
   private config: Required<DiscoveryConfig>;
   private cache: ToolCache;

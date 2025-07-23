@@ -32,10 +32,9 @@ export function resolveToolReference(ref: DynamicToolReference): string {
 }
 
 export interface ToolsetToolNote {
-  name: string
-  note: string
+  name: string;
+  note: string;
 }
-
 
 export interface ToolsetToolNotes {
   toolRef: DynamicToolReference;

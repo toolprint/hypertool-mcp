@@ -74,9 +74,9 @@ export class ConnectionPool extends EventEmitter implements IConnectionPool {
       const existingServers = Array.from(this.connections.keys());
       throw new Error(
         `❌ Server name conflict: Connection for server "${serverName}" already exists.\n` +
-        `💡 Each server must have a unique name.\n` +
-        `📋 Active servers: [${existingServers.join(", ")}]\n` +
-        `🚫 Cannot create duplicate connections for the same server name.`
+          `💡 Each server must have a unique name.\n` +
+          `📋 Active servers: [${existingServers.join(", ")}]\n` +
+          `🚫 Cannot create duplicate connections for the same server name.`
       );
     }
 

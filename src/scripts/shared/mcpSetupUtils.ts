@@ -142,11 +142,37 @@ export async function createConfigBackup(context: SetupContext): Promise<void> {
   }
 
   try {
-    const originalConfig = await fs.readFile(
-      context.originalConfigPath,
-      "utf8"
-    );
-    await fs.writeFile(context.backupPath, originalConfig, "utf8");
+    // Read current .mcp.json to get any new servers
+    const currentConfig: MCPConfig = await readJsonFile(context.originalConfigPath);
+    const newServers = { ...currentConfig.mcpServers };
+    
+    // Remove hypertool from new servers
+    Object.keys(newServers).forEach((key) => {
+      if (key.toLowerCase().includes("hypertool")) {
+        delete newServers[key];
+      }
+    });
+
+    let backupConfig: MCPConfig;
+
+    // If backup already exists, merge new servers into it (additive)
+    if (await fileExists(context.backupPath)) {
+      const existingBackup: MCPConfig = await readJsonFile(context.backupPath);
+      backupConfig = {
+        mcpServers: {
+          ...existingBackup.mcpServers,
+          ...newServers, // New servers take precedence
+        }
+      };
+    } else {
+      // First time - create backup with current servers
+      backupConfig = {
+        mcpServers: newServers
+      };
+    }
+    
+    const backupContent = JSON.stringify(backupConfig, null, 2);
+    await fs.writeFile(context.backupPath, backupContent, "utf8");
   } catch (error) {
     output.error("❌ Failed to create backup:");
     output.error(error instanceof Error ? error.message : String(error));
@@ -168,41 +194,24 @@ export async function migrateToHyperToolConfig(
     originalConfig.mcpServers = {};
   }
 
-  // If hypertool config already exists, check if we should update it
-  if (await fileExists(context.hyperToolConfigPath)) {
-    const hyperToolConfig: MCPConfig = await readJsonFile(
-      context.hyperToolConfigPath
-    );
-    const serverNames = Object.keys(originalConfig.mcpServers || {});
-
-    // If current config only has hypertool and hyperToolConfig has servers, we're already configured
-    if (
-      serverNames.length === 1 &&
-      serverNames[0].toLowerCase().includes("hypertool") &&
-      Object.keys(hyperToolConfig.mcpServers || {}).length > 0
-    ) {
-      return originalConfig;
-    }
+  // Use backup as the source of truth for servers
+  if (!(await fileExists(context.backupPath))) {
+    throw new Error("Backup file not found. Cannot migrate servers safely.");
   }
 
-  // Copy all existing servers to HyperTool config (excluding hypertool itself)
-  const existingServers = { ...originalConfig.mcpServers };
-  // Remove any server with "hypertool" in the name
-  Object.keys(existingServers).forEach((key) => {
-    if (key.toLowerCase().includes("hypertool")) {
-      delete existingServers[key];
-    }
-  });
+  const backupConfig: MCPConfig = await readJsonFile(context.backupPath);
+  const serversFromBackup = backupConfig.mcpServers || {};
 
   if (context.dryRun) {
+    const serverCount = Object.keys(serversFromBackup).length;
     output.info(
-      `[DRY RUN] Would migrate ${Object.keys(existingServers).length} servers to: ${context.hyperToolConfigPath}`
+      `[DRY RUN] Would copy ${serverCount} servers from backup to: ${context.hyperToolConfigPath}`
     );
     return originalConfig;
   }
 
   const hyperToolConfig = {
-    mcpServers: existingServers,
+    mcpServers: serversFromBackup,
   };
 
   await writeJsonFile(context.hyperToolConfigPath, hyperToolConfig);

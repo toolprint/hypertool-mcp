@@ -35,11 +35,11 @@ export const DEFAULT_LOGGING_CONFIG: LoggingConfig = {
 };
 
 export const STDIO_LOGGING_CONFIG: LoggingConfig = {
-  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+  level: process.env.NODE_ENV === "development" ? "debug" : "info",
   enableConsole: false,
   enableFile: true,
   serverName: APP_TECHNICAL_NAME,
-  format: 'pretty', // Always use pretty format for console
+  format: "pretty", // Always use pretty format for console
   colorize: true,
 };
 
@@ -279,7 +279,6 @@ export class Logger {
 // Global logger instance
 let logger: Logger;
 let selectedLoggingConfig: Partial<LoggingConfig> | null = null;
-
 
 /** This is what should be used to get a logger instance. */
 export function getLogger(config?: Partial<LoggingConfig>): Logger {

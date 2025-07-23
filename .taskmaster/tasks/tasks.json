@@ -175,7 +175,7 @@
         "description": "Develop complete documentation suite including project README, API reference documentation, configuration guides, and practical usage examples for the hypertool-mcp proxy server",
         "details": "Create comprehensive documentation structure with the following components:\n\n1. **README.md**: Project overview, quick start guide, installation instructions, basic configuration example, and links to detailed documentation\n\n2. **API Documentation**: Complete API reference using TypeDoc or similar tool, documenting all public interfaces, configuration schemas, and protocol specifications\n\n3. **Configuration Guide**: Detailed documentation of .mcp.json format, toolset configuration options, server connection parameters, and advanced configuration scenarios\n\n4. **Usage Examples**: Practical examples including:\n   - Basic proxy setup with multiple servers\n   - Toolset filtering and namespace configuration\n   - CLI usage for toolset management\n   - Integration with popular MCP clients\n   - Troubleshooting common issues\n\n5. **Architecture Documentation**: Technical overview of proxy architecture, request routing flow, connection management, and tool discovery mechanisms\n\n6. **Developer Guide**: Contributing guidelines, development setup, testing procedures, and code structure overview\n\nEnsure all documentation is clear, well-structured, and includes code examples where appropriate. Use consistent formatting and terminology throughout.",
         "testStrategy": "Documentation validation through the following steps:\n\n1. **README Completeness**: Verify all sections are present (installation, quick start, configuration, usage)\n\n2. **API Documentation Generation**: Run TypeDoc or documentation generator and verify all public APIs are documented\n\n3. **Example Validation**: Test all code examples in documentation to ensure they work correctly\n\n4. **Link Verification**: Check all internal and external links are valid and point to correct resources\n\n5. **Configuration Examples**: Validate all .mcp.json and toolset configuration examples against the actual schemas\n\n6. **User Testing**: Have someone unfamiliar with the project follow the documentation to set up and use the proxy\n\n7. **Documentation Linting**: Use markdown linters to ensure consistent formatting and structure",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           21,
           22,
@@ -324,7 +324,7 @@
         "id": 30,
         "title": "Implement npm publishing workflow and package configuration for @toolprint/hypertool-mcp",
         "description": "Configure package.json for scoped npm publication and add justfile commands for publishing workflow with proper build and verification steps, following specifications in the comprehensive PRD document.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           14,
           22,
@@ -375,7 +375,29 @@
         "description": "Console output is corrupting MCP protocol messages on stdout when using stdio transport, causing JSON parsing errors in MCP clients like Claude Code",
         "details": "## Problem\nWhen running hypertool-mcp with stdio transport (default), initialization messages written to stdout corrupt the JSON-RPC protocol stream, causing client connection failures.\n\n## Solution\nRedirect all console output to stderr when in stdio mode, keeping stdout clean for protocol messages only.\n\n## Implementation Steps\n1. Add STDIO_LOGGING_CONFIG to src/logging/index.ts with console disabled\n2. Update src/logging/output.ts to detect stdio mode and redirect Console to stderr\n3. Ensure early detection of stdio transport in src/index.ts before any output\n4. Handle ora spinners in src/server/enhanced.ts (Phase 2)\n5. Add integration test to verify stdout contains only JSON-RPC\n\n## Reference\nSee detailed PRD: .taskmaster/docs/prd-stdio-fix.md\n\n## Success Criteria\n- No non-JSON-RPC data on stdout in stdio mode\n- All diagnostic messages available via stderr\n- Successfully connects with Claude Code and other MCP clients",
         "testStrategy": "Create automated test that spawns stdio server, captures stdout/stderr separately, and verifies protocol integrity",
-        "status": "pending",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 34,
+        "title": "Fix MCP parser missing type field handling",
+        "description": "The MCP configuration parser needs two critical fixes:\n1. Default to 'stdio' transport when type field is missing (per MCP spec)\n2. Continue parsing other configs when one fails (graceful degradation)\n\nSee PRD: docs/bugs/mcp-parser-bug.md [Updated: 7/23/2025]",
+        "details": "Implementation requirements:\n- Modify src/config/mcpConfigParser.ts to handle missing type field\n- Default to 'stdio' when type is not specified\n- Wrap individual server parsing in try-catch for error isolation\n- Log clear errors for failed configs but continue with valid ones\n- Return partial results with error summary\n- Maintain backward compatibility\n\nRefer to the full PRD at docs/bugs/mcp-parser-bug.md for complete specifications, testing requirements, and implementation approach.\n<info added on 2025-07-23T17:02:52.673Z>\nAssigned to claude-squad session-1737665472\n</info added on 2025-07-23T17:02:52.673Z>",
+        "testStrategy": "1. Test configs with missing type field default to stdio\n2. Test explicit type fields still work correctly\n3. Test mix of valid and invalid configs (partial success)\n4. Test error messages include server names\n5. Verify all existing parser tests still pass",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 35,
+        "title": "Enhance Claude Code installation UX",
+        "description": "Improve the Claude Code installation experience with three key features:\n1. Offer global vs project-local installation choice\n2. Display config file locations in --help output\n3. Detect and warn about MCPs added outside hypertool\n\nSee PRD: docs/bugs/claude-code-installation-bug.md [Updated: 7/23/2025]",
+        "details": "Implementation requirements:\n- Modify install command to prompt for global vs local installation\n- Show current working directory for local installs\n- Add config paths section to --help output showing where configs are stored\n- On startup, detect non-hypertool MCPs in client configs and warn user\n- Add import functionality to bring external MCPs into hypertool config\n- Support for Claude Desktop, Claude Code, and Cursor config locations\n\nKey files to modify:\n- Installation scripts (src/scripts/install.ts or similar)\n- CLI help command handler\n- Server initialization for MCP detection\n- Config path utilities\n\nRefer to the full PRD at docs/bugs/claude-code-installation-bug.md for complete UX flows, implementation patterns, and testing requirements.\n<info added on 2025-07-23T17:11:09.952Z>\nAssigned to claude-squad session-1738165826\n</info added on 2025-07-23T17:11:09.952Z>",
+        "testStrategy": "1. Test global vs local installation prompts and flows\n2. Test project detection for local installation\n3. Test config path display in help output\n4. Test external MCP detection and warning messages\n5. Test import functionality preserves MCP settings\n6. Test on all platforms (Mac, Windows, Linux)",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "subtasks": []
@@ -383,7 +405,7 @@
     ],
     "metadata": {
       "created": "2025-07-09T21:55:09.811Z",
-      "updated": "2025-07-19T17:03:11.837Z",
+      "updated": "2025-07-23T19:33:03.609Z",
       "description": "Tasks for master context"
     }
   }
