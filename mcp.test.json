@@ -4,7 +4,7 @@
       "type": "stdio",
       "command": "npx",
       "args": [
-        "-y", 
+        "-y",
         "@modelcontextprotocol/server-everything"
       ],
       "env": {}
@@ -12,6 +12,13 @@
     "context7": {
       "type": "sse",
       "url": "https://mcp.context7.com/sse"
+    },
+    "mcping": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@toolprint/mcping-mcp@latest"
+      ]
     }
   }
 }

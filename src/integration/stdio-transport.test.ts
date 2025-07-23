@@ -39,7 +39,8 @@ describe("MCP Server stdio transport", () => {
     }
   });
 
-  it("should connect via stdio and call tools successfully", async () => {
+  // Extended timeout needed due to slow spawn time of multiple MCP server connections in mcp.test.json
+  it("should connect via stdio and call tools successfully", { timeout: 10000 }, async () => {
     // Create stdio transport
     transport = new StdioClientTransport({
       command: "node",
@@ -77,7 +78,8 @@ describe("MCP Server stdio transport", () => {
     expect(toolResult.content).toBeDefined();
   });
 
-  it("should handle concurrent operations", async () => {
+  // Extended timeout needed due to slow spawn time of multiple MCP server connections in mcp.test.json
+  it("should handle concurrent operations", { timeout: 10000 }, async () => {
     transport = new StdioClientTransport({
       command: "node",
       args: [serverPath, "--transport", "stdio", "--mcp-config", configPath],
@@ -109,7 +111,8 @@ describe("MCP Server stdio transport", () => {
     expect(result3.content).toBeDefined();
   });
 
-  it("should properly handle errors without breaking stdio protocol", async () => {
+  // Extended timeout needed due to slow spawn time of multiple MCP server connections in mcp.test.json
+  it("should properly handle errors without breaking stdio protocol", { timeout: 10000 }, async () => {
     transport = new StdioClientTransport({
       command: "node",
       args: [serverPath, "--transport", "stdio", "--mcp-config", configPath],
