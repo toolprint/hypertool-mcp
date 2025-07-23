@@ -447,10 +447,10 @@ export class ClaudeCodeSetup {
           output.info("📦 Configuring Hypertool...");
         }
 
-        // Create backup
+        // Create/update backup first (our recoverable source of truth)
         await createConfigBackup(this.context);
 
-        // Migrate servers
+        // Migrate servers from backup to hypertool config
         await migrateToHyperToolConfig(this.context);
 
         // Update configuration
