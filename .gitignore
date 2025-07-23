@@ -97,6 +97,7 @@ CLAUDE.local.md
 *.temp
 .tmp/
 .temp/
+tmp-test-data/
 
 # Backup files
 *.bak

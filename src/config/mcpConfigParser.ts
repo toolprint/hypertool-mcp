@@ -82,24 +82,38 @@ export class MCPConfigParser {
       for (const [serverName, serverConfig] of Object.entries(
         rawConfig.mcpServers
       )) {
-        const result = this.parseServerConfig(
-          serverName,
-          serverConfig as any,
-          basePath
-        );
+        try {
+          const result = this.parseServerConfig(
+            serverName,
+            serverConfig as any,
+            basePath
+          );
 
-        if (result.errors.length > 0) {
-          serverErrors.push(...result.errors);
+          if (result.errors.length > 0) {
+            serverErrors.push(...result.errors);
+            if (this.options.strict) {
+              return {
+                success: false,
+                validationErrors: serverErrors,
+              };
+            }
+          }
+
+          if (result.config) {
+            config.mcpServers[serverName] = result.config;
+          }
+        } catch (error) {
+          // Log error for this server but continue with others
+          const errorMessage = `Failed to parse config for server "${serverName}": ${(error as Error).message}`;
+          serverErrors.push(errorMessage);
+          console.error(errorMessage);
+
           if (this.options.strict) {
             return {
               success: false,
               validationErrors: serverErrors,
             };
           }
-        }
-
-        if (result.config) {
-          config.mcpServers[serverName] = result.config;
         }
       }
 
@@ -154,9 +168,9 @@ export class MCPConfigParser {
       return { errors };
     }
 
+    // Default to 'stdio' if type field is missing (per MCP spec)
     if (!config.type) {
-      errors.push(`Server "${name}" must have a "type" field`);
-      return { errors };
+      config.type = "stdio";
     }
 
     if (

@@ -348,13 +348,10 @@ export function displayMinimalBanner(appName: string = APP_NAME): void {
  * @param host - The host address (for HTTP transport)
  */
 export function displayServerRuntimeInfo(
-  appName: string = APP_NAME,
   transport: string,
   port?: number,
   host?: string
 ): void {
-  // appName parameter is included for future use
-  void appName; // Suppress unused variable warning
   output.log(chalk.blue.bold("Server Configuration:"));
   output.log(chalk.white(`  Transport: ${chalk.yellow(transport)}`));
 

@@ -349,7 +349,10 @@ async function main(): Promise<void> {
     displayBanner(APP_NAME);
     if (runtimeOptions.transport === "http") {
       displayServerRuntimeInfo(
+<<<<<<< HEAD
         APP_NAME,
+=======
+>>>>>>> hotfix-transport-and-install-fixes
         runtimeOptions.transport,
         runtimeOptions.port,
         runtimeOptions.transport === "http" ? "localhost" : undefined
