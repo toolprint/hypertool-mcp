@@ -313,7 +313,6 @@ async function main(): Promise<void> {
     displayBanner(APP_NAME);
     if (runtimeOptions.transport === "http") {
       displayServerRuntimeInfo(
-        APP_NAME,
         runtimeOptions.transport,
         runtimeOptions.port,
         runtimeOptions.transport === "http" ? "localhost" : undefined

@@ -348,7 +348,6 @@ export function displayMinimalBanner(appName: string = APP_NAME): void {
  * @param host - The host address (for HTTP transport)
  */
 export function displayServerRuntimeInfo(
-  appName: string = APP_NAME,
   transport: string,
   port?: number,
   host?: string
