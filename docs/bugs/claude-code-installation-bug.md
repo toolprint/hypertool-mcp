@@ -53,9 +53,9 @@ The `--help` output should include a new section:
 ```
 Configuration Locations:
   Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json
-  Claude Code:    ~/.claude/claude_code_config.json (global)
-                  ./.claude/claude_code_config.json (project)
-  Cursor:         ~/.cursor/mcp/settings.json
+  Claude Code:    ~/.claude.json (global)
+                  ./.mcp.json (project)
+  Cursor:         ~/.cursor/mcp.json
 
 Use --install to manage hypertool in these configurations.
 ```
@@ -124,8 +124,8 @@ On server startup:
          linux: '~/.config/Claude/claude_desktop_config.json'
        },
        claudeCode: {
-         global: '~/.claude/claude_code_config.json',
-         local: './.claude/claude_code_config.json'
+         global: '~/.claude.json',
+         local: './.mcp.json'
        },
        cursor: {
          path: '~/.cursor/mcp/settings.json'
@@ -160,7 +160,7 @@ $ hypertool install claude-code
   ❯ Globally (all projects)
     This project only (/Users/me/my-project)
 
-Installing to: ~/.claude/claude_code_config.json
+Installing to: ~/.claude.json
 
 ✓ MCP server configuration added
 ✓ Slash commands installed

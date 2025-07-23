@@ -206,8 +206,12 @@ describe("ToolsetManager - Annotations", () => {
       const result = manager._hydrateToolNotes(tool);
       expect(result.description).toContain("Show the working tree status");
       expect(result.description).toContain("### Additional Tool Notes");
-      expect(result.description).toContain("• **usage-tip**: Always run this before committing");
-      expect(result.description).toContain("• **warning**: Be careful with untracked files");
+      expect(result.description).toContain(
+        "• **usage-tip**: Always run this before committing"
+      );
+      expect(result.description).toContain(
+        "• **warning**: Be careful with untracked files"
+      );
     });
 
     it("should match notes by refId when both namespacedName and refId provided in notes", () => {
@@ -231,7 +235,7 @@ describe("ToolsetManager - Annotations", () => {
 
       const tools = manager.getMcpTools();
       expect(tools.length).toBe(1);
-      
+
       const gitTool = tools[0];
       expect(gitTool.name).toBe("git_status");
       expect(gitTool.description).toContain("### Additional Tool Notes");
@@ -262,7 +266,9 @@ describe("ToolsetManager - Annotations", () => {
       };
 
       const result = manager._hydrateToolNotes(tool);
-      expect(result.description).toBe("### Additional Tool Notes\n\n• **usage**: Essential git command");
+      expect(result.description).toBe(
+        "### Additional Tool Notes\n\n• **usage**: Essential git command"
+      );
     });
   });
 
@@ -275,14 +281,16 @@ describe("ToolsetManager - Annotations", () => {
       ];
 
       // Access private method through type assertion
-      const formatNotesForLLM = (manager as any).formatNotesForLLM.bind(manager);
+      const formatNotesForLLM = (manager as any).formatNotesForLLM.bind(
+        manager
+      );
       const result = formatNotesForLLM(notes);
 
       expect(result).toBe(
         "### Additional Tool Notes\n\n" +
-        "• **tip-1**: First tip\n" +
-        "• **tip-2**: Second tip\n" +
-        "• **warning**: Important warning"
+          "• **tip-1**: First tip\n" +
+          "• **tip-2**: Second tip\n" +
+          "• **warning**: Important warning"
       );
     });
   });
@@ -294,7 +302,7 @@ describe("ToolsetManager - Annotations", () => {
       mockEngine = new MockDiscoveryEngine();
       mockEngine.setTools(createMockTools());
       manager.setDiscoveryEngine(mockEngine);
-      
+
       const toolset: ToolsetConfig = {
         name: "test-toolset",
         tools: [
@@ -316,16 +324,20 @@ describe("ToolsetManager - Annotations", () => {
       manager.setCurrentToolset(toolset);
 
       const tools = manager.getMcpTools();
-      
+
       // Find the linear tool
-      const linearTool = tools.find(t => t.name === "linear_create_issue");
+      const linearTool = tools.find((t) => t.name === "linear_create_issue");
       expect(linearTool).toBeDefined();
-      expect(linearTool!.description).toContain("Creates a new issue in Linear");
+      expect(linearTool!.description).toContain(
+        "Creates a new issue in Linear"
+      );
       expect(linearTool!.description).toContain("### Additional Tool Notes");
-      expect(linearTool!.description).toContain("• **team-selection**: Always confirm team with user first");
+      expect(linearTool!.description).toContain(
+        "• **team-selection**: Always confirm team with user first"
+      );
 
       // Git tool should not have annotations
-      const gitTool = tools.find(t => t.name === "git_status");
+      const gitTool = tools.find((t) => t.name === "git_status");
       expect(gitTool).toBeDefined();
       expect(gitTool!.description).toBe("Show the working tree status");
       expect(gitTool!.description).not.toContain("### Additional Tool Notes");
@@ -344,13 +356,17 @@ describe("ToolsetManager - Annotations", () => {
       manager.setCurrentToolset(toolset);
 
       // Access private method through type assertion
-      const findDiscoveredToolByFlattenedName = (manager as any).findDiscoveredToolByFlattenedName.bind(manager);
-      
+      const findDiscoveredToolByFlattenedName = (
+        manager as any
+      ).findDiscoveredToolByFlattenedName.bind(manager);
+
       const gitTool = findDiscoveredToolByFlattenedName("git_status");
       expect(gitTool).toBeDefined();
       expect(gitTool.namespacedName).toBe("git.status");
 
-      const linearTool = findDiscoveredToolByFlattenedName("linear_create_issue");
+      const linearTool = findDiscoveredToolByFlattenedName(
+        "linear_create_issue"
+      );
       expect(linearTool).toBeDefined();
       expect(linearTool.namespacedName).toBe("linear.create_issue");
 

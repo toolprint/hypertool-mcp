@@ -27,6 +27,10 @@ import {
 } from "./tools/index.js";
 import chalk from "chalk";
 import { output } from "../utils/output.js";
+import {
+  detectExternalMCPs,
+  formatExternalMCPsMessage,
+} from "../scripts/shared/externalMcpDetector.js";
 /**
  * Enhanced Hypertool MCP server with routing capabilities
  */
@@ -149,6 +153,15 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const serverConfigs: Record<string, ServerConfig> =
         await this.loadMcpConfigOrExit(options);
 
+      // Detect external MCPs
+      const externalMCPs = await detectExternalMCPs();
+      if (externalMCPs.length > 0) {
+        output.displaySpaceBuffer();
+        const message = formatExternalMCPsMessage(externalMCPs);
+        console.log(chalk.yellow(message));
+        output.displaySpaceBuffer();
+      }
+
       // Initialize connection manager
       await this.connectToDownstreamServers(serverConfigs);
 
@@ -217,7 +230,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             if (options.debug) {
               logger.info(
                 `Tools changed while toolset "${activeToolsetInfo.name}" is equipped. ` +
-                `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
+                  `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
               );
             }
           }
@@ -285,9 +298,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const listResult = await this.toolsetManager.listSavedToolsets();
       const storedToolsets = listResult.success
         ? listResult.toolsets.reduce(
-          (acc: any, t: any) => ({ ...acc, [t.name]: t }),
-          {}
-        )
+            (acc: any, t: any) => ({ ...acc, [t.name]: t }),
+            {}
+          )
         : {};
       const hasToolsets = Object.keys(storedToolsets).length > 0;
       const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();

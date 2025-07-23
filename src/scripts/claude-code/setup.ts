@@ -20,14 +20,20 @@ import {
   readJsonFile,
   fileExists,
   hasClaudeCodeGlobalHypertoolSlashCommands,
+  writeJsonFile,
 } from "../shared/mcpSetupUtils.js";
+import {
+  detectExternalMCPs,
+  ExternalMCPInfo,
+} from "../shared/externalMcpDetector.js";
 
 export class ClaudeCodeSetup {
-  private readonly context: SetupContext;
+  private context: SetupContext;
   private dryRun: boolean = false;
+  private isGlobalInstall: boolean = false;
 
   constructor() {
-    // Claude Code uses project-local configuration
+    // Default to project-local configuration
     const projectDir = process.cwd();
     const mcpConfigPath = join(projectDir, ".mcp.json");
     const backupPath = join(projectDir, ".mcp.backup.json");
@@ -39,6 +45,31 @@ export class ClaudeCodeSetup {
       hyperToolConfigPath,
       dryRun: false,
     };
+  }
+
+  /**
+   * Update context paths based on installation scope
+   */
+  private updateContextForScope(isGlobal: boolean) {
+    if (isGlobal) {
+      const homeDir = homedir();
+      this.context = {
+        originalConfigPath: join(homeDir, ".claude.json"),
+        backupPath: join(homeDir, ".claude.backup.json"),
+        hyperToolConfigPath: join(homeDir, ".claude", "mcp.hypertool.json"),
+        dryRun: this.context.dryRun,
+      };
+    } else {
+      // Keep project-local paths
+      const projectDir = process.cwd();
+      this.context = {
+        originalConfigPath: join(projectDir, ".mcp.json"),
+        backupPath: join(projectDir, ".mcp.backup.json"),
+        hyperToolConfigPath: join(projectDir, "mcp.hypertool.json"),
+        dryRun: this.context.dryRun,
+      };
+    }
+    this.isGlobalInstall = isGlobal;
   }
 
   /**
@@ -134,33 +165,80 @@ export class ClaudeCodeSetup {
       }
 
       // Check if we're in a valid project directory
-      if (!(await this.isValidProjectDirectory())) {
-        output.error("❌ Not in a project directory");
-        output.warn(
-          "   Claude Code installation must be run from within a project."
-        );
-        output.info(
-          "   Please navigate to a project directory with .git or .mcp.json"
-        );
-        process.exit(1);
+      const inProjectDirectory = await this.isValidProjectDirectory();
+
+      // Ask user about installation scope
+      let installGlobally = false;
+      if (this.dryRun) {
+        // In dry run mode, default to global if not in project
+        installGlobally = !inProjectDirectory;
+        if (inProjectDirectory) {
+          output.info(
+            "[DRY RUN] Would prompt for installation scope (global vs local)"
+          );
+          installGlobally = true; // Default to global for dry run
+        }
+      } else if (inProjectDirectory) {
+        const { scope } = await inquirer.prompt([
+          {
+            type: "list",
+            name: "scope",
+            message: "Where would you like to install hypertool-mcp?",
+            choices: [
+              {
+                name: "Globally (all projects)",
+                value: "global",
+              },
+              {
+                name: `This project only (${chalk.yellow(projectDir)})`,
+                value: "local",
+              },
+            ],
+            default: "global",
+          },
+        ]);
+        installGlobally = scope === "global";
+      } else {
+        // Not in a project, install globally
+        output.info("📍 Not in a project directory, installing globally");
+        installGlobally = true;
       }
 
-      // Step 1: Check for .mcp.json
+      // Update context paths based on scope
+      this.updateContextForScope(installGlobally);
+
+      if (!installGlobally) {
+        output.info(`📁 Installing to project: ${chalk.yellow(projectDir)}`);
+      } else {
+        output.info(
+          `🌍 Installing globally to: ${chalk.yellow("~/.claude.json")}`
+        );
+      }
+      output.displaySpaceBuffer(1);
+
+      // Step 1: Check for .mcp.json (or .claude.json for global)
       let mcpConfig: MCPConfig = {};
       let hasExistingConfig = false;
 
       if (!(await fileExists(this.context.originalConfigPath))) {
-        output.warn(`⚠️  No .mcp.json found in current directory`);
-        output.info(`📁 Current directory: ${chalk.yellow(projectDir)}`);
+        const configFileName = installGlobally ? ".claude.json" : ".mcp.json";
+        const configLocation = installGlobally
+          ? "home directory"
+          : "current directory";
+
+        output.warn(`⚠️  No ${configFileName} found in ${configLocation}`);
+        if (!installGlobally) {
+          output.info(`📁 Current directory: ${chalk.yellow(projectDir)}`);
+        }
         output.displaySpaceBuffer(1);
         output.displaySubHeader("To use HyperTool with Claude Code:");
         output.displayInstruction(
-          "1. Create a .mcp.json file in your project root"
+          `1. Create a ${configFileName} file in ${configLocation}`
         );
         output.displayInstruction("2. Add your MCP server configurations");
         output.displayInstruction("3. Run this installer again");
         output.displaySpaceBuffer(1);
-        output.displaySubHeader("Example .mcp.json:");
+        output.displaySubHeader(`Example ${configFileName}:`);
         output.displayTerminalInstruction(`{
   "mcpServers": {
     "git": {
@@ -171,26 +249,53 @@ export class ClaudeCodeSetup {
 }`);
         output.displaySpaceBuffer(1);
 
-        // Offer to create a basic .mcp.json
-        const { createBasic } = await inquirer.prompt([
-          {
-            type: "confirm",
-            name: "createBasic",
-            message: "Would you like to create a basic .mcp.json file?",
-            default: true,
-          },
-        ]);
+        // Offer to create a basic config
+        let createBasic = false;
+        if (this.dryRun) {
+          output.info(
+            `[DRY RUN] Would prompt to create a basic ${configFileName} file`
+          );
+          createBasic = true; // Simulate creating for dry run
+        } else {
+          const response = await inquirer.prompt([
+            {
+              type: "confirm",
+              name: "createBasic",
+              message: `Would you like to create a basic ${configFileName} file?`,
+              default: true,
+            },
+          ]);
+          createBasic = response.createBasic;
+        }
 
         if (createBasic) {
           const basicConfig = {
             mcpServers: {},
           };
-          await fs.writeFile(
-            this.context.originalConfigPath,
-            JSON.stringify(basicConfig, null, 2)
-          );
-          output.success("✅ Created basic .mcp.json file");
-          output.info("   You can add MCP servers to this file later");
+
+          if (this.dryRun) {
+            output.info(
+              `[DRY RUN] Would create basic ${configFileName} at ${this.context.originalConfigPath}`
+            );
+            if (installGlobally) {
+              output.info(
+                `[DRY RUN] Would ensure directory exists: ~/.claude/`
+              );
+            }
+          } else {
+            // For global install, the .claude.json is at home directory level
+            // But we may need to create .claude directory for hypertool config
+            if (installGlobally) {
+              const claudeDir = join(homedir(), ".claude");
+              await fs.mkdir(claudeDir, { recursive: true });
+            }
+            await fs.writeFile(
+              this.context.originalConfigPath,
+              JSON.stringify(basicConfig, null, 2)
+            );
+            output.success(`✅ Created basic ${configFileName} file`);
+            output.info("   You can add MCP servers to this file later");
+          }
           mcpConfig = basicConfig;
           hasExistingConfig = false;
         } else {
@@ -240,9 +345,15 @@ export class ClaudeCodeSetup {
         output.displaySpaceBuffer(1);
       } else if (existingServers.length > 0) {
         // Show existing servers
-        output.info(
-          `📍 Project ${projectDir.split("/").pop()} has ${existingServers.length} MCP servers: ${existingServers.join(", ")}`
-        );
+        if (installGlobally) {
+          output.info(
+            `📍 Global configuration has ${existingServers.length} MCP servers: ${existingServers.join(", ")}`
+          );
+        } else {
+          output.info(
+            `📍 Project ${projectDir.split("/").pop()} has ${existingServers.length} MCP servers: ${existingServers.join(", ")}`
+          );
+        }
         output.displaySpaceBuffer(1);
       }
 
@@ -387,6 +498,70 @@ export class ClaudeCodeSetup {
           for (const [filename, content] of Object.entries(commandTemplates)) {
             const filePath = join(hyperToolCommandsDir, filename);
             await fs.writeFile(filePath, content, "utf8");
+          }
+        }
+      }
+
+      // After main setup, check for external MCPs to import
+      if (!this.dryRun && selectedComponents.updateMcpConfig) {
+        const externalMCPs = await detectExternalMCPs();
+
+        // Filter out MCPs that are already in hypertool config
+        const hyperToolConfig = (await fileExists(
+          this.context.hyperToolConfigPath
+        ))
+          ? await readJsonFile(this.context.hyperToolConfigPath)
+          : { mcpServers: {} };
+
+        const newExternalMCPs = externalMCPs.filter(
+          (mcp) => !hyperToolConfig.mcpServers?.[mcp.name]
+        );
+
+        if (newExternalMCPs.length > 0) {
+          output.displaySpaceBuffer(1);
+          output.warn("📋 Other MCP servers detected:");
+
+          // Group by source
+          const mcpsBySource = new Map<string, ExternalMCPInfo[]>();
+          for (const mcp of newExternalMCPs) {
+            if (!mcpsBySource.has(mcp.source)) {
+              mcpsBySource.set(mcp.source, []);
+            }
+            mcpsBySource.get(mcp.source)!.push(mcp);
+          }
+
+          // Display MCPs by source
+          for (const [source, mcps] of mcpsBySource) {
+            output.info(`   ${source}:`);
+            for (const mcp of mcps) {
+              output.info(`     - ${mcp.name}`);
+            }
+          }
+
+          output.displaySpaceBuffer(1);
+
+          const { shouldImport } = await inquirer.prompt([
+            {
+              type: "confirm",
+              name: "shouldImport",
+              message: "Would you like to import these into hypertool?",
+              default: true,
+            },
+          ]);
+
+          if (shouldImport) {
+            // Import the MCPs
+            for (const mcp of newExternalMCPs) {
+              hyperToolConfig.mcpServers[mcp.name] = mcp.config;
+            }
+
+            await writeJsonFile(
+              this.context.hyperToolConfigPath,
+              hyperToolConfig
+            );
+            output.success(
+              `✅ Imported ${newExternalMCPs.length} MCP configurations`
+            );
           }
         }
       }

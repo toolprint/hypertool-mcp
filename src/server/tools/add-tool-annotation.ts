@@ -4,7 +4,10 @@
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolModuleFactory, ToolModule } from "./types.js";
-import { addToolAnnotationResponseSchema, AddToolAnnotationResponse } from "./schemas.js";
+import {
+  addToolAnnotationResponseSchema,
+  AddToolAnnotationResponse,
+} from "./schemas.js";
 import { DynamicToolReference, ToolsetToolNote } from "../../toolset/types.js";
 
 export const addToolAnnotationDefinition: Tool = {
@@ -124,7 +127,9 @@ export const createAddToolAnnotationModule: ToolModuleFactory = (
           addedNotes: [],
           successCount: 0,
           errorCount: 1,
-          errors: ["Tool discovery not available. Server may not be fully started."],
+          errors: [
+            "Tool discovery not available. Server may not be fully started.",
+          ],
         };
 
         return {
@@ -153,7 +158,9 @@ export const createAddToolAnnotationModule: ToolModuleFactory = (
             addedNotes: [],
             successCount: 0,
             errorCount: 1,
-            errors: ["Invalid tool reference. Must provide either namespacedName or refId."],
+            errors: [
+              "Invalid tool reference. Must provide either namespacedName or refId.",
+            ],
           };
 
           return {
@@ -183,7 +190,7 @@ export const createAddToolAnnotationModule: ToolModuleFactory = (
             successCount: 0,
             errorCount: 1,
             errors: [
-              `Tool not found: ${toolRef.namespacedName || toolRef.refId}. Use list-available-tools to see available tools.`
+              `Tool not found: ${toolRef.namespacedName || toolRef.refId}. Use list-available-tools to see available tools.`,
             ],
           };
 
@@ -225,7 +232,10 @@ export const createAddToolAnnotationModule: ToolModuleFactory = (
 
         // Verify the tool is part of the current toolset
         const toolInToolset = currentToolset.tools.some((t) => {
-          if (t.namespacedName && t.namespacedName === resolution.tool!.namespacedName) {
+          if (
+            t.namespacedName &&
+            t.namespacedName === resolution.tool!.namespacedName
+          ) {
             return true;
           }
           if (t.refId && t.refId === resolution.tool!.toolHash) {
@@ -246,7 +256,7 @@ export const createAddToolAnnotationModule: ToolModuleFactory = (
             successCount: 0,
             errorCount: 1,
             errors: [
-              `Tool "${resolution.tool.namespacedName}" is not in the current toolset "${currentToolset.name}".`
+              `Tool "${resolution.tool.namespacedName}" is not in the current toolset "${currentToolset.name}".`,
             ],
           };
 
@@ -318,7 +328,7 @@ export const createAddToolAnnotationModule: ToolModuleFactory = (
           const preferences = await import("../../config/preferenceStore.js");
           const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
           const saveToolsetsToPreferences = preferences.saveStoredToolsets;
-          
+
           const stored = await loadToolsetsFromPreferences();
           stored[currentToolset.name] = currentToolset;
           await saveToolsetsToPreferences(stored);
@@ -333,7 +343,9 @@ export const createAddToolAnnotationModule: ToolModuleFactory = (
             addedNotes: [],
             successCount: 0,
             errorCount: 1,
-            errors: [`Failed to save annotations: ${error instanceof Error ? error.message : String(error)}`],
+            errors: [
+              `Failed to save annotations: ${error instanceof Error ? error.message : String(error)}`,
+            ],
           };
 
           return {
@@ -360,9 +372,12 @@ export const createAddToolAnnotationModule: ToolModuleFactory = (
           addedNotes,
           successCount: addedNotes.length,
           errorCount: skippedNotes.length,
-          errors: skippedNotes.length > 0 
-            ? skippedNotes.map(name => `Annotation "${name}" already exists`)
-            : undefined,
+          errors:
+            skippedNotes.length > 0
+              ? skippedNotes.map(
+                  (name) => `Annotation "${name}" already exists`
+                )
+              : undefined,
         };
 
         return {
@@ -388,7 +403,7 @@ export const createAddToolAnnotationModule: ToolModuleFactory = (
           errors: [
             `Failed to add annotations: ${
               error instanceof Error ? error.message : String(error)
-            }`
+            }`,
           ],
         };
 

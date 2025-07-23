@@ -269,7 +269,8 @@ export class RequestRouter extends EventEmitter implements IRequestRouter {
       return await connection.client.callTool(toolCallArgs);
     } catch (error) {
       throw new Error(
-        `Tool call failed on server '${route.serverName}': ${error instanceof Error ? error.message : String(error)
+        `Tool call failed on server '${route.serverName}': ${
+          error instanceof Error ? error.message : String(error)
         }`
       );
     }

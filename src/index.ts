@@ -13,6 +13,33 @@ import {
   APP_NAME,
 } from "./config/appConfig.js";
 import type { TransportConfig } from "./server/types.js";
+import { homedir } from "os";
+import { join } from "path";
+
+/**
+ * Get formatted configuration paths for help display
+ */
+function getConfigPathsHelp(): string {
+  const home = homedir();
+  const claudeDesktopPath = join(
+    home,
+    "Library/Application Support/Claude/claude_desktop_config.json"
+  );
+  const claudeCodeGlobalPath = join(home, ".claude.json");
+  const claudeCodeLocalPath = "./.mcp.json";
+  const cursorPath = join(home, ".cursor/mcp.json");
+
+  return (
+    chalk.cyan("Configuration Locations:") +
+    `
+  ${chalk.yellow("Claude Desktop:")} ${claudeDesktopPath}
+  ${chalk.yellow("Claude Code:")}    ${claudeCodeGlobalPath} (global)
+                  ${claudeCodeLocalPath} (project)
+  ${chalk.yellow("Cursor:")}         ${cursorPath}
+
+${chalk.gray("Use --install to manage hypertool in these configurations.")}`
+  );
+}
 
 async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
   // Default to 'all' if no option provided
@@ -88,6 +115,9 @@ async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
 async function parseCliArguments(): Promise<RuntimeOptions> {
   const program = new Command();
 
+  // Custom help text with configuration paths
+  program.addHelpText("after", "\n" + getConfigPathsHelp());
+
   program
     .name(APP_TECHNICAL_NAME)
     .description(chalk.blue(APP_DESCRIPTION))
@@ -100,7 +130,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--port <number>",
       chalk.cyan("Port number for HTTP transport") +
-      " (only valid with --transport http)"
+        " (only valid with --transport http)"
     )
     .option(
       "--debug",
@@ -110,7 +140,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--insecure",
       chalk.yellow("Allow tools with changed reference hashes") +
-      chalk.red(" (insecure mode)"),
+        chalk.red(" (insecure mode)"),
       false
     )
     .option(
@@ -129,22 +159,28 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--dry-run",
       chalk.cyan("Show what would be done without making changes") +
-      chalk.yellow(" (only valid with --install)"),
+        chalk.yellow(" (only valid with --install)"),
       false
     )
     .option(
       "--install [app]",
       chalk.cyan("Install and configure integrations.\n") +
-      chalk.white(
-        "Options: all (default), claude-desktop (cd), cursor, claude-code (cc)\n"
-      ) +
-      chalk.yellow("Examples:\n") +
-      chalk.gray(
-        "  hypertool-mcp --install            # Install for all detected apps\n"
-      ) +
-      chalk.gray("  hypertool-mcp --install claude-desktop\n") +
-      chalk.gray("  hypertool-mcp --install cursor --dry-run\n") +
-      chalk.gray("  hypertool-mcp --install cc --dry-run")
+        chalk.white(
+          "Options: all (default), claude-desktop (cd), cursor, claude-code (cc)\n"
+        ) +
+        chalk.yellow("Examples:\n") +
+        chalk.gray(
+          "  hypertool-mcp --install            # Install for all detected apps\n"
+        ) +
+        chalk.gray("  hypertool-mcp --install claude-desktop\n") +
+        chalk.gray("  hypertool-mcp --install cursor --dry-run\n") +
+        chalk.gray("  hypertool-mcp --install cc --dry-run")
+    )
+    .option(
+      "--import",
+      chalk.cyan("Import external MCP servers into hypertool config") +
+        chalk.yellow(" (only valid with --install)"),
+      false
     );
 
   // program.addCommand(createInstallCommand());
@@ -225,15 +261,20 @@ async function main(): Promise<void> {
     const runtimeOptions = await parseCliArguments();
 
     // Initialize logger based on transport type
-    const { getLogger, STDIO_LOGGING_CONFIG } = await import("./utils/logging.js");
+    const { getLogger, STDIO_LOGGING_CONFIG } = await import(
+      "./utils/logging.js"
+    );
     // ! This is the universal entrypoint to instantiate the logger correctly.
     // We perform dynamic imports to ensure that other modules only get the logger instance that we generate here.
-    const logger = runtimeOptions.transport === 'stdio'
-      ? getLogger(STDIO_LOGGING_CONFIG)  // only file-based logging for stdio transport
-      : getLogger();
+    const logger =
+      runtimeOptions.transport === "stdio"
+        ? getLogger(STDIO_LOGGING_CONFIG) // only file-based logging for stdio transport
+        : getLogger();
 
     // Dynamic imports for all modules that might create worker threads
-    const { displayBanner, displayServerRuntimeInfo, output } = await import("./utils/output.js");
+    const { displayBanner, displayServerRuntimeInfo, output } = await import(
+      "./utils/output.js"
+    );
     const { discoverMcpConfig } = await import("./config/mcpConfigLoader.js");
 
     // Update logger configuration
@@ -306,8 +347,13 @@ async function main(): Promise<void> {
 
     output.clearTerminal();
     displayBanner(APP_NAME);
-    if (runtimeOptions.transport === 'http') {
-      displayServerRuntimeInfo(APP_NAME, runtimeOptions.transport, runtimeOptions.port, runtimeOptions.transport === "http" ? "localhost" : undefined);
+    if (runtimeOptions.transport === "http") {
+      displayServerRuntimeInfo(
+        APP_NAME,
+        runtimeOptions.transport,
+        runtimeOptions.port,
+        runtimeOptions.transport === "http" ? "localhost" : undefined
+      );
     }
 
     // Start server
@@ -336,4 +382,4 @@ async function main(): Promise<void> {
 
 // This file is now used as a library - binary entry point is in bin.ts
 
-await main()
+await main();

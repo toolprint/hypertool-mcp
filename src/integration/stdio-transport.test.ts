@@ -1,24 +1,26 @@
-import { describe, it, expect, afterEach, beforeAll } from 'vitest';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { join } from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import { existsSync } from 'fs';
+import { describe, it, expect, afterEach, beforeAll } from "vitest";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { join } from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import { existsSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-describe('MCP Server stdio transport', () => {
-  const serverPath = join(__dirname, '../../dist/bin.js');
-  const configPath = join(__dirname, '../../mcp.test.json');
+describe("MCP Server stdio transport", () => {
+  const serverPath = join(__dirname, "../../dist/bin.js");
+  const configPath = join(__dirname, "../../mcp.test.json");
   let client: Client | null = null;
   let transport: StdioClientTransport | null = null;
 
   beforeAll(() => {
     // Ensure the server is built
     if (!existsSync(serverPath)) {
-      throw new Error(`Server not built. Run 'npm run build' first. Expected at: ${serverPath}`);
+      throw new Error(
+        `Server not built. Run 'npm run build' first. Expected at: ${serverPath}`
+      );
     }
     if (!existsSync(configPath)) {
       throw new Error(`Test config not found at: ${configPath}`);
@@ -37,21 +39,24 @@ describe('MCP Server stdio transport', () => {
     }
   });
 
-  it('should connect via stdio and call tools successfully', async () => {
+  it("should connect via stdio and call tools successfully", async () => {
     // Create stdio transport
     transport = new StdioClientTransport({
-      command: 'node',
-      args: [serverPath, '--transport', 'stdio', '--mcp-config', configPath],
-      env: { ...process.env, NODE_ENV: 'test' }
+      command: "node",
+      args: [serverPath, "--transport", "stdio", "--mcp-config", configPath],
+      env: { ...process.env, NODE_ENV: "test" },
     });
 
     // Create MCP client
-    client = new Client({
-      name: 'test-client',
-      version: '1.0.0'
-    }, {
-      capabilities: {}
-    });
+    client = new Client(
+      {
+        name: "test-client",
+        version: "1.0.0",
+      },
+      {
+        capabilities: {},
+      }
+    );
 
     // Connect to server - this proves stdio transport is working
     await expect(client.connect(transport)).resolves.not.toThrow();
@@ -64,35 +69,38 @@ describe('MCP Server stdio transport', () => {
 
     // Call list-available-tools - should work reliably
     const toolResult = await client.callTool({
-      name: 'list-available-tools',
-      arguments: {}
+      name: "list-available-tools",
+      arguments: {},
     });
-    
+
     expect(toolResult).toBeDefined();
     expect(toolResult.content).toBeDefined();
   });
 
-  it('should handle concurrent operations', async () => {
+  it("should handle concurrent operations", async () => {
     transport = new StdioClientTransport({
-      command: 'node',
-      args: [serverPath, '--transport', 'stdio', '--mcp-config', configPath],
-      env: { ...process.env, NODE_ENV: 'test' }
+      command: "node",
+      args: [serverPath, "--transport", "stdio", "--mcp-config", configPath],
+      env: { ...process.env, NODE_ENV: "test" },
     });
 
-    client = new Client({
-      name: 'test-client',
-      version: '1.0.0'
-    }, {
-      capabilities: {}
-    });
+    client = new Client(
+      {
+        name: "test-client",
+        version: "1.0.0",
+      },
+      {
+        capabilities: {},
+      }
+    );
 
     await client.connect(transport);
 
     // Multiple concurrent tool calls
     const [result1, result2, result3] = await Promise.all([
       client.listTools(),
-      client.callTool({ name: 'list-available-tools', arguments: {} }),
-      client.callTool({ name: 'list-saved-toolsets', arguments: {} })
+      client.callTool({ name: "list-available-tools", arguments: {} }),
+      client.callTool({ name: "list-saved-toolsets", arguments: {} }),
     ]);
 
     // All should succeed
@@ -101,27 +109,30 @@ describe('MCP Server stdio transport', () => {
     expect(result3.content).toBeDefined();
   });
 
-  it('should properly handle errors without breaking stdio protocol', async () => {
+  it("should properly handle errors without breaking stdio protocol", async () => {
     transport = new StdioClientTransport({
-      command: 'node',
-      args: [serverPath, '--transport', 'stdio', '--mcp-config', configPath],
-      env: { ...process.env, NODE_ENV: 'test' }
+      command: "node",
+      args: [serverPath, "--transport", "stdio", "--mcp-config", configPath],
+      env: { ...process.env, NODE_ENV: "test" },
     });
 
-    client = new Client({
-      name: 'test-client',
-      version: '1.0.0'
-    }, {
-      capabilities: {}
-    });
+    client = new Client(
+      {
+        name: "test-client",
+        version: "1.0.0",
+      },
+      {
+        capabilities: {},
+      }
+    );
 
     await client.connect(transport);
 
     // Try to call a non-existent tool
     await expect(
       client.callTool({
-        name: 'non-existent-tool',
-        arguments: {}
+        name: "non-existent-tool",
+        arguments: {},
       })
     ).rejects.toThrow();
 
