@@ -18,6 +18,20 @@ Build a single MCP server that:
 
 ### 🏗️ Agent Instructions
 
+#### Creating PRDs (Product Requirement Documents)
+
+When creating new PRDs for features, bugs, or improvements:
+1. **Use the PRD Template**: Copy `docs/prd-template.md` as your starting point
+2. **Fill in Metadata**: Always populate the metadata section at the top:
+   - Use `git log -1 --format="%H"` to get the reference commit
+   - Use `git branch --show-current` to get the current branch
+   - Set appropriate priority (P0-P3) based on impact
+3. **Save PRDs in Correct Location**:
+   - Bug PRDs: `docs/bugs/[bug-name].md`
+   - Feature PRDs: `docs/features/[feature-name].md`  
+   - General PRDs: `docs/[prd-name].md`
+4. **Keep PRDs Updated**: Update status and revision history as work progresses
+
 #### Before Starting Any Task:
 
 **Step 1: Get Your Task Assignment**
@@ -32,12 +46,15 @@ Build a single MCP server that:
 **Step 2: Get Full Context**
 1. **Read the Main PRD**: Check `.taskmaster/docs/prd.txt` for complete project context
 2. **Get Task Details**: Use `mcp__task-master__get_task --id <your-task-id>` to see your specific requirements
-3. **Find Task-Specific PRD**: Look in `.taskmaster/docs/` directory for PRDs related to your task:
+3. **Find Task-Specific PRD**: Look in both locations for PRDs related to your task:
+   - **Primary location**: `docs/` directory (bugs, features, etc.)
+   - **Legacy location**: `.taskmaster/docs/` directory
    - **Task 29**: `prd.cursor.txt` - Cursor IDE integration
    - **Task 30**: `prd.bin.txt` - NPM publishing workflow
    - **Task 31**: `prd.claude-code.txt` - Claude Code integration
    - **Task 32**: `prd.claude-desktop.txt` - Claude Desktop integration
-   - **Other tasks**: Check if a specific PRD exists for your task area
+   - **Bug PRDs**: `docs/bugs/` - Bug fix specifications
+   - **Feature PRDs**: `docs/features/` - New feature specifications
 4. **Review Dependencies**: Understand which tasks must complete before yours
 5. **Study Reference**: Look at https://github.com/toolprint/cco-mcp for TypeScript MCP patterns
 
@@ -105,7 +122,10 @@ else:
 
 ### 🔗 Quick References
 - **Main PRD**: `.taskmaster/docs/prd.txt` - Complete project requirements
-- **Task-Specific PRDs**: `.taskmaster/docs/` - Check for PRDs related to your task
+- **PRD Template**: `docs/prd-template.md` - Template for new PRDs
+- **Bug PRDs**: `docs/bugs/` - Bug fix specifications
+- **Feature PRDs**: `docs/features/` - New feature specifications
+- **Task-Specific PRDs**: `.taskmaster/docs/` - Legacy task-specific PRDs
 - **Tasks**: Use Task Master MCP tools to view your specific task
 - **Reference**: https://github.com/toolprint/cco-mcp - TypeScript MCP patterns
 - **Example Config**: `.mcp.json` - Shows target server types to support
