@@ -176,12 +176,6 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
         chalk.gray("  hypertool-mcp --install cursor --dry-run\n") +
         chalk.gray("  hypertool-mcp --install cc --dry-run")
     )
-    .option(
-      "--import",
-      chalk.cyan("Import external MCP servers into hypertool config") +
-        chalk.yellow(" (only valid with --install)"),
-      false
-    );
 
   // program.addCommand(createInstallCommand());
   await program.parseAsync();
