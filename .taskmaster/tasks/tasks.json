@@ -397,7 +397,7 @@
         "description": "Improve the Claude Code installation experience with three key features:\n1. Offer global vs project-local installation choice\n2. Display config file locations in --help output\n3. Detect and warn about MCPs added outside hypertool\n\nSee PRD: docs/bugs/claude-code-installation-bug.md [Updated: 7/23/2025]",
         "details": "Implementation requirements:\n- Modify install command to prompt for global vs local installation\n- Show current working directory for local installs\n- Add config paths section to --help output showing where configs are stored\n- On startup, detect non-hypertool MCPs in client configs and warn user\n- Add import functionality to bring external MCPs into hypertool config\n- Support for Claude Desktop, Claude Code, and Cursor config locations\n\nKey files to modify:\n- Installation scripts (src/scripts/install.ts or similar)\n- CLI help command handler\n- Server initialization for MCP detection\n- Config path utilities\n\nRefer to the full PRD at docs/bugs/claude-code-installation-bug.md for complete UX flows, implementation patterns, and testing requirements.\n<info added on 2025-07-23T17:11:09.952Z>\nAssigned to claude-squad session-1738165826\n</info added on 2025-07-23T17:11:09.952Z>",
         "testStrategy": "1. Test global vs local installation prompts and flows\n2. Test project detection for local installation\n3. Test config path display in help output\n4. Test external MCP detection and warning messages\n5. Test import functionality preserves MCP settings\n6. Test on all platforms (Mac, Windows, Linux)",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "subtasks": []
@@ -405,7 +405,7 @@
     ],
     "metadata": {
       "created": "2025-07-09T21:55:09.811Z",
-      "updated": "2025-07-23T17:11:28.509Z",
+      "updated": "2025-07-23T19:33:03.609Z",
       "description": "Tasks for master context"
     }
   }
