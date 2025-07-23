@@ -3,7 +3,7 @@
 > **Too many MCP servers? Too many tools? Poor LLM performance?**  
 > Hypertool creates dynamic toolsets that dramatically improve tool usage performance.
 
-[![Version](https://img.shields.io/npm/v/hypertool-mcp)](https://npmjs.com/package/@toolprint/hypertool-mcp)
+[![Version](https://img.shields.io/npm/v/@toolprint/hypertool-mcp)](https://npmjs.com/package/@toolprint/hypertool-mcp)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -28,6 +28,7 @@ Cursor / Claude Code → Hypertool MCP → Your MCPs
 - **🔄 Hot-Swapping**: Switch between toolsets instantly - clients are notified automatically using MCP list tools changed notifications.
 - **🌐 Universal Compatibility**: Works with any MCP client (Claude Desktop, etc.)
 - **🛡️ Tool Checks**: Toolsets capture a hashed tool reference to validate that the right tool gets exposed.
+- **📝 Tool Annotations**: Add contextual notes and usage guidance to tools to help AI understand when and how to use them effectively
 - **📡 Multiple Transports**: Supports both stdio and HTTP/SSE protocols
 
 ## 🚀 Quick Start
