@@ -5,6 +5,7 @@ This directory contains the comprehensive error handling and recovery system for
 ## Components
 
 ### Error Classes (`index.ts`)
+
 - `MetaMCPError` - Base error class with structured error information
 - Specialized error types for different failure scenarios:
   - `ConnectionError` - Connection-related failures
@@ -18,12 +19,14 @@ This directory contains the comprehensive error handling and recovery system for
   - `HealthCheckError` - Health monitoring failures
 
 ### Error Recovery (`recovery.ts`)
+
 - `RetryManager` - Implements exponential backoff with jitter
 - `CircuitBreaker` - Prevents cascading failures
 - `FallbackManager` - Graceful degradation strategies
 - `RecoveryCoordinator` - Orchestrates all recovery mechanisms
 
 ### User-Friendly Messages (`messages.ts`)
+
 - `ErrorMessageGenerator` - Creates user-friendly error messages
 - Template-based error messages with parameter substitution
 - Contextual suggestions for error resolution

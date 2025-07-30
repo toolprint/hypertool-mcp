@@ -7,8 +7,8 @@ import { promises as fs } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import inquirer from "inquirer";
-import chalk from "chalk";
 import { output } from "../../utils/output.js";
+import { theme, semantic } from "../../utils/theme.js";
 
 export interface MCPConfig {
   mcpServers?: Record<
@@ -130,7 +130,7 @@ export async function createConfigBackup(context: SetupContext): Promise<void> {
       {
         type: "confirm",
         name: "overwrite",
-        message: chalk.yellow("⚠️  Backup file already exists. Overwrite?"),
+        message: theme.warning("⚠️  Backup file already exists. Overwrite?"),
         default: false,
       },
     ]);

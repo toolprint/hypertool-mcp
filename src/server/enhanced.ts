@@ -14,6 +14,20 @@ import {
 import { IConnectionManager, ConnectionManager } from "../connection/index.js";
 import { MCPConfigParser, APP_NAME, ServerConfig } from "../config/index.js";
 import ora from "ora";
+
+// Helper to create conditional spinners
+function createSpinner(text: string, isStdio: boolean) {
+  if (isStdio) {
+    // Return a mock spinner that does nothing in stdio mode
+    return {
+      start: () => ({ succeed: () => {}, fail: () => {}, warn: () => {} }),
+      succeed: () => {},
+      fail: () => {},
+      warn: () => {}
+    };
+  }
+  return ora(text).start();
+}
 import { createChildLogger } from "../utils/logging.js";
 
 const logger = createChildLogger({ module: "server/enhanced" });
@@ -66,7 +80,8 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     options: ServerInitOptions
   ): Promise<Record<string, ServerConfig>> {
     // Initialize config parser
-    const mainSpinner = ora("Loading MCP configuration...").start();
+    const isStdio = options.transport.type === 'stdio';
+    const mainSpinner = createSpinner("Loading MCP configuration...", isStdio);
     this.configParser = new MCPConfigParser();
 
     // Load configuration if path provided
@@ -110,21 +125,108 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     return serverConfigs;
   }
 
-  private async connectToDownstreamServers(
+  /**
+   * Filter out server configurations that would cause HyperTool to connect to itself
+   */
+  private filterSelfReferencingServers(
     serverConfigs: Record<string, ServerConfig>
+  ): Record<string, ServerConfig> {
+    const filteredConfigs: Record<string, ServerConfig> = {};
+    const removedServers: string[] = [];
+
+    for (const [serverName, config] of Object.entries(serverConfigs)) {
+      if (this.isSelfReferencingServer(config)) {
+        removedServers.push(serverName);
+        logger.warn(
+          `⚠️  Skipped server "${serverName}" - detected HyperTool self-reference (would cause recursion)`
+        );
+      } else {
+        filteredConfigs[serverName] = config;
+      }
+    }
+
+    if (removedServers.length > 0) {
+      logger.warn(`
+⚠️  WARNING: Self-referencing servers removed from configuration
+   
+   Removed servers: ${removedServers.join(', ')}
+   
+   These servers appear to be HyperTool MCP itself, which would cause
+   infinite recursion. HyperTool cannot connect to itself as a downstream server.
+   
+   If you intended to connect to a different MCP server, please check your
+   configuration and ensure the command/URL points to the correct server.
+   `);
+    }
+
+    return filteredConfigs;
+  }
+
+  /**
+   * Check if a server configuration references HyperTool itself
+   */
+  private isSelfReferencingServer(config: ServerConfig): boolean {
+    if (config.type === 'stdio' && config.command) {
+      // Check for common patterns that indicate HyperTool MCP
+      const command = config.command.toLowerCase();
+      const args = config.args || [];
+      
+      // Direct command references
+      if (command === 'hypertool-mcp' || command.endsWith('/hypertool-mcp')) {
+        return true;
+      }
+      
+      // NPX references to our package
+      if ((command === 'npx' || command.endsWith('/npx')) && args.length > 0) {
+        for (const arg of args) {
+          const argLower = arg.toLowerCase();
+          if (argLower === '@toolprint/hypertool-mcp' || 
+              argLower === 'hypertool-mcp' ||
+              argLower.includes('@toolprint/hypertool-mcp')) {
+            return true;
+          }
+        }
+      }
+      
+      // Node references to our package
+      if ((command === 'node' || command.endsWith('/node')) && args.length > 0) {
+        for (const arg of args) {
+          if (arg.includes('hypertool-mcp') || arg.includes('@toolprint/hypertool-mcp')) {
+            return true;
+          }
+        }
+      }
+    }
+    
+    // For HTTP/SSE servers, we could check if they're pointing to our own HTTP server
+    // but that would require knowing our own running port/URL which is complex
+    // For now, we focus on stdio self-references which are the most common case
+    
+    return false;
+  }
+
+  private async connectToDownstreamServers(
+    serverConfigs: Record<string, ServerConfig>,
+    options: ServerInitOptions
   ): Promise<void> {
     this.connectionManager = new ConnectionManager();
-    let mainSpinner = ora("🔗 Setting up Connection Manager...").start();
-    await this.connectionManager.initialize(serverConfigs);
+    const isStdio = options.transport.type === 'stdio';
+    let mainSpinner = createSpinner("🔗 Setting up Connection Manager...", isStdio);
+    
+    // Filter out any configurations that would cause HyperTool to connect to itself
+    const filteredConfigs = this.filterSelfReferencingServers(serverConfigs);
+    
+    await this.connectionManager.initialize(filteredConfigs);
     mainSpinner.succeed("🔗 Connection manager initialized");
 
     // Connect to each server individually with progress
-    const serverEntries = Object.entries(serverConfigs);
+    const serverEntries = Object.entries(filteredConfigs);
     if (serverEntries.length > 0) {
       for (const [serverName, config] of serverEntries) {
-        const serverSpinner = ora(
-          `Connecting to [${serverName}] MCP <-> [${config.type}]...`
-        ).start();
+        const serverSpinner = createSpinner(
+          `Connecting to [${serverName}] MCP <-> [${config.type}]...`,
+          isStdio
+        );
 
         try {
           await this.connectionManager.connect(serverName);
@@ -145,8 +247,12 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    * Initialize routing components
    */
   private async initializeRouting(options: ServerInitOptions): Promise<void> {
-    output.displaySubHeader("Initializing Routing and Discovery");
-    output.displaySpaceBuffer();
+    // Only show output for non-stdio transports
+    const isStdio = options.transport.type === 'stdio';
+    if (!isStdio) {
+      output.displaySubHeader("Initializing Routing and Discovery");
+      output.displaySpaceBuffer();
+    }
 
     try {
       // Load server configs from MCP config.
@@ -163,10 +269,11 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       }
 
       // Initialize connection manager
-      await this.connectToDownstreamServers(serverConfigs);
+      await this.connectToDownstreamServers(serverConfigs, options);
 
       // Initialize discovery engine with progress
-      let mainSpinner = ora("Initializing tool discovery engine...").start();
+      const isStdio = options.transport.type === 'stdio';
+      let mainSpinner = createSpinner("Initializing tool discovery engine...", isStdio);
       this.discoveryEngine = new ToolDiscoveryEngine(this.connectionManager!);
       await this.discoveryEngine.initialize({
         autoDiscovery: true,
@@ -192,7 +299,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       mainSpinner.succeed("Tool discovery engine initialized");
 
       // Start discovery and show tool count
-      mainSpinner = ora("Discovering tools from connected servers...").start();
+      mainSpinner = createSpinner("Discovering tools from connected servers...", isStdio);
       await this.discoveryEngine.start();
 
       const discoveredTools = this.discoveryEngine.getAvailableTools(true);
@@ -209,7 +316,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       }
 
       // Initialize request router
-      mainSpinner = ora("Initializing request router...").start();
+      mainSpinner = createSpinner("Initializing request router...", isStdio);
       this.requestRouter = new RequestRouter(
         this.discoveryEngine,
         this.connectionManager!

@@ -5,11 +5,13 @@ This utility helps you restore all applications to their pre-Hypertool installat
 ## Usage
 
 ### Dry Run (see what would be restored)
+
 ```bash
 npm run restore:dry-run
 ```
 
 ### Actual Restore
+
 ```bash
 npm run restore
 ```

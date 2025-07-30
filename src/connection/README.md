@@ -61,6 +61,7 @@ src/connection/
    - **Action**: Throw detailed conflict error
 
 #### **Error Message Design:**
+
 ```bash
 ❌ Server name conflict detected: "git" already exists.
 💡 Resolution: Use a unique server name or remove the existing server first.
@@ -80,6 +81,7 @@ DISCONNECTED → CONNECTING → CONNECTED → DISCONNECTED
 ```
 
 **Benefits:**
+
 - Clear state transitions
 - Health check integration
 - Automatic reconnection strategies
@@ -102,6 +104,7 @@ interface Connection {
 ```
 
 **Supported Transports:**
+
 - **Stdio**: Process-based communication (local tools)
 - **SSE**: HTTP Server-Sent Events (remote services)
 - **Future**: WebSocket, TCP, custom protocols
@@ -135,11 +138,13 @@ interface Connection {
 **Pattern**: `{serverName}.{toolName}`
 
 **Examples**:
+
 - `git.status` → Git server's status tool
 - `docker.ps` → Docker server's ps tool  
 - `github.create-issue` → GitHub server's issue creation tool
 
 **Conflict Resolution**:
+
 ```typescript
 // Multiple servers with same tool name
 servers: {

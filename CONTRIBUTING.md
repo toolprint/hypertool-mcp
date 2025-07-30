@@ -42,15 +42,20 @@ Unsure where to begin contributing? You can start by looking through these issue
 
 1. Fork the repository
 2. Clone your fork:
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/hypertool-mcp.git
    cd hypertool-mcp
    ```
+
 3. Install dependencies:
+
    ```bash
    npm install
    ```
+
 4. Build the project:
+
    ```bash
    npm run build
    ```
@@ -71,19 +76,25 @@ npm run test:coverage
 ### Development Workflow
 
 1. Create a new branch from `main`:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
+
 2. Make your changes
 3. Run tests and ensure they pass
 4. Run linting:
+
    ```bash
    npm run lint
    ```
+
 5. Format your code:
+
    ```bash
    npm run format
    ```
+
 6. Commit your changes (see commit message guidelines below)
 7. Push to your fork and submit a pull request
 
@@ -122,6 +133,7 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 - `chore:` Build process or auxiliary tool changes
 
 Examples:
+
 ```
 feat: add support for custom toolset configurations
 fix: handle connection errors gracefully
