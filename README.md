@@ -154,7 +154,7 @@ That's it! Your AI now sees only the tools it needs for coding. 🎉
 
 **Note**: You can switch toolsets anytime, or unequip to see all tools again.
 
-**Want automated setup?** Check out our [installation scripts](#installation) below.
+**Want automated setup?** Check out our [add-to command](#add-to-applications) below.
 
 ## 🎯 Using Toolsets Like a Pro
 
@@ -243,24 +243,31 @@ Apps that support MCP's `tools/list_changed` notification can hot-swap toolsets 
 ### Method 1: Manual Setup (Recommended)
 The simple approach shown in Quick Start above. You control everything.
 
-### Method 2: Automated Scripts
+### Method 2: Add to Applications {#add-to-applications}
+
+Use the `add-to` command to automatically set up HyperTool in your applications:
 
 **For Claude Code**
 ```bash
-npx -y @toolprint/hypertool-mcp --install claude-code
+npx -y @toolprint/hypertool-mcp add-to claude-code
 ```
 
 **For Cursor**
 ```bash
-npx -y @toolprint/hypertool-mcp --install cursor
+npx -y @toolprint/hypertool-mcp add-to cursor
 ```
 
-**For Everything (Global)**
+**For All Detected Applications**
 ```bash
-npx -y @toolprint/hypertool-mcp --install
+npx -y @toolprint/hypertool-mcp add-to
 ```
 
-These scripts will:
+**Preview Changes First**
+```bash
+npx -y @toolprint/hypertool-mcp add-to cursor --dry-run
+```
+
+The `add-to` command will:
 - ✅ Backup your existing configs
 - ✅ Set up HyperTool automatically
 - ✅ Preserve all your current servers
@@ -319,17 +326,23 @@ Need to run HyperTool as a service?
 hypertool-mcp --transport http --port 3000 --mcp-config your-config.json
 ```
 
-### CLI Options
+### CLI Commands & Options
 
 ```bash
-hypertool-mcp [options]
+hypertool-mcp [options] [command]
 
-Options:
+Commands:
+  add-to [app]           Add HyperTool to an application
+  config                 Configuration management commands
+  mcp                    MCP server operations and management
+
+Options (when running as server):
   --mcp-config <path>    MCP servers config file (default: .mcp.json)
   --transport <type>     Transport type: stdio|http (default: stdio)
   --port <number>        HTTP port (default: 3000)
   --equip-toolset <name> Load toolset on startup
   --debug                Verbose logging
+  --log-level <level>    Log level (trace, debug, info, warn, error, fatal)
 ```
 
 ### 🔐 Configuration Management

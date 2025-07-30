@@ -82,6 +82,32 @@ async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
   }
 }
 
+async function getAddToCommand(): Promise<Command> {
+  const addToCommand = new Command('add-to')
+    .description('Add HyperTool to an application')
+    .addArgument(
+      new Argument('[app]', 'Application to add HyperTool to')
+        .default('all')
+        .choices(['all', 'claude-desktop', 'cd', 'cursor', 'claude-code', 'cc'])
+    )
+    .option('--dry-run', 'Show what would be done without making changes', false)
+    .addHelpText('after', `
+  ${theme.label('Application aliases:')}
+    cd = claude-desktop
+    cc = claude-code
+
+  ${theme.label('Examples:')}
+    ${theme.muted('hypertool-mcp add-to                    # Add to all detected apps')}
+    ${theme.muted('hypertool-mcp add-to claude-desktop     # Add to Claude Desktop only')}
+    ${theme.muted('hypertool-mcp add-to cursor --dry-run   # Preview Cursor setup')}
+    ${theme.muted('hypertool-mcp add-to cc                 # Add to Claude Code')}`)
+    .action(async (app, options) => {
+      await handleInstallOption([app], options.dryRun);
+    });
+
+  return addToCommand;
+}
+
 // Define MCP server run options in a reusable way
 const mcpServerRunOptions = [
   {
@@ -333,32 +359,6 @@ async function runMcpServer(options: any): Promise<void> {
   }
 }
 
-async function getInstallCommand(): Promise<Command> {
-  const installCommand = new Command('install')
-    .description('Install and configure integrations')
-    .addArgument(
-      new Argument('[app]', 'Application to install')
-        .default('all')
-        .choices(['all', 'claude-desktop', 'cd', 'cursor', 'claude-code', 'cc'])
-    )
-    .option('--dry-run', 'Show what would be done without making changes', false)
-    .addHelpText('after', `
-  ${theme.label('Application aliases:')}
-    cd = claude-desktop
-    cc = claude-code
-
-  ${theme.label('Examples:')}
-    ${theme.muted('hypertool-mcp install                    # Install for all detected apps')}
-    ${theme.muted('hypertool-mcp install claude-desktop     # Install for Claude Desktop only')}
-    ${theme.muted('hypertool-mcp install cursor --dry-run   # Preview Cursor installation')}
-    ${theme.muted('hypertool-mcp install cc                # Install for Claude Code')}`)
-    .action(async (app, options) => {
-      await handleInstallOption([app], options.dryRun);
-    });
-
-  return installCommand;
-}
-
 async function getMcpCommand(): Promise<Command> {
   const mcpCommand = new Command('mcp')
     .description('MCP server operations and management');
@@ -409,9 +409,9 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
       await runMcpServer(options);
     });
 
-  // Add install command
-  const installCommand = await getInstallCommand();
-  program.addCommand(installCommand);
+  // Add add-to command
+  const addToCommand = await getAddToCommand();
+  program.addCommand(addToCommand);
 
   // Add config subcommands
   const { createConfigCommands } = await import("./config-manager/cli/index.js");
