@@ -109,17 +109,17 @@ describe("MCPConfigParser", () => {
       );
     });
 
-    it("should validate empty mcpServers", () => {
+    it("should allow empty mcpServers", () => {
       const content = JSON.stringify({
         mcpServers: {},
       });
 
       const result = parser.parseContent(content);
 
-      expect(result.success).toBe(false);
-      expect(result.validationErrors).toContain(
-        "Configuration must define at least one server"
-      );
+      expect(result.success).toBe(true);
+      expect(result.config).toEqual({
+        mcpServers: {},
+      });
     });
 
     it("should default to stdio when type field is missing", () => {

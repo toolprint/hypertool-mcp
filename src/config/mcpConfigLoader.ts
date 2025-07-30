@@ -22,7 +22,7 @@ const STANDARD_CONFIG_LOCATIONS = [
   `${APP_TECHNICAL_NAME}.json`,
 
   // User home directory
-  `~/.${BRAND_NAME.toLowerCase()}/${APP_TECHNICAL_NAME}/config.json`,
+  `~/.${BRAND_NAME.toLowerCase()}/${APP_TECHNICAL_NAME}/mcp.json`,
   `~/.${APP_TECHNICAL_NAME}.json`,
   "~/.mcp.json",
 ];

@@ -126,7 +126,7 @@ Replace your `.mcp.json` with just this:
   "mcpServers": {
     "hypertool": {
       "command": "npx",
-      "args": ["-y", "@toolprint/hypertool-mcp", "--config", ".mcp.hypertool.json"]
+      "args": ["-y", "@toolprint/hypertool-mcp", "--mcp-config", ".mcp.hypertool.json"]
     }
   }
 }
@@ -316,7 +316,7 @@ These notes persist across sessions and become part of your toolset!
 Need to run HyperTool as a service?
 
 ```bash
-hypertool-mcp --transport http --port 3000 --config your-config.json
+hypertool-mcp --transport http --port 3000 --mcp-config your-config.json
 ```
 
 ### CLI Options
@@ -325,7 +325,7 @@ hypertool-mcp --transport http --port 3000 --config your-config.json
 hypertool-mcp [options]
 
 Options:
-  --config <path>        MCP servers config file (default: .mcp.json)
+  --mcp-config <path>    MCP servers config file (default: .mcp.json)
   --transport <type>     Transport type: stdio|http (default: stdio)
   --port <number>        HTTP port (default: 3000)
   --equip-toolset <name> Load toolset on startup

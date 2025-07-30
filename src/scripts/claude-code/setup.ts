@@ -6,10 +6,11 @@
 import { promises as fs } from "fs";
 import { join } from "path";
 import { homedir } from "os";
-import chalk from "chalk";
 import inquirer from "inquirer";
+import chalk from "chalk";
 import { createCommandTemplates } from "./utils.js";
 import { output } from "../../utils/output.js";
+import { theme } from "../../utils/theme.js";
 import {
   MCPConfig,
   SetupContext,
@@ -160,7 +161,7 @@ export class ClaudeCodeSetup {
 
     try {
       if (this.dryRun) {
-        output.info(chalk.cyan("🔍 [DRY RUN MODE] - No changes will be made"));
+        output.info(theme.info("🔍 [DRY RUN MODE] - No changes will be made"));
         output.displaySpaceBuffer(1);
       }
 
@@ -228,7 +229,7 @@ export class ClaudeCodeSetup {
 
         output.warn(`⚠️  No ${configFileName} found in ${configLocation}`);
         if (!installGlobally) {
-          output.info(`📁 Current directory: ${chalk.yellow(projectDir)}`);
+          output.info(`📁 Current directory: ${theme.value(projectDir)}`);
         }
         output.displaySpaceBuffer(1);
         output.displaySubHeader("To use HyperTool with Claude Code:");
@@ -299,6 +300,10 @@ export class ClaudeCodeSetup {
           mcpConfig = basicConfig;
           hasExistingConfig = false;
         } else {
+          // In test environment, return early instead of exiting
+          if (process.env.NODE_ENV === 'test') {
+            return;
+          }
           process.exit(0);
         }
       } else {
@@ -382,7 +387,7 @@ export class ClaudeCodeSetup {
             {
               type: "confirm",
               name: "installCommands",
-              message: chalk.yellow("Install global slash commands?"),
+              message: theme.warning("Install global slash commands?"),
               default: true,
             },
           ]);
@@ -429,7 +434,7 @@ export class ClaudeCodeSetup {
         {
           type: "confirm",
           name: "shouldProceed",
-          message: chalk.yellow("Continue?"),
+          message: theme.warning("Continue?"),
           default: true,
         },
       ]);
@@ -570,13 +575,11 @@ export class ClaudeCodeSetup {
       output.displaySpaceBuffer(1);
 
       if (this.dryRun) {
-        console.log(
-          chalk.yellow("🔍 [DRY RUN] Installation simulation complete")
-        );
+        output.info(theme.warning("🔍 [DRY RUN] Installation simulation complete"));
         output.displaySpaceBuffer(1);
         output.info("No actual changes were made to your system.");
       } else {
-        console.log(chalk.green("✨ Claude Code configuration complete!"));
+        output.success("✨ Claude Code configuration complete!");
         output.displaySpaceBuffer(1);
 
         // Next steps
@@ -596,6 +599,10 @@ export class ClaudeCodeSetup {
     } catch (error) {
       output.error("❌ Setup failed:");
       output.error(error instanceof Error ? error.message : String(error));
+      // In test environment, throw the error for the test to handle
+      if (process.env.NODE_ENV === 'test') {
+        throw error;
+      }
       process.exit(1);
     }
   }
@@ -608,11 +615,26 @@ interface InstallOptions {
 
 export async function installClaudeCodeCommands(options: InstallOptions = {}) {
   const setup = new ClaudeCodeSetup();
-  await setup.run(options.dryRun);
+  try {
+    await setup.run(options.dryRun);
+  } catch (error) {
+    // In test environment, we want to propagate the error instead of exiting
+    if (process.env.NODE_ENV === 'test') {
+      throw error;
+    }
+    // In production, we handle it like before
+    output.error("❌ Setup failed:");
+    output.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 }
 
 // Run the setup if this script is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   const setup = new ClaudeCodeSetup();
-  setup.run().catch(console.error);
+  setup.run().catch((error) => {
+    output.error("Setup failed:");
+    output.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  });
 }

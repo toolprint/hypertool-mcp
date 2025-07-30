@@ -60,6 +60,7 @@ interface ToolsetConfig {
 ```
 
 **Benefits**:
+
 - Users think in terms of tools, not servers
 - Server information is implied from tool references
 - Much simpler persistence and validation
@@ -67,6 +68,7 @@ interface ToolsetConfig {
 ### 2. **Discovery-Based Reconciliation**
 
 **Problem**: Tool references can become stale when:
+
 - Server implementations change (tool schema updates)
 - Servers are reconfigured or moved
 - Tool names or descriptions are modified
@@ -82,6 +84,7 @@ interface DynamicToolReference {
 ```
 
 **Reconciliation Process**:
+
 1. **At Build Time**: Store both `namespacedName` and `refId` for each selected tool
 2. **At Load Time**: Discovery engine validates references using `resolveToolReference()`
 3. **Consistency Validation**:
@@ -95,12 +98,14 @@ interface DynamicToolReference {
 **Decision**: Remove server-level configuration from toolsets.
 
 **Rationale**:
+
 - Server name is embedded in `namespacedName` (e.g., "git.status" → server: "git")
 - Discovery engine provides authoritative server metadata
 - Users select individual tools, not entire servers
 - Simplifies the data model significantly
 
 **Implementation**:
+
 ```typescript
 // Discovery engine resolves server information
 const resolution = discoveryEngine.resolveToolReference({
