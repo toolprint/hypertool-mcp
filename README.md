@@ -4,7 +4,9 @@
 > Transform tool chaos into focused precision with dynamic toolsets
 
 [![Version](https://img.shields.io/npm/v/@toolprint/hypertool-mcp)](https://npmjs.com/package/@toolprint/hypertool-mcp)
+[![Downloads](https://img.shields.io/npm/dm/@toolprint/hypertool-mcp)](https://npmjs.com/package/@toolprint/hypertool-mcp)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## 🚨 The Problem
@@ -61,6 +63,9 @@ After: Expert Mode 🎯
 - **📝 Tool Annotations**: "Hey AI, remember to always use the staging server for this tool"
 - **🔄 Zero Friction**: All your existing servers work unchanged
 - **💨 Runs Locally**: Your data never leaves your machine
+- **🔌 Health Monitoring**: Automatic reconnection when servers go down
+- **💾 Persistent Toolsets**: Saved locally, shareable with your team
+- **🔔 Hot-Swapping**: Cursor already supports live toolset switching. Claude Code support [coming soon](https://github.com/anthropics/claude-code/issues/411)
 
 ## 🎬 Demo
 
@@ -93,11 +98,23 @@ Replace your `.mcp.json` with just this:
 Restart your AI assistant and try:
 ```
 You: "Show me all available tools"
-You: "Create a toolset called 'coding' with git, docker, and github tools"
-You: "Switch to the coding toolset"
+Assistant: "I found 64 tools across 5 servers:
+  - docker: 19 tools (build_image, create_container, run_container...)
+  - task-master: 34 tools (add_task, get_tasks, set_task_status...)
+  - context7: 2 tools (get-library-docs, resolve-library-id)
+  - everything: 8 tools (echo, add, getTinyImage...)
+  - mcping: 1 tool (send-notification)"
+
+You: "Create a toolset called 'dev-essentials' with docker and task-master tools"
+Assistant: "Created 'dev-essentials' toolset with 53 tools from docker and task-master"
+
+You: "Switch to the dev-essentials toolset"
+Assistant: "Equipped 'dev-essentials' toolset! I now have focused access to Docker and Task Master tools"
 ```
 
 That's it! Your AI now sees only the tools it needs for coding. 🎉
+
+**Note**: You can switch toolsets anytime, or unequip to see all tools again.
 
 **Want automated setup?** Check out our [installation scripts](#installation) below.
 
@@ -105,24 +122,24 @@ That's it! Your AI now sees only the tools it needs for coding. 🎉
 
 Here's how we organize our toolsets:
 
-### Our Daily Driver Toolsets
+### Real Toolset Examples
 
-**🔨 Development Mode**
+**🔨 Development Mode** (what we actually use)
 ```
-git + docker + github + linear + cursor
-→ Everything we need for coding, nothing more
-```
-
-**📝 Content Mode**
-```
-notion + slack + grammarly
-→ Focused writing without code distractions
+docker (19 tools) + task-master (34 tools) = 53 focused tools
+→ Container management + project tracking, nothing more
 ```
 
-**📊 Analysis Mode**
+**📝 Documentation Mode**
 ```
-python + jupyter + postgres + charts
-→ Data work without deployment tools
+context7 (2 tools) + mcping (1 tool) = 3 ultra-focused tools  
+→ Library docs lookup + notifications when done
+```
+
+**🧪 Testing Suite**
+```
+everything (8 tools) + specific docker tools = ~15 tools
+→ Basic utilities + container testing capabilities
 ```
 
 ### Real Chat Examples
@@ -141,6 +158,17 @@ Assistant: "Switching to writing toolset"
 
 Your AI adapts to context just like you do! 🎯
 
+### FAQ: Common Questions
+
+**Q: Can I use multiple toolsets?**  
+A: Yes! In stdio mode (default), use `--equip-toolset <name>` when launching. In HTTP mode (singleton service), you're limited to one active toolset.
+
+**Q: Where are toolsets stored?**  
+A: Locally in your home directory. You can export and share them with your team.
+
+**Q: What if an MCP server goes down?**  
+A: HyperTool automatically reconnects when servers come back online. Your toolsets remain intact.
+
 ## 📊 Why This Works
 
 It's not just us saying this - here's what research found:
@@ -157,6 +185,20 @@ It's not just us saying this - here's what research found:
 - Focused tool selection dramatically improves decision quality
 
 **Bottom line**: Your AI literally gets confused with too many tools. HyperTool fixes that.
+
+## 🎮 AI App Support
+
+### Dynamic Toolset Switching Support
+
+Apps that support MCP's `tools/list_changed` notification can hot-swap toolsets without restart:
+
+✅ **Cursor** - Full support! Switch toolsets on the fly  
+⏳ **Claude Code** - [Support coming soon](https://github.com/anthropics/claude-code/issues/411) (please upvote!)  
+✅ **Any MCP-compliant app** - If it supports the standard, it works!
+
+**For Claude Code users**: Until dynamic support lands, either:
+1. Restart after switching toolsets, or
+2. Use `--equip-toolset <name>` flag on startup
 
 ## ⚙️ Installation Options
 
