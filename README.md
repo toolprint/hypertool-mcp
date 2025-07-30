@@ -92,12 +92,41 @@ AI sees ALL 64 tools = confused 😵     │  • traces.view   │
 ### Key Features That Changed Our Workflow
 
 - **🧠 Dynamic Toolsets**: Like switching hats - your AI becomes a specialist instantly
-- **📝 Tool Annotations**: "Hey AI, remember to always use the staging server for this tool"
+- **📝 Tool Annotations**: Teach your AI how YOU use tools (see example below!)
 - **🔄 Zero Friction**: All your existing servers work unchanged
 - **💨 Runs Locally**: Your data never leaves your machine
 - **🔌 Health Monitoring**: Automatic reconnection when servers go down
 - **💾 Persistent Toolsets**: Saved locally, shareable with your team
 - **🔔 Hot-Swapping**: Cursor already supports live toolset switching. Claude Code support [coming soon](https://github.com/anthropics/claude-code/issues/411)
+
+## 🎯 The Secret Sauce: Tool Annotations
+
+Here's what makes HyperTool special - you can add notes to tools that teach your AI how YOU work:
+
+### Real Example: Linear Issue Creation
+
+**Without annotations:**
+```
+You: "Create a bug report for the login issue"
+AI: *Creates issue in random team* ❌
+You: "No, that should go to the Frontend team!"
+AI: "Sorry, let me move it..."
+```
+
+**With HyperTool annotations:**
+```
+You: "Add a note to the linear_create_issue tool"
+You: "Always call list_teams first and ask me which team before creating any issue"
+
+// Now your toolset remembers!
+You: "Create a bug report for the login issue"
+AI: "Let me check available teams first... I found: Frontend, Backend, Design, QA"
+AI: "Which team should this go to?"
+You: "Frontend"
+AI: *Creates issue in Frontend team* ✅
+```
+
+Your AI now follows YOUR workflow every time! 🎯
 
 ## 🎬 Demo
 
@@ -267,16 +296,22 @@ These scripts will:
 
 ## 🔧 Advanced Features
 
-### Tool Annotations
+### More Tool Annotation Examples
 
-Our favorite feature - teach your AI how YOU use tools:
+Beyond the Linear example above, you can annotate any tool:
 
 ```
-You: "Add a note to the linear_create_issue tool"
-You: "Always ask which team before creating - Engineering, Design, or Product"
+// For Docker tools
+"Always use --no-cache flag when building production images"
 
-// Now your AI will always ask for the team first!
+// For Git tools  
+"Commit messages must follow conventional commits format"
+
+// For Database tools
+"Only use the read-only connection for customer data queries"
 ```
+
+These notes persist across sessions and become part of your toolset!
 
 ### HTTP Transport
 
