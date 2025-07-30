@@ -12,10 +12,7 @@
     },
     "mcping": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@toolprint/mcping-mcp@latest"
-      ]
+      "args": ["-y", "@toolprint/mcping-mcp@latest"]
     }
   }
 }

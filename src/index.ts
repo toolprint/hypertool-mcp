@@ -257,7 +257,7 @@ async function runMcpServer(options: any): Promise<void> {
   if (runtimeOptions.transport === 'http') {
     output.clearTerminal();
     displayBanner(APP_NAME);
-    displayServerRuntimeInfo(APP_NAME, runtimeOptions.transport, runtimeOptions.port, "localhost");
+    displayServerRuntimeInfo(runtimeOptions.transport, runtimeOptions.port, "localhost");
   }
 
   // Start server
@@ -441,8 +441,8 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     process.argv.push('mcp', 'run');
   }
   
-  // Check if we have 'mcp' command but no subcommand
-  const hasMcpCommand = cliArgs.includes('mcp');
+  // Check if we have 'mcp' command but no subcommand and need to add 'run'
+  // (hasMcpCommand is already declared above)
   if (hasMcpCommand) {
     const mcpIndex = cliArgs.indexOf('mcp');
     const nextArg = cliArgs[mcpIndex + 1];
