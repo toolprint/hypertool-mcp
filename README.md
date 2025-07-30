@@ -99,35 +99,6 @@ AI sees ALL 64 tools = confused 😵     │  • traces.view   │
 - **💾 Persistent Toolsets**: Saved locally, shareable with your team
 - **🔔 Hot-Swapping**: Cursor already supports live toolset switching. Claude Code support [coming soon](https://github.com/anthropics/claude-code/issues/411)
 
-## 🎯 The Secret Sauce: Tool Annotations
-
-Here's what makes HyperTool special - you can add notes to tools that teach your AI how YOU work:
-
-### Real Example: Linear Issue Creation
-
-**Without annotations:**
-```
-You: "Create a bug report for the login issue"
-AI: *Creates issue in random team* ❌
-You: "No, that should go to the Frontend team!"
-AI: "Sorry, let me move it..."
-```
-
-**With HyperTool annotations:**
-```
-You: "Add a note to the linear_create_issue tool"
-You: "Always call list_teams first and ask me which team before creating any issue"
-
-// Now your toolset remembers!
-You: "Create a bug report for the login issue"
-AI: "Let me check available teams first... I found: Frontend, Backend, Design, QA"
-AI: "Which team should this go to?"
-You: "Frontend"
-AI: *Creates issue in Frontend team* ✅
-```
-
-Your AI now follows YOUR workflow every time! 🎯
-
 ## 🎬 Demo
 
 [Coming soon: See HyperTool in action with Claude and Cursor]
@@ -296,9 +267,36 @@ These scripts will:
 
 ## 🔧 Advanced Features
 
-### More Tool Annotation Examples
+### 🎯 Tool Annotations: Teach Your AI How YOU Work
 
-Beyond the Linear example above, you can annotate any tool:
+Here's what makes HyperTool special - you can add notes to tools that teach your AI your specific workflows:
+
+#### Real Example: Linear Issue Creation
+
+**Without annotations:**
+```
+You: "Create a bug report for the login issue"
+AI: *Creates issue in random team* ❌
+You: "No, that should go to the Frontend team!"
+AI: "Sorry, let me move it..."
+```
+
+**With HyperTool annotations:**
+```
+You: "Add a note to the linear_create_issue tool"
+You: "Always call list_teams first and ask me which team before creating any issue"
+
+// Now your toolset remembers!
+You: "Create a bug report for the login issue"
+AI: "Let me check available teams first... I found: Frontend, Backend, Design, QA"
+AI: "Which team should this go to?"
+You: "Frontend"
+AI: *Creates issue in Frontend team* ✅
+```
+
+Your AI now follows YOUR workflow every time! 🎯
+
+#### More Annotation Examples
 
 ```
 // For Docker tools
