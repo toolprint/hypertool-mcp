@@ -4,23 +4,23 @@
  * but still outputs to stdout for visibility using real Pino
  */
 
-import { vi } from 'vitest';
-import pino from 'pino';
+import { vi } from "vitest";
+import pino from "pino";
 
 // Mock the logging module to prevent file I/O during tests
 // but use a real Pino logger configured for console output only
-vi.mock('./utils/logging.js', () => {
+vi.mock("./utils/logging.js", () => {
   // Create a simple console-only Pino logger for tests
   const testLogger = pino({
-    level: 'info',
+    level: "info",
     transport: {
-      target: 'pino-pretty',
+      target: "pino-pretty",
       options: {
         colorize: false,
         translateTime: false,
-        ignore: 'pid,hostname',
-      }
-    }
+        ignore: "pid,hostname",
+      },
+    },
   });
 
   const mockLogger = {
@@ -51,19 +51,19 @@ vi.mock('./utils/logging.js', () => {
     getLogger: vi.fn(() => mockLogger),
     createChildLogger: vi.fn((bindings) => mockLogger.child(bindings)),
     DEFAULT_LOGGING_CONFIG: {
-      level: 'info',
+      level: "info",
       enableConsole: true,
       enableFile: false,
-      serverName: 'test',
-      format: 'pretty',
+      serverName: "test",
+      format: "pretty",
       colorize: false,
     },
     STDIO_LOGGING_CONFIG: {
-      level: 'info',
+      level: "info",
       enableConsole: false,
       enableFile: false,
-      serverName: 'test',
-      format: 'pretty',
+      serverName: "test",
+      format: "pretty",
       colorize: false,
     },
   };

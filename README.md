@@ -17,7 +17,7 @@ Let me guess - you've been here too:
 "Why can't I add more MCP servers? I hit Claude's 100-tool limit!" 😤
 
 ### 2. **Poor AI Performance**
-Research shows [89% accuracy drop](#research) when AI chooses from 50+ tools. Your assistant picks the wrong tool 7 out of 10 times. Sound familiar?
+Research shows [89% accuracy drop](#-research--metrics) when AI chooses from 50+ tools. Your assistant picks the wrong tool 7 out of 10 times. Sound familiar?
 
 ### 3. **Config Management Hell**
 Managing 5 different `.mcp.json` files across projects? Switching contexts means editing configs? There's got to be a better way...
@@ -97,11 +97,11 @@ AI sees ALL 64 tools = confused 😵     │  • traces.view   │
 - **💨 Runs Locally**: Your data never leaves your machine
 - **🔌 Health Monitoring**: Automatic reconnection when servers go down
 - **💾 Persistent Toolsets**: Saved locally, shareable with your team
-- **🔔 Hot-Swapping**: Cursor already supports live toolset switching. Claude Code support [coming soon](https://github.com/anthropics/claude-code/issues/411)
+- **🔔 Hot-Swapping**: Cursor already supports live toolset switching. Claude Code [support tracked here](https://github.com/anthropics/claude-code/issues/411)
 
 ## 🎬 Demo
 
-[Coming soon: See HyperTool in action with Claude and Cursor]
+Watch how HyperTool transforms your AI assistant's tool usage - demo video coming soon.
 
 ## 🚀 Quick Start (2 minutes)
 
@@ -126,7 +126,7 @@ Replace your `.mcp.json` with just this:
   "mcpServers": {
     "hypertool": {
       "command": "npx",
-      "args": ["-y", "@toolprint/hypertool-mcp", "--mcp-config", ".mcp.hypertool.json"]
+      "args": ["-y", "@toolprint/hypertool-mcp@latest", "--mcp-config", ".mcp.hypertool.json"]
     }
   }
 }
@@ -154,7 +154,7 @@ That's it! Your AI now sees only the tools it needs for coding. 🎉
 
 **Note**: You can switch toolsets anytime, or unequip to see all tools again.
 
-**Want automated setup?** Check out our [installation scripts](#installation) below.
+**Want automated setup?** Check out our [add-to command](#add-to-applications) below.
 
 ## 🎯 Using Toolsets Like a Pro
 
@@ -231,7 +231,7 @@ It's not just us saying this - here's what research found:
 Apps that support MCP's `tools/list_changed` notification can hot-swap toolsets without restart:
 
 ✅ **Cursor** - Full support! Switch toolsets on the fly  
-⏳ **Claude Code** - [Support coming soon](https://github.com/anthropics/claude-code/issues/411) (please upvote!)  
+⏳ **Claude Code** - [Dynamic switching support tracked](https://github.com/anthropics/claude-code/issues/411) (please upvote!)  
 ✅ **Any MCP-compliant app** - If it supports the standard, it works!
 
 **For Claude Code users**: Until dynamic support lands, either:
@@ -243,24 +243,31 @@ Apps that support MCP's `tools/list_changed` notification can hot-swap toolsets 
 ### Method 1: Manual Setup (Recommended)
 The simple approach shown in Quick Start above. You control everything.
 
-### Method 2: Automated Scripts
+### Method 2: Add to Applications {#add-to-applications}
+
+Use the `add-to` command to automatically set up HyperTool in your applications:
 
 **For Claude Code**
 ```bash
-npx -y @toolprint/hypertool-mcp --install claude-code
+npx -y @toolprint/hypertool-mcp add-to claude-code
 ```
 
 **For Cursor**
 ```bash
-npx -y @toolprint/hypertool-mcp --install cursor
+npx -y @toolprint/hypertool-mcp add-to cursor
 ```
 
-**For Everything (Global)**
+**For All Detected Applications**
 ```bash
-npx -y @toolprint/hypertool-mcp --install
+npx -y @toolprint/hypertool-mcp add-to
 ```
 
-These scripts will:
+**Preview Changes First**
+```bash
+npx -y @toolprint/hypertool-mcp add-to cursor --dry-run
+```
+
+The `add-to` command will:
 - ✅ Backup your existing configs
 - ✅ Set up HyperTool automatically
 - ✅ Preserve all your current servers
@@ -319,17 +326,23 @@ Need to run HyperTool as a service?
 hypertool-mcp --transport http --port 3000 --mcp-config your-config.json
 ```
 
-### CLI Options
+### CLI Commands & Options
 
 ```bash
-hypertool-mcp [options]
+hypertool-mcp [options] [command]
 
-Options:
+Commands:
+  add-to [app]           Add HyperTool to an application
+  config                 Configuration management commands
+  mcp                    MCP server operations and management
+
+Options (when running as server):
   --mcp-config <path>    MCP servers config file (default: .mcp.json)
   --transport <type>     Transport type: stdio|http (default: stdio)
   --port <number>        HTTP port (default: 3000)
   --equip-toolset <name> Load toolset on startup
   --debug                Verbose logging
+  --log-level <level>    Log level (trace, debug, info, warn, error, fatal)
 ```
 
 ### 🔐 Configuration Management
@@ -414,7 +427,7 @@ hypertool-mcp config unlink --app claude-desktop
 hypertool-mcp config unlink --no-restore
 ```
 
-## 📚 Research & Metrics {#research}
+## 📚 Research & Metrics
 
 For the data nerds (like us), here's the academic backing:
 

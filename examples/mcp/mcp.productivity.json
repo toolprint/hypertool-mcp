@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp/workspace"]
+    },
+    "time": {
+      "command": "uvx",
+      "args": ["mcp-server-time"]
+    },
+    "timeserver": {
+      "command": "npx",
+      "args": ["-y", "mcp-timeserver"]
+    },
+    "calendar-utils": {
+      "command": "npx",
+      "args": ["-y", "mcp-calendar-utils"]
+    },
+    "task-manager": {
+      "command": "npx",
+      "args": ["-y", "mcp-task-manager"]
+    },
+    "calculator": {
+      "command": "npx",
+      "args": ["-y", "@wrtnlabs/calculator-mcp"]
+    },
+    "text-utils": {
+      "command": "npx",
+      "args": ["-y", "mcp-text-utils"]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    }
+  }
+}

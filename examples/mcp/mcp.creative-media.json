@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "manim-mcp": {
+      "command": "npx",
+      "args": ["-y", "manim-mcp-server"]
+    },
+    "aseprite-mcp": {
+      "command": "npx",
+      "args": ["-y", "aseprite-mcp"]
+    },
+    "image-processor": {
+      "command": "npx",
+      "args": ["-y", "mcp-image-tools"]
+    },
+    "audio-tools": {
+      "command": "npx",
+      "args": ["-y", "mcp-audio-processor"]
+    },
+    "media-converter": {
+      "command": "npx",
+      "args": ["-y", "mcp-media-converter"]
+    },
+    "chart": {
+      "command": "npx",
+      "args": ["-y", "mcp-chart-generator"]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp/media"]
+    },
+    "time": {
+      "command": "uvx",
+      "args": ["mcp-server-time"]
+    }
+  }
+}

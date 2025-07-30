@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "markitdown": {
+      "command": "npx",
+      "args": ["-y", "markitdown-mcp-server"]
+    },
+    "markdownify": {
+      "command": "npx",
+      "args": ["-y", "markdownify-mcp"]
+    },
+    "markdown2pdf": {
+      "command": "npx",
+      "args": ["-y", "markdown2pdf-mcp"]
+    },
+    "pandoc": {
+      "command": "npx",
+      "args": ["-y", "mcp-pandoc"]
+    },
+    "pdf-processor": {
+      "command": "npx",
+      "args": ["-y", "mcp-pdf-tools"]
+    },
+    "format-converter": {
+      "command": "npx",
+      "args": ["-y", "mcp-format-converter"]
+    },
+    "text-utils": {
+      "command": "npx",
+      "args": ["-y", "mcp-text-utils"]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp/documents"]
+    }
+  }
+}

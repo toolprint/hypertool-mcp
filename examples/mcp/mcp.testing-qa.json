@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "everything": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"]
+    },
+    "python-sandbox": {
+      "command": "npx",
+      "args": ["-y", "mcp-python-sandbox"]
+    },
+    "javascript-sandbox": {
+      "command": "npx",
+      "args": ["-y", "mcp-js-sandbox"]
+    },
+    "browser-mcp": {
+      "command": "npx",
+      "args": ["-y", "browser-mcp"]
+    },
+    "dice": {
+      "command": "uvx",
+      "args": ["mcp-dice"]
+    },
+    "calculator": {
+      "command": "npx",
+      "args": ["-y", "@wrtnlabs/calculator-mcp"]
+    },
+    "code-runner": {
+      "command": "npx",
+      "args": ["-y", "mcp-code-runner"]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    }
+  }
+}

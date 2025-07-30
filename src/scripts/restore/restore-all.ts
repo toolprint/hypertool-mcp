@@ -261,12 +261,14 @@ export class RestoreAll {
 
     try {
       // Welcome banner
-      output.info(theme.error(`
+      output.info(
+        theme.error(`
 ╔══════════════════════════════════════════╗
 ║       🔄 Hypertool Restore Utility       ║
 ║     Revert All Installations to Original ║
 ╚══════════════════════════════════════════╝
-      `));
+      `)
+      );
 
       if (this.dryRun) {
         output.info(theme.info("🔍 [DRY RUN MODE] - No changes will be made"));
@@ -315,7 +317,9 @@ export class RestoreAll {
       }
 
       if (this.dryRun) {
-        output.info(theme.warning("🔍 [DRY RUN] Restoration simulation complete"));
+        output.info(
+          theme.warning("🔍 [DRY RUN] Restoration simulation complete")
+        );
         output.info("No actual changes were made to your system.");
       } else {
         output.success("✨ Restoration complete!");

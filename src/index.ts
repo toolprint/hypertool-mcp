@@ -3,8 +3,7 @@
  * HyperTool MCP server main entry point
  */
 
-import { Command } from "commander";
-import chalk from "chalk";
+import { Command, Argument } from "commander";
 import { RuntimeOptions, RuntimeTransportType } from "./types/runtime.js";
 import {
   APP_DESCRIPTION,
@@ -38,7 +37,9 @@ async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
   })();
 
   if (!normalizedOption) {
-    console.error(semantic.messageError("❌ Invalid install option: " + option));
+    console.error(
+      semantic.messageError("❌ Invalid install option: " + option)
+    );
     console.error(
       theme.warning(
         "   Valid options: all (default), claude-desktop (cd), cursor, claude-code (cc)"
@@ -73,7 +74,9 @@ async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
         await installClaudeCodeCommands({ dryRun: isDryRun });
         break;
       default:
-        throw new Error(semantic.messageError("❌ Invalid install option: " + option));
+        throw new Error(
+          semantic.messageError("❌ Invalid install option: " + option)
+        );
     }
   } catch (error) {
     throw new Error(
@@ -83,6 +86,94 @@ async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
   }
 }
 
+async function getAddToCommand(): Promise<Command> {
+  const addToCommand = new Command("add-to")
+    .description("Add HyperTool to an application")
+    .addArgument(
+      new Argument("[app]", "Application to add HyperTool to")
+        .default("all")
+        .choices(["all", "claude-desktop", "cd", "cursor", "claude-code", "cc"])
+    )
+    .option(
+      "--dry-run",
+      "Show what would be done without making changes",
+      false
+    )
+    .addHelpText(
+      "after",
+      `
+  ${theme.label("Application aliases:")}
+    cd = claude-desktop
+    cc = claude-code
+
+  ${theme.label("Examples:")}
+    ${theme.muted("hypertool-mcp add-to                    # Add to all detected apps")}
+    ${theme.muted("hypertool-mcp add-to claude-desktop     # Add to Claude Desktop only")}
+    ${theme.muted("hypertool-mcp add-to cursor --dry-run   # Preview Cursor setup")}
+    ${theme.muted("hypertool-mcp add-to cc                 # Add to Claude Code")}`
+    )
+    .action(async (app, options) => {
+      await handleInstallOption([app], options.dryRun);
+    });
+
+  return addToCommand;
+}
+
+// Define MCP server run options in a reusable way
+const mcpServerRunOptions = [
+  {
+    flags: "--transport <type>",
+    description: theme.info("Transport protocol to use") + " (http, stdio)",
+    defaultValue: "stdio",
+  },
+  {
+    flags: "--port <number>",
+    description:
+      theme.info("Port number for HTTP transport") +
+      " (only valid with --transport http)",
+  },
+  {
+    flags: "--debug",
+    description: theme.info("Enable debug mode with verbose logging"),
+    defaultValue: false,
+  },
+  {
+    flags: "--insecure",
+    description:
+      theme.warning("Allow tools with changed reference hashes") +
+      semantic.messageError(" (insecure mode)"),
+    defaultValue: false,
+  },
+  {
+    flags: "--equip-toolset <name>",
+    description: theme.info("Toolset name to equip on startup"),
+  },
+  {
+    flags: "--mcp-config <path>",
+    description: theme.info("Path to MCP configuration file") + " (.mcp.json)",
+  },
+  {
+    flags: "--log-level <level>",
+    description:
+      theme.info("Log level") + " (trace, debug, info, warn, error, fatal)",
+    defaultValue: "info",
+  },
+];
+
+/**
+ * Add MCP server run options to a command
+ */
+function addMcpServerOptions(command: Command): Command {
+  mcpServerRunOptions.forEach((opt) => {
+    if (opt.defaultValue !== undefined) {
+      command.option(opt.flags, opt.description, opt.defaultValue);
+    } else {
+      command.option(opt.flags, opt.description);
+    }
+  });
+  return command;
+}
+
 /**
  * Run the MCP server with the given options
  */
@@ -90,7 +181,9 @@ async function runMcpServer(options: any): Promise<void> {
   // Validate transport type
   const transport = options.transport as RuntimeTransportType;
   if (!["http", "stdio"].includes(transport)) {
-    console.error(semantic.messageError(`❌ Invalid transport type: ${transport}`));
+    console.error(
+      semantic.messageError(`❌ Invalid transport type: ${transport}`)
+    );
     console.error(theme.warning("   Valid options: http, stdio"));
     process.exit(1);
   }
@@ -98,14 +191,18 @@ async function runMcpServer(options: any): Promise<void> {
   // Validate port is only used with http transport
   if (options.port && transport !== "http") {
     console.error(
-      semantic.messageError("❌ --port flag can only be used with --transport http")
+      semantic.messageError(
+        "❌ --port flag can only be used with --transport http"
+      )
     );
     process.exit(1);
   }
 
   const port = options.port ? parseInt(options.port) : 3000;
   if (isNaN(port) || port < 1 || port > 65535) {
-    console.error(semantic.messageError(`❌ Invalid port number: ${options.port}`));
+    console.error(
+      semantic.messageError(`❌ Invalid port number: ${options.port}`)
+    );
     console.error(theme.warning("   Port must be between 1 and 65535"));
     process.exit(1);
   }
@@ -131,14 +228,21 @@ async function runMcpServer(options: any): Promise<void> {
     logLevel,
   };
 
+  // ! We use dynamic imports to ensure that the transport and logging configuration is initialized
+  // ! in the correct order.
   // Initialize logger based on transport type
-  const { getLogger, STDIO_LOGGING_CONFIG } = await import("./utils/logging.js");
-  const logger = runtimeOptions.transport === 'stdio'
-    ? getLogger(STDIO_LOGGING_CONFIG)  // stderr + file logging for stdio transport
-    : getLogger();
+  const { getLogger, STDIO_LOGGING_CONFIG } = await import(
+    "./utils/logging.js"
+  );
+  const logger =
+    runtimeOptions.transport === "stdio"
+      ? getLogger(STDIO_LOGGING_CONFIG) // stderr + file logging for stdio transport
+      : getLogger();
 
   // Dynamic imports for all modules that might create worker threads
-  const { displayBanner, displayServerRuntimeInfo, output } = await import("./utils/output.js");
+  const { displayBanner, displayServerRuntimeInfo, output } = await import(
+    "./utils/output.js"
+  );
   const { discoverMcpConfig } = await import("./config/mcpConfigLoader.js");
 
   // Update logger configuration
@@ -200,23 +304,29 @@ async function runMcpServer(options: any): Promise<void> {
       return;
     }
     isShuttingDown = true;
-    
+
     if (runtimeOptions.debug) {
-      console.log(theme.warning(`🛑 Shutting down HyperTool server... (${signal || 'manual'})`));
+      console.log(
+        theme.warning(
+          `🛑 Shutting down HyperTool server... (${signal || "manual"})`
+        )
+      );
     }
-    
+
     // Set a hard timeout to force exit if graceful shutdown fails
     const forceExitTimeout = setTimeout(() => {
-      console.error(semantic.messageError('⚠️  Forcefully exiting after timeout...'));
+      console.error(
+        semantic.messageError("⚠️  Forcefully exiting after timeout...")
+      );
       process.exit(1);
     }, 5000); // 5 second timeout
-    
+
     try {
       await server.stop();
       clearTimeout(forceExitTimeout);
       process.exit(0);
     } catch (error) {
-      logger.error('Error during shutdown:', error);
+      logger.error("Error during shutdown:", error);
       clearTimeout(forceExitTimeout);
       process.exit(1);
     }
@@ -229,35 +339,39 @@ async function runMcpServer(options: any): Promise<void> {
   process.on("SIGTERM", () => {
     setImmediate(() => shutdown("SIGTERM"));
   });
-  
+
   // For stdio mode, also handle SIGHUP which can occur when terminal closes
-  if (runtimeOptions.transport === 'stdio') {
+  if (runtimeOptions.transport === "stdio") {
     process.on("SIGHUP", () => {
       setImmediate(() => shutdown("SIGHUP"));
     });
-    
+
     // Handle uncaught exceptions
-    process.on('uncaughtException', (error) => {
-      logger.error('Uncaught exception:', error);
-      shutdown('uncaughtException');
+    process.on("uncaughtException", (error) => {
+      logger.error("Uncaught exception:", error);
+      shutdown("uncaughtException");
     });
-    
+
     // In production, handle stdin end as a shutdown signal
     // Skip this in test environment to avoid premature shutdown
-    if (process.env.NODE_ENV !== 'test') {
-      process.stdin.on('end', () => {
-        logger.debug('stdin ended, shutting down...');
-        shutdown('stdin-end');
+    if (process.env.NODE_ENV !== "test") {
+      process.stdin.on("end", () => {
+        logger.debug("stdin ended, shutting down...");
+        shutdown("stdin-end");
       });
     }
   }
 
   // Only show banner and clear terminal for HTTP transport
   // For stdio, any output to stdout will interfere with MCP protocol
-  if (runtimeOptions.transport === 'http') {
+  if (runtimeOptions.transport === "http") {
     output.clearTerminal();
     displayBanner(APP_NAME);
-    displayServerRuntimeInfo(runtimeOptions.transport, runtimeOptions.port, "localhost");
+    displayServerRuntimeInfo(
+      runtimeOptions.transport,
+      runtimeOptions.port,
+      "localhost"
+    );
   }
 
   // Start server
@@ -270,7 +384,7 @@ async function runMcpServer(options: any): Promise<void> {
   await server.start(initOptions, runtimeOptions);
 
   // Only show warnings and separator for HTTP transport
-  if (runtimeOptions.transport === 'http') {
+  if (runtimeOptions.transport === "http") {
     if (runtimeOptions.insecure) {
       logger.warn(
         semantic.messageError(
@@ -282,6 +396,41 @@ async function runMcpServer(options: any): Promise<void> {
   }
 }
 
+async function getMcpCommand(): Promise<Command> {
+  const mcpCommand = new Command("mcp").description(
+    "MCP server operations and management"
+  );
+
+  // Add 'run' subcommand for running the MCP server
+  const runCommand = new Command("run").description(
+    "Run the MCP server (default if no subcommand specified)"
+  );
+
+  // Add all MCP server options to the run command
+  addMcpServerOptions(runCommand);
+
+  runCommand.action(async (options) => {
+    // Run the MCP server with the given options
+    await runMcpServer(options);
+  });
+
+  mcpCommand.addCommand(runCommand);
+
+  // Add MCP server management commands directly
+  const {
+    createListCommand,
+    createGetCommand,
+    createAddCommand,
+    createRemoveCommand,
+  } = await import("./mcp-manager/cli/index.js");
+  mcpCommand.addCommand(createListCommand());
+  mcpCommand.addCommand(createGetCommand());
+  mcpCommand.addCommand(createAddCommand());
+  mcpCommand.addCommand(createRemoveCommand());
+
+  return mcpCommand;
+}
+
 /**
  * Parse CLI arguments and return runtime options
  */
@@ -291,198 +440,36 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   program
     .name(APP_TECHNICAL_NAME)
     .description(theme.info(APP_DESCRIPTION))
-    .version(APP_VERSION)
-    .option(
-      "--debug",
-      theme.info("Enable debug mode with verbose logging"),
-      false
-    )
-    .option(
-      "--insecure",
-      theme.warning("Allow tools with changed reference hashes") +
-      semantic.messageError(" (insecure mode)"),
-      false
-    )
-    .option(
-      "--equip-toolset <name>",
-      theme.info("Toolset name to equip on startup")
-    )
-    .option(
-      "--mcp-config <path>",
-      theme.info("Path to MCP configuration file") + " (.mcp.json)"
-    )
-    .option(
-      "--log-level <level>",
-      theme.info("Log level") + " (trace, debug, info, warn, error, fatal)",
-      "info"
-    )
-    .option(
-      "--dry-run",
-      theme.info("Show what would be done without making changes") +
-      theme.warning(" (only valid with --install)"),
-      false
-    )
-    .option(
-      "--install [app]",
-      theme.info("Install and configure integrations.\n") +
-      theme.label(
-        "Options: all (default), claude-desktop (cd), cursor, claude-code (cc)\n"
-      ) +
-      theme.warning("Examples:\n") +
-      theme.muted(
-        "  hypertool-mcp --install            # Install for all detected apps\n"
-      ) +
-      theme.muted("  hypertool-mcp --install claude-desktop\n") +
-      theme.muted("  hypertool-mcp --install cursor --dry-run\n") +
-      theme.muted("  hypertool-mcp --install cc --dry-run")
-    );
+    .version(APP_VERSION);
+
+  // Add all MCP server options at the root level
+  addMcpServerOptions(program);
+
+  // Add default action for when no subcommand is specified
+  program.action(async (options) => {
+    // This action only runs when NO subcommand is specified
+    // Default behavior: run the MCP server
+    await runMcpServer(options);
+  });
+
+  // Add add-to command
+  const addToCommand = await getAddToCommand();
+  program.addCommand(addToCommand);
 
   // Add config subcommands
-  const { createConfigCommands } = await import("./config-manager/cli/index.js");
+  const { createConfigCommands } = await import(
+    "./config-manager/cli/index.js"
+  );
   program.addCommand(createConfigCommands());
-  
+
   // Add mcp command with subcommands
-  const mcpCommand = new Command('mcp')
-    .description('MCP server operations and management');
-  
-  // Add 'run' subcommand for running the MCP server
-  const runCommand = new Command('run')
-    .description('Run the MCP server (default if no subcommand specified)')
-    .option(
-      "--transport <type>",
-      theme.info("Transport protocol to use") + " (http, stdio)",
-      "stdio"
-    )
-    .option(
-      "--port <number>",
-      theme.info("Port number for HTTP transport") +
-      " (only valid with --transport http)"
-    )
-    .option(
-      "--debug",
-      theme.info("Enable debug mode with verbose logging"),
-      false
-    )
-    .option(
-      "--insecure",
-      theme.warning("Allow tools with changed reference hashes") +
-      semantic.messageError(" (insecure mode)"),
-      false
-    )
-    .option(
-      "--equip-toolset <name>",
-      theme.info("Toolset name to equip on startup")
-    )
-    .option(
-      "--mcp-config <path>",
-      theme.info("Path to MCP configuration file") + " (.mcp.json)"
-    )
-    .option(
-      "--log-level <level>",
-      theme.info("Log level") + " (trace, debug, info, warn, error, fatal)",
-      "info"
-    )
-    .action(async (options) => {
-      // Run the MCP server with the given options
-      await runMcpServer(options);
-    });
-  
-  mcpCommand.addCommand(runCommand);
-  
-  // Add MCP server management commands directly
-  const { createListCommand, createGetCommand, createAddCommand, createRemoveCommand } = await import("./mcp-manager/cli/index.js");
-  mcpCommand.addCommand(createListCommand());
-  mcpCommand.addCommand(createGetCommand());
-  mcpCommand.addCommand(createAddCommand());
-  mcpCommand.addCommand(createRemoveCommand());
-  
-  // No default action - subcommands handle their own actions
-  
+  const mcpCommand = await getMcpCommand();
   program.addCommand(mcpCommand);
-  
-  // If no command is specified, default to 'mcp run'
-  // But only if the first argument isn't already a known command
-  const cliArgs = process.argv.slice(2);
-  const knownCommands = ['config', 'mcp', 'help'];
-  const knownMcpSubcommands = ['run', 'list', 'get', 'add', 'remove'];
-  
-  // Check if any argument is a known command
-  let hasCommand = false;
-  let hasMcpCommand = false;
-  for (const arg of cliArgs) {
-    if (knownCommands.includes(arg)) {
-      hasCommand = true;
-      if (arg === 'mcp') {
-        hasMcpCommand = true;
-      }
-      break;
-    }
-  }
-  
-  // Also check for special global options that should not trigger mcp command
-  const hasSpecialGlobalOption = cliArgs.includes('--help') || cliArgs.includes('-h') || 
-                                cliArgs.includes('--version') || cliArgs.includes('-V') ||
-                                cliArgs.some(arg => arg.startsWith('--install'));
-  
-  // If we have arguments but no command and no special global options, insert 'mcp run'
-  if (cliArgs.length > 0 && !hasCommand && !hasSpecialGlobalOption) {
-    process.argv.splice(2, 0, 'mcp', 'run');
-  }
-  // If we have 'mcp' command but no subcommand, insert 'run'
-  else if (hasMcpCommand && cliArgs.length === 1) {
-    process.argv.splice(3, 0, 'run');
-  }
-  // If we have 'mcp' followed by options (not a subcommand), insert 'run'
-  else if (hasMcpCommand && cliArgs.length > 1 && !knownMcpSubcommands.includes(cliArgs[1]) && cliArgs[1].startsWith('--')) {
-    process.argv.splice(3, 0, 'run');
-  }
-  // If no arguments at all, default to 'mcp run'
-  else if (cliArgs.length === 0) {
-    process.argv.push('mcp', 'run');
-  }
-  
-  // Check if we have 'mcp' command but no subcommand and need to add 'run'
-  // (hasMcpCommand is already declared above)
-  if (hasMcpCommand) {
-    const mcpIndex = cliArgs.indexOf('mcp');
-    const nextArg = cliArgs[mcpIndex + 1];
-    // If there's no next arg or it's an option (starts with --), add 'run'
-    if (!nextArg || nextArg.startsWith('--')) {
-      process.argv.splice(2 + mcpIndex + 1, 0, 'run');
-    }
-  }
-  
+
+  // Parse the arguments - all actions will be handled by their respective handlers
   await program.parseAsync();
 
-  // If we get here and no command was executed, we're done
-  const args = process.argv.slice(2);
-  if (args.length > 0 && (args[0] === 'config' || args[0] === 'help')) {
-    // Subcommand was handled, exit
-    process.exit(0);
-  }
-
-  const options = program.opts();
-
-  // Validate that --dry-run is only used with --install
-  if (options.dryRun && !options.install) {
-    console.error(
-      semantic.messageError("❌ --dry-run flag can only be used with --install")
-    );
-    console.error(
-      theme.warning("   Usage: hypertool-mcp --install claude-desktop --dry-run")
-    );
-    throw new Error("Invalid install option");
-  }
-
-  if (options.install !== undefined) {
-    // options.install will be true if no app specified, or a string if app specified
-    const installApp =
-      typeof options.install === "string" ? options.install : "all";
-    await handleInstallOption([installApp], options.dryRun);
-    process.exit(0);
-  }
-
-  // If we get here, the MCP server options will be handled by the mcp subcommand
+  // Return empty - actions have been handled
   return {} as RuntimeOptions;
 }
 
@@ -494,7 +481,10 @@ async function main(): Promise<void> {
     // Parse CLI arguments - this will handle commands and options
     await parseCliArguments();
   } catch (error) {
-    console.error(semantic.messageError(`❌ Failed to start HyperTool server:`), error);
+    console.error(
+      semantic.messageError(`❌ Failed to start HyperTool server:`),
+      error
+    );
     process.exit(1);
   }
 }

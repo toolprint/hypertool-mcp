@@ -12,7 +12,12 @@ import {
   ToolDiscoveryEngine,
 } from "../discovery/index.js";
 import { IConnectionManager, ConnectionManager } from "../connection/index.js";
-import { MCPConfigParser, APP_NAME, APP_TECHNICAL_NAME, ServerConfig } from "../config/index.js";
+import {
+  MCPConfigParser,
+  APP_NAME,
+  APP_TECHNICAL_NAME,
+  ServerConfig,
+} from "../config/index.js";
 import ora from "ora";
 
 // Helper to create conditional spinners
@@ -23,7 +28,7 @@ function createSpinner(text: string, isStdio: boolean) {
       start: () => ({ succeed: () => {}, fail: () => {}, warn: () => {} }),
       succeed: () => {},
       fail: () => {},
-      warn: () => {}
+      warn: () => {},
     };
   }
   return ora(text).start();
@@ -80,7 +85,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     options: ServerInitOptions
   ): Promise<Record<string, ServerConfig>> {
     // Initialize config parser
-    const isStdio = options.transport.type === 'stdio';
+    const isStdio = options.transport.type === "stdio";
     const mainSpinner = createSpinner("Loading MCP configuration...", isStdio);
     this.configParser = new MCPConfigParser();
 
@@ -149,7 +154,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       logger.warn(`
 ⚠️  WARNING: Self-referencing servers removed from configuration
    
-   Removed servers: ${removedServers.join(', ')}
+   Removed servers: ${removedServers.join(", ")}
    
    These servers appear to be HyperTool MCP itself, which would cause
    infinite recursion. HyperTool cannot connect to itself as a downstream server.
@@ -166,42 +171,50 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    * Check if a server configuration references HyperTool itself
    */
   private isSelfReferencingServer(config: ServerConfig): boolean {
-    if (config.type === 'stdio' && config.command) {
+    if (config.type === "stdio" && config.command) {
       // Check for common patterns that indicate HyperTool MCP
       const command = config.command.toLowerCase();
       const args = config.args || [];
-      
+
       // Direct command references
-      if (command === 'hypertool-mcp' || command.endsWith('/hypertool-mcp')) {
+      if (command === "hypertool-mcp" || command.endsWith("/hypertool-mcp")) {
         return true;
       }
-      
+
       // NPX references to our package
-      if ((command === 'npx' || command.endsWith('/npx')) && args.length > 0) {
+      if ((command === "npx" || command.endsWith("/npx")) && args.length > 0) {
         for (const arg of args) {
           const argLower = arg.toLowerCase();
-          if (argLower === '@toolprint/hypertool-mcp' || 
-              argLower === 'hypertool-mcp' ||
-              argLower.includes('@toolprint/hypertool-mcp')) {
+          if (
+            argLower === "@toolprint/hypertool-mcp" ||
+            argLower === "hypertool-mcp" ||
+            argLower.includes("@toolprint/hypertool-mcp")
+          ) {
             return true;
           }
         }
       }
-      
+
       // Node references to our package
-      if ((command === 'node' || command.endsWith('/node')) && args.length > 0) {
+      if (
+        (command === "node" || command.endsWith("/node")) &&
+        args.length > 0
+      ) {
         for (const arg of args) {
-          if (arg.includes('hypertool-mcp') || arg.includes('@toolprint/hypertool-mcp')) {
+          if (
+            arg.includes("hypertool-mcp") ||
+            arg.includes("@toolprint/hypertool-mcp")
+          ) {
             return true;
           }
         }
       }
     }
-    
+
     // For HTTP/SSE servers, we could check if they're pointing to our own HTTP server
     // but that would require knowing our own running port/URL which is complex
     // For now, we focus on stdio self-references which are the most common case
-    
+
     return false;
   }
 
@@ -210,12 +223,15 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     options: ServerInitOptions
   ): Promise<void> {
     this.connectionManager = new ConnectionManager();
-    const isStdio = options.transport.type === 'stdio';
-    let mainSpinner = createSpinner("🔗 Setting up Connection Manager...", isStdio);
-    
+    const isStdio = options.transport.type === "stdio";
+    let mainSpinner = createSpinner(
+      "🔗 Setting up Connection Manager...",
+      isStdio
+    );
+
     // Filter out any configurations that would cause HyperTool to connect to itself
     const filteredConfigs = this.filterSelfReferencingServers(serverConfigs);
-    
+
     await this.connectionManager.initialize(filteredConfigs);
     mainSpinner.succeed("🔗 Connection manager initialized");
 
@@ -257,7 +273,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    */
   private async initializeRouting(options: ServerInitOptions): Promise<void> {
     // Only show output for non-stdio transports
-    const isStdio = options.transport.type === 'stdio';
+    const isStdio = options.transport.type === "stdio";
     if (!isStdio) {
       output.displaySubHeader("Initializing Routing and Discovery");
       output.displaySpaceBuffer();
@@ -281,8 +297,11 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       await this.connectToDownstreamServers(serverConfigs, options);
 
       // Initialize discovery engine with progress
-      const isStdio = options.transport.type === 'stdio';
-      let mainSpinner = createSpinner("Initializing tool discovery engine...", isStdio);
+      const isStdio = options.transport.type === "stdio";
+      let mainSpinner = createSpinner(
+        "Initializing tool discovery engine...",
+        isStdio
+      );
       this.discoveryEngine = new ToolDiscoveryEngine(this.connectionManager!);
       await this.discoveryEngine.initialize({
         autoDiscovery: true,
@@ -308,7 +327,10 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       mainSpinner.succeed("Tool discovery engine initialized");
 
       // Start discovery and show tool count
-      mainSpinner = createSpinner("Discovering tools from connected servers...", isStdio);
+      mainSpinner = createSpinner(
+        "Discovering tools from connected servers...",
+        isStdio
+      );
       await this.discoveryEngine.start();
 
       const discoveredTools = this.discoveryEngine.getAvailableTools(true);

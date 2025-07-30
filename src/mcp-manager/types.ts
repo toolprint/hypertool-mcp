@@ -3,7 +3,7 @@
  */
 
 export interface MCPServerConfig {
-  type: 'stdio' | 'http' | 'sse' | 'websocket';
+  type: "stdio" | "http" | "sse" | "websocket";
   command?: string;
   args?: string[];
   url?: string;
@@ -32,7 +32,7 @@ export interface MCPServerDetails {
 }
 
 export interface AddServerOptions {
-  transport?: 'stdio' | 'http' | 'sse';
+  transport?: "stdio" | "http" | "sse";
   env?: string[];
   header?: string[];
 }

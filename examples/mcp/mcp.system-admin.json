@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "ssh-tools": {
+      "command": "npx",
+      "args": ["-y", "mcp-ssh-tools", "localhost"]
+    },
+    "terminal": {
+      "command": "npx",
+      "args": ["-y", "mcp-terminal-server"]
+    },
+    "system-info": {
+      "command": "npx",
+      "args": ["-y", "mcp-system-info"]
+    },
+    "process-manager": {
+      "command": "npx",
+      "args": ["-y", "mcp-process-manager"]
+    },
+    "network-tools": {
+      "command": "npx",
+      "args": ["-y", "mcp-network-tools"]
+    },
+    "file-watcher": {
+      "command": "npx",
+      "args": ["-y", "mcp-file-watcher", "/tmp"]
+    },
+    "docker": {
+      "command": "npx",
+      "args": ["-y", "mcp-docker-server"]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/"]
+    }
+  }
+}

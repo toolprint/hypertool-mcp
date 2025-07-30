@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "toolprint-hypertool": {
+    "hypertool": {
       "type": "stdio",
       "command": "npx",
       "args": [

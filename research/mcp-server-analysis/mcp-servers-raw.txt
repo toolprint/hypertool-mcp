@@ -1,0 +1,51 @@
+# MCP Server Research - Raw Data
+
+## Research Sources
+1. Smithery.ai - 5,616 skills/extensions catalog
+2. Glama.ai - MCP platform (marketing page, no detailed server list)
+3. GitHub awesome-mcp-servers repositories
+4. Official modelcontextprotocol/servers repository
+
+## Popular MCP Servers (Usage Statistics)
+From pedrojaques99/popular-mcp-servers:
+
+HIGH USAGE (500+ uses):
+- Sequential Thinking: 5,550+ uses - "Dynamic and reflective problem-solving through thought sequences"
+- wcgw: 4,920+ uses - "Shell and coding agent on Claude and ChatGPT"
+- Brave Search: 680+ uses - "Integrate web and local search capabilities"
+- Web Research: 533+ uses - "Augments LLMs with better research capabilities"
+
+MEDIUM USAGE (100-500 uses):
+- Fetch: 269+ uses - "A simple tool that performs a fetch request to a webpage"
+- Dice Roller: 246+ uses - "Roll dice using standard dice notation"
+- Exa: 171+ uses - "Real-time semantic web searches via Exa Search API"
+
+## Official Reference Servers
+From modelcontextprotocol/servers (active):
+1. Everything - "Reference/test server with prompts, resources, and tools"
+2. Fetch - "Web content fetching and conversion for efficient LLM usage"
+3. Filesystem - "Secure file operations with configurable access controls"
+4. Git - "Tools to read, search, and manipulate Git repositories"
+5. Memory - "Knowledge graph-based persistent memory system"
+6. Sequential Thinking - "Dynamic and reflective problem-solving"
+7. Time - "Time and timezone conversion capabilities"
+
+## Categories from awesome-mcp-servers
+- Database Integration (PostgreSQL, SQLite, MongoDB, etc.)
+- Cloud Services (AWS, Alibaba Cloud)
+- Development Tools (GitHub, GitLab, Docker)
+- Browser Automation
+- Web Search
+- Document Conversion
+- Google Workspace Integration
+- Code Repository Management
+- Memory Management
+
+## Installation Patterns Found
+Common installation commands:
+- npx @modelcontextprotocol/inspector node build/index.js
+- npx @modelcontextprotocol/server-filesystem /path/to/directory
+- Standard npm package installation patterns
+
+## Next Steps
+Need to investigate individual servers for configuration requirements.

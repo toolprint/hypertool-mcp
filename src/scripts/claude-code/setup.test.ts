@@ -64,7 +64,7 @@ const mockCwd = vi.fn(() => "/test/project");
 vi.stubGlobal("process", {
   cwd: mockCwd,
   exit: vi.fn(),
-  env: { NODE_ENV: 'test' },
+  env: { NODE_ENV: "test" },
 });
 
 // Mock ora spinner
@@ -101,7 +101,7 @@ vi.mock("../../utils/output.js", () => ({
   },
 }));
 
-// Mock theme utilities  
+// Mock theme utilities
 vi.mock("../../utils/theme.js", () => ({
   theme: {
     info: vi.fn((text) => text),
@@ -287,7 +287,7 @@ describe("Claude Code Integration Setup", () => {
       vi.stubGlobal("process", {
         cwd: mockCwd,
         exit: mockExit,
-        env: { NODE_ENV: 'test' },
+        env: { NODE_ENV: "test" },
       });
 
       // Import the output mock
