@@ -400,7 +400,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   
   program.addCommand(mcpCommand);
   
-  // If no command is specified, default to 'mcp' command
+  // If no command is specified, default to 'mcp run'
   // But only if the first argument isn't already a known command
   const cliArgs = process.argv.slice(2);
   const knownCommands = ['config', 'mcp', 'help'];
@@ -408,9 +408,13 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   
   // Check if any argument is a known command
   let hasCommand = false;
+  let hasMcpCommand = false;
   for (const arg of cliArgs) {
     if (knownCommands.includes(arg)) {
       hasCommand = true;
+      if (arg === 'mcp') {
+        hasMcpCommand = true;
+      }
       break;
     }
   }
@@ -420,19 +424,21 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
                                 cliArgs.includes('--version') || cliArgs.includes('-V') ||
                                 cliArgs.some(arg => arg.startsWith('--install'));
   
-  // Check if we have MCP-specific options that indicate we want to run the server
-  const hasMcpOptions = cliArgs.includes('--transport') || 
-                       cliArgs.includes('--port') ||
-                       cliArgs.includes('--mcp-config') ||
-                       cliArgs.includes('--equip-toolset') ||
-                       cliArgs.includes('--insecure') ||
-                       cliArgs.includes('--log-level');
-  
-  // If we have arguments but no command and no special global options, insert 'mcp'
-  // Also insert 'mcp' if we have MCP-specific options
-  if ((cliArgs.length > 0 && !hasCommand && !hasSpecialGlobalOption) || 
-      (hasMcpOptions && !hasCommand && !hasSpecialGlobalOption)) {
-    process.argv.splice(2, 0, 'mcp');
+  // If we have arguments but no command and no special global options, insert 'mcp run'
+  if (cliArgs.length > 0 && !hasCommand && !hasSpecialGlobalOption) {
+    process.argv.splice(2, 0, 'mcp', 'run');
+  }
+  // If we have 'mcp' command but no subcommand, insert 'run'
+  else if (hasMcpCommand && cliArgs.length === 1) {
+    process.argv.splice(3, 0, 'run');
+  }
+  // If we have 'mcp' followed by options (not a subcommand), insert 'run'
+  else if (hasMcpCommand && cliArgs.length > 1 && !knownMcpSubcommands.includes(cliArgs[1]) && cliArgs[1].startsWith('--')) {
+    process.argv.splice(3, 0, 'run');
+  }
+  // If no arguments at all, default to 'mcp run'
+  else if (cliArgs.length === 0) {
+    process.argv.push('mcp', 'run');
   }
   
   // Check if we have 'mcp' command but no subcommand
