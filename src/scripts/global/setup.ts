@@ -7,9 +7,9 @@
 import { promises as fs } from "fs";
 import { join } from "path";
 import { homedir } from "os";
-import chalk from "chalk";
 import inquirer from "inquirer";
 import { displayBanner, output } from "../../utils/output.js";
+import { theme } from "../../utils/theme.js";
 import {
   fileExists,
   hasClaudeCodeGlobalHypertoolSlashCommands,
@@ -88,7 +88,7 @@ export class GlobalSetup {
       output.displayHeader("🚀 Hypertool Global Installation");
 
       if (this.dryRun) {
-        output.info(chalk.cyan("🔍 [DRY RUN MODE] - No changes will be made"));
+        output.info(theme.info("🔍 [DRY RUN MODE] - No changes will be made"));
         output.displaySpaceBuffer(1);
       }
 
@@ -136,7 +136,7 @@ export class GlobalSetup {
           {
             type: "confirm",
             name: "installCommands",
-            message: chalk.yellow(
+            message: theme.warning(
               "Install global slash commands? (recommended)"
             ),
             default: true,
@@ -152,7 +152,7 @@ export class GlobalSetup {
         {
           type: "confirm",
           name: "shouldProceed",
-          message: chalk.yellow(
+          message: theme.warning(
             `Install Hypertool for ${detectedApps.length} application(s)?`
           ),
           default: true,
@@ -242,13 +242,11 @@ export class GlobalSetup {
       output.displaySpaceBuffer(1);
 
       if (this.dryRun) {
-        console.log(
-          chalk.yellow("🔍 [DRY RUN] Installation simulation complete")
-        );
+        output.info(theme.warning("🔍 [DRY RUN] Installation simulation complete"));
         output.displaySpaceBuffer(1);
         output.info("No actual changes were made to your system.");
       } else {
-        console.log(chalk.green("✨ All installations complete!"));
+        output.success("✨ All installations complete!");
         output.displaySpaceBuffer(1);
 
         // Show concise results
@@ -286,5 +284,9 @@ export class GlobalSetup {
 // Run the setup if this script is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   const setup = new GlobalSetup();
-  setup.run().catch(console.error);
+  setup.run().catch((error) => {
+    output.error("Setup failed:");
+    output.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  });
 }

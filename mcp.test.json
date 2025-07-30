@@ -3,10 +3,7 @@
     "everything": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-everything"
-      ],
+      "args": ["-y", "@modelcontextprotocol/server-everything"],
       "env": {}
     },
     "context7": {
@@ -15,10 +12,7 @@
     },
     "mcping": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@toolprint/mcping-mcp@latest"
-      ]
+      "args": ["-y", "@toolprint/mcping-mcp@latest"]
     }
   }
 }

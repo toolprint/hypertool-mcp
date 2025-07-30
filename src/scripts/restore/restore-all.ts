@@ -12,9 +12,9 @@
 import { promises as fs } from "fs";
 import { join } from "path";
 import { homedir } from "os";
-import chalk from "chalk";
 import { Command } from "commander";
 import { output } from "../../utils/output.js";
+import { theme } from "../../utils/theme.js";
 import { fileExists } from "../shared/mcpSetupUtils.js";
 
 interface RestoreResult {
@@ -261,17 +261,15 @@ export class RestoreAll {
 
     try {
       // Welcome banner
-      console.log(
-        chalk.red(`
+      output.info(theme.error(`
 ╔══════════════════════════════════════════╗
 ║       🔄 Hypertool Restore Utility       ║
 ║     Revert All Installations to Original ║
 ╚══════════════════════════════════════════╝
-      `)
-      );
+      `));
 
       if (this.dryRun) {
-        output.info(chalk.cyan("🔍 [DRY RUN MODE] - No changes will be made"));
+        output.info(theme.info("🔍 [DRY RUN MODE] - No changes will be made"));
         output.displaySpaceBuffer(1);
       }
 
@@ -317,12 +315,10 @@ export class RestoreAll {
       }
 
       if (this.dryRun) {
-        console.log(
-          chalk.yellow("🔍 [DRY RUN] Restoration simulation complete")
-        );
+        output.info(theme.warning("🔍 [DRY RUN] Restoration simulation complete"));
         output.info("No actual changes were made to your system.");
       } else {
-        console.log(chalk.green("✨ Restoration complete!"));
+        output.success("✨ Restoration complete!");
         output.displaySpaceBuffer(1);
         output.info("All Hypertool installations have been reverted.");
         output.info("You can now run the installer again for testing.");

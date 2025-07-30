@@ -33,6 +33,18 @@ vi.mock("inquirer", () => ({
   },
 }));
 
+// Mock chalk
+vi.mock("chalk", () => ({
+  default: {
+    yellow: vi.fn((text) => text),
+    green: vi.fn((text) => text),
+    red: vi.fn((text) => text),
+    blue: vi.fn((text) => text),
+    gray: vi.fn((text) => text),
+    bold: vi.fn((text) => text),
+  },
+}));
+
 // Mock shared utilities
 vi.mock("../shared/mcpSetupUtils.js", () => ({
   fileExists: vi.fn(),
@@ -52,6 +64,7 @@ const mockCwd = vi.fn(() => "/test/project");
 vi.stubGlobal("process", {
   cwd: mockCwd,
   exit: vi.fn(),
+  env: { NODE_ENV: 'test' },
 });
 
 // Mock ora spinner
@@ -85,6 +98,25 @@ vi.mock("../../utils/output.js", () => ({
     warn: vi.fn(),
     error: vi.fn(),
     log: vi.fn(),
+  },
+}));
+
+// Mock theme utilities  
+vi.mock("../../utils/theme.js", () => ({
+  theme: {
+    info: vi.fn((text) => text),
+    success: vi.fn((text) => text),
+    warning: vi.fn((text) => text),
+    error: vi.fn((text) => text),
+    label: vi.fn((text) => text),
+    muted: vi.fn((text) => text),
+    critical: vi.fn((text) => text),
+  },
+  semantic: {
+    messageError: vi.fn((text) => text),
+    messageSuccess: vi.fn((text) => text),
+    messageWarning: vi.fn((text) => text),
+    messageInfo: vi.fn((text) => text),
   },
 }));
 
@@ -255,6 +287,7 @@ describe("Claude Code Integration Setup", () => {
       vi.stubGlobal("process", {
         cwd: mockCwd,
         exit: mockExit,
+        env: { NODE_ENV: 'test' },
       });
 
       // Import the output mock
@@ -267,11 +300,10 @@ describe("Claude Code Integration Setup", () => {
       );
 
       const setup = new ClaudeCodeSetup();
-      await expect(setup.run(false)).rejects.toThrow("process.exit called");
+      await expect(setup.run(false)).rejects.toThrow("Permission denied");
 
       expect(output.error).toHaveBeenCalledWith("❌ Setup failed:");
       expect(output.error).toHaveBeenCalledWith("Permission denied");
-      expect(mockExit).toHaveBeenCalledWith(1);
     });
   });
 

@@ -38,9 +38,11 @@ The Discovery Module acts as the "phone book" for all available MCP tools across
 ### Core Components
 
 #### 1. **ToolDiscoveryEngine** (`service.ts`)
+
 The main orchestrator that coordinates tool discovery across all connected MCP servers.
 
 **Key Responsibilities:**
+
 - Discovers tools from connected MCP servers via `list_tools` MCP calls
 - Maintains real-time inventory of available tools
 - Provides fast lookup and search capabilities
@@ -48,27 +50,33 @@ The main orchestrator that coordinates tool discovery across all connected MCP s
 - Manages server connection state and health
 
 #### 2. **ToolCache** (`cache.ts`)
+
 High-performance in-memory cache for discovered tools with TTL (Time-To-Live) management.
 
 **Features:**
+
 - Fast O(1) tool lookups by name or hash
 - Automatic expiration and cleanup
 - Hit rate monitoring for performance optimization
 - Server-specific cache management
 
 #### 3. **ToolLookupManager** (`lookup.ts`)
+
 Advanced search and filtering capabilities for the tool registry.
 
 **Capabilities:**
+
 - Name-based search with fuzzy matching
 - Keyword-based search in descriptions
 - Server-specific filtering
 - Search result scoring and ranking
 
 #### 4. **ToolHashManager** (`hash-utils.ts`)
+
 Tool identity and change detection system using cryptographic hashes.
 
 **Functions:**
+
 - Generates unique hashes for tool identity
 - Detects tool changes (schema updates, description changes)
 - Enables efficient diff operations
@@ -228,11 +236,13 @@ interface DiscoveredToolsChangedEvent {
 ## Error Handling
 
 ### Connection Failures
+
 - **Graceful Degradation**: Continues operating with remaining servers
 - **Retry Logic**: Automatic reconnection and rediscovery
 - **Error Tracking**: Logs server-specific errors for debugging
 
 ### Tool Discovery Failures
+
 - **Individual Server Isolation**: Failure in one server doesn't affect others
 - **Partial Discovery**: Returns successfully discovered tools even if some fail
 - **Error Reporting**: Detailed error messages for troubleshooting

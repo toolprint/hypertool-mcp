@@ -18,6 +18,7 @@
 ```
 Cursor / Claude Code → Hypertool MCP → Your MCPs
 ```
+
 ```
 📦 Multiple MCP Servers → 🎯 Focused Toolsets → 🚀 Better Performance
 ```
@@ -34,6 +35,7 @@ Cursor / Claude Code → Hypertool MCP → Your MCPs
 ## 🚀 Quick Start
 
 Install hypertool in all your agentic apps.
+
 ```bash
 npx -y @toolprint/hypertool-mcp@latest --install
 
@@ -45,15 +47,19 @@ Just restart Cursor/Claude Code and it will pick up hypertool. All your MCP conf
 ## Add Hypertool to your project
 
 ### Claude Code
+
 **Option 1 - quick add**
+
 ```bash
 # In your project directory:
 npx -y @toolprint/hypertool-mcp@latest --install claude-code
 ```
 
 **Option 2 - manual add**
+
 1. Copy your `.mcp.json` to `.mcp.hypertool.json`
 2. Update your `.mcp.json` with only the hypertool MCP:
+
 ```json
 {
   "mcpServers": {
@@ -71,17 +77,20 @@ npx -y @toolprint/hypertool-mcp@latest --install claude-code
 }
 ```
 
-> **Claude Code Dynamic Toolset Support** - Currently CC doesn't support [MCP tool change notifications](https://modelcontextprotocol.io/docs/concepts/tools#tool-discovery-and-updates) (we know, it surprised us too) but we suspect this is coming soon. We've opened an issue [here](https://github.com/anthropics/claude-code/issues/411). Please give it an upvote if you want this too. 
+> **Claude Code Dynamic Toolset Support** - Currently CC doesn't support [MCP tool change notifications](https://modelcontextprotocol.io/docs/concepts/tools#tool-discovery-and-updates) (we know, it surprised us too) but we suspect this is coming soon. We've opened an issue [here](https://github.com/anthropics/claude-code/issues/411). Please give it an upvote if you want this too.
 
 > In the meantime, just restart your claude code session to pick up your newly equipped toolset OR run your hypertool-mcp with the `--equip-toolset {name}` flag and it will autoequip on boot.
 
 ### 🎯 Cursor
+
 **Option 1 - One command install**
+
 ```bash
 npx -y @toolprint/hypertool-mcp@latest --install cursor
 ```
 
 This will:
+
 - Back up your current Cursor MCP configuration
 - Copy all existing servers to Hypertool's config
 - Add Hypertool as your main MCP server
@@ -94,10 +103,11 @@ Click the badge above to automatically install Hypertool MCP in Cursor IDE. This
 
 **Note** you will need to update the runtime flag for the hypertool mcp server `--mcp-config` to point to a copied version of Cursor's MCP settings. All of this is done automatically in **Option 1**.
 
-
 ## Other Projects
+
 1. Copy your `mcp.json` to `.mcp.hypertool.json`
 2. Update your `mcp.json` with only the hypertool MCP:
+
 ```json
 {
   "mcpServers": {
@@ -114,7 +124,6 @@ Click the badge above to automatically install Hypertool MCP in Cursor IDE. This
   }
 }
 ```
-
 
 ## 🎭 Creating Your First Toolset
 
@@ -138,8 +147,7 @@ Just chat with your assistant to swap toolsets using the `equip-toolset` tool.
 
 Hypertool will equip the tools and send a change notification so that your assistant can read and use the newly executable tools.
 
-
-## Add Notes to tools!
+## Add Notes to tools
 
 Sometimes descriptions and reading input parameters isn't enough for an LLM to figure out how to use a tool.
 
@@ -148,13 +156,17 @@ Hypertool gives your agents a `add-tool-annotation` tool that lets them add note
 ## 🌐 Multiple Transport Support
 
 ### Stdio (Default)
+
 Perfect for Claude Desktop and most MCP clients:
+
 ```bash
 hypertool-mcp --mcp-config {path_to_config}
 ```
 
 ### HTTP/SSE
+
 Have it run separately and listen on a port over HTTP:
+
 ```bash
 hypertool-mcp --transport http --port 3000 --config test-mcp.json
 ```
@@ -185,6 +197,7 @@ Hypertool validates tool references using cryptographic hashes:
 ## 📋 Common Workflows
 
 ### Development Setup
+
 ```
 1. Start Hypertool: hypertool-mcp --config test-mcp.json
 2. Ask Claude: "Use build-toolset to create a frontend toolset with echo and add_numbers"
@@ -192,6 +205,7 @@ Hypertool validates tool references using cryptographic hashes:
 ```
 
 ### Production Debugging
+
 ```
 1. Ask Claude: "Use equip-toolset to switch to debug toolset"
 2. Your AI now has access to focused debugging tools
@@ -199,6 +213,7 @@ Hypertool validates tool references using cryptographic hashes:
 ```
 
 ### Team Collaboration
+
 ```
 1. Ask Claude: "Use list-saved-toolsets to see available toolsets"
 2. Share toolset configurations via your preferred method
@@ -208,6 +223,7 @@ Hypertool validates tool references using cryptographic hashes:
 ## 🔧 Configuration Reference
 
 ### CLI Options
+
 ```bash
 hypertool-mcp [options]
 
@@ -220,6 +236,7 @@ Options:
 ```
 
 ### Server Configuration
+
 ```json
 {
   "mcpServers": {
@@ -238,6 +255,7 @@ Options:
 ## 🤝 Integration Examples
 
 ### Equip a specific toolset on server spawn
+
 ```json
 {
   "mcpServers": {
@@ -250,15 +268,16 @@ Options:
 }
 ```
 
-
 ## 📊 Performance Impact
 
 **Before Hypertool:**
+
 - 🐌 50+ tools exposed to LLM
 - 😵 Confused tool selection
 - 🔄 Slow response times
 
 **After Hypertool:**
+
 - ⚡ 5-10 focused tools per context
 - 🎯 Precise tool selection  
 - 🚀 Faster, more accurate responses
@@ -286,7 +305,6 @@ MIT License - see [LICENSE](LICENSE) file for details.
 <div align="center">
 
 **Built by developers who got tired of overwhelming their AI with too many tools. Hope you find it useful!** 🚀
-
 
 <a href="https://toolprint.dev">
   <img src="./assets/toolprint.png" alt="Toolprint" width="200">

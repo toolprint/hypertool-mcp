@@ -32,6 +32,38 @@ vi.mock("../../utils/output.js");
 vi.mock("../shared/mcpSetupUtils.js");
 vi.mock("../shared/externalMcpDetector.js");
 
+// Mock chalk
+vi.mock("chalk", () => ({
+  default: {
+    yellow: vi.fn((text) => text),
+    green: vi.fn((text) => text),
+    red: vi.fn((text) => text),
+    blue: vi.fn((text) => text),
+    gray: vi.fn((text) => text),
+    bold: vi.fn((text) => text),
+  },
+}));
+
+// Mock theme
+vi.mock("../../utils/theme.js", () => ({
+  theme: {
+    info: vi.fn((text) => text),
+    success: vi.fn((text) => text),
+    warning: vi.fn((text) => text),
+    error: vi.fn((text) => text),
+    label: vi.fn((text) => text),
+    muted: vi.fn((text) => text),
+    critical: vi.fn((text) => text),
+    value: vi.fn((text) => text),
+  },
+  semantic: {
+    messageError: vi.fn((text) => text),
+    messageSuccess: vi.fn((text) => text),
+    messageWarning: vi.fn((text) => text),
+    messageInfo: vi.fn((text) => text),
+  },
+}));
+
 // Mock process.cwd, process.exit, and console
 const originalCwd = process.cwd;
 const originalExit = process.exit;
@@ -329,6 +361,12 @@ describe("ClaudeCodeSetup - Global vs Local Installation", () => {
   describe("Dry Run Mode", () => {
     it("should not create files in dry run mode", async () => {
       mockUtils.fileExists.mockResolvedValue(false);
+      
+      // Mock user interactions for dry run
+      mockInquirer.prompt = vi.fn()
+        .mockResolvedValueOnce({ createBasic: true })
+        .mockResolvedValueOnce({ components: ["updateMcpConfig"] })
+        .mockResolvedValueOnce({ shouldProceed: true });
 
       await setup.run(true);
 

@@ -38,10 +38,10 @@ setup: brew
     npm run build
     @echo "✅ Setup complete!"
 
-# Run development mode
+# Run development mode with optional arguments
 [group('dev')]
-dev:
-    npm run dev
+dev *args='':
+    npm run dev -- {{args}}
 
 # Run tests
 [group('test')]

@@ -5,6 +5,7 @@ import { spawnSync } from "child_process";
 import { isDefined } from "../utils/helpers.js";
 import { APP_CONFIG, APP_NAME, BRAND_NAME } from "../config/appConfig.js";
 import { getActiveLoggingConfig } from "./logging.js";
+import { theme, semantic } from "./theme.js";
 
 // For stdio transport, use stderr for all display output to avoid interfering with MCP protocol
 const getStdioDisplay = () => {
@@ -133,8 +134,7 @@ export const output = {
    * @param length - The length of the separator
    */
   displaySeparator: (length: number = 80) => {
-    getStdioDisplay().log(chalk.bold.blueBright.underline(" ".repeat(length)));
-    getStdioDisplay().log(chalk.bold.blueBright.underline("".repeat(length)));
+    getStdioDisplay().log(theme.separator("━".repeat(length)));
   },
 
   /**
@@ -142,12 +142,12 @@ export const output = {
    * @param msg - The message to log
    */
   displayHeader: (msg: string) => {
-    getStdioDisplay().log(chalk.bold.blueBright.underline(msg));
+    getStdioDisplay().log(theme.heading(msg));
   },
 
   displaySubHeader: (msg: string) => {
     const fmtMsg = `\n> ${msg}`;
-    getStdioDisplay().log(chalk.bold.blue.italic.underline(fmtMsg));
+    getStdioDisplay().log(theme.subheading(fmtMsg));
   },
 
   /**
@@ -172,7 +172,7 @@ export const output = {
       output.displaySpaceBuffer(1);
       getStdioDisplay().log(`${promptSymbol} ${command}`);
       output.displaySpaceBuffer(1);
-      getStdioDisplay().log(chalk.dim.italic("Command copied to clipboard!"));
+      getStdioDisplay().log(theme.subtle("Command copied to clipboard!"));
       output.displaySpaceBuffer(1);
     } else {
       // Display with padding only
@@ -189,7 +189,7 @@ export const output = {
   displayCodeBlock: (code: string) => {
     const lines = code.split("\n");
     for (const line of lines) {
-      getStdioDisplay().log(`\t${chalk.white.dim(line)}`);
+      getStdioDisplay().log(`\t${theme.code(line)}`);
     }
   },
 
@@ -201,7 +201,7 @@ export const output = {
     if (bright) {
       getStdioDisplay().log(chalk.yellow.bold(msg));
     } else {
-      getStdioDisplay().log(chalk.blue.dim(msg));
+      getStdioDisplay().log(theme.muted(msg));
     }
   },
 
@@ -210,7 +210,7 @@ export const output = {
    * @param msg - The message to log
    */
   displayHelpContext: (msg: string) => {
-    getStdioDisplay().log(chalk.gray.dim.italic(msg));
+    getStdioDisplay().log(theme.subtle(msg));
   },
 
   /**
@@ -219,7 +219,7 @@ export const output = {
    * @param link - The link to display
    */
   displayLinkWithPrefix: (prefix: string, link: string) => {
-    getStdioDisplay().log(`${chalk.dim(prefix)} ${chalk.blue.bold(link)}`);
+    getStdioDisplay().log(`${theme.muted(prefix)} ${theme.link(link)}`);
   },
 
   /**
@@ -235,7 +235,7 @@ export const output = {
    * @param msg - The message to display
    */
   debug: (msg: string) => {
-    getStdioDisplay().debug(chalk.dim(chalk.yellow(msg)));
+    getStdioDisplay().debug(theme.dimmed(msg));
   },
 
   /**
@@ -244,9 +244,9 @@ export const output = {
    */
   info: (msg: string, lowPriority: boolean = false) => {
     if (lowPriority) {
-      getStdioDisplay().info(chalk.dim(chalk.gray(msg)));
+      getStdioDisplay().info(theme.subtle(msg));
     } else {
-      getStdioDisplay().info(chalk.blue(msg));
+      getStdioDisplay().info(theme.info(msg));
     }
   },
 
@@ -255,7 +255,7 @@ export const output = {
    * @param msg - The message to display
    */
   success: (msg: string) => {
-    getStdioDisplay().log(chalk.green(msg));
+    getStdioDisplay().log(semantic.messageSuccess(msg));
   },
 
   /**
@@ -263,7 +263,7 @@ export const output = {
    * @param msg - The message to display
    */
   warn: (msg: string) => {
-    getStdioDisplay().warn(chalk.magenta(msg));
+    getStdioDisplay().warn(semantic.messageWarning(msg));
   },
 
   /**
@@ -271,7 +271,7 @@ export const output = {
    * @param msg - The message to display
    */
   error: (msg: string) => {
-    getStdioDisplay().error(chalk.red(msg));
+    getStdioDisplay().error(semantic.messageError(msg));
   },
 } as const;
 
@@ -323,11 +323,11 @@ function displayAppBanner(appName: string, maxLenNewLine: number = 10): void {
     const words = appName.split(" ");
     for (const word of words) {
       const wordBanner = getAsciiArt(word, PREFERRED_FONT);
-      output.log(chalk.blueBright.bold(wordBanner));
+      output.log(theme.banner(wordBanner));
     }
   } else {
     const appNameBanner = getAsciiArt(appName, PREFERRED_FONT);
-    output.log(chalk.blueBright.bold(appNameBanner));
+    output.log(theme.banner(appNameBanner));
   }
 }
 
@@ -336,7 +336,7 @@ function displayAppBanner(appName: string, maxLenNewLine: number = 10): void {
  * @param appName - The name of the specific application
  */
 export function displayMinimalBanner(appName: string = APP_NAME): void {
-  console.log(chalk.cyan.bold(`${BRAND_NAME} - ${appName}`));
+  console.log(theme.heading(`${BRAND_NAME} - ${appName}`));
   output.displaySeparator(40);
 }
 
@@ -352,15 +352,13 @@ export function displayServerRuntimeInfo(
   port?: number,
   host?: string
 ): void {
-  output.log(chalk.blue.bold("Server Configuration:"));
-  output.log(chalk.white(`  Transport: ${chalk.yellow(transport)}`));
+  output.log(theme.heading('Server Configuration:'));
+  output.log(theme.label(`  Transport: ${theme.value(transport)}`));
 
-  if (transport === "http" && port && host) {
-    output.log(
-      chalk.white(`  Address:   ${chalk.yellow(`http://${host}:${port}`)}`)
-    );
+  if (transport === 'http' && port && host) {
+    output.log(theme.label(`  Address:   ${theme.value(`http://${host}:${port}`)}`));
   }
 
-  output.log(chalk.white(`  Version:   ${chalk.yellow(APP_CONFIG.version)}`));
+  output.log(theme.label(`  Version:   ${theme.value(APP_CONFIG.version)}`));
   output.displaySpaceBuffer(1);
 }

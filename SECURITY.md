@@ -8,9 +8,10 @@ We take the security of Hypertool MCP seriously. If you discover a security vuln
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Instead, please email us at: **support@onegrep.dev**
+Instead, please email us at: **<support@onegrep.dev>**
 
 Include the following information:
+
 - Type of issue (e.g., buffer overflow, command injection, privilege escalation, etc.)
 - Full paths of source file(s) related to the manifestation of the issue
 - The location of the affected source code (tag/branch/commit or direct URL)
@@ -32,14 +33,14 @@ When using Hypertool MCP:
 
 1. **Authentication**: Ensure proper authentication for all underlying MCP servers
 2. **Environment Variables**: Store sensitive tokens and API keys in environment variables, never in code
-3. **Configuration Security**: 
+3. **Configuration Security**:
    - Protect your `.mcp.json` configuration files
    - Use appropriate file permissions
    - Never commit sensitive configuration to version control
-4. **Network Security**: 
+4. **Network Security**:
    - Use secure transports when available
    - Be cautious when exposing HTTP endpoints
-5. **Tool Permissions**: 
+5. **Tool Permissions**:
    - Only enable tools you trust
    - Regularly audit enabled toolsets
    - Use the principle of least privilege
