@@ -3,15 +3,15 @@
  * Supports production and test modes with configurable paths
  */
 
-import { join } from 'path';
-import { homedir } from 'os';
+import { join } from "path";
+import { homedir } from "os";
 
 /**
  * Environment mode enumeration
  */
 export enum EnvironmentMode {
-  PRODUCTION = 'production',
-  TEST = 'test'
+  PRODUCTION = "production",
+  TEST = "test",
 }
 
 /**
@@ -51,13 +51,13 @@ export class EnvironmentManager {
    * Create production configuration
    */
   private createProductionConfig(): EnvironmentConfig {
-    const configRoot = join(homedir(), '.toolprint/hypertool-mcp');
+    const configRoot = join(homedir(), ".toolprint/hypertool-mcp");
     return {
       mode: EnvironmentMode.PRODUCTION,
       configRoot,
-      registryPath: join(configRoot, 'apps/registry.json'),
-      backupPath: join(configRoot, 'backups'),
-      cachePath: join(configRoot, 'cache')
+      registryPath: join(configRoot, "apps/registry.json"),
+      backupPath: join(configRoot, "backups"),
+      cachePath: join(configRoot, "cache"),
     };
   }
 
@@ -65,13 +65,13 @@ export class EnvironmentManager {
    * Create test configuration
    */
   private createTestConfig(baseDir: string): EnvironmentConfig {
-    const configRoot = join(baseDir, '.toolprint/hypertool-mcp');
+    const configRoot = join(baseDir, ".toolprint/hypertool-mcp");
     return {
       mode: EnvironmentMode.TEST,
       configRoot,
-      registryPath: join(configRoot, 'apps/registry.json'),
-      backupPath: join(configRoot, 'backups'),
-      cachePath: join(configRoot, 'cache')
+      registryPath: join(configRoot, "apps/registry.json"),
+      backupPath: join(configRoot, "backups"),
+      cachePath: join(configRoot, "cache"),
     };
   }
 
@@ -88,7 +88,7 @@ export class EnvironmentManager {
   setMode(mode: EnvironmentMode, testBaseDir?: string): void {
     if (mode === EnvironmentMode.TEST) {
       if (!testBaseDir) {
-        throw new Error('Test base directory must be provided for test mode');
+        throw new Error("Test base directory must be provided for test mode");
       }
       this.config = this.createTestConfig(testBaseDir);
     } else {
@@ -102,7 +102,7 @@ export class EnvironmentManager {
   override(overrides: Partial<EnvironmentConfig>): void {
     this.config = {
       ...this.config,
-      ...overrides
+      ...overrides,
     };
   }
 
@@ -134,9 +134,9 @@ export class EnvironmentManager {
     if (configRoot) {
       this.config.configRoot = configRoot;
       // Update derived paths
-      this.config.registryPath = join(configRoot, 'apps/registry.json');
-      this.config.backupPath = join(configRoot, 'backups');
-      this.config.cachePath = join(configRoot, 'cache');
+      this.config.registryPath = join(configRoot, "apps/registry.json");
+      this.config.backupPath = join(configRoot, "backups");
+      this.config.cachePath = join(configRoot, "cache");
     }
   }
 

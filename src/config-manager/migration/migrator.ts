@@ -2,15 +2,15 @@
  * Migration logic for existing HyperTool installations
  */
 
-import { promises as fs } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
-import { ConfigurationManager } from '../index.js';
-import { MCPConfig } from '../types/index.js';
+import { promises as fs } from "fs";
+import { join } from "path";
+import { homedir } from "os";
+import { ConfigurationManager } from "../index.js";
+import { MCPConfig } from "../types/index.js";
 
 export class ConfigMigrator {
   private configManager: ConfigurationManager;
-  
+
   constructor() {
     this.configManager = new ConfigurationManager();
   }
@@ -21,9 +21,9 @@ export class ConfigMigrator {
   async needsMigration(): Promise<boolean> {
     // Check for legacy configurations in application-specific locations
     const legacyPaths = [
-      join(homedir(), 'Library/Application Support/Claude/mcp.hypertool.json'),
-      join(homedir(), '.cursor/mcp.hypertool.json'),
-      join(process.cwd(), 'mcp.hypertool.json')
+      join(homedir(), "Library/Application Support/Claude/mcp.hypertool.json"),
+      join(homedir(), ".cursor/mcp.hypertool.json"),
+      join(process.cwd(), "mcp.hypertool.json"),
     ];
 
     for (const path of legacyPaths) {
@@ -36,7 +36,7 @@ export class ConfigMigrator {
     }
 
     // Check if new config exists
-    const newConfigPath = join(homedir(), '.toolprint/hypertool-mcp/mcp.json');
+    const newConfigPath = join(homedir(), ".toolprint/hypertool-mcp/mcp.json");
     try {
       await fs.access(newConfigPath);
       return false; // Already migrated
@@ -63,51 +63,51 @@ export class ConfigMigrator {
     // Migrate Claude Desktop
     try {
       const claudeConfig = await this.migrateLegacyConfig(
-        join(homedir(), 'Library/Application Support/Claude/mcp.hypertool.json'),
-        'claude-desktop'
+        join(
+          homedir(),
+          "Library/Application Support/Claude/mcp.hypertool.json"
+        )
       );
       if (claudeConfig) {
         Object.assign(mergedServers.mcpServers, claudeConfig.mcpServers);
-        migrated.push('claude-desktop');
+        migrated.push("claude-desktop");
       }
     } catch (error) {
-      console.warn('Failed to migrate Claude Desktop config:', error);
-      failed.push('claude-desktop');
+      console.warn("Failed to migrate Claude Desktop config:", error);
+      failed.push("claude-desktop");
     }
 
     // Migrate Cursor
     try {
       const cursorConfig = await this.migrateLegacyConfig(
-        join(homedir(), '.cursor/mcp.hypertool.json'),
-        'cursor'
+        join(homedir(), ".cursor/mcp.hypertool.json")
       );
       if (cursorConfig) {
         Object.assign(mergedServers.mcpServers, cursorConfig.mcpServers);
-        migrated.push('cursor');
+        migrated.push("cursor");
       }
     } catch (error) {
-      console.warn('Failed to migrate Cursor config:', error);
-      failed.push('cursor');
+      console.warn("Failed to migrate Cursor config:", error);
+      failed.push("cursor");
     }
 
     // Migrate Claude Code (project-local)
     try {
       const claudeCodeConfig = await this.migrateLegacyConfig(
-        join(process.cwd(), 'mcp.hypertool.json'),
-        'claude-code'
+        join(process.cwd(), "mcp.hypertool.json")
       );
       if (claudeCodeConfig) {
         Object.assign(mergedServers.mcpServers, claudeCodeConfig.mcpServers);
-        migrated.push('claude-code');
+        migrated.push("claude-code");
       }
-    } catch (error) {
+    } catch {
       // Project-local configs might not exist, which is fine
     }
 
     // Save merged configuration if we migrated anything
     if (migrated.length > 0) {
-      const configPath = join(homedir(), '.toolprint/hypertool-mcp/mcp.json');
-      
+      const configPath = join(homedir(), ".toolprint/hypertool-mcp/mcp.json");
+
       // Add metadata
       mergedServers._metadata = { sources: {} };
       for (const [serverName] of Object.entries(mergedServers.mcpServers)) {
@@ -115,14 +115,14 @@ export class ConfigMigrator {
         const sourceApp = migrated[0]; // Simple heuristic
         mergedServers._metadata.sources![serverName] = {
           app: sourceApp,
-          importedAt: new Date().toISOString()
+          importedAt: new Date().toISOString(),
         };
       }
 
       await fs.writeFile(
         configPath,
         JSON.stringify(mergedServers, null, 2),
-        'utf-8'
+        "utf-8"
       );
     }
 
@@ -133,16 +133,15 @@ export class ConfigMigrator {
    * Migrate a single legacy configuration file
    */
   private async migrateLegacyConfig(
-    legacyPath: string,
-    appId: string
+    legacyPath: string
   ): Promise<MCPConfig | null> {
     try {
-      const content = await fs.readFile(legacyPath, 'utf-8');
+      const content = await fs.readFile(legacyPath, "utf-8");
       const config = JSON.parse(content);
-      
+
       // Legacy configs already use standard format
       return {
-        mcpServers: config.mcpServers || {}
+        mcpServers: config.mcpServers || {},
       };
     } catch {
       return null;
@@ -154,9 +153,9 @@ export class ConfigMigrator {
    */
   async cleanupLegacyConfigs(): Promise<void> {
     const legacyPaths = [
-      join(homedir(), 'Library/Application Support/Claude/mcp.hypertool.json'),
-      join(homedir(), '.cursor/mcp.hypertool.json'),
-      join(process.cwd(), 'mcp.hypertool.json')
+      join(homedir(), "Library/Application Support/Claude/mcp.hypertool.json"),
+      join(homedir(), ".cursor/mcp.hypertool.json"),
+      join(process.cwd(), "mcp.hypertool.json"),
     ];
 
     for (const path of legacyPaths) {

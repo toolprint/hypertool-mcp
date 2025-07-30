@@ -143,9 +143,11 @@ export async function createConfigBackup(context: SetupContext): Promise<void> {
 
   try {
     // Read current .mcp.json to get any new servers
-    const currentConfig: MCPConfig = await readJsonFile(context.originalConfigPath);
+    const currentConfig: MCPConfig = await readJsonFile(
+      context.originalConfigPath
+    );
     const newServers = { ...currentConfig.mcpServers };
-    
+
     // Remove hypertool from new servers
     Object.keys(newServers).forEach((key) => {
       if (key.toLowerCase().includes("hypertool")) {
@@ -162,15 +164,15 @@ export async function createConfigBackup(context: SetupContext): Promise<void> {
         mcpServers: {
           ...existingBackup.mcpServers,
           ...newServers, // New servers take precedence
-        }
+        },
       };
     } else {
       // First time - create backup with current servers
       backupConfig = {
-        mcpServers: newServers
+        mcpServers: newServers,
       };
     }
-    
+
     const backupContent = JSON.stringify(backupConfig, null, 2);
     await fs.writeFile(context.backupPath, backupContent, "utf8");
   } catch (error) {

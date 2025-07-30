@@ -132,7 +132,7 @@ export class MCPConfigParser {
 
   /**
    * Validate the basic structure of the configuration
-   * 
+   *
    * NOTE: Allow empty server configurations for initial setup
    */
   private validateStructure(rawConfig: any): string[] {

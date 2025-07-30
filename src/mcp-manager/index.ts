@@ -2,23 +2,23 @@
  * MCP Server Manager - Core functionality for managing MCP server configurations
  */
 
-import { promises as fs } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
-import { 
-  MCPServerConfig, 
-  MCPServersConfig, 
+import { promises as fs } from "fs";
+import { join } from "path";
+import { homedir } from "os";
+import {
+  MCPServerConfig,
+  MCPServersConfig,
   MCPServerDetails,
-  MCPServerMetadata
-} from './types.js';
+  MCPServerMetadata,
+} from "./types.js";
 
 export class MCPServerManager {
   private basePath: string;
   private mcpConfigPath: string;
 
-  constructor(basePath: string = join(homedir(), '.toolprint/hypertool-mcp')) {
+  constructor(basePath: string = join(homedir(), ".toolprint/hypertool-mcp")) {
     this.basePath = basePath;
-    this.mcpConfigPath = join(basePath, 'mcp.json');
+    this.mcpConfigPath = join(basePath, "mcp.json");
   }
 
   /**
@@ -35,8 +35,8 @@ export class MCPServerManager {
       const emptyConfig: MCPServersConfig = {
         mcpServers: {},
         _metadata: {
-          sources: {}
-        }
+          sources: {},
+        },
       };
       await this.saveConfig(emptyConfig);
     }
@@ -54,7 +54,7 @@ export class MCPServerManager {
       servers.push({
         name,
         config: serverConfig,
-        metadata
+        metadata,
       });
     }
 
@@ -67,7 +67,7 @@ export class MCPServerManager {
   async getServer(name: string): Promise<MCPServerDetails | null> {
     const config = await this.loadConfig();
     const serverConfig = config.mcpServers[name];
-    
+
     if (!serverConfig) {
       return null;
     }
@@ -76,7 +76,7 @@ export class MCPServerManager {
     return {
       name,
       config: serverConfig,
-      metadata
+      metadata,
     };
   }
 
@@ -93,7 +93,9 @@ export class MCPServerManager {
 
     // Validate server name
     if (!this.isValidServerName(name)) {
-      throw new Error(`Invalid server name '${name}'. Use alphanumeric characters, hyphens, and underscores only.`);
+      throw new Error(
+        `Invalid server name '${name}'. Use alphanumeric characters, hyphens, and underscores only.`
+      );
     }
 
     // Validate server configuration
@@ -111,9 +113,9 @@ export class MCPServerManager {
     }
 
     config._metadata.sources[name] = {
-      app: 'manual',
+      app: "manual",
       importedAt: new Date().toISOString(),
-      addedManually: true
+      addedManually: true,
     };
 
     // Save configuration
@@ -146,7 +148,10 @@ export class MCPServerManager {
   /**
    * Update an existing server configuration
    */
-  async updateServer(name: string, serverConfig: MCPServerConfig): Promise<void> {
+  async updateServer(
+    name: string,
+    serverConfig: MCPServerConfig
+  ): Promise<void> {
     const config = await this.loadConfig();
 
     // Check if server exists
@@ -182,30 +187,36 @@ export class MCPServerManager {
    */
   private validateServerConfig(config: MCPServerConfig): void {
     // Validate transport type
-    const validTypes = ['stdio', 'http', 'sse', 'websocket'];
+    const validTypes = ["stdio", "http", "sse", "websocket"];
     if (!validTypes.includes(config.type)) {
-      throw new Error(`Invalid transport type '${config.type}'. Must be one of: ${validTypes.join(', ')}`);
+      throw new Error(
+        `Invalid transport type '${config.type}'. Must be one of: ${validTypes.join(", ")}`
+      );
     }
 
     // Validate stdio configuration
-    if (config.type === 'stdio') {
+    if (config.type === "stdio") {
       if (!config.command) {
-        throw new Error('Stdio transport requires a command');
+        throw new Error("Stdio transport requires a command");
       }
       if (config.url) {
-        throw new Error('Stdio transport should not have a URL');
+        throw new Error("Stdio transport should not have a URL");
       }
     }
 
     // Validate HTTP/SSE/WebSocket configuration
-    if (['http', 'sse', 'websocket'].includes(config.type)) {
+    if (["http", "sse", "websocket"].includes(config.type)) {
       if (!config.url) {
-        throw new Error(`${config.type.toUpperCase()} transport requires a URL`);
+        throw new Error(
+          `${config.type.toUpperCase()} transport requires a URL`
+        );
       }
       if (config.command) {
-        throw new Error(`${config.type.toUpperCase()} transport should not have a command`);
+        throw new Error(
+          `${config.type.toUpperCase()} transport should not have a command`
+        );
       }
-      
+
       // Validate URL format
       try {
         new URL(config.url);
@@ -215,13 +226,13 @@ export class MCPServerManager {
     }
 
     // Validate environment variables
-    if (config.env && typeof config.env !== 'object') {
-      throw new Error('Environment variables must be an object');
+    if (config.env && typeof config.env !== "object") {
+      throw new Error("Environment variables must be an object");
     }
 
     // Validate headers
-    if (config.headers && typeof config.headers !== 'object') {
-      throw new Error('Headers must be an object');
+    if (config.headers && typeof config.headers !== "object") {
+      throw new Error("Headers must be an object");
     }
   }
 
@@ -230,15 +241,15 @@ export class MCPServerManager {
    */
   private async loadConfig(): Promise<MCPServersConfig> {
     try {
-      const content = await fs.readFile(this.mcpConfigPath, 'utf-8');
+      const content = await fs.readFile(this.mcpConfigPath, "utf-8");
       return JSON.parse(content);
     } catch (error) {
       // Return empty config if file doesn't exist or is invalid
       return {
         mcpServers: {},
         _metadata: {
-          sources: {}
-        }
+          sources: {},
+        },
       };
     }
   }
@@ -254,7 +265,7 @@ export class MCPServerManager {
     await fs.writeFile(
       this.mcpConfigPath,
       JSON.stringify(config, null, 2),
-      'utf-8'
+      "utf-8"
     );
   }
 
@@ -263,14 +274,14 @@ export class MCPServerManager {
    */
   private async createBackup(): Promise<void> {
     try {
-      const backupDir = join(this.basePath, 'backups', 'mcp');
+      const backupDir = join(this.basePath, "backups", "mcp");
       await fs.mkdir(backupDir, { recursive: true });
 
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const backupPath = join(backupDir, `mcp_${timestamp}.json`);
 
-      const content = await fs.readFile(this.mcpConfigPath, 'utf-8');
-      await fs.writeFile(backupPath, content, 'utf-8');
+      const content = await fs.readFile(this.mcpConfigPath, "utf-8");
+      await fs.writeFile(backupPath, content, "utf-8");
     } catch {
       // Ignore backup errors - don't fail the operation
     }
@@ -280,9 +291,11 @@ export class MCPServerManager {
    * Parse environment variable string (key=value)
    */
   static parseEnvVar(envStr: string): [string, string] {
-    const index = envStr.indexOf('=');
+    const index = envStr.indexOf("=");
     if (index === -1) {
-      throw new Error(`Invalid environment variable format: ${envStr}. Use KEY=value`);
+      throw new Error(
+        `Invalid environment variable format: ${envStr}. Use KEY=value`
+      );
     }
     const key = envStr.substring(0, index);
     const value = envStr.substring(index + 1);
@@ -293,7 +306,7 @@ export class MCPServerManager {
    * Parse header string (key=value)
    */
   static parseHeader(headerStr: string): [string, string] {
-    const index = headerStr.indexOf('=');
+    const index = headerStr.indexOf("=");
     if (index === -1) {
       throw new Error(`Invalid header format: ${headerStr}. Use Header=value`);
     }

@@ -352,11 +352,13 @@ export function displayServerRuntimeInfo(
   port?: number,
   host?: string
 ): void {
-  output.log(theme.heading('Server Configuration:'));
+  output.log(theme.heading("Server Configuration:"));
   output.log(theme.label(`  Transport: ${theme.value(transport)}`));
 
-  if (transport === 'http' && port && host) {
-    output.log(theme.label(`  Address:   ${theme.value(`http://${host}:${port}`)}`));
+  if (transport === "http" && port && host) {
+    output.log(
+      theme.label(`  Address:   ${theme.value(`http://${host}:${port}`)}`)
+    );
   }
 
   output.log(theme.label(`  Version:   ${theme.value(APP_CONFIG.version)}`));

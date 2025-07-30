@@ -7,7 +7,7 @@
  */
 export interface PlatformConfig {
   configPath: string;
-  format: 'standard' | 'custom';
+  format: "standard" | "custom";
   transformer?: string; // Name of custom transformer if format is 'custom'
 }
 
@@ -15,7 +15,7 @@ export interface PlatformConfig {
  * Application detection configuration
  */
 export interface DetectionConfig {
-  type: 'file' | 'directory' | 'project-local' | 'command';
+  type: "file" | "directory" | "project-local" | "command";
   path?: string;
   indicator?: string;
   command?: string;
@@ -52,11 +52,14 @@ export interface BackupMetadata {
   version: string;
   timestamp: string;
   hypertool_version: string;
-  applications: Record<string, {
-    source_path: string;
-    format: string;
-    servers_count: number;
-  }>;
+  applications: Record<
+    string,
+    {
+      source_path: string;
+      format: string;
+      servers_count: number;
+    }
+  >;
   total_servers: number;
   system_info: {
     platform: NodeJS.Platform;
@@ -112,12 +115,12 @@ export interface ConfigTransformer {
    * Convert from app-specific format to standard MCP format
    */
   toStandard(appConfig: any): MCPConfig;
-  
+
   /**
    * Convert from standard MCP format to app-specific format
    */
   fromStandard(standardConfig: MCPConfig): any;
-  
+
   /**
    * Validate app-specific configuration format
    */
@@ -130,10 +133,13 @@ export interface ConfigTransformer {
 export interface MCPConfig {
   mcpServers: Record<string, MCPServerConfig>;
   _metadata?: {
-    sources?: Record<string, {
-      app: string;
-      importedAt: string;
-    }>;
+    sources?: Record<
+      string,
+      {
+        app: string;
+        importedAt: string;
+      }
+    >;
   };
 }
 
@@ -141,7 +147,7 @@ export interface MCPConfig {
  * Individual MCP server configuration
  */
 export interface MCPServerConfig {
-  type: 'stdio' | 'http' | 'websocket' | 'sse';
+  type: "stdio" | "http" | "websocket" | "sse";
   command?: string; // Required for stdio
   url?: string; // Required for http/sse/websocket
   args?: string[];

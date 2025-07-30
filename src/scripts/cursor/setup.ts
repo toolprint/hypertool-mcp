@@ -137,7 +137,9 @@ export class CursorSetup {
       output.displaySpaceBuffer(1);
 
       if (this.dryRun) {
-        output.info(theme.warning("🔍 [DRY RUN] Installation simulation complete"));
+        output.info(
+          theme.warning("🔍 [DRY RUN] Installation simulation complete")
+        );
         output.displaySpaceBuffer(1);
         output.info("No actual changes were made to your system.");
       } else {

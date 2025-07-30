@@ -126,7 +126,7 @@ Replace your `.mcp.json` with just this:
   "mcpServers": {
     "hypertool": {
       "command": "npx",
-      "args": ["-y", "@toolprint/hypertool-mcp", "--mcp-config", ".mcp.hypertool.json"]
+      "args": ["-y", "@toolprint/hypertool-mcp@latest", "--mcp-config", ".mcp.hypertool.json"]
     }
   }
 }

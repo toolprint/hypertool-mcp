@@ -361,9 +361,10 @@ describe("ClaudeCodeSetup - Global vs Local Installation", () => {
   describe("Dry Run Mode", () => {
     it("should not create files in dry run mode", async () => {
       mockUtils.fileExists.mockResolvedValue(false);
-      
+
       // Mock user interactions for dry run
-      mockInquirer.prompt = vi.fn()
+      mockInquirer.prompt = vi
+        .fn()
         .mockResolvedValueOnce({ createBasic: true })
         .mockResolvedValueOnce({ components: ["updateMcpConfig"] })
         .mockResolvedValueOnce({ shouldProceed: true });

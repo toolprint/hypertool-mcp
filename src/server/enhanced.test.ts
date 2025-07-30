@@ -14,7 +14,7 @@ describe("EnhancedMetaMCPServer", () => {
   beforeEach(() => {
     config = {
       name: "test-enhanced-server",
-      version: "1.0.0", 
+      version: "1.0.0",
       description: "Test enhanced server",
       transport: {
         type: "stdio",
@@ -34,7 +34,7 @@ describe("EnhancedMetaMCPServer", () => {
       const config: ServerConfig = {
         type: "stdio",
         command: "npx",
-        args: ["-y", "@toolprint/hypertool-mcp"]
+        args: ["-y", "@toolprint/hypertool-mcp"],
       };
 
       const result = (server as any).isSelfReferencingServer(config);
@@ -45,7 +45,7 @@ describe("EnhancedMetaMCPServer", () => {
       const config: ServerConfig = {
         type: "stdio",
         command: "hypertool-mcp",
-        args: []
+        args: [],
       };
 
       const result = (server as any).isSelfReferencingServer(config);
@@ -56,7 +56,7 @@ describe("EnhancedMetaMCPServer", () => {
       const config: ServerConfig = {
         type: "stdio",
         command: "npx",
-        args: ["hypertool-mcp"]
+        args: ["hypertool-mcp"],
       };
 
       const result = (server as any).isSelfReferencingServer(config);
@@ -67,7 +67,7 @@ describe("EnhancedMetaMCPServer", () => {
       const config: ServerConfig = {
         type: "stdio",
         command: "node",
-        args: ["./node_modules/@toolprint/hypertool-mcp/dist/bin.js"]
+        args: ["./node_modules/@toolprint/hypertool-mcp/dist/bin.js"],
       };
 
       const result = (server as any).isSelfReferencingServer(config);
@@ -78,7 +78,7 @@ describe("EnhancedMetaMCPServer", () => {
       const config: ServerConfig = {
         type: "stdio",
         command: "npx",
-        args: ["-y", "@modelcontextprotocol/server-docker"]
+        args: ["-y", "@modelcontextprotocol/server-docker"],
       };
 
       const result = (server as any).isSelfReferencingServer(config);
@@ -88,7 +88,7 @@ describe("EnhancedMetaMCPServer", () => {
     it("should not flag HTTP/SSE servers", () => {
       const config: ServerConfig = {
         type: "sse",
-        url: "https://example.com/mcp"
+        url: "https://example.com/mcp",
       };
 
       const result = (server as any).isSelfReferencingServer(config);
@@ -102,21 +102,23 @@ describe("EnhancedMetaMCPServer", () => {
         "legitimate-server": {
           type: "stdio",
           command: "npx",
-          args: ["-y", "@modelcontextprotocol/server-docker"]
+          args: ["-y", "@modelcontextprotocol/server-docker"],
         },
         "self-reference": {
-          type: "stdio", 
+          type: "stdio",
           command: "npx",
-          args: ["-y", "@toolprint/hypertool-mcp"]
+          args: ["-y", "@toolprint/hypertool-mcp"],
         },
         "another-legitimate": {
           type: "sse",
-          url: "https://example.com/mcp"
-        }
+          url: "https://example.com/mcp",
+        },
       };
 
-      const filtered = (server as any).filterSelfReferencingServers(serverConfigs);
-      
+      const filtered = (server as any).filterSelfReferencingServers(
+        serverConfigs
+      );
+
       expect(Object.keys(filtered)).toHaveLength(2);
       expect(filtered["legitimate-server"]).toBeDefined();
       expect(filtered["another-legitimate"]).toBeDefined();
@@ -125,19 +127,21 @@ describe("EnhancedMetaMCPServer", () => {
 
     it("should return all servers when no self-references exist", () => {
       const serverConfigs: Record<string, ServerConfig> = {
-        "docker": {
+        docker: {
           type: "stdio",
           command: "npx",
-          args: ["-y", "@modelcontextprotocol/server-docker"]
+          args: ["-y", "@modelcontextprotocol/server-docker"],
         },
         "api-server": {
-          type: "sse", 
-          url: "https://api.example.com/mcp"
-        }
+          type: "sse",
+          url: "https://api.example.com/mcp",
+        },
       };
 
-      const filtered = (server as any).filterSelfReferencingServers(serverConfigs);
-      
+      const filtered = (server as any).filterSelfReferencingServers(
+        serverConfigs
+      );
+
       expect(Object.keys(filtered)).toHaveLength(2);
       expect(filtered).toEqual(serverConfigs);
     });
@@ -146,17 +150,19 @@ describe("EnhancedMetaMCPServer", () => {
       const serverConfigs: Record<string, ServerConfig> = {
         "self-ref-1": {
           type: "stdio",
-          command: "hypertool-mcp"
+          command: "hypertool-mcp",
         },
         "self-ref-2": {
           type: "stdio",
-          command: "npx", 
-          args: ["@toolprint/hypertool-mcp"]
-        }
+          command: "npx",
+          args: ["@toolprint/hypertool-mcp"],
+        },
       };
 
-      const filtered = (server as any).filterSelfReferencingServers(serverConfigs);
-      
+      const filtered = (server as any).filterSelfReferencingServers(
+        serverConfigs
+      );
+
       expect(Object.keys(filtered)).toHaveLength(0);
     });
   });

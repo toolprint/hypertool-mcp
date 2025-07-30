@@ -301,7 +301,7 @@ export class ClaudeCodeSetup {
           hasExistingConfig = false;
         } else {
           // In test environment, return early instead of exiting
-          if (process.env.NODE_ENV === 'test') {
+          if (process.env.NODE_ENV === "test") {
             return;
           }
           process.exit(0);
@@ -575,7 +575,9 @@ export class ClaudeCodeSetup {
       output.displaySpaceBuffer(1);
 
       if (this.dryRun) {
-        output.info(theme.warning("🔍 [DRY RUN] Installation simulation complete"));
+        output.info(
+          theme.warning("🔍 [DRY RUN] Installation simulation complete")
+        );
         output.displaySpaceBuffer(1);
         output.info("No actual changes were made to your system.");
       } else {
@@ -600,7 +602,7 @@ export class ClaudeCodeSetup {
       output.error("❌ Setup failed:");
       output.error(error instanceof Error ? error.message : String(error));
       // In test environment, throw the error for the test to handle
-      if (process.env.NODE_ENV === 'test') {
+      if (process.env.NODE_ENV === "test") {
         throw error;
       }
       process.exit(1);
@@ -619,7 +621,7 @@ export async function installClaudeCodeCommands(options: InstallOptions = {}) {
     await setup.run(options.dryRun);
   } catch (error) {
     // In test environment, we want to propagate the error instead of exiting
-    if (process.env.NODE_ENV === 'test') {
+    if (process.env.NODE_ENV === "test") {
       throw error;
     }
     // In production, we handle it like before

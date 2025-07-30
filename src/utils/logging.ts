@@ -23,7 +23,7 @@ export interface LoggingConfig {
   serverName: string;
   format: "json" | "pretty";
   colorize: boolean;
-  useStderr?: boolean;  // Whether to output console logs to stderr
+  useStderr?: boolean; // Whether to output console logs to stderr
 }
 
 export const DEFAULT_LOGGING_CONFIG: LoggingConfig = {
@@ -33,17 +33,17 @@ export const DEFAULT_LOGGING_CONFIG: LoggingConfig = {
   serverName: APP_TECHNICAL_NAME,
   format: "pretty", // Always use pretty format for console
   colorize: true,
-  useStderr: false,  // Default to stdout for non-stdio transports
+  useStderr: false, // Default to stdout for non-stdio transports
 };
 
 export const STDIO_LOGGING_CONFIG: LoggingConfig = {
   level: process.env.NODE_ENV === "development" ? "debug" : "info",
-  enableConsole: true,  // Enable console logging for stderr
+  enableConsole: true, // Enable console logging for stderr
   enableFile: true,
   serverName: APP_TECHNICAL_NAME,
   format: "pretty", // Always use pretty format for console
   colorize: true,
-  useStderr: true,  // Use stderr for stdio transport to avoid interfering with protocol
+  useStderr: true, // Use stderr for stdio transport to avoid interfering with protocol
 };
 
 // Singleton transport instances to prevent multiple worker threads
@@ -108,7 +108,7 @@ export class Logger {
   private getSharedConsoleStream() {
     // Create shared console transport only once, separate for stdout and stderr
     const useStderr = this.config.useStderr || false;
-    
+
     if (useStderr) {
       if (!sharedStderrTransport) {
         sharedStderrTransport = pino.transport({

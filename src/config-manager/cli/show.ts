@@ -2,51 +2,56 @@
  * CLI command for showing HyperTool configuration overview
  */
 
-import { Command } from 'commander';
-import { theme, semantic } from '../../utils/theme.js';
-import { promises as fs } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
-import { ConfigurationManager } from '../index.js';
-import { output } from '../../utils/output.js';
+import { Command } from "commander";
+import { theme } from "../../utils/theme.js";
+import { promises as fs } from "fs";
+import { join } from "path";
+import { homedir } from "os";
+import { ConfigurationManager } from "../index.js";
+import { output } from "../../utils/output.js";
 
 /**
  * Check if a server configuration references HyperTool itself
  */
 function checkSelfReferencingServer(config: any): boolean {
-  if (config.type === 'stdio' && config.command) {
+  if (config.type === "stdio" && config.command) {
     // Check for common patterns that indicate HyperTool MCP
     const command = config.command.toLowerCase();
     const args = config.args || [];
-    
+
     // Direct command references
-    if (command === 'hypertool-mcp' || command.endsWith('/hypertool-mcp')) {
+    if (command === "hypertool-mcp" || command.endsWith("/hypertool-mcp")) {
       return true;
     }
-    
+
     // NPX references to our package
-    if ((command === 'npx' || command.endsWith('/npx')) && args.length > 0) {
+    if ((command === "npx" || command.endsWith("/npx")) && args.length > 0) {
       for (const arg of args) {
         const argLower = arg.toLowerCase();
-        if (argLower === '@toolprint/hypertool-mcp' || 
-            argLower === 'hypertool-mcp' ||
-            argLower.includes('@toolprint/hypertool-mcp')) {
+        if (
+          argLower === "@toolprint/hypertool-mcp" ||
+          argLower === "hypertool-mcp" ||
+          argLower.includes("@toolprint/hypertool-mcp")
+        ) {
           return true;
         }
       }
     }
-    
+
     // Node references to our package
-    if ((command === 'node' || command.endsWith('/node')) && args.length > 0) {
+    if ((command === "node" || command.endsWith("/node")) && args.length > 0) {
       for (const arg of args) {
         const argLower = arg.toLowerCase();
-        if (argLower.includes('hypertool-mcp') || argLower.includes('@toolprint/hypertool-mcp')) {
+        if (
+          argLower.includes("hypertool-mcp") ||
+          argLower.includes("@toolprint/hypertool-mcp")
+        ) {
           return true;
         }
       }
     }
   }
-  
+
   return false;
 }
 
@@ -54,37 +59,38 @@ function checkSelfReferencingServer(config: any): boolean {
  * Check if a server configuration is using a development build
  */
 function checkDevelopmentBuild(config: any): boolean {
-  if (config.type === 'stdio' && config.command && config.args) {
+  if (config.type === "stdio" && config.command && config.args) {
     const command = config.command.toLowerCase();
     const args = config.args || [];
-    
+
     // Check if using node with a local dist/bin.js path
-    if ((command === 'node' || command.endsWith('/node')) && args.length > 0) {
+    if ((command === "node" || command.endsWith("/node")) && args.length > 0) {
       // Check if it has the mcp run pattern with a local path
-      let hasMcpRun = false;
       let hasLocalPath = false;
-      
+
       for (let i = 0; i < args.length; i++) {
         const arg = args[i];
-        
+
         // Check for development build patterns
-        if (arg.includes('/dist/bin.js') || 
-            arg.includes('/hypertool-mcp/dist/') ||
-            (arg.includes('dist') && arg.includes('bin.js'))) {
+        if (
+          arg.includes("/dist/bin.js") ||
+          arg.includes("/hypertool-mcp/dist/") ||
+          (arg.includes("dist") && arg.includes("bin.js"))
+        ) {
           hasLocalPath = true;
         }
-        
+
         // Check for mcp run pattern
-        if (i < args.length - 1 && arg === 'mcp' && args[i + 1] === 'run') {
-          hasMcpRun = true;
+        if (i < args.length - 1 && arg === "mcp" && args[i + 1] === "run") {
+          // hasMcpRun = true; // Not used currently
         }
       }
-      
+
       // Return true if we have a local path (with or without mcp run)
       return hasLocalPath;
     }
   }
-  
+
   return false;
 }
 
@@ -117,166 +123,178 @@ interface ToolsetInfo {
 }
 
 export function createShowCommand(): Command {
-  const show = new Command('show');
-  
+  const show = new Command("show");
+
   show
-    .description('Show overview of HyperTool configuration and status')
-    .option('--json', 'Output in JSON format')
+    .description("Show overview of HyperTool configuration and status")
+    .option("--json", "Output in JSON format")
     .action(async (options) => {
       try {
         const configManager = new ConfigurationManager();
         await configManager.initialize();
-        
-        const basePath = join(homedir(), '.toolprint/hypertool-mcp');
-        
+
+        const basePath = join(homedir(), ".toolprint/hypertool-mcp");
+
         // Gather all information
         const mcpServers = await getMcpServers(basePath);
         const applications = await getApplicationStatus(configManager);
         const toolsets = await getToolsets(basePath);
-        const healthStatus = await checkHealth(basePath, mcpServers, applications);
-        
+        const healthStatus = await checkHealth(
+          basePath,
+          mcpServers,
+          applications
+        );
+
         if (options.json) {
           // Output as JSON
           const result = {
             mcpServers,
             applications,
             toolsets,
-            health: healthStatus
+            health: healthStatus,
           };
           output.log(JSON.stringify(result, null, 2));
         } else {
           // Display formatted output
-          output.displayHeader('🛠️  HyperTool Configuration Overview');
+          output.displayHeader("🛠️  HyperTool Configuration Overview");
           output.displaySpaceBuffer(1);
-          
+
           // MCP Servers section
           displayMcpServers(mcpServers);
-          
+
           // Applications section
           displayApplications(applications);
-          
+
           // Toolsets section
           displayToolsets(toolsets);
-          
+
           // Help link
-          output.displayHelpContext('  For detailed help, visit: https://github.com/toolprint/hypertool-mcp');
+          output.displayHelpContext(
+            "  For detailed help, visit: https://github.com/toolprint/hypertool-mcp"
+          );
         }
-        
       } catch (error) {
-        output.error('❌ Failed to show configuration:');
+        output.error("❌ Failed to show configuration:");
         output.error(error instanceof Error ? error.message : String(error));
         process.exit(1);
       }
     });
-  
+
   return show;
 }
 
 async function getMcpServers(basePath: string): Promise<ServerInfo[]> {
   const servers: ServerInfo[] = [];
-  
+
   try {
-    const mcpConfigPath = join(basePath, 'mcp.json');
-    const content = await fs.readFile(mcpConfigPath, 'utf-8');
+    const mcpConfigPath = join(basePath, "mcp.json");
+    const content = await fs.readFile(mcpConfigPath, "utf-8");
     const config = JSON.parse(content);
-    
+
     if (config.mcpServers) {
       for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
         const server = serverConfig as any;
-        let details = '';
-        
+        let details = "";
+
         switch (server.type) {
-          case 'stdio':
-            details = server.command || 'Unknown command';
+          case "stdio":
+            details = server.command || "Unknown command";
             if (server.args && Array.isArray(server.args)) {
-              details += ' ' + server.args.join(' ');
+              details += " " + server.args.join(" ");
             }
             break;
-          case 'http':
-          case 'sse':
-          case 'websocket':
-            details = server.url || 'Unknown URL';
+          case "http":
+          case "sse":
+          case "websocket":
+            details = server.url || "Unknown URL";
             break;
           default:
-            details = 'Unknown transport details';
+            details = "Unknown transport details";
         }
-        
+
         // Get source from metadata if available
-        let source = 'Unknown';
+        let source = "Unknown";
         if (config._metadata?.sources?.[name]) {
           source = config._metadata.sources[name].app;
         }
-        
+
         // Check for self-referencing HyperTool configuration
         const isSelfReferencing = checkSelfReferencingServer(server);
-        
+
         // Check for development build
         const isDevelopment = checkDevelopmentBuild(server);
         let developmentPath: string | undefined;
-        
+
         if (isDevelopment && server.args) {
           // Extract the development path from args
           for (const arg of server.args) {
-            if (arg.includes('/dist/bin.js')) {
+            if (arg.includes("/dist/bin.js")) {
               developmentPath = arg;
               break;
             }
           }
         }
-        
+
         servers.push({
           name,
-          type: server.type || 'unknown',
+          type: server.type || "unknown",
           details,
           source,
           healthy: !isSelfReferencing,
-          warning: isSelfReferencing ? 'Self-referencing HyperTool configuration' : undefined,
+          warning: isSelfReferencing
+            ? "Self-referencing HyperTool configuration"
+            : undefined,
           isDevelopment,
-          developmentPath
+          developmentPath,
         });
       }
     }
-  } catch (error) {
+  } catch {
     // Config file doesn't exist or is invalid
   }
-  
+
   return servers;
 }
 
-async function getApplicationStatus(configManager: ConfigurationManager): Promise<ApplicationStatus[]> {
+async function getApplicationStatus(
+  configManager: ConfigurationManager
+): Promise<ApplicationStatus[]> {
   const applications: ApplicationStatus[] = [];
   const registry = (configManager as any).registry;
-  
+
   try {
     const apps = await registry.getEnabledApplications();
-    
-    for (const [appId, app] of Object.entries(apps)) {
+
+    for (const [, app] of Object.entries(apps)) {
       const appDef = app as any;
       const installed = await registry.isApplicationInstalled(appDef);
       const platformConfig = registry.getPlatformConfig(appDef);
-      
+
       let configPath: string | undefined;
       let hasConfig = false;
-      
+
       if (installed && platformConfig) {
         configPath = registry.resolvePath(platformConfig.configPath);
-        if (appDef.detection.type === 'project-local') {
-          configPath = join(process.cwd(), platformConfig.configPath.replace('./', ''));
+        if (appDef.detection.type === "project-local") {
+          configPath = join(
+            process.cwd(),
+            platformConfig.configPath.replace("./", "")
+          );
         }
-        
+
         if (configPath) {
           try {
             await fs.access(configPath);
             // Check if the config actually contains HyperTool
-            const content = await fs.readFile(configPath, 'utf-8');
+            const content = await fs.readFile(configPath, "utf-8");
             const config = JSON.parse(content);
-            
+
             // Check if config has HyperTool entry
-            if (config.mcpServers?.['toolprint-hypertool']) {
+            if (config.mcpServers?.["toolprint-hypertool"]) {
               hasConfig = true;
-              
+
               // Check if it's using a development build
-              const hypertoolConfig = config.mcpServers['toolprint-hypertool'];
+              const hypertoolConfig = config.mcpServers["toolprint-hypertool"];
               if (checkDevelopmentBuild(hypertoolConfig)) {
                 applications.push({
                   name: appDef.name,
@@ -284,7 +302,9 @@ async function getApplicationStatus(configManager: ConfigurationManager): Promis
                   configPath,
                   hasConfig,
                   isDevelopmentBuild: true,
-                  developmentPath: hypertoolConfig.args?.find((arg: string) => arg.includes('/dist/bin.js'))
+                  developmentPath: hypertoolConfig.args?.find((arg: string) =>
+                    arg.includes("/dist/bin.js")
+                  ),
                 });
                 continue;
               }
@@ -296,57 +316,59 @@ async function getApplicationStatus(configManager: ConfigurationManager): Promis
           }
         }
       }
-      
+
       applications.push({
         name: appDef.name,
         installed,
         configPath,
         hasConfig,
-        isDevelopmentBuild: false
+        isDevelopmentBuild: false,
       });
     }
-  } catch (error) {
+  } catch {
     // Error getting applications
   }
-  
+
   return applications;
 }
 
 async function getToolsets(basePath: string): Promise<ToolsetInfo[]> {
   const toolsets: ToolsetInfo[] = [];
-  
+
   try {
-    const prefsPath = join(basePath, 'preferences.json');
-    const content = await fs.readFile(prefsPath, 'utf-8');
+    const prefsPath = join(basePath, "preferences.json");
+    const content = await fs.readFile(prefsPath, "utf-8");
     const prefs = JSON.parse(content);
-    
+
     if (prefs.toolsets) {
       for (const [id, toolset] of Object.entries(prefs.toolsets)) {
         const ts = toolset as any;
-        
+
         // Find which apps use this toolset
         const apps: string[] = [];
         if (prefs.appDefaults) {
-          for (const [appId, defaultToolset] of Object.entries(prefs.appDefaults)) {
+          for (const [appId, defaultToolset] of Object.entries(
+            prefs.appDefaults
+          )) {
             if (defaultToolset === id) {
               apps.push(appId);
             }
           }
         }
-        
+
         toolsets.push({
           name: ts.name || id,
           description: ts.description,
           toolCount: ts.tools?.length || 0,
           autoGenerated: ts.metadata?.autoGenerated || false,
-          apps
+          apps,
         });
       }
     }
-  } catch (error) {
+  } catch {
     // Preferences file doesn't exist or is invalid
   }
-  
+
   return toolsets;
 }
 
@@ -358,48 +380,59 @@ interface HealthStatus {
 }
 
 async function checkHealth(
-  basePath: string, 
-  servers: ServerInfo[], 
+  basePath: string,
+  servers: ServerInfo[],
   applications: ApplicationStatus[]
 ): Promise<HealthStatus> {
   const issues: string[] = [];
   const warnings: string[] = [];
   const suggestions: string[] = [];
-  
+
   // Check if config directory exists
   try {
     await fs.access(basePath);
   } catch {
-    issues.push('HyperTool configuration directory not found');
-    suggestions.push(`Run 'hypertool-mcp config backup' to initialize configuration`);
+    issues.push("HyperTool configuration directory not found");
+    suggestions.push(
+      `Run 'hypertool-mcp config backup' to initialize configuration`
+    );
   }
-  
+
   // Check if any servers are configured
   if (servers.length === 0) {
-    warnings.push('No MCP servers configured');
-    suggestions.push(`Run 'hypertool-mcp config backup' to import MCP servers from applications`);
+    warnings.push("No MCP servers configured");
+    suggestions.push(
+      `Run 'hypertool-mcp config backup' to import MCP servers from applications`
+    );
   }
-  
+
   // Check if any applications are configured
-  const installedApps = applications.filter(app => app.installed);
+  const installedApps = applications.filter((app) => app.installed);
   if (installedApps.length === 0) {
-    warnings.push('No supported applications detected');
-    suggestions.push('Install Claude Desktop, Cursor, or Claude Code to use HyperTool');
+    warnings.push("No supported applications detected");
+    suggestions.push(
+      "Install Claude Desktop, Cursor, or Claude Code to use HyperTool"
+    );
   }
-  
+
   // Check if applications have HyperTool linked (excluding Claude Code which uses project-local configs)
-  const linkableApps = applications.filter(app => 
-    app.installed && app.name !== 'Claude Code' && app.name !== 'Claude Code (User)'
+  const linkableApps = applications.filter(
+    (app) =>
+      app.installed &&
+      app.name !== "Claude Code" &&
+      app.name !== "Claude Code (User)"
   );
-  const linkedApps = linkableApps.filter(app => app.hasConfig);
-  
+  const linkedApps = linkableApps.filter((app) => app.hasConfig);
+
   if (linkableApps.length > 0 && linkedApps.length === 0) {
-    warnings.push('HyperTool not linked to any applications');
-    suggestions.push(`Run 'hypertool-mcp config link' to link HyperTool to applications`);
+    warnings.push("HyperTool not linked to any applications");
+    suggestions.push(
+      `Run 'hypertool-mcp config link' to link HyperTool to applications`
+    );
   }
-  
+
   // Check for invalid configurations
-  const invalidServers = servers.filter(s => !s.healthy);
+  const invalidServers = servers.filter((s) => !s.healthy);
   if (invalidServers.length > 0) {
     for (const server of invalidServers) {
       if (server.warning) {
@@ -407,58 +440,67 @@ async function checkHealth(
       }
     }
   }
-  
+
   // Check for toolset issues
   try {
-    const prefsPath = join(basePath, 'preferences.json');
-    const content = await fs.readFile(prefsPath, 'utf-8');
+    const prefsPath = join(basePath, "preferences.json");
+    const content = await fs.readFile(prefsPath, "utf-8");
     const prefs = JSON.parse(content);
-    
+
     if (!prefs.toolsets || Object.keys(prefs.toolsets).length === 0) {
-      warnings.push('No toolsets configured');
-      suggestions.push('Toolsets help organize MCP tools by application context');
+      warnings.push("No toolsets configured");
+      suggestions.push(
+        "Toolsets help organize MCP tools by application context"
+      );
     }
   } catch {
     // Preferences file doesn't exist
   }
-  
+
   const healthy = issues.length === 0;
-  
+
   return {
     healthy,
     issues,
     warnings,
-    suggestions
+    suggestions,
   };
 }
 
 function displayMcpServers(servers: ServerInfo[]): void {
-  output.displaySubHeader('📡 MCP Servers');
-  
+  output.displaySubHeader("📡 MCP Servers");
+
   if (servers.length === 0) {
-    output.warn('  No MCP servers configured');
+    output.warn("  No MCP servers configured");
   } else {
     output.info(`  Total: ${servers.length} server(s)`);
     output.displaySpaceBuffer(1);
-    
+
     // Group by transport type
-    const byType = servers.reduce((acc, server) => {
-      if (!acc[server.type]) acc[server.type] = [];
-      acc[server.type].push(server);
-      return acc;
-    }, {} as Record<string, ServerInfo[]>);
-    
+    const byType = servers.reduce(
+      (acc, server) => {
+        if (!acc[server.type]) acc[server.type] = [];
+        acc[server.type].push(server);
+        return acc;
+      },
+      {} as Record<string, ServerInfo[]>
+    );
+
     for (const [type, typeServers] of Object.entries(byType)) {
-      output.displayInstruction(`  ${theme.warning(type.toUpperCase())} Transport (${typeServers.length}):`);
+      output.displayInstruction(
+        `  ${theme.warning(type.toUpperCase())} Transport (${typeServers.length}):`
+      );
       for (const server of typeServers) {
-        const healthIcon = server.healthy ? '🟢' : '🔴';
+        const healthIcon = server.healthy ? "🟢" : "🔴";
         output.info(`    ${healthIcon} ${theme.primary(server.name)}`);
         output.info(`      ${theme.muted(server.details)}`);
         if (server.source) {
           output.info(`      ${theme.muted(`Source: ${server.source}`)}`);
         }
         if (server.isDevelopment && server.developmentPath) {
-          output.warn(`      ⚠️  ${theme.warning('Using development build from:')} ${theme.muted(server.developmentPath)}`);
+          output.warn(
+            `      ⚠️  ${theme.warning("Using development build from:")} ${theme.muted(server.developmentPath)}`
+          );
         }
         if (server.warning) {
           output.warn(`      ⚠️  ${server.warning}`);
@@ -470,36 +512,38 @@ function displayMcpServers(servers: ServerInfo[]): void {
 }
 
 function displayApplications(applications: ApplicationStatus[]): void {
-  output.displaySubHeader('🖥️  Applications');
-  
+  output.displaySubHeader("🖥️  Applications");
+
   if (applications.length === 0) {
-    output.warn('  No applications configured');
+    output.warn("  No applications configured");
   } else {
-    const installed = applications.filter(app => app.installed);
-    const configured = applications.filter(app => app.hasConfig);
-    
+    const installed = applications.filter((app) => app.installed);
+    const configured = applications.filter((app) => app.hasConfig);
+
     output.info(`  Detected: ${installed.length}/${applications.length}`);
     output.info(`  Linked: ${configured.length}/${installed.length}`);
     output.displaySpaceBuffer(1);
-    
+
     for (const app of applications) {
-      const status = app.installed 
-        ? (app.hasConfig ? '✅' : '⚠️ ') 
-        : '❌';
+      const status = app.installed ? (app.hasConfig ? "✅" : "⚠️ ") : "❌";
       output.displayInstruction(`  ${status} ${theme.primary(app.name)}`);
-      
+
       if (app.installed) {
         if (app.isDevelopmentBuild && app.developmentPath) {
-          output.warn(`     ⚠️  ${theme.warning('Using development build')}`);
+          output.warn(`     ⚠️  ${theme.warning("Using development build")}`);
           output.info(`     ${theme.muted(app.developmentPath)}`);
         } else if (app.configPath) {
           output.info(`     ${theme.muted(app.configPath)}`);
         }
-        if (!app.hasConfig && app.name !== 'Claude Code' && app.name !== 'Claude Code (User)') {
-          output.info(`     ${theme.warning('Not linked to HyperTool')}`);
+        if (
+          !app.hasConfig &&
+          app.name !== "Claude Code" &&
+          app.name !== "Claude Code (User)"
+        ) {
+          output.info(`     ${theme.warning("Not linked to HyperTool")}`);
         }
       } else {
-        output.info(`     ${theme.muted('Not installed')}`);
+        output.info(`     ${theme.muted("Not installed")}`);
       }
     }
   }
@@ -507,29 +551,30 @@ function displayApplications(applications: ApplicationStatus[]): void {
 }
 
 function displayToolsets(toolsets: ToolsetInfo[]): void {
-  output.displaySubHeader('🧰 Toolsets');
-  
+  output.displaySubHeader("🧰 Toolsets");
+
   if (toolsets.length === 0) {
-    output.warn('  No toolsets configured');
+    output.warn("  No toolsets configured");
   } else {
     output.info(`  Total: ${toolsets.length} toolset(s)`);
     output.displaySpaceBuffer(1);
-    
+
     for (const toolset of toolsets) {
-      const autoGen = toolset.autoGenerated ? theme.warning(' (auto)') : '';
+      const autoGen = toolset.autoGenerated ? theme.warning(" (auto)") : "";
       output.displayInstruction(`  • ${theme.primary(toolset.name)}${autoGen}`);
-      
+
       if (toolset.description) {
         output.info(`    ${theme.muted(toolset.description)}`);
       }
-      
+
       output.info(`    ${theme.muted(`Tools: ${toolset.toolCount}`)}`);
-      
+
       if (toolset.apps.length > 0) {
-        output.info(`    ${theme.muted(`Used by: ${toolset.apps.join(', ')}`)}`);
+        output.info(
+          `    ${theme.muted(`Used by: ${toolset.apps.join(", ")}`)}`
+        );
       }
     }
   }
   output.displaySpaceBuffer(1);
 }
-
