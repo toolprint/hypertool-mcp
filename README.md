@@ -17,7 +17,7 @@ Let me guess - you've been here too:
 "Why can't I add more MCP servers? I hit Claude's 100-tool limit!" 😤
 
 ### 2. **Poor AI Performance**
-Research shows [89% accuracy drop](#research) when AI chooses from 50+ tools. Your assistant picks the wrong tool 7 out of 10 times. Sound familiar?
+Research shows [89% accuracy drop](#-research--metrics) when AI chooses from 50+ tools. Your assistant picks the wrong tool 7 out of 10 times. Sound familiar?
 
 ### 3. **Config Management Hell**
 Managing 5 different `.mcp.json` files across projects? Switching contexts means editing configs? There's got to be a better way...
@@ -97,11 +97,11 @@ AI sees ALL 64 tools = confused 😵     │  • traces.view   │
 - **💨 Runs Locally**: Your data never leaves your machine
 - **🔌 Health Monitoring**: Automatic reconnection when servers go down
 - **💾 Persistent Toolsets**: Saved locally, shareable with your team
-- **🔔 Hot-Swapping**: Cursor already supports live toolset switching. Claude Code support [coming soon](https://github.com/anthropics/claude-code/issues/411)
+- **🔔 Hot-Swapping**: Cursor already supports live toolset switching. Claude Code [support tracked here](https://github.com/anthropics/claude-code/issues/411)
 
 ## 🎬 Demo
 
-[Coming soon: See HyperTool in action with Claude and Cursor]
+Watch how HyperTool transforms your AI assistant's tool usage - demo video coming soon.
 
 ## 🚀 Quick Start (2 minutes)
 
@@ -231,7 +231,7 @@ It's not just us saying this - here's what research found:
 Apps that support MCP's `tools/list_changed` notification can hot-swap toolsets without restart:
 
 ✅ **Cursor** - Full support! Switch toolsets on the fly  
-⏳ **Claude Code** - [Support coming soon](https://github.com/anthropics/claude-code/issues/411) (please upvote!)  
+⏳ **Claude Code** - [Dynamic switching support tracked](https://github.com/anthropics/claude-code/issues/411) (please upvote!)  
 ✅ **Any MCP-compliant app** - If it supports the standard, it works!
 
 **For Claude Code users**: Until dynamic support lands, either:
@@ -427,7 +427,7 @@ hypertool-mcp config unlink --app claude-desktop
 hypertool-mcp config unlink --no-restore
 ```
 
-## 📚 Research & Metrics {#research}
+## 📚 Research & Metrics
 
 For the data nerds (like us), here's the academic backing:
 
