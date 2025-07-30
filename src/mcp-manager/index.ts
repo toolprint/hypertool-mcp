@@ -9,7 +9,6 @@ import {
   MCPServerConfig,
   MCPServersConfig,
   MCPServerDetails,
-  MCPServerMetadata,
 } from "./types.js";
 
 export class MCPServerManager {
@@ -243,7 +242,7 @@ export class MCPServerManager {
     try {
       const content = await fs.readFile(this.mcpConfigPath, "utf-8");
       return JSON.parse(content);
-    } catch (error) {
+    } catch {
       // Return empty config if file doesn't exist or is invalid
       return {
         mcpServers: {},

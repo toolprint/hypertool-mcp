@@ -8,7 +8,7 @@ import { join } from "path";
 import { homedir } from "os";
 import inquirer from "inquirer";
 import { output } from "../../utils/output.js";
-import { theme, semantic } from "../../utils/theme.js";
+import { theme } from "../../utils/theme.js";
 
 export interface MCPConfig {
   mcpServers?: Record<

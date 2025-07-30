@@ -2,7 +2,7 @@
  * Unit tests for Enhanced Hypertool MCP server
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { EnhancedMetaMCPServer } from "./enhanced.js";
 import { MetaMCPServerConfig, ServerState } from "./types.js";
 import { ServerConfig } from "../config/index.js";
