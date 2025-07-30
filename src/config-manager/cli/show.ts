@@ -336,8 +336,8 @@ async function getToolsets(basePath: string): Promise<ToolsetInfo[]> {
   const toolsets: ToolsetInfo[] = [];
 
   try {
-    const prefsPath = join(basePath, "preferences.json");
-    const content = await fs.readFile(prefsPath, "utf-8");
+    const prefsPath = join(basePath, 'config.json');
+    const content = await fs.readFile(prefsPath, 'utf-8');
     const prefs = JSON.parse(content);
 
     if (prefs.toolsets) {
@@ -443,8 +443,8 @@ async function checkHealth(
 
   // Check for toolset issues
   try {
-    const prefsPath = join(basePath, "preferences.json");
-    const content = await fs.readFile(prefsPath, "utf-8");
+    const prefsPath = join(basePath, 'config.json');
+    const content = await fs.readFile(prefsPath, 'utf-8');
     const prefs = JSON.parse(content);
 
     if (!prefs.toolsets || Object.keys(prefs.toolsets).length === 0) {

@@ -333,15 +333,23 @@ export class ConfigurationManager {
   /**
    * Generate default toolsets for each application
    */
-  private async generateDefaultToolsets(
-    mergedConfig: MCPConfig
-  ): Promise<void> {
-    const prefsPath = join(this.basePath, "preferences.json");
-
+  private async generateDefaultToolsets(mergedConfig: MCPConfig): Promise<void> {
+    const prefsPath = join(this.basePath, 'config.json');
+    
     let prefs: PreferencesConfig;
     try {
       const content = await this.fs.readFile(prefsPath, "utf-8");
       prefs = JSON.parse(content);
+      
+      // Ensure toolsets property exists (for consolidated config structure)
+      if (!prefs.toolsets) {
+        prefs.toolsets = {};
+      }
+      
+      // Ensure appDefaults property exists
+      if (!prefs.appDefaults) {
+        prefs.appDefaults = {};
+      }
     } catch {
       prefs = {
         toolsets: {},

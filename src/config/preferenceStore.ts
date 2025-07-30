@@ -11,7 +11,7 @@ import { APP_TECHNICAL_NAME, BRAND_NAME } from "./appConfig.js";
 // Configuration directory structure
 const BRAND_CONFIG_DIR = path.join(homedir(), `.${BRAND_NAME.toLowerCase()}`);
 const APP_CONFIG_DIR = path.join(BRAND_CONFIG_DIR, APP_TECHNICAL_NAME);
-const PREFERENCES_FILE = path.join(APP_CONFIG_DIR, "preferences.json");
+const CONFIG_FILE = path.join(APP_CONFIG_DIR, "config.json");
 
 /**
  * User preferences structure
@@ -31,6 +31,17 @@ export interface UserPreferences {
 
   /** Version of preferences format */
   version?: string;
+}
+
+/**
+ * Complete configuration structure
+ */
+export interface CompleteConfig extends UserPreferences {
+  /** Application sync configurations */
+  applications?: Record<string, any>;
+
+  /** Last backup timestamp */
+  lastBackup?: string;
 }
 
 /**
@@ -58,8 +69,17 @@ async function ensureConfigDir(): Promise<void> {
 export async function loadUserPreferences(): Promise<UserPreferences> {
   try {
     await ensureConfigDir();
-    const content = await fs.readFile(PREFERENCES_FILE, "utf-8");
-    const preferences = JSON.parse(content) as UserPreferences;
+    const content = await fs.readFile(CONFIG_FILE, "utf-8");
+    const config = JSON.parse(content) as CompleteConfig;
+
+    // Extract preference fields from config
+    const preferences: UserPreferences = {
+      toolsets: config.toolsets || {},
+      mcpConfigPath: config.mcpConfigPath,
+      lastEquippedToolset: config.lastEquippedToolset,
+      lastUpdated: config.lastUpdated,
+      version: config.version,
+    };
 
     // Ensure all required fields exist
     return {
@@ -89,14 +109,24 @@ export async function saveUserPreferences(
 ): Promise<void> {
   await ensureConfigDir();
 
-  const updatedPreferences = {
+  // Load existing config to preserve non-preference fields
+  let existingConfig: Partial<CompleteConfig> = {};
+  try {
+    const content = await fs.readFile(CONFIG_FILE, "utf-8");
+    existingConfig = JSON.parse(content) as CompleteConfig;
+  } catch {
+    // File doesn't exist or is invalid, use empty object
+  }
+
+  const updatedConfig: CompleteConfig = {
+    ...existingConfig,
     ...preferences,
     lastUpdated: new Date().toISOString(),
   };
 
   await fs.writeFile(
-    PREFERENCES_FILE,
-    JSON.stringify(updatedPreferences, null, 2),
+    CONFIG_FILE,
+    JSON.stringify(updatedConfig, null, 2),
     "utf-8"
   );
 }
@@ -157,6 +187,7 @@ export function getConfigPaths() {
   return {
     brandDir: BRAND_CONFIG_DIR,
     appDir: APP_CONFIG_DIR,
-    preferencesFile: PREFERENCES_FILE,
+    configFile: CONFIG_FILE,
+    preferencesFile: CONFIG_FILE, // Deprecated: use configFile instead
   };
 }
