@@ -1,0 +1,108 @@
+{
+  "mcpServers": {
+    "docker": {
+      "command": "npx",
+      "args": ["-y", "@docker/mcp-server"]
+    },
+    "terraform": {
+      "command": "npx",
+      "args": ["-y", "@hashicorp/terraform-mcp-server"]
+    },
+    "kubernetes": {
+      "command": "npx",
+      "args": ["-y", "mcp-kubernetes-server"]
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-git", "."]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+    },
+    "sqlite": {
+      "command": "npx",
+      "args": ["-y", "@executeautomation/database-server", "./data.db"]
+    },
+    "hackernews": {
+      "command": "npx",
+      "args": ["-y", "mcp-hn"]
+    },
+    "web-search": {
+      "command": "npx",
+      "args": ["-y", "mcp-web-search"]
+    },
+    "web-scraper": {
+      "command": "npx",
+      "args": ["-y", "mcp-web-scraper"]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"]
+    },
+    "csv-processor": {
+      "command": "npx",
+      "args": ["-y", "mcp-csv-processor"]
+    },
+    "json-tools": {
+      "command": "npx",
+      "args": ["-y", "mcp-json-tools"]
+    },
+    "excel-converter": {
+      "command": "npx",
+      "args": ["-y", "mcp-excel-converter"]
+    },
+    "markitdown": {
+      "command": "npx",
+      "args": ["-y", "markitdown-mcp-server"]
+    },
+    "pandoc": {
+      "command": "npx",
+      "args": ["-y", "mcp-pandoc"]
+    },
+    "pdf-processor": {
+      "command": "npx",
+      "args": ["-y", "mcp-pdf-tools"]
+    },
+    "ssh-tools": {
+      "command": "npx",
+      "args": ["-y", "mcp-ssh-tools", "localhost"]
+    },
+    "terminal": {
+      "command": "npx",
+      "args": ["-y", "mcp-terminal-server"]
+    },
+    "system-monitor": {
+      "command": "npx",
+      "args": ["-y", "mcp-system-monitor"]
+    },
+    "browser-automation": {
+      "command": "npx",
+      "args": ["-y", "browser-mcp"]
+    },
+    "python-sandbox": {
+      "command": "npx",
+      "args": ["-y", "mcp-python-sandbox"]
+    },
+    "javascript-sandbox": {
+      "command": "npx",
+      "args": ["-y", "mcp-js-sandbox"]
+    },
+    "time": {
+      "command": "uvx",
+      "args": ["mcp-server-time"]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "everything": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"]
+    }
+  }
+}

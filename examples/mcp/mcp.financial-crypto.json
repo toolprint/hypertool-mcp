@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "coincap": {
+      "command": "npx",
+      "args": ["-y", "coincap-mcp"]
+    },
+    "calculator": {
+      "command": "npx",
+      "args": ["-y", "@wrtnlabs/calculator-mcp"]
+    },
+    "math-server": {
+      "command": "npx",
+      "args": ["-y", "mcp-math-server"]
+    },
+    "chart": {
+      "command": "npx",
+      "args": ["-y", "mcp-chart-generator"]
+    },
+    "csv-processor": {
+      "command": "npx",
+      "args": ["-y", "mcp-csv-processor"]
+    },
+    "json-processor": {
+      "command": "npx",
+      "args": ["-y", "mcp-json-tools"]
+    },
+    "time": {
+      "command": "uvx",
+      "args": ["mcp-server-time"]
+    },
+    "web-search": {
+      "command": "npx",
+      "args": ["-y", "mcp-web-search"]
+    }
+  }
+}

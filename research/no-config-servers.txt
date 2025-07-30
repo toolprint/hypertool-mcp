@@ -1,0 +1,46 @@
+# MCP Servers with No Required Configuration
+
+## Confirmed No-Config Servers (Research Verified)
+
+### Official Reference Servers
+1. **everything** - `@modelcontextprotocol/server-everything`
+   - No environment variables required
+   - Command: `npx -y @modelcontextprotocol/server-everything`
+   - Description: Reference/test server with prompts, resources, and tools
+
+2. **fetch** - `@modelcontextprotocol/server-fetch`
+   - No required environment variables or API keys
+   - Optional flags: --ignore-robots-txt, --user-agent, --proxy-url
+   - Command: `uvx mcp-server-fetch` or `pip install mcp-server-fetch`
+   - Description: Web content fetching and conversion
+
+3. **time** - `@modelcontextprotocol/server-time`
+   - No required environment variables
+   - Optional: --local-timezone flag
+   - Command: `uvx mcp-server-time`
+   - Description: Time and timezone conversion capabilities
+
+4. **memory** - `@modelcontextprotocol/server-memory`
+   - Likely no config required (need to verify)
+   - Description: Knowledge graph-based persistent memory system
+
+## High-Usage Servers (Need Config Verification)
+1. **Sequential Thinking** (5,550+ uses)
+   - Need to check config requirements
+   - Description: Dynamic and reflective problem-solving
+
+2. **Dice Roller** (246+ uses)
+   - Likely no config - simple dice rolling
+   - Description: Roll dice using standard notation
+
+## Servers Requiring API Keys/Config (Excluded)
+- Brave Search (requires API key)
+- Web Research (likely requires API configuration)
+- GitHub servers (require GitHub tokens)
+- AWS servers (require AWS credentials)
+- Database servers (require connection strings)
+
+## Research Status
+- ✅ Verified: everything, fetch, time
+- 🔍 Need to verify: memory, sequential-thinking, dice-roller
+- ❌ Excluded: All servers requiring API keys, credentials, or external services

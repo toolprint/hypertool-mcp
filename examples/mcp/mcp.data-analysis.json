@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "sqlite": {
+      "command": "npx",
+      "args": ["-y", "@executeautomation/database-server", "./data.db"]
+    },
+    "sqlite-explorer": {
+      "command": "npx",
+      "args": ["-y", "sqlite-explorer-fastmcp"]
+    },
+    "csv-processor": {
+      "command": "npx",
+      "args": ["-y", "mcp-csv-processor"]
+    },
+    "json-processor": {
+      "command": "npx",
+      "args": ["-y", "mcp-json-tools"]
+    },
+    "data-exploration": {
+      "command": "npx",
+      "args": ["-y", "mcp-data-explorer"]
+    },
+    "excel2json": {
+      "command": "npx",
+      "args": ["-y", "mcp-excel-converter"]
+    },
+    "chart": {
+      "command": "npx",
+      "args": ["-y", "mcp-chart-generator"]
+    },
+    "calculator": {
+      "command": "npx",
+      "args": ["-y", "@wrtnlabs/calculator-mcp"]
+    }
+  }
+}

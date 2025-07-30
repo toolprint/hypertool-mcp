@@ -1,0 +1,62 @@
+# MCP Server Combinations by Use Case
+
+## Core No-Config Servers Available
+1. **everything** - Reference/test server with prompts, resources, tools
+2. **fetch** - Web content fetching and conversion  
+3. **time** - Time and timezone conversion capabilities
+4. **dice** - Dice rolling with standard notation
+5. **calculator** - Basic arithmetic operations (multiple implementations)
+6. **filesystem** - Secure file operations and text processing
+7. **memory** - Knowledge graph-based persistent memory (assuming no config)
+
+## Meaningful Combinations by Category
+
+### DEVELOPMENT
+**Purpose**: Local development and testing
+**Servers**: filesystem + time + calculator + everything
+**Use Cases**: File editing, timestamp operations, calculations, testing tools
+
+### CONTENT_RESEARCH  
+**Purpose**: Content gathering and analysis
+**Servers**: fetch + filesystem + time + memory
+**Use Cases**: Web scraping, content storage, timestamp tracking, knowledge retention
+
+### TESTING
+**Purpose**: Testing and experimentation  
+**Servers**: everything + dice + calculator + time
+**Use Cases**: Random testing, calculations, time-based tests, reference tools
+
+### UTILITIES
+**Purpose**: General purpose utilities
+**Servers**: dice + calculator + time + filesystem
+**Use Cases**: Random generation, math operations, time conversions, file management
+
+### EDUCATION
+**Purpose**: Learning and experimentation
+**Servers**: everything + calculator + dice + memory
+**Use Cases**: Interactive learning, math problems, random scenarios, knowledge building
+
+### PRODUCTIVITY
+**Purpose**: Daily productivity tasks
+**Servers**: filesystem + time + calculator + fetch
+**Use Cases**: File organization, time management, calculations, research
+
+### GAMING
+**Purpose**: Gaming and entertainment
+**Servers**: dice + calculator + time + memory
+**Use Cases**: RPG dice rolls, score calculations, timing, game history
+
+### RESEARCH
+**Purpose**: Information gathering and storage
+**Servers**: fetch + memory + filesystem + time
+**Use Cases**: Web research, data storage, file management, chronological tracking
+
+### MINIMAL
+**Purpose**: Lightweight setup
+**Servers**: calculator + time
+**Use Cases**: Basic calculations and time operations
+
+### COMPREHENSIVE
+**Purpose**: Full-featured environment
+**Servers**: All 7 servers
+**Use Cases**: Maximum functionality for complex workflows

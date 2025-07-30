@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "browser-mcp": {
+      "command": "npx",
+      "args": ["-y", "browser-mcp"]
+    },
+    "web-search": {
+      "command": "npx",
+      "args": ["-y", "mcp-web-search"]
+    },
+    "web-scraper": {
+      "command": "npx",
+      "args": ["-y", "mcp-web-scraper"]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"]
+    },
+    "ashra-mcp": {
+      "command": "npx",
+      "args": ["-y", "ashra-mcp"]
+    },
+    "domain-search": {
+      "command": "npx",
+      "args": ["-y", "mcp-domain-search"]
+    },
+    "dropbin": {
+      "command": "npx",
+      "args": ["-y", "mcp-dropbin"]
+    },
+    "network-tools": {
+      "command": "npx",
+      "args": ["-y", "mcp-network-tools"]
+    }
+  }
+}

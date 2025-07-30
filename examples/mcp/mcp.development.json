@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-git", "."]
+    },
+    "docker": {
+      "command": "npx",
+      "args": ["-y", "mcp-docker-server"]
+    },
+    "sqlite": {
+      "command": "npx",
+      "args": ["-y", "@executeautomation/database-server", "./dev.db"]
+    },
+    "python-sandbox": {
+      "command": "npx",
+      "args": ["-y", "mcp-python-sandbox"]
+    },
+    "terminal": {
+      "command": "npx",
+      "args": ["-y", "mcp-terminal-server"]
+    },
+    "build-tools": {
+      "command": "npx",
+      "args": ["-y", "mcp-build-tools"]
+    },
+    "package-manager": {
+      "command": "npx",
+      "args": ["-y", "mcp-package-info"]
+    }
+  }
+}

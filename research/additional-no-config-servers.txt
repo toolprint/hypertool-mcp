@@ -1,0 +1,54 @@
+# Additional No-Config MCP Servers
+
+## CALCULATOR/MATH SERVERS (No API Required)
+
+### 1. wrtnlabs/calculator-mcp
+- Available via: `npx @wrtnlabs/calculator-mcp`
+- Features: Basic arithmetic operations
+- No configuration needed
+
+### 2. simonberner/mcp-server-calculator  
+- Basic math operations demo server
+- Simple add/subtract/multiply/divide
+- Local development friendly
+
+### 3. varunidealabs/simple-calculator-mcp-server
+- Fast arithmetic calculation tools
+- Four basic operations (add, subtract, multiply, divide)
+- Designed for AI assistants
+
+## FILESYSTEM SERVERS (No API Required)
+
+### 4. @modelcontextprotocol/server-filesystem (Official)
+- Already included in our verified list
+- Secure file operations with access controls
+- Command: `npx @modelcontextprotocol/server-filesystem`
+
+### 5. mark3labs/mcp-filesystem-server (Go implementation)
+- Go-based filesystem operations
+- Directory traversal protection
+- Local file manipulation
+
+## TEXT PROCESSING CAPABILITIES
+- File read/write operations
+- Text search and replace with regex
+- Directory management
+- Local file analysis
+
+## UPDATED NO-CONFIG SERVER COUNT
+Total confirmed no-config servers: 7+
+1. everything (reference/test)
+2. fetch (web content)
+3. time (timezone utilities)  
+4. dice (dice rolling)
+5. calculator (arithmetic - multiple implementations)
+6. filesystem (file operations)
+7. math (statistical functions)
+
+## COMBINATIONS POTENTIAL
+With 7+ categories of no-config servers, we can create meaningful combinations:
+- Development: filesystem + time + calculator
+- Testing: everything + dice + calculator
+- Content: fetch + filesystem + time
+- Utilities: dice + calculator + time
+- Research: fetch + filesystem + everything

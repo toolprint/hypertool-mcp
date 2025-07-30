@@ -1,0 +1,40 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"]
+    },
+    "web-search": {
+      "command": "npx",
+      "args": ["-y", "mcp-web-search"]
+    },
+    "web-scraper": {
+      "command": "npx",
+      "args": ["-y", "mcp-web-scraper"]
+    },
+    "ashra-mcp": {
+      "command": "npx",
+      "args": ["-y", "ashra-mcp"]
+    },
+    "markitdown": {
+      "command": "npx",
+      "args": ["-y", "markitdown-mcp-server"]
+    },
+    "markdownify": {
+      "command": "npx",
+      "args": ["-y", "markdownify-mcp"]
+    },
+    "pdf-processor": {
+      "command": "npx",
+      "args": ["-y", "mcp-pdf-tools"]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp/research"]
+    }
+  }
+}
