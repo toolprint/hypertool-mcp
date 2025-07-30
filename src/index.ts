@@ -134,7 +134,7 @@ async function runMcpServer(options: any): Promise<void> {
   // Initialize logger based on transport type
   const { getLogger, STDIO_LOGGING_CONFIG } = await import("./utils/logging.js");
   const logger = runtimeOptions.transport === 'stdio'
-    ? getLogger(STDIO_LOGGING_CONFIG)  // only file-based logging for stdio transport
+    ? getLogger(STDIO_LOGGING_CONFIG)  // stderr + file logging for stdio transport
     : getLogger();
 
   // Dynamic imports for all modules that might create worker threads

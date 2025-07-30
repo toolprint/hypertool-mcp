@@ -4,8 +4,8 @@
 
 import { Command } from 'commander';
 import { createBackupCommand, createRestoreCommand } from './backup.js';
-import { createDeployCommand } from './deploy.js';
-import { createUninstallCommand } from './uninstall.js';
+import { createLinkCommand } from './link.js';
+import { createUnlinkCommand } from './unlink.js';
 import { createShowCommand } from './show.js';
 
 export function createConfigCommands(): Command {
@@ -16,11 +16,11 @@ export function createConfigCommands(): Command {
     .addCommand(createShowCommand())
     .addCommand(createBackupCommand())
     .addCommand(createRestoreCommand())
-    .addCommand(createDeployCommand())
-    .addCommand(createUninstallCommand());
+    .addCommand(createLinkCommand())
+    .addCommand(createUnlinkCommand());
   
   return config;
 }
 
 // Export individual commands for direct use
-export { createShowCommand, createBackupCommand, createRestoreCommand, createDeployCommand, createUninstallCommand };
+export { createShowCommand, createBackupCommand, createRestoreCommand, createLinkCommand, createUnlinkCommand };

@@ -12,7 +12,7 @@ import {
   ToolDiscoveryEngine,
 } from "../discovery/index.js";
 import { IConnectionManager, ConnectionManager } from "../connection/index.js";
-import { MCPConfigParser, APP_NAME, ServerConfig } from "../config/index.js";
+import { MCPConfigParser, APP_NAME, APP_TECHNICAL_NAME, ServerConfig } from "../config/index.js";
 import ora from "ora";
 
 // Helper to create conditional spinners
@@ -240,6 +240,15 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           // Don't fail the entire startup for individual server connection failures
         }
       }
+    } else {
+      // No servers configured - show helpful message
+      const infoSpinner = createSpinner(
+        "No MCP servers configured yet",
+        isStdio
+      );
+      infoSpinner.succeed(
+        `No MCP servers configured. Use '${APP_TECHNICAL_NAME} mcp add' to add servers.`
+      );
     }
   }
 
@@ -310,7 +319,10 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         mainSpinner.succeed(
           `Discovered ${toolCount} tool${toolCount !== 1 ? "s" : ""} from ${connectedServers.length} connected server${connectedServers.length !== 1 ? "s" : ""}`
         );
-        await this.discoveryEngine.outputToolServerStatus();
+        // Only output tool server status in non-stdio mode to avoid interfering with MCP protocol
+        if (!isStdio) {
+          await this.discoveryEngine.outputToolServerStatus();
+        }
       } else {
         mainSpinner.warn("No tools discovered from connected servers");
       }

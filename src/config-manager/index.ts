@@ -387,13 +387,13 @@ export class ConfigurationManager {
   }
 
   /**
-   * Deploy HyperTool configuration to all enabled applications
+   * Link HyperTool configuration to specified applications
    */
-  async deployToApplications(): Promise<{
-    deployed: string[];
+  async linkApplications(appIds?: string[]): Promise<{
+    linked: string[];
     failed: string[];
   }> {
-    const deployed: string[] = [];
+    const linked: string[] = [];
     const failed: string[] = [];
 
     // Get merged configuration path
@@ -401,24 +401,33 @@ export class ConfigurationManager {
     
     // Get all enabled applications
     const apps = await this.registry.getEnabledApplications();
+    
+    // If no specific apps requested, link all
+    const targetApps = appIds || Object.keys(apps);
 
-    for (const [appId, app] of Object.entries(apps)) {
+    for (const appId of targetApps) {
+      if (!apps[appId]) {
+        console.warn(`Application ${appId} not found`);
+        failed.push(appId);
+        continue;
+      }
+      
       try {
-        await this.deployToApplication(appId, app, mergedConfigPath);
-        deployed.push(appId);
+        await this.linkApplication(appId, apps[appId], mergedConfigPath);
+        linked.push(appId);
       } catch (error) {
-        console.warn(`Failed to deploy to ${appId}:`, error);
+        console.warn(`Failed to link ${appId}:`, error);
         failed.push(appId);
       }
     }
 
-    return { deployed, failed };
+    return { linked, failed };
   }
 
   /**
-   * Deploy HyperTool configuration to a specific application
+   * Link HyperTool configuration to a specific application
    */
-  private async deployToApplication(
+  private async linkApplication(
     appId: string,
     app: ApplicationDefinition,
     hyperToolConfigPath: string
@@ -429,19 +438,44 @@ export class ConfigurationManager {
       throw new Error(`No platform configuration for ${appId}`);
     }
 
+    // Check if we're in development mode
+    const isDevelopmentMode = await this.isInDevelopmentMode();
+    
     // Create HyperTool proxy configuration
-    const hyperToolProxy = {
-      'toolprint-hypertool': {
-        type: 'stdio' as const,
-        command: 'npx',
-        args: [
-          '-y',
-          '@toolprint/hypertool-mcp@latest',
-          '--mcp-config',
-          hyperToolConfigPath
-        ]
-      }
-    };
+    let hyperToolProxy: any;
+    
+    if (isDevelopmentMode) {
+      // Use local development build
+      const localBinPath = join(process.cwd(), 'dist', 'bin.js');
+      hyperToolProxy = {
+        'toolprint-hypertool': {
+          type: 'stdio' as const,
+          command: 'node',
+          args: [
+            localBinPath,
+            'mcp',
+            'run',
+            '--mcp-config',
+            hyperToolConfigPath,
+            '--debug'
+          ]
+        }
+      };
+    } else {
+      // Use published NPM package
+      hyperToolProxy = {
+        'toolprint-hypertool': {
+          type: 'stdio' as const,
+          command: 'npx',
+          args: [
+            '-y',
+            '@toolprint/hypertool-mcp@latest',
+            '--mcp-config',
+            hyperToolConfigPath
+          ]
+        }
+      };
+    }
 
     // Transform to app-specific format
     const transformer = TransformerRegistry.getTransformer(platformConfig.format);
@@ -505,17 +539,153 @@ export class ConfigurationManager {
   }
 
   /**
-   * Uninstall HyperTool from all applications
+   * Unlink HyperTool from specified applications
    */
-  async uninstall(): Promise<void> {
-    // Get latest backup for restoration
-    const backups = await this.listBackups();
-    if (backups.length === 0) {
-      throw new Error('No backups available for restoration');
+  async unlinkApplications(appIds: string[], options?: {
+    restore?: boolean;
+    backupId?: string;
+  }): Promise<{
+    unlinked: string[];
+    failed: string[];
+    restoredWithHypertool?: string[];
+  }> {
+    const unlinked: string[] = [];
+    const failed: string[] = [];
+    const restoredWithHypertool: string[] = [];
+
+    if (options?.restore && options?.backupId) {
+      // First restore from backup
+      await this.restoreBackup(options.backupId, { applications: appIds });
+      
+      // Check each restored app for hypertool entries
+      for (const appId of appIds) {
+        try {
+          const hasHypertool = await this.checkAndRemoveHypertoolFromApp(appId);
+          if (hasHypertool) {
+            restoredWithHypertool.push(appId);
+          }
+          unlinked.push(appId);
+        } catch (error) {
+          console.warn(`Failed to process ${appId}:`, error);
+          failed.push(appId);
+        }
+      }
+    } else {
+      // Just remove hypertool without restoration
+      for (const appId of appIds) {
+        try {
+          await this.removeHypertoolFromApp(appId);
+          unlinked.push(appId);
+        } catch (error) {
+          console.warn(`Failed to unlink ${appId}:`, error);
+          failed.push(appId);
+        }
+      }
     }
 
-    // Restore from latest backup
-    await this.restoreBackup(backups[0].id);
+    return { unlinked, failed, restoredWithHypertool };
+  }
+
+  /**
+   * Check if app config has hypertool and remove it while preserving other servers
+   */
+  private async checkAndRemoveHypertoolFromApp(appId: string): Promise<boolean> {
+    const app = await this.registry.getApplication(appId);
+    if (!app) {
+      throw new Error(`Application ${appId} not found`);
+    }
+
+    const platformConfig = this.registry.getPlatformConfig(app);
+    if (!platformConfig) {
+      return false;
+    }
+
+    const configPath = this.registry.resolvePath(platformConfig.configPath);
+    
+    try {
+      const content = await this.fs.readFile(configPath, 'utf-8');
+      const config = JSON.parse(content);
+      
+      // Check if config has hypertool
+      const transformer = TransformerRegistry.getTransformer(platformConfig.format);
+      const standardConfig = transformer.toStandard(config);
+      
+      if (standardConfig.mcpServers && standardConfig.mcpServers['toolprint-hypertool']) {
+        // Remove hypertool entry
+        delete standardConfig.mcpServers['toolprint-hypertool'];
+        
+        // Write back the config without hypertool
+        const updatedConfig = transformer.fromStandard(standardConfig);
+        await this.fs.writeFile(
+          configPath,
+          JSON.stringify(updatedConfig, null, 2),
+          'utf-8'
+        );
+        
+        return true;
+      }
+    } catch (error) {
+      // Config might not exist or be invalid
+      console.warn(`Could not check config for ${appId}:`, error);
+    }
+    
+    return false;
+  }
+
+  /**
+   * Remove HyperTool from a specific application without restoration
+   */
+  private async removeHypertoolFromApp(appId: string): Promise<void> {
+    const app = await this.registry.getApplication(appId);
+    if (!app) {
+      throw new Error(`Application ${appId} not found`);
+    }
+
+    const platformConfig = this.registry.getPlatformConfig(app);
+    if (!platformConfig) {
+      return;
+    }
+
+    const configPath = this.registry.resolvePath(platformConfig.configPath);
+    
+    // Write empty config or remove the file
+    const transformer = TransformerRegistry.getTransformer(platformConfig.format);
+    const emptyConfig = transformer.fromStandard({ mcpServers: {} });
+    
+    await this.fs.writeFile(
+      configPath,
+      JSON.stringify(emptyConfig, null, 2),
+      'utf-8'
+    );
+  }
+
+  /**
+   * Check if we're running in development mode
+   */
+  private async isInDevelopmentMode(): Promise<boolean> {
+    try {
+      // Check if we're in the hypertool-mcp project directory
+      const packageJsonPath = join(process.cwd(), 'package.json');
+      const content = await this.fs.readFile(packageJsonPath, 'utf-8');
+      const packageJson = JSON.parse(content);
+      
+      // Check if this is the hypertool-mcp package
+      if (packageJson.name === '@toolprint/hypertool-mcp') {
+        // Also check if dist/bin.js exists (built)
+        const binPath = join(process.cwd(), 'dist', 'bin.js');
+        try {
+          await this.fs.access(binPath);
+          return true;
+        } catch {
+          // Not built yet
+          return false;
+        }
+      }
+    } catch {
+      // Not in a package directory or can't read package.json
+    }
+    
+    return false;
   }
 }
 

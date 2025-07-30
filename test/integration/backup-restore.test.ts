@@ -205,7 +205,7 @@ describe('Backup and Restore Integration Tests', () => {
       
       // Modify the configuration
       await manager.discoverAndImport();
-      await manager.deployToApplications();
+      await manager.linkApplications();
       
       // Verify config was changed
       const claudeConfigPath = '/tmp/hypertool-test/Library/Application Support/Claude/claude_desktop_config.json';

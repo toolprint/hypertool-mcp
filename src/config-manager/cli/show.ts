@@ -50,6 +50,44 @@ function checkSelfReferencingServer(config: any): boolean {
   return false;
 }
 
+/**
+ * Check if a server configuration is using a development build
+ */
+function checkDevelopmentBuild(config: any): boolean {
+  if (config.type === 'stdio' && config.command && config.args) {
+    const command = config.command.toLowerCase();
+    const args = config.args || [];
+    
+    // Check if using node with a local dist/bin.js path
+    if ((command === 'node' || command.endsWith('/node')) && args.length > 0) {
+      // Check if it has the mcp run pattern with a local path
+      let hasMcpRun = false;
+      let hasLocalPath = false;
+      
+      for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        
+        // Check for development build patterns
+        if (arg.includes('/dist/bin.js') || 
+            arg.includes('/hypertool-mcp/dist/') ||
+            (arg.includes('dist') && arg.includes('bin.js'))) {
+          hasLocalPath = true;
+        }
+        
+        // Check for mcp run pattern
+        if (i < args.length - 1 && arg === 'mcp' && args[i + 1] === 'run') {
+          hasMcpRun = true;
+        }
+      }
+      
+      // Return true if we have a local path (with or without mcp run)
+      return hasLocalPath;
+    }
+  }
+  
+  return false;
+}
+
 interface ServerInfo {
   name: string;
   type: string;
@@ -57,6 +95,8 @@ interface ServerInfo {
   source?: string;
   healthy: boolean;
   warning?: string;
+  isDevelopment?: boolean;
+  developmentPath?: string;
 }
 
 interface ApplicationStatus {
@@ -64,6 +104,8 @@ interface ApplicationStatus {
   installed: boolean;
   configPath?: string;
   hasConfig?: boolean;
+  isDevelopmentBuild?: boolean;
+  developmentPath?: string;
 }
 
 interface ToolsetInfo {
@@ -168,13 +210,29 @@ async function getMcpServers(basePath: string): Promise<ServerInfo[]> {
         // Check for self-referencing HyperTool configuration
         const isSelfReferencing = checkSelfReferencingServer(server);
         
+        // Check for development build
+        const isDevelopment = checkDevelopmentBuild(server);
+        let developmentPath: string | undefined;
+        
+        if (isDevelopment && server.args) {
+          // Extract the development path from args
+          for (const arg of server.args) {
+            if (arg.includes('/dist/bin.js')) {
+              developmentPath = arg;
+              break;
+            }
+          }
+        }
+        
         servers.push({
           name,
           type: server.type || 'unknown',
           details,
           source,
           healthy: !isSelfReferencing,
-          warning: isSelfReferencing ? 'Self-referencing HyperTool configuration' : undefined
+          warning: isSelfReferencing ? 'Self-referencing HyperTool configuration' : undefined,
+          isDevelopment,
+          developmentPath
         });
       }
     }
@@ -209,7 +267,30 @@ async function getApplicationStatus(configManager: ConfigurationManager): Promis
         if (configPath) {
           try {
             await fs.access(configPath);
-            hasConfig = true;
+            // Check if the config actually contains HyperTool
+            const content = await fs.readFile(configPath, 'utf-8');
+            const config = JSON.parse(content);
+            
+            // Check if config has HyperTool entry
+            if (config.mcpServers?.['toolprint-hypertool']) {
+              hasConfig = true;
+              
+              // Check if it's using a development build
+              const hypertoolConfig = config.mcpServers['toolprint-hypertool'];
+              if (checkDevelopmentBuild(hypertoolConfig)) {
+                applications.push({
+                  name: appDef.name,
+                  installed,
+                  configPath,
+                  hasConfig,
+                  isDevelopmentBuild: true,
+                  developmentPath: hypertoolConfig.args?.find((arg: string) => arg.includes('/dist/bin.js'))
+                });
+                continue;
+              }
+            } else {
+              hasConfig = false;
+            }
           } catch {
             hasConfig = false;
           }
@@ -220,7 +301,8 @@ async function getApplicationStatus(configManager: ConfigurationManager): Promis
         name: appDef.name,
         installed,
         configPath,
-        hasConfig
+        hasConfig,
+        isDevelopmentBuild: false
       });
     }
   } catch (error) {
@@ -305,15 +387,15 @@ async function checkHealth(
     suggestions.push('Install Claude Desktop, Cursor, or Claude Code to use HyperTool');
   }
   
-  // Check if applications have HyperTool deployed (excluding Claude Code which uses project-local configs)
-  const deployableApps = applications.filter(app => 
+  // Check if applications have HyperTool linked (excluding Claude Code which uses project-local configs)
+  const linkableApps = applications.filter(app => 
     app.installed && app.name !== 'Claude Code' && app.name !== 'Claude Code (User)'
   );
-  const deployedApps = deployableApps.filter(app => app.hasConfig);
+  const linkedApps = linkableApps.filter(app => app.hasConfig);
   
-  if (deployableApps.length > 0 && deployedApps.length === 0) {
-    warnings.push('HyperTool not deployed to any deployable applications');
-    suggestions.push(`Run 'hypertool-mcp config deploy' to deploy HyperTool to applications`);
+  if (linkableApps.length > 0 && linkedApps.length === 0) {
+    warnings.push('HyperTool not linked to any applications');
+    suggestions.push(`Run 'hypertool-mcp config link' to link HyperTool to applications`);
   }
   
   // Check for invalid configurations
@@ -375,6 +457,9 @@ function displayMcpServers(servers: ServerInfo[]): void {
         if (server.source) {
           output.info(`      ${theme.muted(`Source: ${server.source}`)}`);
         }
+        if (server.isDevelopment && server.developmentPath) {
+          output.warn(`      ⚠️  ${theme.warning('Using development build from:')} ${theme.muted(server.developmentPath)}`);
+        }
         if (server.warning) {
           output.warn(`      ⚠️  ${server.warning}`);
         }
@@ -394,7 +479,7 @@ function displayApplications(applications: ApplicationStatus[]): void {
     const configured = applications.filter(app => app.hasConfig);
     
     output.info(`  Detected: ${installed.length}/${applications.length}`);
-    output.info(`  Configured: ${configured.length}/${installed.length}`);
+    output.info(`  Linked: ${configured.length}/${installed.length}`);
     output.displaySpaceBuffer(1);
     
     for (const app of applications) {
@@ -404,11 +489,14 @@ function displayApplications(applications: ApplicationStatus[]): void {
       output.displayInstruction(`  ${status} ${theme.primary(app.name)}`);
       
       if (app.installed) {
-        if (app.configPath) {
+        if (app.isDevelopmentBuild && app.developmentPath) {
+          output.warn(`     ⚠️  ${theme.warning('Using development build')}`);
+          output.info(`     ${theme.muted(app.developmentPath)}`);
+        } else if (app.configPath) {
           output.info(`     ${theme.muted(app.configPath)}`);
         }
         if (!app.hasConfig && app.name !== 'Claude Code' && app.name !== 'Claude Code (User)') {
-          output.info(`     ${theme.warning('Not configured for HyperTool')}`);
+          output.info(`     ${theme.warning('Not linked to HyperTool')}`);
         }
       } else {
         output.info(`     ${theme.muted('Not installed')}`);

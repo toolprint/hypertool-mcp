@@ -23,6 +23,7 @@ export interface LoggingConfig {
   serverName: string;
   format: "json" | "pretty";
   colorize: boolean;
+  useStderr?: boolean;  // Whether to output console logs to stderr
 }
 
 export const DEFAULT_LOGGING_CONFIG: LoggingConfig = {
@@ -32,19 +33,22 @@ export const DEFAULT_LOGGING_CONFIG: LoggingConfig = {
   serverName: APP_TECHNICAL_NAME,
   format: "pretty", // Always use pretty format for console
   colorize: true,
+  useStderr: false,  // Default to stdout for non-stdio transports
 };
 
 export const STDIO_LOGGING_CONFIG: LoggingConfig = {
   level: process.env.NODE_ENV === "development" ? "debug" : "info",
-  enableConsole: false,
+  enableConsole: true,  // Enable console logging for stderr
   enableFile: true,
   serverName: APP_TECHNICAL_NAME,
   format: "pretty", // Always use pretty format for console
   colorize: true,
+  useStderr: true,  // Use stderr for stdio transport to avoid interfering with protocol
 };
 
 // Singleton transport instances to prevent multiple worker threads
-let sharedConsoleTransport: any = null;
+let sharedStdoutTransport: any = null;
+let sharedStderrTransport: any = null;
 // sharedFileTransport reserved for future use
 // let sharedFileTransport: any = null;
 
@@ -102,19 +106,38 @@ export class Logger {
   }
 
   private getSharedConsoleStream() {
-    // Create shared console transport only once
-    if (!sharedConsoleTransport) {
-      sharedConsoleTransport = pino.transport({
-        target: "pino-pretty",
-        options: {
-          colorize: this.config.colorize,
-          translateTime: "SYS:standard",
-          include: "level,time,msg",
-          ignore: "pid,hostname", // Simplify output
-        },
-      });
+    // Create shared console transport only once, separate for stdout and stderr
+    const useStderr = this.config.useStderr || false;
+    
+    if (useStderr) {
+      if (!sharedStderrTransport) {
+        sharedStderrTransport = pino.transport({
+          target: "pino-pretty",
+          options: {
+            colorize: this.config.colorize,
+            translateTime: "SYS:standard",
+            include: "level,time,msg",
+            ignore: "pid,hostname", // Simplify output
+            destination: 2, // 2 is stderr file descriptor
+          },
+        });
+      }
+      return sharedStderrTransport;
+    } else {
+      if (!sharedStdoutTransport) {
+        sharedStdoutTransport = pino.transport({
+          target: "pino-pretty",
+          options: {
+            colorize: this.config.colorize,
+            translateTime: "SYS:standard",
+            include: "level,time,msg",
+            ignore: "pid,hostname", // Simplify output
+            // No destination specified, defaults to stdout
+          },
+        });
+      }
+      return sharedStdoutTransport;
     }
-    return sharedConsoleTransport;
   }
 
   private createFileStream() {

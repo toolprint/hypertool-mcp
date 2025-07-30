@@ -132,6 +132,8 @@ export class MCPConfigParser {
 
   /**
    * Validate the basic structure of the configuration
+   * 
+   * NOTE: Allow empty server configurations for initial setup
    */
   private validateStructure(rawConfig: any): string[] {
     const errors: string[] = [];
@@ -144,10 +146,6 @@ export class MCPConfigParser {
     if (!rawConfig.mcpServers || typeof rawConfig.mcpServers !== "object") {
       errors.push('Configuration must have an "mcpServers" object');
       return errors;
-    }
-
-    if (Object.keys(rawConfig.mcpServers).length === 0) {
-      errors.push("Configuration must define at least one server");
     }
 
     return errors;
