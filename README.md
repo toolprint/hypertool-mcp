@@ -57,6 +57,38 @@ After: Expert Mode 🎯
                   ✅ Expert picks every time
 ```
 
+### What's a "Toolset"? Think Playlists for Your AI
+
+Just like Spotify playlists organize your music, toolsets organize your AI tools:
+
+```
+ALL YOUR TOOLS (64 total)              YOUR TOOLSETS
+┌────────────────────────────┐         ┌──────────────────┐
+│ 🐳 Docker (19 tools)       │         │ 🔨 "coding"      │
+│  • build_image             │   ┌───▶ │  • git.status    │
+│  • create_container        │   │     │  • git.commit    │
+│  • run_container           │   │     │  • docker.build  │
+│  • stop_container          │   │     │  • docker.run    │
+│  • [... 15 more]           │   │     │  • github.pr     │
+├────────────────────────────┤   │     └──────────────────┘
+│ 🔀 Git (12 tools)          │───┤
+│  • status                  │   │     ┌──────────────────┐
+│  • commit                  │   │     │ 📝 "writing"     │
+│  • push                    │   └───▶ │  • notion.create │
+│  • [... 9 more]            │         │  • slack.send    │
+├────────────────────────────┤         │  • grammarly.fix │
+│ 📝 Notion (8 tools)        │─────┐   └──────────────────┘
+│ 💬 Slack (6 tools)         │     │
+│ 📊 Linear (10 tools)       │     │   ┌──────────────────┐
+│ 🧪 Testing (9 tools)       │     └─▶ │ 🐛 "debugging"   │
+└────────────────────────────┘         │  • logs.search   │
+                                       │  • docker.logs   │
+AI sees ALL 64 tools = confused 😵     │  • traces.view   │
+                                       └──────────────────┘
+                                       
+                                       AI sees 3-5 tools = focused 🎯
+```
+
 ### Key Features That Changed Our Workflow
 
 - **🧠 Dynamic Toolsets**: Like switching hats - your AI becomes a specialist instantly
@@ -81,12 +113,11 @@ Let's get you running with the simplest setup:
 cp .mcp.json .mcp.hypertool.json
 ```
 
-**Need an example?** Check out our [mcp.test.json](mcp.test.json) to see what a multi-server config looks like. It includes:
-- `everything` - Basic utility tools (echo, add, etc.)
-- `context7` - Library documentation lookup
-- `mcping` - Desktop notifications
+**Need an example?** We have two configs you can copy:
+- [mcp.test.json](mcp.test.json) - Simple 3-server setup to get started
+- [mcp.example.json](mcp.example.json) - Full example with 13 popular MCP servers (no API keys needed!)
 
-This is a great starting config to copy!
+The example includes filesystem, git, sqlite, browser automation, and more!
 
 ### Step 2: Point to HyperTool
 Replace your `.mcp.json` with just this:
