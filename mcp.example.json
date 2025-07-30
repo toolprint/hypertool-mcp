@@ -1,0 +1,119 @@
+{
+  "mcpServers": {
+    "everything": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-everything"
+      ],
+      "description": "Basic utility tools (echo, add, etc.) - great for testing"
+    },
+    "context7": {
+      "type": "sse",
+      "url": "https://mcp.context7.com/sse",
+      "description": "Library documentation lookup - no API key needed"
+    },
+    "mcping": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@toolprint/mcping-mcp@latest"
+      ],
+      "description": "Desktop notifications (macOS) - useful for long tasks"
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "."
+      ],
+      "description": "File system access - read/write local files"
+    },
+    "sqlite": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sqlite",
+        "path/to/your/database.db"
+      ],
+      "description": "SQLite database access - supports Datasette metadata"
+    },
+    "git": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-git"
+      ],
+      "description": "Git repository management - works with local repos"
+    },
+    "time": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-time"
+      ],
+      "description": "Time and date utilities - timezone conversions, scheduling"
+    },
+    "fetch": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-fetch"
+      ],
+      "description": "HTTP requests - fetch web content without API keys"
+    },
+    "memory": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "description": "Knowledge graph memory - store and retrieve information"
+    },
+    "python": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-server-python",
+        "--python",
+        "python3"
+      ],
+      "description": "Python code execution - requires Python installed"
+    },
+    "mcp-docker": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-server-docker"
+      ],
+      "description": "Docker container management - requires Docker"
+    },
+    "sequential-thinking": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "description": "Step-by-step reasoning for complex problems"
+    },
+    "browser": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ],
+      "description": "Browser automation - screenshots, web scraping"
+    }
+  }
+}
