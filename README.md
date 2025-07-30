@@ -332,6 +332,88 @@ Options:
   --debug                Verbose logging
 ```
 
+### 🔐 Configuration Management
+
+HyperTool includes powerful configuration management commands to help you organize and backup your MCP server setups:
+
+#### View Configuration Status
+
+Check your current HyperTool setup and health:
+
+```bash
+# Show overview of all configurations
+hypertool-mcp config show
+
+# Output in JSON format for scripting
+hypertool-mcp config show --json
+```
+
+This displays:
+- 📡 All discovered MCP servers and their status
+- 🖥️ Installed applications and their HyperTool link status
+- 🧰 Configured toolsets and which apps use them
+- ⚠️ Configuration health checks and suggestions
+
+#### Backup and Import MCP Servers
+
+Automatically discover and import all MCP servers from your installed applications (Claude Desktop, Cursor, Claude Code):
+
+```bash
+# Create a backup of all MCP configurations
+hypertool-mcp config backup
+
+# See what would be backed up without making changes
+hypertool-mcp config backup --dry-run
+```
+
+This creates a consolidated backup of all your MCP servers in `~/.toolprint/hypertool-mcp/backups/`.
+
+#### Restore from Backup
+
+```bash
+# List available backups
+hypertool-mcp config restore --list
+
+# Restore from the latest backup
+hypertool-mcp config restore --latest
+
+# Interactive restore (choose from list)
+hypertool-mcp config restore
+```
+
+#### Link HyperTool to Applications
+
+Replace your app's MCP configuration with HyperTool (your original config is backed up first):
+
+```bash
+# Interactive linking (choose which apps)
+hypertool-mcp config link
+
+# Link all detected applications
+hypertool-mcp config link --all
+
+# Link specific application
+hypertool-mcp config link --app cursor
+```
+
+#### Unlink and Restore Original Configs
+
+Remove HyperTool and optionally restore previous configurations:
+
+```bash
+# Interactive unlink with restore option
+hypertool-mcp config unlink
+
+# Unlink all applications
+hypertool-mcp config unlink --all
+
+# Unlink specific app
+hypertool-mcp config unlink --app claude-desktop
+
+# Remove HyperTool without restoring backups
+hypertool-mcp config unlink --no-restore
+```
+
 ## 📚 Research & Metrics {#research}
 
 For the data nerds (like us), here's the academic backing:
