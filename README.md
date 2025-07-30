@@ -81,6 +81,13 @@ Let's get you running with the simplest setup:
 cp .mcp.json .mcp.hypertool.json
 ```
 
+**Need an example?** Check out our [mcp.test.json](mcp.test.json) to see what a multi-server config looks like. It includes:
+- `everything` - Basic utility tools (echo, add, etc.)
+- `context7` - Library documentation lookup
+- `mcping` - Desktop notifications
+
+This is a great starting config to copy!
+
 ### Step 2: Point to HyperTool
 Replace your `.mcp.json` with just this:
 ```json
