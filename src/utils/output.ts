@@ -49,6 +49,7 @@ enum FigletFont {
 
 const PREFERRED_FONT = FigletFont.SubZero;
 
+
 /**
  * Custom console display output that also conditionally
  * logs to the console and the logger where appropriate
@@ -318,17 +319,9 @@ export function displayBanner(appName: string = APP_NAME): void {
  * @param appName - The name of the specific application
  */
 function displayAppBanner(appName: string, maxLenNewLine: number = 10): void {
-  // Handle app name - split into lines if too long, use same font as Toolprint
-  if (appName.length > maxLenNewLine) {
-    const words = appName.split(" ");
-    for (const word of words) {
-      const wordBanner = getAsciiArt(word, PREFERRED_FONT);
-      output.log(theme.banner(wordBanner));
-    }
-  } else {
-    const appNameBanner = getAsciiArt(appName, PREFERRED_FONT);
-    output.log(theme.banner(appNameBanner));
-  }
+  // Use ASCII art for HYPERTOOL
+  const appNameBanner = getAsciiArt("HYPERTOOL", PREFERRED_FONT);
+  output.log(theme.banner(appNameBanner));
 }
 
 /**

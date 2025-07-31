@@ -8,6 +8,7 @@ import * as os from "os";
 import { loadUserPreferences, updateMcpConfigPath } from "./preferenceStore.js";
 import { APP_TECHNICAL_NAME, BRAND_NAME } from "./appConfig.js";
 import { createChildLogger } from "../utils/logging.js";
+import { MainConfig } from "../config-manager/types/index.js";
 
 const logger = createChildLogger({ module: "config/discovery" });
 
@@ -50,20 +51,91 @@ async function fileExists(filePath: string): Promise<boolean> {
 }
 
 /**
+ * Resolve app-specific configuration path
+ */
+async function resolveAppConfig(appId: string, profile?: string): Promise<string | null> {
+  try {
+    // Load main config to get app-specific config paths
+    const configPath = path.join(
+      os.homedir(),
+      `.${BRAND_NAME.toLowerCase()}`,
+      APP_TECHNICAL_NAME,
+      'config.json'
+    );
+    
+    const configContent = await fs.readFile(configPath, 'utf-8');
+    const config: MainConfig = JSON.parse(configContent);
+    
+    const appConfig = config.applications?.[appId];
+    if (!appConfig?.mcpConfig) {
+      return null;
+    }
+    
+    // If profile is specified, look for profile-specific config
+    if (profile) {
+      const profilePath = path.join(
+        os.homedir(),
+        `.${BRAND_NAME.toLowerCase()}`,
+        APP_TECHNICAL_NAME,
+        'mcp',
+        'profiles',
+        appId,
+        `${profile}.json`
+      );
+      
+      if (await fileExists(profilePath)) {
+        return profilePath;
+      }
+    }
+    
+    // Return app's default config path
+    return path.join(
+      os.homedir(),
+      `.${BRAND_NAME.toLowerCase()}`,
+      APP_TECHNICAL_NAME,
+      appConfig.mcpConfig
+    );
+  } catch (error) {
+    logger.debug('Failed to resolve app config:', error);
+    return null;
+  }
+}
+
+/**
  * Discover MCP configuration file
  *
- * @param cliConfigPath - Path provided via --mcp-config flag
+ * @param cliConfigPath - Path provided via --mcp-config flag (deprecated)
  * @param updatePreference - Whether to update user preference when using CLI path
+ * @param linkedApp - Application ID to load config for
+ * @param profile - Profile ID for workspace/project config
  * @returns Object with config path and source information
  */
 export async function discoverMcpConfig(
   cliConfigPath?: string,
-  updatePreference: boolean = true
+  updatePreference: boolean = true,
+  linkedApp?: string,
+  profile?: string
 ): Promise<{
   configPath: string | null;
-  source: "cli" | "preference" | "discovered" | "none";
+  source: "cli" | "app" | "preference" | "discovered" | "none";
   errorMessage?: string;
 }> {
+  // 0. Check for linked app first (new priority)
+  if (linkedApp) {
+    const appConfigPath = await resolveAppConfig(linkedApp, profile);
+    if (appConfigPath && await fileExists(appConfigPath)) {
+      return {
+        configPath: appConfigPath,
+        source: "app",
+      };
+    } else {
+      return {
+        configPath: null,
+        source: "none",
+        errorMessage: `Could not find configuration for app '${linkedApp}'${profile ? ` with profile '${profile}'` : ''}`,
+      };
+    }
+  }
   // 1. Check CLI argument first (highest priority)
   if (cliConfigPath) {
     const resolvedPath = resolvePath(cliConfigPath);

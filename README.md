@@ -427,6 +427,157 @@ hypertool-mcp config unlink --app claude-desktop
 hypertool-mcp config unlink --no-restore
 ```
 
+## 🤖 Non-Interactive Setup
+
+The `setup` command supports a fully non-interactive mode for automation, CI/CD pipelines, and scripted installations.
+
+### Basic Usage
+
+```bash
+# Run setup accepting all defaults
+hypertool-mcp setup --yes
+
+# Dry run to preview changes
+hypertool-mcp setup --yes --dry-run
+
+# Verbose output for debugging
+hypertool-mcp setup --yes --verbose
+```
+
+### Configuration Options
+
+#### Application Selection
+
+```bash
+# Configure specific applications only
+hypertool-mcp setup --yes --apps claude-desktop,cursor
+
+# Configure all detected applications (default)
+hypertool-mcp setup --yes
+```
+
+#### Import Strategy
+
+```bash
+# Import all existing configurations (default)
+hypertool-mcp setup --yes --import-all
+
+# Start fresh without importing
+hypertool-mcp setup --yes --import-none
+```
+
+#### Installation Type
+
+```bash
+# Standard installation - replace app configs (default)
+hypertool-mcp setup --yes --standard
+
+# Development installation - run alongside existing configs
+hypertool-mcp setup --yes --development
+```
+
+#### Toolset Management
+
+```bash
+# Create default toolset (default behavior)
+hypertool-mcp setup --yes
+
+# Skip toolset creation
+hypertool-mcp setup --yes --skip-toolsets
+```
+
+### Complete Examples
+
+#### Fresh Installation
+```bash
+# Clean install for CI/CD environment
+hypertool-mcp setup --yes --import-none --skip-toolsets
+```
+
+#### Import Everything
+```bash
+# Import all configs from all detected apps
+hypertool-mcp setup --yes --import-all
+```
+
+#### Selective Configuration
+```bash
+# Configure only Claude Desktop with development mode
+hypertool-mcp setup --yes \
+  --apps claude-desktop \
+  --development \
+  --verbose
+```
+
+#### Docker/Container Setup
+```bash
+# Minimal setup for containerized environments
+hypertool-mcp setup --yes \
+  --import-none \
+  --skip-toolsets \
+  --standard
+```
+
+### Default Behaviors in Non-Interactive Mode
+
+When using `--yes`, the following defaults apply:
+
+1. **App Selection**: All detected applications
+2. **Import Strategy**: Import all existing configurations
+3. **Server Selection**: All servers from selected apps
+4. **Conflict Resolution**: Add app suffix to conflicting names
+5. **Installation Type**: Standard (replace app configs)
+6. **Toolsets**: Create one "default" toolset with all tools
+
+### Exit Codes
+
+- `0`: Success
+- `1`: Setup failed
+- `2`: No applications detected (when specific apps requested)
+
+### Environment Variables
+
+```bash
+# Set config directory
+export HYPERTOOL_CONFIG_PATH=/custom/path
+hypertool-mcp setup --yes
+
+# Debug output
+export DEBUG=1
+hypertool-mcp setup --yes
+```
+
+### CI/CD Integration
+
+#### GitHub Actions Example
+```yaml
+- name: Setup Hypertool MCP
+  run: |
+    npm install -g @toolprint/hypertool-mcp
+    hypertool-mcp setup --yes --import-none
+```
+
+#### GitLab CI Example
+```yaml
+setup-hypertool:
+  script:
+    - npm install -g @toolprint/hypertool-mcp
+    - hypertool-mcp setup --yes --dry-run
+    - hypertool-mcp setup --yes
+```
+
+#### Jenkins Pipeline Example
+```groovy
+stage('Setup Hypertool') {
+  steps {
+    sh '''
+      npm install -g @toolprint/hypertool-mcp
+      hypertool-mcp setup --yes --verbose
+    '''
+  }
+}
+```
+
 ## 📚 Research & Metrics
 
 For the data nerds (like us), here's the academic backing:
