@@ -151,6 +151,7 @@ const mcpServerRunOptions = [
   {
     flags: "--mcp-config <path>",
     description: theme.info("Path to MCP configuration file") + " (.mcp.json)",
+    defaultValue: undefined,
   },
   {
     flags: "--log-level <level>",
@@ -467,7 +468,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--mcp-config <path>",
       theme.info("Path to MCP configuration file") + 
-      theme.warning(" (deprecated, use --linked-app)")
+      theme.muted(" (overrides all other config sources)")
     )
     .option(
       "--linked-app <app-id>",
@@ -549,7 +550,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--mcp-config <path>",
       theme.info("Path to MCP configuration file") + 
-      theme.warning(" (deprecated, use --linked-app)")
+      theme.muted(" (overrides all other config sources)")
     )
     .option(
       "--linked-app <app-id>",

@@ -12,11 +12,50 @@ export class ImportStrategyStep implements WizardStep {
   canSkip = true; // Can skip in non-interactive mode
 
   async run(state: WizardState): Promise<WizardState> {
-    // Skip if no existing configs
-    if (state.existingConfigs.length === 0) {
+    // Check for --example flag first in non-interactive mode
+    if (state.nonInteractive) {
+      const options = state as any;
+      if (options.example) {
+        // User explicitly requested an example config
+        const { EXAMPLE_CONFIGS } = await import('./exampleConfigs.js');
+        const selectedExample = EXAMPLE_CONFIGS.find(e => e.id === options.example);
+        if (!selectedExample) {
+          throw new Error(`Unknown example configuration: ${options.example}`);
+        }
+        return {
+          ...state,
+          importStrategy: 'examples',
+          selectedExample
+        };
+      }
+    }
+
+    // If no existing configs or no apps selected, ask if they want to use examples
+    if (state.existingConfigs.length === 0 || state.selectedApps.length === 0) {
+      // In non-interactive mode, default to fresh
+      if (state.nonInteractive) {
+        return {
+          ...state,
+          importStrategy: 'fresh'
+        };
+      }
+      
+      output.displaySpaceBuffer(1);
+      
+      const message = state.selectedApps.length === 0 
+        ? 'No applications selected. Would you like to start from an example configuration?' 
+        : 'No existing configurations found. Would you like to start from an example configuration?';
+      
+      const { useExamples } = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'useExamples',
+        message,
+        default: true
+      }]);
+      
       return {
         ...state,
-        importStrategy: 'fresh'
+        importStrategy: useExamples ? 'examples' : 'fresh'
       };
     }
 
@@ -49,6 +88,10 @@ export class ImportStrategyStep implements WizardStep {
         {
           name: 'Configure per application (recommended)',
           value: 'per-app'
+        },
+        {
+          name: 'Start from an example configuration',
+          value: 'examples'
         },
         {
           name: 'Start fresh (ignore existing configs)',

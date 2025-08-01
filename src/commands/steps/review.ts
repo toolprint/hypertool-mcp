@@ -21,6 +21,16 @@ export class ReviewStep implements WizardStep {
     output.displayHeader('📋 Setup Summary');
     output.displaySeparator();
 
+    // Example configuration
+    if (state.importStrategy === 'examples' && state.selectedExample) {
+      output.info(theme.label('Configuration template:'));
+      output.info(`  ${state.selectedExample.name} (${state.selectedExample.serverCount} servers)`);
+      if (state.selectedExample.requiresSecrets) {
+        output.info(`  ${theme.warning('⚠️  Requires API keys for full functionality')}`);
+      }
+      output.displaySpaceBuffer(1);
+    }
+
     // Applications
     if (state.selectedApps.length > 0) {
       output.info(theme.label('Applications to configure:'));
@@ -33,16 +43,18 @@ export class ReviewStep implements WizardStep {
       output.displaySpaceBuffer(1);
     }
 
-    // Servers
-    const finalServers = this.getFinalServerList(state);
-    if (finalServers.length > 0) {
-      output.info(theme.label('Servers to be managed:'));
-      for (const server of finalServers) {
-        const app = state.detectedApps.find(a => a.id === server.fromApp);
-        const appInfo = theme.muted(` (from ${app?.displayName})`);
-        output.info(`  • ${server.finalName}${appInfo}`);
+    // Servers (only show for per-app strategy)
+    if (state.importStrategy === 'per-app') {
+      const finalServers = this.getFinalServerList(state);
+      if (finalServers.length > 0) {
+        output.info(theme.label('Servers to be managed:'));
+        for (const server of finalServers) {
+          const app = state.detectedApps.find(a => a.id === server.fromApp);
+          const appInfo = theme.muted(` (from ${app?.displayName})`);
+          output.info(`  • ${server.finalName}${appInfo}`);
+        }
+        output.displaySpaceBuffer(1);
       }
-      output.displaySpaceBuffer(1);
     }
 
     // Toolsets

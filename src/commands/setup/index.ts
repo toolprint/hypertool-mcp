@@ -18,7 +18,32 @@ export function createSetupCommand(): Command {
     .option('--development', 'Use development installation type')
     .option('--skip-toolsets', 'Skip toolset creation')
     .option('--verbose', 'Show detailed output')
+    .option('--example <name>', 'Use specific example configuration (everything, development, etc.)')
+    .option('--list-examples', 'List available example configurations')
     .action(async (options) => {
+      // Handle --list-examples first
+      if (options.listExamples) {
+        const { EXAMPLE_CONFIGS } = await import('../steps/exampleConfigs.js');
+        const { output } = await import('../../utils/output.js');
+        
+        output.displaySpaceBuffer(1);
+        output.displayHeader('Available Example Configurations');
+        output.displaySpaceBuffer(1);
+        
+        for (const example of EXAMPLE_CONFIGS) {
+          console.log(theme.label(example.name));
+          console.log(`  ID: ${theme.value(example.id)}`);
+          console.log(`  ${example.description}`);
+          console.log(`  Servers: ${theme.value(example.serverCount.toString())}`);
+          if (example.requiresSecrets) {
+            console.log(`  ${theme.warning('⚠️  Requires API keys')}`);
+          }
+          console.log();
+        }
+        
+        process.exit(0);
+      }
+
       try {
         const setupOptions = {
           yes: options.yes,
@@ -28,7 +53,9 @@ export function createSetupCommand(): Command {
           standard: options.development ? false : (options.standard ?? true),
           development: options.development,
           skipToolsets: options.skipToolsets,
-          verbose: options.verbose
+          verbose: options.verbose,
+          example: options.example,
+          listExamples: options.listExamples
         };
 
         const wizard = new SetupWizard(setupOptions);

@@ -8,6 +8,7 @@ import { theme } from '../../utils/theme.js';
 import { ConfigurationManager } from '../../config-manager/index.js';
 import { join } from 'path';
 import { homedir } from 'os';
+import { loadExampleConfig } from './exampleConfigs.js';
 
 export class ExecutionStep implements WizardStep {
   name = 'execution';
@@ -24,11 +25,13 @@ export class ExecutionStep implements WizardStep {
 
     const steps = [
       { name: 'Creating configuration directory', action: () => this.createConfigDirectory(state) },
-      { name: 'Importing server configurations', action: () => this.importServerConfigs(state) },
+      state.importStrategy === 'examples' ? 
+        { name: 'Installing example configuration', action: () => this.installExampleConfig(state) } :
+        { name: 'Importing server configurations', action: () => this.importServerConfigs(state) },
       { name: 'Setting up per-app configs', action: () => this.setupPerAppConfigs(state) },
       { name: 'Creating toolsets', action: () => this.createToolsets(state) },
       { name: 'Linking applications', action: () => this.linkApplications(state) }
-    ];
+    ].filter(Boolean);
 
     // Execute each step
     for (let i = 0; i < steps.length; i++) {
@@ -74,8 +77,70 @@ export class ExecutionStep implements WizardStep {
     // This will be handled by setupPerAppConfigs
   }
 
+  private async installExampleConfig(state: WizardState): Promise<void> {
+    if (state.dryRun) return;
+    
+    if (!state.selectedExample) {
+      throw new Error('No example configuration selected');
+    }
+
+    const fs = (await import('fs')).promises;
+    
+    // Load the example configuration
+    const exampleConfig = await loadExampleConfig(state.selectedExample.id);
+    
+    // Save it as the global default at ~/.toolprint/hypertool-mcp/mcp.json
+    const globalConfigPath = join(
+      homedir(),
+      '.toolprint',
+      'hypertool-mcp',
+      'mcp.json'
+    );
+    
+    await fs.writeFile(
+      globalConfigPath,
+      JSON.stringify(exampleConfig, null, 2),
+      'utf-8'
+    );
+    
+    // Update main config to note the source
+    const mainConfigPath = join(
+      homedir(),
+      '.toolprint',
+      'hypertool-mcp',
+      'config.json'
+    );
+    
+    let mainConfig: any = {};
+    try {
+      const content = await fs.readFile(mainConfigPath, 'utf-8');
+      mainConfig = JSON.parse(content);
+    } catch {
+      mainConfig = { version: '1.0.0' };
+    }
+    
+    mainConfig.globalDefault = {
+      source: 'example',
+      exampleId: state.selectedExample.id,
+      installedAt: new Date().toISOString()
+    };
+    
+    await fs.writeFile(
+      mainConfigPath,
+      JSON.stringify(mainConfig, null, 2),
+      'utf-8'
+    );
+    
+    output.info(theme.muted(`  → Installed ${state.selectedExample.name} as global default`));
+  }
+
   private async setupPerAppConfigs(state: WizardState): Promise<void> {
     if (state.dryRun) return;
+
+    // Skip if using example config as global default
+    if (state.importStrategy === 'examples') {
+      return;
+    }
 
     // Create per-app configs from perAppSelections
     for (const [appId, servers] of Object.entries(state.perAppSelections)) {

@@ -222,10 +222,25 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     serverConfigs: Record<string, ServerConfig>,
     options: ServerInitOptions
   ): Promise<void> {
-    this.connectionManager = new ConnectionManager();
+    // Load server settings with proper priority (env > config > default)
+    const { loadServerSettings } = await import("../config/serverSettings.js");
+    const serverSettings = await loadServerSettings();
+    
+    // Create connection manager with configured pool settings
+    this.connectionManager = new ConnectionManager({
+      maxConcurrentConnections: serverSettings.maxConcurrentConnections,
+    });
+    
     const isStdio = options.transport.type === "stdio";
+    
+    // Log the connection pool configuration if in debug mode or if env var is set
+    if (options.debug || process.env.HYPERTOOL_MAX_CONNECTIONS) {
+      const { logServerSettingsSource } = await import("../config/serverSettings.js");
+      await logServerSettingsSource();
+    }
+    
     let mainSpinner = createSpinner(
-      "🔗 Setting up Connection Manager...",
+      `🔗 Setting up Connection Manager (max ${serverSettings.maxConcurrentConnections} connections)...`,
       isStdio
     );
 

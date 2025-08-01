@@ -205,12 +205,12 @@ describe('Backup and Restore Integration Tests', () => {
       
       // Modify the configuration
       await manager.discoverAndImport();
-      await manager.linkApplications();
+      await manager.linkApplications(['claude-desktop']);
       
       // Verify config was changed
       const claudeConfigPath = '/tmp/hypertool-test/Library/Application Support/Claude/claude_desktop_config.json';
       const modifiedConfig = getConfigContent(claudeConfigPath);
-      expect(Object.keys(modifiedConfig.mcpServers)).toContain('toolprint-hypertool');
+      expect(Object.keys(modifiedConfig.mcpServers)).toContain('hypertool');
       
       // Restore from backup
       const restoreResult = await manager.restoreBackup(backupResult.backupId!);
@@ -219,7 +219,7 @@ describe('Backup and Restore Integration Tests', () => {
       
       // Verify original config was restored
       const restoredConfig = getConfigContent(claudeConfigPath);
-      expect(Object.keys(restoredConfig.mcpServers)).not.toContain('toolprint-hypertool');
+      expect(Object.keys(restoredConfig.mcpServers)).not.toContain('hypertool');
       expect(Object.keys(restoredConfig.mcpServers)).toContain('git');
     });
 

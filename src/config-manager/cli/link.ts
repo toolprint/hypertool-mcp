@@ -8,6 +8,13 @@ import { theme } from "../../utils/theme.js";
 import { ConfigurationManager } from "../index.js";
 import { output } from "../../utils/output.js";
 
+interface AppLinkConfig {
+  appId: string;
+  appName: string;
+  configType: 'global' | 'per-app';
+  perAppInit?: 'empty' | 'copy' | 'import';
+}
+
 export function createLinkCommand(): Command {
   const link = new Command("link");
 
@@ -46,8 +53,22 @@ export function createLinkCommand(): Command {
           selectedApps = appIds;
         }
 
-        // If no --all flag and no specific app, show interactive selection
-        if (!options.all && !options.app && appIds.length > 1) {
+        // Configure each selected app
+        const appConfigs: AppLinkConfig[] = [];
+        
+        // If using flags (non-interactive), use default config type
+        if (options.all || options.app) {
+          for (const appId of selectedApps) {
+            appConfigs.push({
+              appId,
+              appName: apps[appId].name,
+              configType: 'global', // Default to global for non-interactive
+            });
+          }
+        } else {
+          // Interactive mode
+          // If no --all flag and no specific app, show interactive selection
+          if (!options.all && !options.app && appIds.length > 1) {
           const { selected } = await inquirer.prompt([
             {
               type: "checkbox",
@@ -67,6 +88,86 @@ export function createLinkCommand(): Command {
             },
           ]);
           selectedApps = selected;
+          }
+
+          // Interactive configuration for each selected app
+          for (const appId of selectedApps) {
+          const appName = apps[appId].name;
+          
+          output.displaySpaceBuffer(1);
+          output.info(theme.label(`Configuring ${appName}:`));
+          
+          // Ask about config type
+          const { configType } = await inquirer.prompt([{
+            type: 'list',
+            name: 'configType',
+            message: `How should ${appName} connect to HyperTool?`,
+            choices: [
+              {
+                name: 'Use global config (shared with all apps)',
+                value: 'global'
+              },
+              {
+                name: 'Use per-app config (separate servers for this app)',
+                value: 'per-app'
+              }
+            ],
+            default: 'global'
+          }]);
+          
+          let perAppInit: 'empty' | 'copy' | 'import' | undefined;
+          
+          if (configType === 'per-app') {
+            // Check if per-app config already exists
+            const { promises: fs } = await import('fs');
+            const { join } = await import('path');
+            const { homedir } = await import('os');
+            
+            const perAppConfigPath = join(
+              homedir(),
+              '.toolprint/hypertool-mcp/mcp',
+              `${appId}.json`
+            );
+            
+            let configExists = false;
+            try {
+              await fs.access(perAppConfigPath);
+              configExists = true;
+            } catch {
+              configExists = false;
+            }
+            
+            if (!configExists) {
+              const { initMethod } = await inquirer.prompt([{
+                type: 'list',
+                name: 'initMethod',
+                message: `No per-app config exists for ${appName}. How would you like to proceed?`,
+                choices: [
+                  {
+                    name: 'Start with empty config',
+                    value: 'empty'
+                  },
+                  {
+                    name: 'Copy current global config',
+                    value: 'copy'
+                  },
+                  {
+                    name: `Import from ${appName}'s existing config`,
+                    value: 'import'
+                  }
+                ]
+              }]);
+              perAppInit = initMethod;
+            }
+          }
+          
+          appConfigs.push({
+            appId,
+            appName,
+            configType,
+            perAppInit
+          });
+          }
         }
 
         if (options.dryRun) {
@@ -74,18 +175,15 @@ export function createLinkCommand(): Command {
           output.displaySpaceBuffer(1);
 
           output.displaySubHeader("Would link HyperTool to:");
-          for (const appId of selectedApps) {
-            const appDef = apps[appId] as any;
-            const installed = await registry.isApplicationInstalled(appDef);
-            if (installed) {
-              const platformConfig = registry.getPlatformConfig(appDef);
-              if (platformConfig) {
-                const configPath = registry.resolvePath(
-                  platformConfig.configPath
-                );
-                output.displayInstruction(`• ${appDef.name}: ${configPath}`);
-              }
+          for (const config of appConfigs) {
+            const configTypeLabel = config.configType === 'global' ? 'Global config' : 'Per-app config';
+            let details = `• ${config.appName} → ${configTypeLabel}`;
+            
+            if (config.perAppInit) {
+              details += ` (${config.perAppInit})`;
             }
+            
+            output.displayInstruction(details);
           }
 
           output.displaySpaceBuffer(1);
@@ -94,12 +192,25 @@ export function createLinkCommand(): Command {
         }
 
         // Confirm linking
-        const appNames = selectedApps.map((id) => apps[id].name).join(", ");
+        output.displaySpaceBuffer(1);
+        output.displaySubHeader("Link Summary:");
+        for (const config of appConfigs) {
+          const configTypeLabel = config.configType === 'global' ? 'Global config' : 'Per-app config';
+          let details = `• ${config.appName} → ${configTypeLabel}`;
+          
+          if (config.perAppInit) {
+            details += ` (${config.perAppInit})`;
+          }
+          
+          output.displayInstruction(details);
+        }
+        
+        output.displaySpaceBuffer(1);
         const { confirm } = await inquirer.prompt([
           {
             type: "confirm",
             name: "confirm",
-            message: theme.warning(`Link HyperTool to ${appNames}?`),
+            message: theme.warning(`Proceed with linking?`),
             default: true,
           },
         ]);
@@ -111,7 +222,7 @@ export function createLinkCommand(): Command {
 
         output.info("🔗 Linking applications to HyperTool...");
 
-        const result = await configManager.linkApplications(selectedApps);
+        const result = await configManager.linkApplications(appConfigs);
 
         output.displaySpaceBuffer(1);
         output.success("✅ Linking complete!");

@@ -23,6 +23,7 @@ import { WelcomeStep } from '../steps/welcome.js';
 import { AppDetectionStep } from '../steps/appDetection.js';
 import { ConfigDiscoveryStep } from '../steps/configDiscovery.js';
 import { ImportStrategyStep } from '../steps/importStrategy.js';
+import { ExampleSelectionStep } from '../steps/exampleSelection.js';
 import { ServerSelectionStep } from '../steps/serverSelection.js';
 import { ConflictResolutionStep } from '../steps/conflictResolution.js';
 import { ToolsetCreationStep } from '../steps/toolsetCreation.js';
@@ -64,6 +65,7 @@ export class SetupWizard {
       new AppDetectionStep(),
       new ConfigDiscoveryStep(),
       new ImportStrategyStep(),
+      new ExampleSelectionStep(),
       new ServerSelectionStep(),
       new ConflictResolutionStep(),
       new ToolsetCreationStep(),

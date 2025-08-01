@@ -28,7 +28,7 @@ export interface RuntimeOptions {
   /** Toolset name to load on startup */
   equipToolset?: string;
 
-  /** Path to MCP configuration file (deprecated - use linkedApp instead) */
+  /** Path to MCP configuration file (overrides all other config sources) */
   configPath?: string;
 
   /** Linked application ID for loading app-specific config */

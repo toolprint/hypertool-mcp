@@ -42,6 +42,12 @@ export interface CompleteConfig extends UserPreferences {
 
   /** Last backup timestamp */
   lastBackup?: string;
+
+  /** Server-related settings */
+  serverSettings?: {
+    /** Maximum number of concurrent server connections */
+    maxConcurrentConnections?: number;
+  };
 }
 
 /**

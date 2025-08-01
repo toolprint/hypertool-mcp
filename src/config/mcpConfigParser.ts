@@ -166,9 +166,12 @@ export class MCPConfigParser {
       return { errors };
     }
 
-    // Default to 'stdio' if type field is missing (per MCP spec)
+    // Require explicit type field for clarity
     if (!config.type) {
-      config.type = "stdio";
+      errors.push(
+        `Server "${name}" is missing required "type" field. Must be "stdio", "http", or "sse"`
+      );
+      return { errors };
     }
 
     if (

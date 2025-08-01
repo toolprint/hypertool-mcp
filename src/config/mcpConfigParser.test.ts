@@ -122,7 +122,7 @@ describe("MCPConfigParser", () => {
       });
     });
 
-    it("should default to stdio when type field is missing", () => {
+    it("should require explicit type field and fail when missing", () => {
       const content = JSON.stringify({
         mcpServers: {
           git: {
@@ -134,13 +134,10 @@ describe("MCPConfigParser", () => {
 
       const result = parser.parseContent(content);
 
-      expect(result.success).toBe(true);
-      expect(result.config?.mcpServers.git).toMatchObject({
-        type: "stdio",
-        command: "uvx",
-        args: ["mcp-server-git"],
-        env: {},
-      });
+      expect(result.success).toBe(false);
+      expect(result.validationErrors).toContain(
+        'Server "git" is missing required "type" field. Must be "stdio", "http", or "sse"'
+      );
     });
 
     it("should validate invalid server type", () => {
@@ -346,8 +343,8 @@ describe("MCPConfigParser", () => {
 
       const content = JSON.stringify({
         mcpServers: {
-          defaultsToStdio: {
-            // Missing type, should default to stdio
+          missingType: {
+            // Missing type field - should fail with new validation
             command: "uvx",
             args: ["mcp-server-git"],
           },
@@ -365,10 +362,12 @@ describe("MCPConfigParser", () => {
       const result = parser.parseContent(content);
 
       expect(result.success).toBe(false);
-      expect(result.config?.mcpServers.defaultsToStdio).toBeDefined();
-      expect(result.config?.mcpServers.defaultsToStdio.type).toBe("stdio");
+      expect(result.config?.mcpServers.missingType).toBeUndefined();
       expect(result.config?.mcpServers.invalidStdio).toBeUndefined();
       expect(result.config?.mcpServers.validSse).toBeDefined();
+      expect(result.validationErrors).toContain(
+        'Server "missingType" is missing required "type" field. Must be "stdio", "http", or "sse"'
+      );
       expect(result.validationErrors).toContain(
         'Stdio server "invalidStdio" must have a "command" string'
       );

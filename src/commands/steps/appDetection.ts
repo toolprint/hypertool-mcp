@@ -94,14 +94,9 @@ export class AppDetectionStep implements WizardStep {
       choices: detectedApps.map(app => ({
         name: app.displayName,
         value: app.id,
-        checked: app.hasExistingConfig // Pre-select apps with configs
+        checked: false // Start with all unchecked (opt-in)
       })),
-      validate: (answers) => {
-        if (answers.length === 0) {
-          return 'Please select at least one application';
-        }
-        return true;
-      }
+      // No validation - allow empty selection
     }]);
 
     return {

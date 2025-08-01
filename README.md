@@ -107,15 +107,38 @@ Watch how HyperTool transforms your AI assistant's tool usage - demo video comin
 
 Let's get you running with the simplest setup:
 
-### Step 1: Copy Your Config
+### Option 1: Use Example Configurations (Recommended for New Users)
+
+```bash
+# Run interactive setup
+hypertool-mcp setup
+
+# Or use non-interactive mode with an example
+hypertool-mcp setup --yes --example everything
+
+# List all available examples
+hypertool-mcp setup --list-examples
+```
+
+**Available Examples:**
+- `everything` - 26 servers, works immediately without API keys
+- `development` - Git, Docker, filesystem, SQLite for developers
+- `data-analysis` - CSV, JSON, Excel processing tools
+- `web-automation` - Browser automation and web scraping
+- And many more! Run `--list-examples` to see all options.
+
+### Option 2: Manual Setup
+
+#### Step 1: Copy Your Config
 ```bash
 # In your project directory
 cp .mcp.json .mcp.hypertool.json
 ```
 
-**Need an example?** We have two configs you can copy:
+**Need an example?** We have configs you can copy:
 - [mcp.test.json](mcp.test.json) - Simple 3-server setup to get started
 - [mcp.example.json](mcp.example.json) - Full example with 13 popular MCP servers (no API keys needed!)
+- [examples/mcp/](examples/mcp/) - Complete collection of specialized configurations
 
 The example includes filesystem, git, sqlite, browser automation, and more!
 
@@ -437,6 +460,12 @@ The `setup` command supports a fully non-interactive mode for automation, CI/CD 
 # Run setup accepting all defaults
 hypertool-mcp setup --yes
 
+# Use a specific example configuration
+hypertool-mcp setup --yes --example everything
+
+# List available example configurations
+hypertool-mcp setup --list-examples
+
 # Dry run to preview changes
 hypertool-mcp setup --yes --dry-run
 
@@ -464,6 +493,11 @@ hypertool-mcp setup --yes --import-all
 
 # Start fresh without importing
 hypertool-mcp setup --yes --import-none
+
+# Use an example configuration
+hypertool-mcp setup --yes --example everything
+hypertool-mcp setup --yes --example development
+hypertool-mcp setup --yes --example data-analysis
 ```
 
 #### Installation Type

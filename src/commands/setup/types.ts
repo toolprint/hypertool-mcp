@@ -10,6 +10,7 @@ export interface WizardState {
   // User selections
   selectedApps: string[];
   importStrategy: ImportStrategy;
+  selectedExample?: ExampleConfig; // Selected example configuration
   perAppSelections: Record<string, SelectedServer[]>; // appId -> selected servers
   toolsets: ToolsetDefinition[];
   installationType: InstallationType;
@@ -49,6 +50,19 @@ export interface ServerInfo {
   fromApp: string;
 }
 
+/**
+ * Example configuration template
+ */
+export interface ExampleConfig {
+  id: string;
+  name: string;
+  description: string;
+  fileName: string;
+  serverCount: number;
+  requiresSecrets: boolean;
+  category: 'zero-setup' | 'specialized' | 'full-featured';
+}
+
 export interface SelectedServer extends ServerInfo {
   selected: boolean;
   newName?: string; // For conflict resolution
@@ -57,6 +71,7 @@ export interface SelectedServer extends ServerInfo {
 export type ImportStrategy = 
   | 'per-app'    // Configure servers per application (default)
   | 'fresh'      // Start with no existing configs
+  | 'examples'   // Start from an example configuration
   | 'view';      // View configs before deciding
 
 export type InstallationType = 
@@ -88,6 +103,8 @@ export interface SetupOptions {
   development?: boolean;  // Use development installation
   skipToolsets?: boolean; // Skip toolset creation
   verbose?: boolean;      // Show detailed output
+  example?: string;       // Use specific example config
+  listExamples?: boolean; // List available examples
   
   // Internal
   isFirstRun?: boolean;   // True when no config exists

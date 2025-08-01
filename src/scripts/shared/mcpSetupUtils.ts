@@ -235,7 +235,7 @@ export async function promptForCleanupOptions(): Promise<boolean> {
  */
 export function createHyperToolProxyConfig(hyperToolConfigPath: string): any {
   return {
-    "toolprint-hypertool": {
+    "hypertool": {
       type: "stdio",
       command: "npx",
       args: [
