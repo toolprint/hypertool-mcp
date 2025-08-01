@@ -1,36 +1,69 @@
 {
   "mcpServers": {
     "markitdown": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "markitdown-mcp-server"]
+      "args": [
+        "-y",
+        "markitdown-mcp-server"
+      ]
     },
     "markdownify": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "markdownify-mcp"]
+      "args": [
+        "-y",
+        "markdownify-mcp"
+      ]
     },
     "markdown2pdf": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "markdown2pdf-mcp"]
+      "args": [
+        "-y",
+        "markdown2pdf-mcp"
+      ]
     },
     "pandoc": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-pandoc"]
+      "args": [
+        "-y",
+        "mcp-pandoc"
+      ]
     },
     "pdf-processor": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-pdf-tools"]
+      "args": [
+        "-y",
+        "mcp-pdf-tools"
+      ]
     },
     "format-converter": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-format-converter"]
+      "args": [
+        "-y",
+        "mcp-format-converter"
+      ]
     },
     "text-utils": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-text-utils"]
+      "args": [
+        "-y",
+        "mcp-text-utils"
+      ]
     },
     "filesystem": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp/documents"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/tmp/documents"
+      ]
     }
   }
 }

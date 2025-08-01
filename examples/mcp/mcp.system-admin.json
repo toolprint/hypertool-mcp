@@ -1,36 +1,71 @@
 {
   "mcpServers": {
     "ssh-tools": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-ssh-tools", "localhost"]
+      "args": [
+        "-y",
+        "mcp-ssh-tools",
+        "localhost"
+      ]
     },
     "terminal": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-terminal-server"]
+      "args": [
+        "-y",
+        "mcp-terminal-server"
+      ]
     },
     "system-info": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-system-info"]
+      "args": [
+        "-y",
+        "mcp-system-info"
+      ]
     },
     "process-manager": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-process-manager"]
+      "args": [
+        "-y",
+        "mcp-process-manager"
+      ]
     },
     "network-tools": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-network-tools"]
+      "args": [
+        "-y",
+        "mcp-network-tools"
+      ]
     },
     "file-watcher": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-file-watcher", "/tmp"]
+      "args": [
+        "-y",
+        "mcp-file-watcher",
+        "/tmp"
+      ]
     },
     "docker": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-docker-server"]
+      "args": [
+        "-y",
+        "mcp-docker-server"
+      ]
     },
     "filesystem": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/"
+      ]
     }
   }
 }
