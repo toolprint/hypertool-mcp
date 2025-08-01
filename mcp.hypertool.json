@@ -3,7 +3,9 @@
     "docker": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["mcp-server-docker"],
+      "args": [
+        "mcp-server-docker"
+      ],
       "env": {}
     },
     "context7": {
@@ -13,19 +15,68 @@
     "task-master": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "--package=task-master-ai", "task-master-ai"],
+      "args": [
+        "-y",
+        "--package=task-master-ai",
+        "task-master-ai"
+      ],
       "env": {}
     },
     "mcping": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@toolprint/mcping-mcp@latest"],
+      "args": [
+        "-y",
+        "@toolprint/mcping-mcp@latest"
+      ],
       "env": {}
     },
     "everything": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-everything"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-everything"
+      ],
       "env": {}
+    },
+    "git": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-server-git"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
+    },
+    "markitdown": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "-v",
+        "/Users/achintyaashok/Desktop/llm_scratchpad:/workdir",
+        "markitdown-mcp:latest"
+      ]
+    },
+    "exa": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.exa.ai/mcp?exaApiKey=928431f0-df02-4222-8002-60e174831b9e"
+      ]
     }
   }
 }

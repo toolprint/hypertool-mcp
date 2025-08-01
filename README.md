@@ -1,7 +1,11 @@
-# 🛠️ HyperTool MCP
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/hypertool_darkmode_wordmark_horizontal.png">
+  <source media="(prefers-color-scheme: light)" srcset="./assets/hypertool_lightmode_wordmark_horizontal">
+  <img alt="Shows a darkmode hypertool-mcp Logo in light color mode and a white one in dark color mode." src="./assets/hypertool_lightmode_wordmark_horizontal"  width="full">
+</picture>
 
-> **Make your AI assistant select tools like an expert human would**  
-> Transform tool chaos into focused precision with dynamic toolsets
+<h1 align="center">Give your AI the best tools from all your MCPs 🎯</h1>
+
 
 [![Version](https://img.shields.io/npm/v/@toolprint/hypertool-mcp)](https://npmjs.com/package/@toolprint/hypertool-mcp)
 [![Downloads](https://img.shields.io/npm/dm/@toolprint/hypertool-mcp)](https://npmjs.com/package/@toolprint/hypertool-mcp)
@@ -9,28 +13,64 @@
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## 🚨 The Problem
 
-Let me guess - you've been here too:
+## ⚡ Features
 
-### 1. **Tool Binding Limits**
-"Why can't I add more MCP servers? I hit Claude's 100-tool limit!" 😤
+### 🔓 **Break Free from Tool Limits**
+Connect unlimited MCP servers. Use 10, 50, or 500+ tools total - your AI only sees what it needs.
 
-### 2. **Poor AI Performance**
-Research shows [89% accuracy drop](#-research--metrics) when AI chooses from 50+ tools. Your assistant picks the wrong tool 7 out of 10 times. Sound familiar?
+### 🎯 **Task-Specific Toolsets** 
+Build "git-essentials" with 5 tools instead of drowning in 47 Git commands. Switch contexts instantly.
 
-### 3. **Config Management Hell**
-Managing 5 different `.mcp.json` files across projects? Switching contexts means editing configs? There's got to be a better way...
+### 🧠 **Smart Tool Descriptions**
+Enhance tools with examples and context. Watch your AI pick the right tool 89% more often.
 
-## ✨ The Solution: HyperTool
+## 🚀 Quick Start
 
-We built HyperTool because we were tired of watching our AI assistants struggle with tool overload. Here's what it does:
+### Step 1: Copy Your Existing Config
+```bash
+# In your project directory
+cp .mcp.json .mcp.hypertool.json
+```
 
-**One `.mcp.json` config for ALL your servers** + **Smart toolsets that make your AI think like a specialist**.
+### Step 2: Point Your AI to HyperTool
+Replace your `.mcp.json` with:
+```json
+{
+  "mcpServers": {
+    "hypertool": {
+      "command": "npx",
+      "args": ["-y", "@toolprint/hypertool-mcp@latest", "--mcp-config", ".mcp.hypertool.json"]
+    }
+  }
+}
+```
 
-It runs completely locally on your machine as a proxy between your AI and all your MCP servers.
+### Step 3: Create Your First Toolset
+Restart your AI and try:
+```
+You: "Create a toolset called 'coding' with git and docker tools"
+AI: "Created 'coding' toolset with 15 focused tools"
 
-### How It Works
+You: "Switch to coding toolset"
+AI: "Equipped! I now have just the tools needed for development"
+```
+
+**That's it!** Your AI is now focused and effective. 🎉
+
+💡 **Want automated setup?** Try our interactive `setup` command - see [Advanced Guide](guides/ADVANCED.md#setup-command) for details.
+
+## 🎬 Demo
+
+### Hotswap toolsets across 100+ tools
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=43fkKOBayCg">
+    <img src="https://img.youtube.com/vi/43fkKOBayCg/maxresdefault.jpg" alt="HyperTool Demo Video" width="800">
+  </a>
+</div>
+
+## 🏗️ How It Works
 
 ```
 Before: Tool Chaos 😵
@@ -89,95 +129,39 @@ AI sees ALL 64 tools = confused 😵     │  • traces.view   │
                                        AI sees 3-5 tools = focused 🎯
 ```
 
-### Key Features That Changed Our Workflow
+---
 
-- **🧠 Dynamic Toolsets**: Like switching hats - your AI becomes a specialist instantly
-- **📝 Tool Annotations**: Teach your AI how YOU use tools (see example below!)
+## 🚨 The Problem
+
+Let me guess - you've been here too:
+
+### 1. **Tool Binding Limits**
+"Why can't I add more MCP servers? I hit Claude's 100-tool limit!" 😤
+
+### 2. **Poor AI Performance**
+Research shows [89% accuracy drop](#-research--metrics) when AI chooses from 50+ tools. Your assistant picks the wrong tool 7 out of 10 times. Sound familiar?
+
+### 3. **Config Management Hell**
+Managing 5 different `.mcp.json` files across projects? Switching contexts means editing configs? There's got to be a better way...
+
+## ✨ The Solution: HyperTool
+
+We built HyperTool because we were tired of watching our AI assistants struggle with tool overload. Here's what it does:
+
+**One `.mcp.json` config for ALL your servers** + **Smart toolsets that make your AI think like a specialist**.
+
+It runs completely locally on your machine as a proxy between your AI and all your MCP servers.
+
+### More Features
+
+- **📝 Tool Annotations**: Teach your AI how YOU use tools (see [example below](#-tool-annotations-teach-your-ai-how-you-work)!)
 - **🔄 Zero Friction**: All your existing servers work unchanged
 - **💨 Runs Locally**: Your data never leaves your machine
 - **🔌 Health Monitoring**: Automatic reconnection when servers go down
 - **💾 Persistent Toolsets**: Saved locally, shareable with your team
-- **🔔 Hot-Swapping**: Cursor already supports live toolset switching. Claude Code [support tracked here](https://github.com/anthropics/claude-code/issues/411)
+- **🔔 Hot-Swapping**: Cursor supports live switching. Claude Code [support tracked](https://github.com/anthropics/claude-code/issues/411)
 
-## 🎬 Demo
 
-Watch how HyperTool transforms your AI assistant's tool usage - demo video coming soon.
-
-## 🚀 Quick Start (2 minutes)
-
-Let's get you running with the simplest setup:
-
-### Option 1: Use Example Configurations (Recommended for New Users)
-
-```bash
-# Run interactive setup
-hypertool-mcp setup
-
-# Or use non-interactive mode with an example
-hypertool-mcp setup --yes --example everything
-
-# List all available examples
-hypertool-mcp setup --list-examples
-```
-
-**Available Examples:**
-- `everything` - 26 servers, works immediately without API keys
-- `development` - Git, Docker, filesystem, SQLite for developers
-- `data-analysis` - CSV, JSON, Excel processing tools
-- `web-automation` - Browser automation and web scraping
-- And many more! Run `--list-examples` to see all options.
-
-### Option 2: Manual Setup
-
-#### Step 1: Copy Your Config
-```bash
-# In your project directory
-cp .mcp.json .mcp.hypertool.json
-```
-
-**Need an example?** We have configs you can copy:
-- [mcp.test.json](mcp.test.json) - Simple 3-server setup to get started
-- [mcp.example.json](mcp.example.json) - Full example with 13 popular MCP servers (no API keys needed!)
-- [examples/mcp/](examples/mcp/) - Complete collection of specialized configurations
-
-The example includes filesystem, git, sqlite, browser automation, and more!
-
-### Step 2: Point to HyperTool
-Replace your `.mcp.json` with just this:
-```json
-{
-  "mcpServers": {
-    "hypertool": {
-      "command": "npx",
-      "args": ["-y", "@toolprint/hypertool-mcp@latest", "--mcp-config", ".mcp.hypertool.json"]
-    }
-  }
-}
-```
-
-### Step 3: Create Your First Toolset
-Restart your AI assistant and try:
-```
-You: "Show me all available tools"
-Assistant: "I found 64 tools across 5 servers:
-  - docker: 19 tools (build_image, create_container, run_container...)
-  - task-master: 34 tools (add_task, get_tasks, set_task_status...)
-  - context7: 2 tools (get-library-docs, resolve-library-id)
-  - everything: 8 tools (echo, add, getTinyImage...)
-  - mcping: 1 tool (send-notification)"
-
-You: "Create a toolset called 'dev-essentials' with docker and task-master tools"
-Assistant: "Created 'dev-essentials' toolset with 53 tools from docker and task-master"
-
-You: "Switch to the dev-essentials toolset"
-Assistant: "Equipped 'dev-essentials' toolset! I now have focused access to Docker and Task Master tools"
-```
-
-That's it! Your AI now sees only the tools it needs for coding. 🎉
-
-**Note**: You can switch toolsets anytime, or unequip to see all tools again.
-
-**Want automated setup?** Check out our [add-to command](#add-to-applications) below.
 
 ## 🎯 Using Toolsets Like a Pro
 
