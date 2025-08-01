@@ -1,3 +1,9 @@
+# Agent stuff
+.claude
+.cursor
+.taskmaster
+worktrees
+
 # Dependencies
 node_modules/
 .pnpm-store/
@@ -122,3 +128,5 @@ dev-debug.log
 # tasks/ 
 
 lint-*.txt
+tmp*/**
+tmp

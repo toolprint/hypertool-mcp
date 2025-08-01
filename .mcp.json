@@ -7,7 +7,21 @@
         "-y",
         "@toolprint/hypertool-mcp@latest",
         "--mcp-config",
-        "mcp.hypertool.json"
+        "mcp.hypertool.json",
+        "--equip-toolset",
+        "claude-development"
+      ]
+    },
+    "hypertool-marketing": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@toolprint/hypertool-mcp@latest",
+        "--mcp-config",
+        "mcp.hypertool.json",
+        "--equip-toolset",
+        "marketing-research-pro"
       ]
     }
   }

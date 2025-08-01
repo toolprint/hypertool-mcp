@@ -1,7 +1,11 @@
-# 🛠️ HyperTool MCP
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/hypertool_darkmode_wordmark_horizontal.png">
+  <source media="(prefers-color-scheme: light)" srcset="./assets/hypertool_lightmode_wordmark_horizontal.png">
+  <img alt="Shows a darkmode hypertool-mcp Logo in light color mode and a white one in dark color mode." src="./assets/hypertool_lightmode_wordmark_horizontal.png"  width="full">
+</picture>
 
-> **Make your AI assistant select tools like an expert human would**  
-> Transform tool chaos into focused precision with dynamic toolsets
+<h1 align="center">Give your AI the best tools from all your MCPs 🎯</h1>
+
 
 [![Version](https://img.shields.io/npm/v/@toolprint/hypertool-mcp)](https://npmjs.com/package/@toolprint/hypertool-mcp)
 [![Downloads](https://img.shields.io/npm/dm/@toolprint/hypertool-mcp)](https://npmjs.com/package/@toolprint/hypertool-mcp)
@@ -9,28 +13,64 @@
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## 🚨 The Problem
 
-Let me guess - you've been here too:
+## ⚡ Features
 
-### 1. **Tool Binding Limits**
-"Why can't I add more MCP servers? I hit Claude's 100-tool limit!" 😤
+### 🔓 **Break Free from Tool Limits**
+Connect unlimited MCP servers. Use 10, 50, or 500+ tools total - your AI only sees what it needs.
 
-### 2. **Poor AI Performance**
-Research shows [89% accuracy drop](#-research--metrics) when AI chooses from 50+ tools. Your assistant picks the wrong tool 7 out of 10 times. Sound familiar?
+### 🎯 **Task-Specific Toolsets** 
+Build "git-essentials" with 5 tools instead of drowning in 47 Git commands. Switch contexts instantly.
 
-### 3. **Config Management Hell**
-Managing 5 different `.mcp.json` files across projects? Switching contexts means editing configs? There's got to be a better way...
+### 🧠 **Smart Tool Descriptions**
+Enhance tools with examples and context. Watch your AI pick the right tool 89% more often.
 
-## ✨ The Solution: HyperTool
+## 🚀 Quick Start
 
-We built HyperTool because we were tired of watching our AI assistants struggle with tool overload. Here's what it does:
+### Step 1: Copy Your Existing Config
+```bash
+# In your project directory
+cp .mcp.json .mcp.hypertool.json
+```
 
-**One `.mcp.json` config for ALL your servers** + **Smart toolsets that make your AI think like a specialist**.
+### Step 2: Point Your AI to HyperTool
+Replace your `.mcp.json` with:
+```json
+{
+  "mcpServers": {
+    "hypertool": {
+      "command": "npx",
+      "args": ["-y", "@toolprint/hypertool-mcp@latest", "--mcp-config", ".mcp.hypertool.json"]
+    }
+  }
+}
+```
 
-It runs completely locally on your machine as a proxy between your AI and all your MCP servers.
+### Step 3: Create Your First Toolset
+Restart your AI and try:
+```
+You: "Create a toolset called 'coding' with git and docker tools"
+AI: "Created 'coding' toolset with 15 focused tools"
 
-### How It Works
+You: "Switch to coding toolset"
+AI: "Equipped! I now have just the tools needed for development"
+```
+
+**That's it!** Your AI is now focused and effective. 🎉
+
+💡 **Want automated setup?** Try our interactive `setup` command - see [Advanced Guide](guides/ADVANCED.md#setup-command) for details.
+
+## 🎬 Demo
+
+### Hotswap toolsets across 100+ tools
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=43fkKOBayCg">
+    <img src="https://img.youtube.com/vi/43fkKOBayCg/maxresdefault.jpg" alt="HyperTool Demo Video" width="800">
+  </a>
+</div>
+
+## 🏗️ How It Works
 
 ```
 Before: Tool Chaos 😵
@@ -89,542 +129,98 @@ AI sees ALL 64 tools = confused 😵     │  • traces.view   │
                                        AI sees 3-5 tools = focused 🎯
 ```
 
-### Key Features That Changed Our Workflow
+## 💼 Real-World Toolsets
 
-- **🧠 Dynamic Toolsets**: Like switching hats - your AI becomes a specialist instantly
-- **📝 Tool Annotations**: Teach your AI how YOU use tools (see example below!)
-- **🔄 Zero Friction**: All your existing servers work unchanged
-- **💨 Runs Locally**: Your data never leaves your machine
-- **🔌 Health Monitoring**: Automatic reconnection when servers go down
-- **💾 Persistent Toolsets**: Saved locally, shareable with your team
-- **🔔 Hot-Swapping**: Cursor already supports live toolset switching. Claude Code [support tracked here](https://github.com/anthropics/claude-code/issues/411)
+Create focused toolsets for different workflows:
 
-## 🎬 Demo
 
-Watch how HyperTool transforms your AI assistant's tool usage - demo video coming soon.
 
-## 🚀 Quick Start (2 minutes)
+### 🔨 Development Mode
+```
+"deep-coding": git + docker + filesystem (12 tools)
+→ Everything you need for feature development
 
-Let's get you running with the simplest setup:
+"code-review": git + github + linear (10 tools)
+→ Review PRs, update tickets, merge with confidence
 
-### Option 1: Use Example Configurations (Recommended for New Users)
-
-```bash
-# Run interactive setup
-hypertool-mcp setup
-
-# Or use non-interactive mode with an example
-hypertool-mcp setup --yes --example everything
-
-# List all available examples
-hypertool-mcp setup --list-examples
+"debugging": logs + docker + traces + alerts (8 tools)
+→ Find and fix issues fast
 ```
 
-**Available Examples:**
-- `everything` - 26 servers, works immediately without API keys
-- `development` - Git, Docker, filesystem, SQLite for developers
-- `data-analysis` - CSV, JSON, Excel processing tools
-- `web-automation` - Browser automation and web scraping
-- And many more! Run `--list-examples` to see all options.
+### 📝 Content Creation
+```
+"writing": notion + grammarly + slack (6 tools)
+→ Blog posts, docs, and team updates
 
-### Option 2: Manual Setup
-
-#### Step 1: Copy Your Config
-```bash
-# In your project directory
-cp .mcp.json .mcp.hypertool.json
+"research": perplexity + notion + filesystem (7 tools)
+→ Deep dives with organized notes
 ```
 
-**Need an example?** We have configs you can copy:
-- [mcp.test.json](mcp.test.json) - Simple 3-server setup to get started
-- [mcp.example.json](mcp.example.json) - Full example with 13 popular MCP servers (no API keys needed!)
-- [examples/mcp/](examples/mcp/) - Complete collection of specialized configurations
-
-The example includes filesystem, git, sqlite, browser automation, and more!
-
-### Step 2: Point to HyperTool
-Replace your `.mcp.json` with just this:
-```json
-{
-  "mcpServers": {
-    "hypertool": {
-      "command": "npx",
-      "args": ["-y", "@toolprint/hypertool-mcp@latest", "--mcp-config", ".mcp.hypertool.json"]
-    }
-  }
-}
-```
-
-### Step 3: Create Your First Toolset
-Restart your AI assistant and try:
-```
-You: "Show me all available tools"
-Assistant: "I found 64 tools across 5 servers:
-  - docker: 19 tools (build_image, create_container, run_container...)
-  - task-master: 34 tools (add_task, get_tasks, set_task_status...)
-  - context7: 2 tools (get-library-docs, resolve-library-id)
-  - everything: 8 tools (echo, add, getTinyImage...)
-  - mcping: 1 tool (send-notification)"
-
-You: "Create a toolset called 'dev-essentials' with docker and task-master tools"
-Assistant: "Created 'dev-essentials' toolset with 53 tools from docker and task-master"
-
-You: "Switch to the dev-essentials toolset"
-Assistant: "Equipped 'dev-essentials' toolset! I now have focused access to Docker and Task Master tools"
-```
-
-That's it! Your AI now sees only the tools it needs for coding. 🎉
-
-**Note**: You can switch toolsets anytime, or unequip to see all tools again.
-
-**Want automated setup?** Check out our [add-to command](#add-to-applications) below.
-
-## 🎯 Using Toolsets Like a Pro
-
-Here's how we organize our toolsets:
-
-### Real Toolset Examples
-
-**🔨 Development Mode** (what we actually use)
-```
-docker (19 tools) + task-master (34 tools) = 53 focused tools
-→ Container management + project tracking, nothing more
-```
-
-**📝 Documentation Mode**
-```
-context7 (2 tools) + mcping (1 tool) = 3 ultra-focused tools  
-→ Library docs lookup + notifications when done
-```
-
-**🧪 Testing Suite**
-```
-everything (8 tools) + specific docker tools = ~15 tools
-→ Basic utilities + container testing capabilities
-```
-
-### Real Chat Examples
-
-Watch how natural it feels:
-
+### 🎬 Real Chat Example
 ```
 You: "I need to debug our API"
-Assistant: "I'll switch to the debugging toolset for better focus"
-[Now has: logs, traces, curl, docker, k8s]
+AI: "I'll switch to the debugging toolset for better focus"
+[Now has: logs, traces, curl, docker]
 
 You: "Actually, let's write the incident report"
-Assistant: "Switching to writing toolset"
+AI: "Switching to writing toolset"
 [Now has: notion, slack, templates]
 ```
 
-Your AI adapts to context just like you do! 🎯
+💡 **Pro tip**: Start with 3-5 tools per toolset. Your AI will thank you!
 
-### FAQ: Common Questions
+## ❓ FAQ
 
-**Q: Can I use multiple toolsets?**  
-A: Yes! In stdio mode (default), use `--equip-toolset <name>` when launching. In HTTP mode (singleton service), you're limited to one active toolset.
+### General Questions
 
-**Q: Where are toolsets stored?**  
-A: Locally in your home directory. You can export and share them with your team.
+**Q: How is this different from just using MCP servers directly?**  
+A: HyperTool lets you use unlimited MCP servers without hitting the 100-tool limit, and dynamically switches between focused toolsets for better AI performance.
+
+**Q: Can I use multiple toolsets at once?**  
+A: In stdio mode (default), use `--equip-toolset <name>` when launching. HTTP mode supports one active toolset but you can switch anytime.
+
+**Q: Where are my toolsets stored?**  
+A: Locally in `~/.toolprint/hypertool-mcp/`. Explore the directory to see your configurations.
+
+### Setup & Compatibility
+
+**Q: Does this work with Claude Desktop / Cursor / Claude Code?**  
+A: Yes! Cursor has full hot-swapping support. Claude Desktop works with restart. Claude Code [hot-swap coming soon](https://github.com/anthropics/claude-code/issues/411).
 
 **Q: What if an MCP server goes down?**  
-A: HyperTool automatically reconnects when servers come back online. Your toolsets remain intact.
+A: HyperTool monitors health and automatically reconnects when servers come back. Your toolsets stay intact.
 
-## 📊 Why This Works
+**Q: Can I share toolsets with my team?**  
+A: Import/export is coming soon! For now, you can copy and share toolset files - they'll work if your team has the same MCP servers configured.
 
-It's not just us saying this - here's what research found:
+### Technical Questions
 
-### The Science Behind Focused Tools
+**Q: How do I add tools from a new MCP server?**  
+A: Just add the server to your `.mcp.hypertool.json` config. It's automatically available for toolsets.
 
-**[Less is More: Optimizing Function Calling for LLM Execution](https://arxiv.org/abs/2411.15399)** shows:
-- **89% tool accuracy** with limited tools vs 32% with everything exposed
-- **71% success rate** improvement in task completion
+**Q: Can I use this in production?**  
+A: Yes! For enterprise support, [contact us](mailto:support@onegrep.dev?subject=HyperTool%20Production%20Use&body=Hi%20team%2C%0A%0AI'm%20interested%20in%20using%20HyperTool%20in%20production.%0A%0ACompany%3A%20%0AUse%20case%3A%20%0AScale%3A%20%0A%0AThanks!).
 
-**[Tool Learning with Large Language Models: A Survey](https://arxiv.org/abs/2405.17935)** found:
-- LLMs suffer from "cognitive overload" with too many options
-- Context window constraints make large tool sets impractical
-- Focused tool selection dramatically improves decision quality
 
-**Bottom line**: Your AI literally gets confused with too many tools. HyperTool fixes that.
+## 🎮 App Compatibility
 
-## 🎮 AI App Support
+**Works with ANY MCP-compatible app!** HyperTool is a standard MCP server, so if your app supports MCP, it supports HyperTool.
 
-### Dynamic Toolset Switching Support
+### Hot-swap Toolsets Without Restarts
 
-Apps that support MCP's `tools/list_changed` notification can hot-swap toolsets without restart:
+| App | Status | How to Switch Toolsets |
+|-----|---------|------------------------|
+| **Cursor/VSCode** | ✅ Full support | Switch toolsets instantly - no restart needed! |
+| **Claude Code** | ⏳ Coming soon | Use `--equip-toolset <name>` flag ([track progress](https://github.com/anthropics/claude-code/issues/4118)) |
+| **Claude Desktop** | ⏳ In progress | Restart app after switching toolsets |
 
-✅ **Cursor** - Full support! Switch toolsets on the fly  
-⏳ **Claude Code** - [Dynamic switching support tracked](https://github.com/anthropics/claude-code/issues/411) (please upvote!)  
-✅ **Any MCP-compliant app** - If it supports the standard, it works!
+---
 
-**For Claude Code users**: Until dynamic support lands, either:
-1. Restart after switching toolsets, or
-2. Use `--equip-toolset <name>` flag on startup
-
-## ⚙️ Installation Options
-
-### Method 1: Manual Setup (Recommended)
-The simple approach shown in Quick Start above. You control everything.
-
-### Method 2: Add to Applications {#add-to-applications}
-
-Use the `add-to` command to automatically set up HyperTool in your applications:
-
-**For Claude Code**
-```bash
-npx -y @toolprint/hypertool-mcp add-to claude-code
-```
-
-**For Cursor**
-```bash
-npx -y @toolprint/hypertool-mcp add-to cursor
-```
-
-**For All Detected Applications**
-```bash
-npx -y @toolprint/hypertool-mcp add-to
-```
-
-**Preview Changes First**
-```bash
-npx -y @toolprint/hypertool-mcp add-to cursor --dry-run
-```
-
-The `add-to` command will:
-- ✅ Backup your existing configs
-- ✅ Set up HyperTool automatically
-- ✅ Preserve all your current servers
-
-## 🔧 Advanced Features
-
-### 🎯 Tool Annotations: Teach Your AI How YOU Work
-
-Here's what makes HyperTool special - you can add notes to tools that teach your AI your specific workflows:
-
-#### Real Example: Linear Issue Creation
-
-**Without annotations:**
-```
-You: "Create a bug report for the login issue"
-AI: *Creates issue in random team* ❌
-You: "No, that should go to the Frontend team!"
-AI: "Sorry, let me move it..."
-```
-
-**With HyperTool annotations:**
-```
-You: "Add a note to the linear_create_issue tool"
-You: "Always call list_teams first and ask me which team before creating any issue"
-
-// Now your toolset remembers!
-You: "Create a bug report for the login issue"
-AI: "Let me check available teams first... I found: Frontend, Backend, Design, QA"
-AI: "Which team should this go to?"
-You: "Frontend"
-AI: *Creates issue in Frontend team* ✅
-```
-
-Your AI now follows YOUR workflow every time! 🎯
-
-#### More Annotation Examples
-
-```
-// For Docker tools
-"Always use --no-cache flag when building production images"
-
-// For Git tools  
-"Commit messages must follow conventional commits format"
-
-// For Database tools
-"Only use the read-only connection for customer data queries"
-```
-
-These notes persist across sessions and become part of your toolset!
-
-### HTTP Transport
-
-Need to run HyperTool as a service?
-
-```bash
-hypertool-mcp --transport http --port 3000 --mcp-config your-config.json
-```
-
-### CLI Commands & Options
-
-```bash
-hypertool-mcp [options] [command]
-
-Commands:
-  add-to [app]           Add HyperTool to an application
-  config                 Configuration management commands
-  mcp                    MCP server operations and management
-
-Options (when running as server):
-  --mcp-config <path>    MCP servers config file (default: .mcp.json)
-  --transport <type>     Transport type: stdio|http (default: stdio)
-  --port <number>        HTTP port (default: 3000)
-  --equip-toolset <name> Load toolset on startup
-  --debug                Verbose logging
-  --log-level <level>    Log level (trace, debug, info, warn, error, fatal)
-```
-
-### 🔐 Configuration Management
-
-HyperTool includes powerful configuration management commands to help you organize and backup your MCP server setups:
-
-#### View Configuration Status
-
-Check your current HyperTool setup and health:
-
-```bash
-# Show overview of all configurations
-hypertool-mcp config show
-
-# Output in JSON format for scripting
-hypertool-mcp config show --json
-```
-
-This displays:
-- 📡 All discovered MCP servers and their status
-- 🖥️ Installed applications and their HyperTool link status
-- 🧰 Configured toolsets and which apps use them
-- ⚠️ Configuration health checks and suggestions
-
-#### Backup and Import MCP Servers
-
-Automatically discover and import all MCP servers from your installed applications (Claude Desktop, Cursor, Claude Code):
-
-```bash
-# Create a backup of all MCP configurations
-hypertool-mcp config backup
-
-# See what would be backed up without making changes
-hypertool-mcp config backup --dry-run
-```
-
-This creates a consolidated backup of all your MCP servers in `~/.toolprint/hypertool-mcp/backups/`.
-
-#### Restore from Backup
-
-```bash
-# List available backups
-hypertool-mcp config restore --list
-
-# Restore from the latest backup
-hypertool-mcp config restore --latest
-
-# Interactive restore (choose from list)
-hypertool-mcp config restore
-```
-
-#### Link HyperTool to Applications
-
-Replace your app's MCP configuration with HyperTool (your original config is backed up first):
-
-```bash
-# Interactive linking (choose which apps)
-hypertool-mcp config link
-
-# Link all detected applications
-hypertool-mcp config link --all
-
-# Link specific application
-hypertool-mcp config link --app cursor
-```
-
-#### Unlink and Restore Original Configs
-
-Remove HyperTool and optionally restore previous configurations:
-
-```bash
-# Interactive unlink with restore option
-hypertool-mcp config unlink
-
-# Unlink all applications
-hypertool-mcp config unlink --all
-
-# Unlink specific app
-hypertool-mcp config unlink --app claude-desktop
-
-# Remove HyperTool without restoring backups
-hypertool-mcp config unlink --no-restore
-```
-
-## 🤖 Non-Interactive Setup
-
-The `setup` command supports a fully non-interactive mode for automation, CI/CD pipelines, and scripted installations.
-
-### Basic Usage
-
-```bash
-# Run setup accepting all defaults
-hypertool-mcp setup --yes
-
-# Use a specific example configuration
-hypertool-mcp setup --yes --example everything
-
-# List available example configurations
-hypertool-mcp setup --list-examples
-
-# Dry run to preview changes
-hypertool-mcp setup --yes --dry-run
-
-# Verbose output for debugging
-hypertool-mcp setup --yes --verbose
-```
-
-### Configuration Options
-
-#### Application Selection
-
-```bash
-# Configure specific applications only
-hypertool-mcp setup --yes --apps claude-desktop,cursor
-
-# Configure all detected applications (default)
-hypertool-mcp setup --yes
-```
-
-#### Import Strategy
-
-```bash
-# Import all existing configurations (default)
-hypertool-mcp setup --yes --import-all
-
-# Start fresh without importing
-hypertool-mcp setup --yes --import-none
-
-# Use an example configuration
-hypertool-mcp setup --yes --example everything
-hypertool-mcp setup --yes --example development
-hypertool-mcp setup --yes --example data-analysis
-```
-
-#### Installation Type
-
-```bash
-# Standard installation - replace app configs (default)
-hypertool-mcp setup --yes --standard
-
-# Development installation - run alongside existing configs
-hypertool-mcp setup --yes --development
-```
-
-#### Toolset Management
-
-```bash
-# Create default toolset (default behavior)
-hypertool-mcp setup --yes
-
-# Skip toolset creation
-hypertool-mcp setup --yes --skip-toolsets
-```
-
-### Complete Examples
-
-#### Fresh Installation
-```bash
-# Clean install for CI/CD environment
-hypertool-mcp setup --yes --import-none --skip-toolsets
-```
-
-#### Import Everything
-```bash
-# Import all configs from all detected apps
-hypertool-mcp setup --yes --import-all
-```
-
-#### Selective Configuration
-```bash
-# Configure only Claude Desktop with development mode
-hypertool-mcp setup --yes \
-  --apps claude-desktop \
-  --development \
-  --verbose
-```
-
-#### Docker/Container Setup
-```bash
-# Minimal setup for containerized environments
-hypertool-mcp setup --yes \
-  --import-none \
-  --skip-toolsets \
-  --standard
-```
-
-### Default Behaviors in Non-Interactive Mode
-
-When using `--yes`, the following defaults apply:
-
-1. **App Selection**: All detected applications
-2. **Import Strategy**: Import all existing configurations
-3. **Server Selection**: All servers from selected apps
-4. **Conflict Resolution**: Add app suffix to conflicting names
-5. **Installation Type**: Standard (replace app configs)
-6. **Toolsets**: Create one "default" toolset with all tools
-
-### Exit Codes
-
-- `0`: Success
-- `1`: Setup failed
-- `2`: No applications detected (when specific apps requested)
-
-### Environment Variables
-
-```bash
-# Set config directory
-export HYPERTOOL_CONFIG_PATH=/custom/path
-hypertool-mcp setup --yes
-
-# Debug output
-export DEBUG=1
-hypertool-mcp setup --yes
-```
-
-### CI/CD Integration
-
-#### GitHub Actions Example
-```yaml
-- name: Setup Hypertool MCP
-  run: |
-    npm install -g @toolprint/hypertool-mcp
-    hypertool-mcp setup --yes --import-none
-```
-
-#### GitLab CI Example
-```yaml
-setup-hypertool:
-  script:
-    - npm install -g @toolprint/hypertool-mcp
-    - hypertool-mcp setup --yes --dry-run
-    - hypertool-mcp setup --yes
-```
-
-#### Jenkins Pipeline Example
-```groovy
-stage('Setup Hypertool') {
-  steps {
-    sh '''
-      npm install -g @toolprint/hypertool-mcp
-      hypertool-mcp setup --yes --verbose
-    '''
-  }
-}
-```
-
-## 📚 Research & Metrics
-
-For the data nerds (like us), here's the academic backing:
-
-### Tool Selection Accuracy
-- **"Less is More" (2024)**: 89% accuracy with <10 tools vs 32% with 50+ tools
-- **"Cognitive Overload in LLMs" (2023)**: Direct correlation between tool count and error rate
-- **"Tool Learning Survey" (2024)**: Context windows can't handle large tool descriptions effectively
-
-### Real-World Impact
-- **3-5 tools per context**: Optimal range from multiple studies
-- **6-8x faster decisions**: When tools are focused
-- **90% reduction in wrong tool selection**: Our user reports
+📚 **Learn More**
+- 🔬 [Research & Performance](guides/RESEARCH.md) - Why focused toolsets work
+- 🚀 [Advanced Features](guides/ADVANCED.md) - Tool annotations, HTTP mode, CLI
+- 🔧 [Troubleshooting](guides/TROUBLESHOOTING.md) - Common issues and solutions
+- 📖 [Examples & Recipes](guides/EXAMPLES.md) - Toolset patterns for every workflow
 
 ## 🤝 Contributing
 
@@ -644,12 +240,12 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 **Built by developers who got tired of watching AI pick the wrong tools** 🎯
 
-<a href="https://toolprint.dev">
+<a href="https://toolprint.ai">
   <img src="./assets/toolprint.png" alt="Toolprint" width="200">
 </a>
 
 <p>
-  <strong>Built with ❤️ by <a href="https://toolprint.dev">Toolprint</a></strong><br>
+  <strong>Built with ❤️ by <a href="https://toolprint.ai">Toolprint</a></strong><br>
   <sub>© 2025 OneGrep, Inc.</sub>
 </p>
 
