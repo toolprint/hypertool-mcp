@@ -28,8 +28,14 @@ export interface RuntimeOptions {
   /** Toolset name to load on startup */
   equipToolset?: string;
 
-  /** Path to MCP configuration file */
+  /** Path to MCP configuration file (overrides all other config sources) */
   configPath?: string;
+
+  /** Linked application ID for loading app-specific config */
+  linkedApp?: string;
+
+  /** Profile ID for workspace/project-specific config */
+  profile?: string;
 
   /** Log level for the application */
   logLevel?: string;

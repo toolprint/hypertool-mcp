@@ -171,6 +171,8 @@ export interface ApplicationConfig {
   configPath: string;
   lastSync: string;
   format: string;
+  mcpConfig?: string; // Path to app-specific MCP config
+  linkedProfiles?: string[]; // List of profile IDs
 }
 
 /**
@@ -180,6 +182,10 @@ export interface MainConfig {
   version: string;
   lastBackup?: string;
   applications: Record<string, ApplicationConfig>;
+  preferences?: {
+    defaultApp?: string;
+    defaultProfile?: string;
+  };
 }
 
 /**
@@ -206,4 +212,34 @@ export interface PreferencesConfig {
   toolsets: Record<string, Toolset>;
   appDefaults?: Record<string, string>;
   version?: string;
+}
+
+/**
+ * Profile configuration for workspace/project support
+ */
+export interface ProfileConfig {
+  id: string;
+  appId: string;
+  name: string;
+  description?: string;
+  mcpConfig: string; // Path to profile-specific MCP config
+  toolsets?: string[]; // Profile-specific toolsets
+  createdAt: string;
+  lastModified: string;
+}
+
+/**
+ * Per-application MCP configuration
+ */
+export interface AppMCPConfig extends MCPConfig {
+  _metadata?: {
+    app: string;
+    profile?: string;
+    importedAt: string;
+    lastModified: string;
+    sources?: Record<string, {
+      app: string;
+      importedAt: string;
+    }>;
+  };
 }

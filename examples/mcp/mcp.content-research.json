@@ -1,40 +1,36 @@
 {
   "mcpServers": {
     "fetch": {
+      "type": "stdio",
       "command": "uvx",
-      "args": ["mcp-server-fetch"]
-    },
-    "web-search": {
-      "command": "npx",
-      "args": ["-y", "mcp-web-search"]
-    },
-    "web-scraper": {
-      "command": "npx",
-      "args": ["-y", "mcp-web-scraper"]
-    },
-    "ashra-mcp": {
-      "command": "npx",
-      "args": ["-y", "ashra-mcp"]
-    },
-    "markitdown": {
-      "command": "npx",
-      "args": ["-y", "markitdown-mcp-server"]
-    },
-    "markdownify": {
-      "command": "npx",
-      "args": ["-y", "markdownify-mcp"]
+      "args": [
+        "mcp-server-fetch"
+      ]
     },
     "pdf-processor": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-pdf-tools"]
+      "args": [
+        "-y",
+        "@sylphlab/pdf-reader-mcp"
+      ]
     },
     "memory": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
     },
     "filesystem": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp/research"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/tmp/research"
+      ]
     }
   }
 }

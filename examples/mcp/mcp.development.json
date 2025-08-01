@@ -1,36 +1,54 @@
 {
   "mcpServers": {
     "filesystem": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/tmp"
+      ]
     },
     "git": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-git", "."]
-    },
-    "docker": {
-      "command": "npx",
-      "args": ["-y", "mcp-docker-server"]
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-server-git",
+        "."
+      ]
     },
     "sqlite": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@executeautomation/database-server", "./dev.db"]
+      "args": [
+        "-y",
+        "@executeautomation/database-server",
+        "./dev.db"
+      ]
     },
-    "python-sandbox": {
+    "puppeteer": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-python-sandbox"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ]
     },
-    "terminal": {
+    "playwright": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-terminal-server"]
+      "args": [
+        "-y",
+        "@executeautomation/playwright-mcp-server"
+      ]
     },
-    "build-tools": {
+    "memory": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-build-tools"]
-    },
-    "package-manager": {
-      "command": "npx",
-      "args": ["-y", "mcp-package-info"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
     }
   }
 }

@@ -17,24 +17,36 @@ export class StandardTransformer implements ConfigTransformer {
    * Convert from standard format to standard format (pass-through)
    */
   toStandard(appConfig: any): MCPConfig {
-    // If it already has mcpServers, return as-is
+    let mcpServers: Record<string, any> = {};
+    let metadata = appConfig._metadata;
+
+    // If it already has mcpServers, use that
     if (appConfig.mcpServers && typeof appConfig.mcpServers === "object") {
-      return {
-        mcpServers: appConfig.mcpServers,
-        _metadata: appConfig._metadata,
-      };
+      mcpServers = appConfig.mcpServers;
+    } else if (typeof appConfig === "object" && !Array.isArray(appConfig)) {
+      // If it's a bare object of servers, use it directly
+      mcpServers = appConfig;
     }
 
-    // If it's a bare object of servers, wrap it
-    if (typeof appConfig === "object" && !Array.isArray(appConfig)) {
-      return {
-        mcpServers: appConfig,
-      };
+    // Add missing type fields to servers for backward compatibility
+    let hasAddedTypes = false;
+    for (const [name, server] of Object.entries(mcpServers)) {
+      if (server && typeof server === 'object' && !server.type) {
+        // Default to stdio if has command field
+        if (server.command) {
+          server.type = 'stdio';
+          hasAddedTypes = true;
+        }
+      }
     }
 
-    // Otherwise return empty config
+    if (hasAddedTypes) {
+      console.warn('Added missing "type" fields to server configurations. Please update your config files to include explicit type fields.');
+    }
+
     return {
-      mcpServers: {},
+      mcpServers,
+      _metadata: metadata,
     };
   }
 

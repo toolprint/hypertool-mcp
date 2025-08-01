@@ -1,36 +1,68 @@
 {
   "mcpServers": {
     "manim-mcp": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "manim-mcp-server"]
+      "args": [
+        "-y",
+        "manim-mcp-server"
+      ]
     },
     "aseprite-mcp": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "aseprite-mcp"]
+      "args": [
+        "-y",
+        "aseprite-mcp"
+      ]
     },
     "image-processor": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-image-tools"]
+      "args": [
+        "-y",
+        "mcp-image-tools"
+      ]
     },
     "audio-tools": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-audio-processor"]
+      "args": [
+        "-y",
+        "mcp-audio-processor"
+      ]
     },
     "media-converter": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-media-converter"]
+      "args": [
+        "-y",
+        "mcp-media-converter"
+      ]
     },
     "chart": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-chart-generator"]
+      "args": [
+        "-y",
+        "mcp-chart-generator"
+      ]
     },
     "filesystem": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp/media"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/tmp/media"
+      ]
     },
     "time": {
+      "type": "stdio",
       "command": "uvx",
-      "args": ["mcp-server-time"]
+      "args": [
+        "mcp-server-time"
+      ]
     }
   }
 }

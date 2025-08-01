@@ -7,6 +7,13 @@
  * - Wildcard and regex patterns for tool selection
  * - Conflict resolution strategies
  * - Default configuration generation
+ * 
+ * TODO: Per-Application Toolset Management
+ * - Associate toolsets with specific applications (claude-desktop, cursor, etc.)
+ * - Allow app-specific toolset configurations and preferences
+ * - Implement toolset sharing and synchronization between apps
+ * - Add application context awareness for tool filtering
+ * - Support app-specific tool customization and overrides
  */
 
 // Export types

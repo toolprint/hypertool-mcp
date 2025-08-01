@@ -1,36 +1,67 @@
 {
   "mcpServers": {
     "browser-mcp": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "browser-mcp"]
+      "args": [
+        "-y",
+        "browser-mcp"
+      ]
     },
     "web-search": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-web-search"]
+      "args": [
+        "-y",
+        "mcp-web-search"
+      ]
     },
     "web-scraper": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-web-scraper"]
+      "args": [
+        "-y",
+        "mcp-web-scraper"
+      ]
     },
     "fetch": {
+      "type": "stdio",
       "command": "uvx",
-      "args": ["mcp-server-fetch"]
+      "args": [
+        "mcp-server-fetch"
+      ]
     },
     "ashra-mcp": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "ashra-mcp"]
+      "args": [
+        "-y",
+        "ashra-mcp"
+      ]
     },
     "domain-search": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-domain-search"]
+      "args": [
+        "-y",
+        "mcp-domain-search"
+      ]
     },
     "dropbin": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-dropbin"]
+      "args": [
+        "-y",
+        "mcp-dropbin"
+      ]
     },
     "network-tools": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-network-tools"]
+      "args": [
+        "-y",
+        "mcp-network-tools"
+      ]
     }
   }
 }

@@ -112,6 +112,7 @@ interface ApplicationStatus {
   hasConfig?: boolean;
   isDevelopmentBuild?: boolean;
   developmentPath?: string;
+  mcpConfigPath?: string;
 }
 
 interface ToolsetInfo {
@@ -128,15 +129,20 @@ export function createShowCommand(): Command {
   show
     .description("Show overview of HyperTool configuration and status")
     .option("--json", "Output in JSON format")
-    .action(async (options) => {
+    .action(async (options, command) => {
       try {
+        // Get global options from parent command
+        // We need to go up two levels: show -> config -> program
+        const globalOptions = command.parent?.parent?.opts() || {};
+        const linkedApp = globalOptions.linkedApp;
+        
         const configManager = new ConfigurationManager();
         await configManager.initialize();
 
         const basePath = join(homedir(), ".toolprint/hypertool-mcp");
 
         // Gather all information
-        const mcpServers = await getMcpServers(basePath);
+        const { servers: mcpServers, configPath } = await getMcpServers(basePath, linkedApp);
         const applications = await getApplicationStatus(configManager);
         const toolsets = await getToolsets(basePath);
         const healthStatus = await checkHealth(
@@ -149,7 +155,8 @@ export function createShowCommand(): Command {
           // Output as JSON
           const result = {
             mcpServers,
-            applications,
+            mcpConfigPath: configPath,
+            applications: linkedApp ? undefined : applications,
             toolsets,
             health: healthStatus,
           };
@@ -160,10 +167,12 @@ export function createShowCommand(): Command {
           output.displaySpaceBuffer(1);
 
           // MCP Servers section
-          displayMcpServers(mcpServers);
+          displayMcpServers(mcpServers, configPath);
 
-          // Applications section
-          displayApplications(applications);
+          // Applications section (only if not using --linked-app)
+          if (!linkedApp) {
+            displayApplications(applications);
+          }
 
           // Toolsets section
           displayToolsets(toolsets);
@@ -183,12 +192,27 @@ export function createShowCommand(): Command {
   return show;
 }
 
-async function getMcpServers(basePath: string): Promise<ServerInfo[]> {
+async function getMcpServers(basePath: string, linkedApp?: string): Promise<{ servers: ServerInfo[], configPath: string }> {
   const servers: ServerInfo[] = [];
+  let configPath: string;
+
+  // Determine which config to load
+  if (linkedApp) {
+    // Try app-specific config first
+    configPath = join(basePath, "mcp", `${linkedApp}.json`);
+    try {
+      await fs.access(configPath);
+    } catch {
+      // Fall back to global config
+      configPath = join(basePath, "mcp.json");
+    }
+  } else {
+    // Use global config
+    configPath = join(basePath, "mcp.json");
+  }
 
   try {
-    const mcpConfigPath = join(basePath, "mcp.json");
-    const content = await fs.readFile(mcpConfigPath, "utf-8");
+    const content = await fs.readFile(configPath, "utf-8");
     const config = JSON.parse(content);
 
     if (config.mcpServers) {
@@ -253,7 +277,7 @@ async function getMcpServers(basePath: string): Promise<ServerInfo[]> {
     // Config file doesn't exist or is invalid
   }
 
-  return servers;
+  return { servers, configPath };
 }
 
 async function getApplicationStatus(
@@ -290,11 +314,21 @@ async function getApplicationStatus(
             const config = JSON.parse(content);
 
             // Check if config has HyperTool entry
-            if (config.mcpServers?.["toolprint-hypertool"]) {
+            if (config.mcpServers?.["hypertool"]) {
               hasConfig = true;
 
               // Check if it's using a development build
-              const hypertoolConfig = config.mcpServers["toolprint-hypertool"];
+              const hypertoolConfig = config.mcpServers["hypertool"];
+              
+              // Extract MCP config path from args
+              let mcpConfigPath: string | undefined;
+              if (hypertoolConfig.args && Array.isArray(hypertoolConfig.args)) {
+                const mcpConfigIndex = hypertoolConfig.args.indexOf("--mcp-config");
+                if (mcpConfigIndex !== -1 && mcpConfigIndex < hypertoolConfig.args.length - 1) {
+                  mcpConfigPath = hypertoolConfig.args[mcpConfigIndex + 1];
+                }
+              }
+              
               if (checkDevelopmentBuild(hypertoolConfig)) {
                 applications.push({
                   name: appDef.name,
@@ -305,6 +339,17 @@ async function getApplicationStatus(
                   developmentPath: hypertoolConfig.args?.find((arg: string) =>
                     arg.includes("/dist/bin.js")
                   ),
+                  mcpConfigPath,
+                });
+                continue;
+              } else {
+                applications.push({
+                  name: appDef.name,
+                  installed,
+                  configPath,
+                  hasConfig,
+                  isDevelopmentBuild: false,
+                  mcpConfigPath,
                 });
                 continue;
               }
@@ -336,8 +381,8 @@ async function getToolsets(basePath: string): Promise<ToolsetInfo[]> {
   const toolsets: ToolsetInfo[] = [];
 
   try {
-    const prefsPath = join(basePath, "preferences.json");
-    const content = await fs.readFile(prefsPath, "utf-8");
+    const prefsPath = join(basePath, 'config.json');
+    const content = await fs.readFile(prefsPath, 'utf-8');
     const prefs = JSON.parse(content);
 
     if (prefs.toolsets) {
@@ -443,8 +488,8 @@ async function checkHealth(
 
   // Check for toolset issues
   try {
-    const prefsPath = join(basePath, "preferences.json");
-    const content = await fs.readFile(prefsPath, "utf-8");
+    const prefsPath = join(basePath, 'config.json');
+    const content = await fs.readFile(prefsPath, 'utf-8');
     const prefs = JSON.parse(content);
 
     if (!prefs.toolsets || Object.keys(prefs.toolsets).length === 0) {
@@ -467,8 +512,8 @@ async function checkHealth(
   };
 }
 
-function displayMcpServers(servers: ServerInfo[]): void {
-  output.displaySubHeader("📡 MCP Servers");
+function displayMcpServers(servers: ServerInfo[], configPath: string): void {
+  output.displaySubHeader(`📡 MCP Servers (from ${configPath})`);
 
   if (servers.length === 0) {
     output.warn("  No MCP servers configured");
@@ -535,6 +580,12 @@ function displayApplications(applications: ApplicationStatus[]): void {
         } else if (app.configPath) {
           output.info(`     ${theme.muted(app.configPath)}`);
         }
+        
+        // Show MCP config path for linked apps
+        if (app.hasConfig && app.mcpConfigPath) {
+          output.info(`     📄 MCP Config: ${theme.muted(app.mcpConfigPath)}`);
+        }
+        
         if (
           !app.hasConfig &&
           app.name !== "Claude Code" &&

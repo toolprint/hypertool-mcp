@@ -1,36 +1,68 @@
 {
   "mcpServers": {
     "filesystem": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp/workspace"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/tmp/workspace"
+      ]
     },
     "time": {
+      "type": "stdio",
       "command": "uvx",
-      "args": ["mcp-server-time"]
+      "args": [
+        "mcp-server-time"
+      ]
     },
     "timeserver": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-timeserver"]
+      "args": [
+        "-y",
+        "mcp-timeserver"
+      ]
     },
     "calendar-utils": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-calendar-utils"]
+      "args": [
+        "-y",
+        "mcp-calendar-utils"
+      ]
     },
     "task-manager": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-task-manager"]
+      "args": [
+        "-y",
+        "mcp-task-manager"
+      ]
     },
     "calculator": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@wrtnlabs/calculator-mcp"]
+      "args": [
+        "-y",
+        "@wrtnlabs/calculator-mcp"
+      ]
     },
     "text-utils": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-text-utils"]
+      "args": [
+        "-y",
+        "mcp-text-utils"
+      ]
     },
     "memory": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
     }
   }
 }

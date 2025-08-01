@@ -39,16 +39,20 @@ describe("MCP Server stdio transport", () => {
     }
   });
 
-  // Extended timeout needed due to slow spawn time of multiple MCP server connections in mcp.test.json
+  // Reduced timeout with minimal memory server configuration in mcp.test.json
   it(
     "should connect via stdio and call tools successfully",
-    { timeout: 10000 },
+    { timeout: 5000 },
     async () => {
-      // Create stdio transport
+      // Create stdio transport using environment variable override (CLI parsing issue workaround)
       transport = new StdioClientTransport({
         command: "node",
-        args: [serverPath, "--transport", "stdio", "--mcp-config", configPath],
-        env: { ...process.env, NODE_ENV: "test" },
+        args: [serverPath, "--transport", "stdio"],
+        env: { 
+          ...process.env, 
+          NODE_ENV: "test",
+          HYPERTOOL_TEST_CONFIG: configPath
+        },
       });
 
       // Create MCP client
@@ -82,12 +86,16 @@ describe("MCP Server stdio transport", () => {
     }
   );
 
-  // Extended timeout needed due to slow spawn time of multiple MCP server connections in mcp.test.json
-  it("should handle concurrent operations", { timeout: 10000 }, async () => {
+  // Reduced timeout with minimal memory server configuration in mcp.test.json
+  it("should handle concurrent operations", { timeout: 5000 }, async () => {
     transport = new StdioClientTransport({
       command: "node",
-      args: [serverPath, "--transport", "stdio", "--mcp-config", configPath],
-      env: { ...process.env, NODE_ENV: "test" },
+      args: [serverPath, "--transport", "stdio"],
+      env: { 
+        ...process.env, 
+        NODE_ENV: "test",
+        HYPERTOOL_TEST_CONFIG: configPath
+      },
     });
 
     client = new Client(
@@ -115,15 +123,19 @@ describe("MCP Server stdio transport", () => {
     expect(result3.content).toBeDefined();
   });
 
-  // Extended timeout needed due to slow spawn time of multiple MCP server connections in mcp.test.json
+  // Reduced timeout with minimal memory server configuration in mcp.test.json
   it(
     "should properly handle errors without breaking stdio protocol",
-    { timeout: 10000 },
+    { timeout: 5000 },
     async () => {
       transport = new StdioClientTransport({
         command: "node",
-        args: [serverPath, "--transport", "stdio", "--mcp-config", configPath],
-        env: { ...process.env, NODE_ENV: "test" },
+        args: [serverPath, "--transport", "stdio"],
+        env: { 
+          ...process.env, 
+          NODE_ENV: "test",
+          HYPERTOOL_TEST_CONFIG: configPath
+        },
       });
 
       client = new Client(

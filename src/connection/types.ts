@@ -172,7 +172,7 @@ export const DEFAULT_CONNECTION_OPTIONS: Required<ConnectionOptions> = {
  * Default connection pool configuration
  */
 export const DEFAULT_POOL_CONFIG: Required<ConnectionPoolConfig> = {
-  maxConcurrentConnections: 10,
+  maxConcurrentConnections: 20,
   idleTimeout: 300000, // 5 minutes
   healthCheckInterval: 60000, // 1 minute
   connectionOptions: DEFAULT_CONNECTION_OPTIONS,

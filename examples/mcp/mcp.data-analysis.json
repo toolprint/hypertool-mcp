@@ -1,36 +1,69 @@
 {
   "mcpServers": {
     "sqlite": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@executeautomation/database-server", "./data.db"]
+      "args": [
+        "-y",
+        "@executeautomation/database-server",
+        "./data.db"
+      ]
     },
     "sqlite-explorer": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "sqlite-explorer-fastmcp"]
+      "args": [
+        "-y",
+        "sqlite-explorer-fastmcp"
+      ]
     },
     "csv-processor": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-csv-processor"]
+      "args": [
+        "-y",
+        "mcp-csv-processor"
+      ]
     },
     "json-processor": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-json-tools"]
+      "args": [
+        "-y",
+        "mcp-json-tools"
+      ]
     },
     "data-exploration": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-data-explorer"]
+      "args": [
+        "-y",
+        "mcp-data-explorer"
+      ]
     },
     "excel2json": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-excel-converter"]
+      "args": [
+        "-y",
+        "mcp-excel-converter"
+      ]
     },
     "chart": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-chart-generator"]
+      "args": [
+        "-y",
+        "mcp-chart-generator"
+      ]
     },
     "calculator": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@wrtnlabs/calculator-mcp"]
+      "args": [
+        "-y",
+        "@wrtnlabs/calculator-mcp"
+      ]
     }
   }
 }

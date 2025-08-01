@@ -3,6 +3,13 @@
  *
  * This module provides centralized configuration management for integrating
  * HyperTool with multiple MCP client applications.
+ * 
+ * TODO: Full Profile Management System
+ * - Implement profile creation, switching, and deletion
+ * - Add profile-specific configuration storage
+ * - Support workspace/project-specific profiles
+ * - Add profile inheritance and merging
+ * - Implement profile templates and presets
  */
 
 import { promises as fs } from "fs";
@@ -15,14 +22,14 @@ import {
   PreferencesConfig,
   ApplicationDefinition,
   Toolset,
-} from "./types/index.js";
-import { AppRegistry } from "./apps/registry.js";
-import { BackupManager } from "./backup/manager.js";
-import { TransformerRegistry } from "./transformers/base.js";
-import {
-  EnvironmentManager,
-  EnvironmentConfig,
-} from "../config/environment.js";
+  AppMCPConfig
+} from './types/index.js';
+import { AppRegistry } from './apps/registry.js';
+import { BackupManager } from './backup/manager.js';
+import { TransformerRegistry } from './transformers/base.js';
+import { EnvironmentManager, EnvironmentConfig } from '../config/environment.js';
+import { ConfigMigration } from './migration.js';
+import { addMissingTypeFields, needsTypeMigration } from './utils/type-migration.js';
 
 export class ConfigurationManager {
   private basePath: string;
@@ -94,6 +101,17 @@ export class ConfigurationManager {
     failed: string[];
     backup: string;
   }> {
+    // Check if migration is needed first
+    const migration = new ConfigMigration(this.basePath);
+    if (await migration.needsMigration()) {
+      console.log('Migrating from global mcp.json to per-app configurations...');
+      const migrationResult = await migration.migrate();
+      if (!migrationResult.success) {
+        console.warn('Migration completed with errors:', migrationResult.errors);
+      } else {
+        console.log('Migration completed successfully');
+      }
+    }
     // Create backup first
     const backupResult = await this.backupManager.createBackup();
     const backupPath = backupResult.success
@@ -108,15 +126,15 @@ export class ConfigurationManager {
     // Get all enabled applications
     const apps = await this.registry.getEnabledApplications();
 
-    // Import from each application
+    // Import from each application and save to per-app configs
+    const appConfigPaths: Record<string, string> = {};
+    
     for (const [appId, app] of Object.entries(apps)) {
       try {
         const result = await this.importFromApplicationWithPath(appId, app);
         if (result && result.config) {
           // Merge servers with metadata
-          for (const [serverName, serverConfig] of Object.entries(
-            result.config.mcpServers
-          )) {
+          for (const [serverName, serverConfig] of Object.entries(result.config.mcpServers)) {
             mergedServers.mcpServers[serverName] = serverConfig;
 
             // Add metadata
@@ -135,6 +153,10 @@ export class ConfigurationManager {
 
           imported.push(appId);
           importedDetails.push({ appId, configPath: result.configPath });
+          
+          // Save app-specific config and track path
+          const appConfigPath = await this.saveAppConfig(appId, result.config);
+          appConfigPaths[appId] = appConfigPath;
         }
       } catch (error) {
         console.warn(`Failed to import from ${appId}:`, error);
@@ -142,11 +164,11 @@ export class ConfigurationManager {
       }
     }
 
-    // Save merged configuration
+    // Save merged configuration for backwards compatibility
     await this.saveMergedConfig(mergedServers);
 
-    // Update main configuration
-    await this.updateMainConfig(imported);
+    // Update main configuration with per-app config paths
+    await this.updateMainConfig(imported, appConfigPaths);
 
     // Generate default toolsets
     await this.generateDefaultToolsets(mergedServers);
@@ -276,23 +298,59 @@ export class ConfigurationManager {
   }
 
   /**
-   * Save the merged MCP configuration
+   * Save the merged MCP configuration (deprecated - for backwards compatibility)
    */
   private async saveMergedConfig(config: MCPConfig): Promise<void> {
     const configPath = join(this.basePath, "mcp.json");
+    
+    // Add missing type fields if needed
+    const migratedConfig = needsTypeMigration(config) ? addMissingTypeFields(config) : config;
+    
     await this.fs.writeFile(
       configPath,
-      JSON.stringify(config, null, 2),
+      JSON.stringify(migratedConfig, null, 2),
       "utf-8"
     );
   }
 
   /**
+   * Save app-specific MCP configuration
+   */
+  private async saveAppConfig(appId: string, config: MCPConfig): Promise<string> {
+    const configPath = join(this.basePath, 'mcp', `${appId}.json`);
+    
+    // Ensure mcp directory exists
+    await this.fs.mkdir(join(this.basePath, 'mcp'), { recursive: true });
+    
+    // Add missing type fields if needed
+    const migratedConfig = needsTypeMigration(config) ? addMissingTypeFields(config) : config;
+    
+    // Add metadata
+    const appConfig: AppMCPConfig = {
+      ...migratedConfig,
+      _metadata: {
+        ...migratedConfig._metadata,
+        app: appId,
+        importedAt: new Date().toISOString(),
+        lastModified: new Date().toISOString()
+      }
+    };
+    
+    await this.fs.writeFile(
+      configPath,
+      JSON.stringify(appConfig, null, 2),
+      'utf-8'
+    );
+    
+    return `mcp/${appId}.json`;
+  }
+
+  /**
    * Update the main configuration file with imported apps
    */
-  private async updateMainConfig(importedApps: string[]): Promise<void> {
-    const configPath = join(this.basePath, "config.json");
-
+  private async updateMainConfig(importedApps: string[], appConfigPaths: Record<string, string>): Promise<void> {
+    const configPath = join(this.basePath, 'config.json');
+    
     let config: MainConfig;
     try {
       const content = await this.fs.readFile(configPath, "utf-8");
@@ -319,6 +377,7 @@ export class ConfigurationManager {
         configPath: this.registry.resolvePath(platformConfig.configPath),
         lastSync: new Date().toISOString(),
         format: platformConfig.format,
+        mcpConfig: appConfigPaths[appId]
       };
     }
 
@@ -333,15 +392,23 @@ export class ConfigurationManager {
   /**
    * Generate default toolsets for each application
    */
-  private async generateDefaultToolsets(
-    mergedConfig: MCPConfig
-  ): Promise<void> {
-    const prefsPath = join(this.basePath, "preferences.json");
-
+  private async generateDefaultToolsets(mergedConfig: MCPConfig): Promise<void> {
+    const prefsPath = join(this.basePath, 'config.json');
+    
     let prefs: PreferencesConfig;
     try {
       const content = await this.fs.readFile(prefsPath, "utf-8");
       prefs = JSON.parse(content);
+      
+      // Ensure toolsets property exists (for consolidated config structure)
+      if (!prefs.toolsets) {
+        prefs.toolsets = {};
+      }
+      
+      // Ensure appDefaults property exists
+      if (!prefs.appDefaults) {
+        prefs.appDefaults = {};
+      }
     } catch {
       prefs = {
         toolsets: {},
@@ -406,23 +473,41 @@ export class ConfigurationManager {
   /**
    * Link HyperTool configuration to specified applications
    */
-  async linkApplications(appIds?: string[]): Promise<{
+  async linkApplications(appConfigs: Array<{
+    appId: string;
+    appName?: string;
+    configType: 'global' | 'per-app';
+    perAppInit?: 'empty' | 'copy' | 'import';
+  }> | string[]): Promise<{
     linked: string[];
     failed: string[];
   }> {
     const linked: string[] = [];
     const failed: string[] = [];
 
-    // Get merged configuration path
-    const mergedConfigPath = join(this.basePath, "mcp.json");
-
     // Get all enabled applications
     const apps = await this.registry.getEnabledApplications();
 
-    // If no specific apps requested, link all
-    const targetApps = appIds || Object.keys(apps);
+    // Handle legacy string array format for backward compatibility
+    let configs: Array<{
+      appId: string;
+      configType: 'global' | 'per-app';
+      perAppInit?: 'empty' | 'copy' | 'import';
+    }>;
+    
+    if (Array.isArray(appConfigs) && typeof appConfigs[0] === 'string') {
+      // Legacy format - convert to new format
+      configs = (appConfigs as string[]).map(appId => ({
+        appId,
+        configType: 'global' as const
+      }));
+    } else {
+      configs = appConfigs as any;
+    }
 
-    for (const appId of targetApps) {
+    for (const config of configs) {
+      const { appId, configType, perAppInit } = config;
+      
       if (!apps[appId]) {
         console.warn(`Application ${appId} not found`);
         failed.push(appId);
@@ -430,7 +515,32 @@ export class ConfigurationManager {
       }
 
       try {
-        await this.linkApplication(appId, apps[appId], mergedConfigPath);
+        // Determine the config path based on user choice
+        let configPath: string;
+        
+        if (configType === 'global') {
+          configPath = join(this.basePath, "mcp.json");
+        } else {
+          // Per-app config
+          const appConfigPath = join(this.basePath, "mcp", `${appId}.json`);
+          
+          // Check if per-app config needs to be created
+          let configExists = false;
+          try {
+            await fs.access(appConfigPath);
+            configExists = true;
+          } catch {
+            configExists = false;
+          }
+          
+          if (!configExists && perAppInit) {
+            await this.initializePerAppConfig(appId, perAppInit);
+          }
+          
+          configPath = appConfigPath;
+        }
+        
+        await this.linkApplication(appId, apps[appId], configPath);
         linked.push(appId);
       } catch (error) {
         console.warn(`Failed to link ${appId}:`, error);
@@ -439,6 +549,91 @@ export class ConfigurationManager {
     }
 
     return { linked, failed };
+  }
+
+  /**
+   * Initialize per-app configuration
+   */
+  private async initializePerAppConfig(
+    appId: string, 
+    initMethod: 'empty' | 'copy' | 'import'
+  ): Promise<void> {
+    const appConfigPath = join(this.basePath, "mcp", `${appId}.json`);
+    const mcpDir = join(this.basePath, "mcp");
+    
+    // Ensure mcp directory exists
+    await fs.mkdir(mcpDir, { recursive: true });
+    
+    let config: any = {
+      mcpServers: {},
+      _metadata: {
+        app: appId,
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString()
+      }
+    };
+    
+    switch (initMethod) {
+      case 'empty':
+        // Already initialized with empty mcpServers
+        break;
+        
+      case 'copy':
+        // Copy from global config
+        try {
+          const globalConfigPath = join(this.basePath, "mcp.json");
+          const globalContent = await fs.readFile(globalConfigPath, 'utf-8');
+          const globalConfig = JSON.parse(globalContent);
+          
+          config.mcpServers = globalConfig.mcpServers || {};
+          if (globalConfig._metadata) {
+            config._metadata = {
+              ...config._metadata,
+              copiedFrom: 'global',
+              sources: globalConfig._metadata.sources
+            };
+          }
+        } catch (error) {
+          console.warn('Failed to copy global config, using empty config instead');
+        }
+        break;
+        
+      case 'import':
+        // Import from application's existing config
+        const apps = await this.registry.getEnabledApplications();
+        const app = apps[appId];
+        if (app) {
+          const appDef = app as any;
+          const platformConfig = this.registry.getPlatformConfig(appDef);
+          
+          if (platformConfig) {
+            const configPath = this.registry.resolvePath(platformConfig.configPath);
+            
+            try {
+              await fs.access(configPath);
+              const content = await fs.readFile(configPath, 'utf-8');
+              const appConfig = JSON.parse(content);
+              
+              // Import all servers except hypertool itself
+              if (appConfig.mcpServers) {
+                for (const [name, server] of Object.entries(appConfig.mcpServers)) {
+                  if (name !== 'hypertool' && name !== 'toolprint-hypertool') {
+                    config.mcpServers[name] = server;
+                  }
+                }
+              }
+              
+              config._metadata.importedFrom = configPath;
+            } catch (error) {
+              console.warn(`Failed to import from ${appId} config, using empty config instead`);
+            }
+          }
+        }
+        break;
+    }
+    
+    // Write the per-app config
+    await fs.writeFile(appConfigPath, JSON.stringify(config, null, 2), 'utf-8');
   }
 
   /**
@@ -465,7 +660,7 @@ export class ConfigurationManager {
       // Use local development build
       const localBinPath = join(process.cwd(), "dist", "bin.js");
       hyperToolProxy = {
-        "toolprint-hypertool": {
+        "hypertool": {
           type: "stdio" as const,
           command: "node",
           args: [
@@ -481,7 +676,7 @@ export class ConfigurationManager {
     } else {
       // Use published NPM package
       hyperToolProxy = {
-        "toolprint-hypertool": {
+        "hypertool": {
           type: "stdio" as const,
           command: "npx",
           args: [
@@ -641,10 +836,10 @@ export class ConfigurationManager {
 
       if (
         standardConfig.mcpServers &&
-        standardConfig.mcpServers["toolprint-hypertool"]
+        standardConfig.mcpServers["hypertool"]
       ) {
         // Remove hypertool entry
-        delete standardConfig.mcpServers["toolprint-hypertool"];
+        delete standardConfig.mcpServers["hypertool"];
 
         // Write back the config without hypertool
         const updatedConfig = transformer.fromStandard(standardConfig);
