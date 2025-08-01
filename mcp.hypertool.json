@@ -58,25 +58,6 @@
       "args": [
         "@playwright/mcp@latest"
       ]
-    },
-    "markitdown": {
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-i",
-        "-v",
-        "/Users/achintyaashok/Desktop/llm_scratchpad:/workdir",
-        "markitdown-mcp:latest"
-      ]
-    },
-    "exa": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "https://mcp.exa.ai/mcp?exaApiKey=928431f0-df02-4222-8002-60e174831b9e"
-      ]
     }
   }
 }
