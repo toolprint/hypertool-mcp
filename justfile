@@ -156,8 +156,34 @@ test-install: build
     echo "🧪 Testing npx execution..."
     npx @toolprint/hypertool-mcp --version
     
-    # Cleanup
-    npm uninstall -g @toolprint/hypertool-mcp
+    echo "🧪 Testing examples accessibility..."
+    node -e "console.log(require('child_process').execSync('hypertool-mcp list-saved-toolsets 2>&1', {encoding: 'utf8'}).includes('toolsets') ? '✅ CLI commands working' : '❌ CLI commands failed')"
+    
+    # Cleanup tarball
     rm -f toolprint-hypertool-mcp-*.tgz
     
-    echo "✅ Local installation test completed!"
+    echo "✅ Local installation completed!"
+    echo ""
+    echo "📚 Usage Instructions:"
+    echo "─────────────────────────────────────────────────"
+    echo ""
+    echo "🖥️  CLI Usage:"
+    echo "  hypertool-mcp --help                    # Show all commands"
+    echo "  hypertool-mcp --version                 # Show version"
+    echo "  hypertool-mcp list-available-tools      # List all available tools"
+    echo "  hypertool-mcp list-saved-toolsets       # List saved toolsets"
+    echo "  hypertool-mcp --mcp-config config.json  # Use custom MCP config"
+    echo ""
+    echo "🔧 MCP Configuration (.mcp.json):"
+    echo '  {'
+    echo '    "mcpServers": {'
+    echo '      "hypertool": {'
+    echo '        "command": "hypertool-mcp",'
+    echo '        "args": ["--mcp-config", ".mcp.hypertool.json"]'
+    echo '      }'
+    echo '    }'
+    echo '  }'
+    echo ""
+    echo "🗑️  To uninstall when done:"
+    echo "  npm uninstall -g @toolprint/hypertool-mcp"
+    echo "─────────────────────────────────────────────────"

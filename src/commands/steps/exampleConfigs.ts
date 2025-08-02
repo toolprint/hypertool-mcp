@@ -2,7 +2,7 @@
  * Example MCP configuration templates
  */
 
-import { promises as fs } from "fs";
+import { promises as fs, readFileSync, existsSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { ExampleConfig } from "../setup/types.js";
@@ -13,12 +13,39 @@ const logger = createChildLogger({ module: "setup/examples" });
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Find package root once during module initialization
+const packageRoot = (() => {
+  let dir = __dirname;
+  while (dir !== dirname(dir)) {
+    const packageJsonPath = join(dir, "package.json");
+    if (existsSync(packageJsonPath)) {
+      try {
+        const pkg = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+        if (pkg.name === "@toolprint/hypertool-mcp") {
+          return dir;
+        }
+      } catch {
+        // Continue searching up
+      }
+    }
+    dir = dirname(dir);
+  }
+  // Fallback to relative path approach if package.json not found
+  logger.warn("Could not find package root, using fallback path resolution");
+  return null;
+})();
+
 /**
  * Get the path to the examples directory
  * Handles both development and production environments
  */
 function getExamplesPath(): string {
-  // Check if we're running from dist (production)
+  if (packageRoot) {
+    // Found package root, use absolute path from there
+    return join(packageRoot, "dist", "examples", "mcp");
+  }
+  
+  // Fallback to original relative path approach
   if (__dirname.includes("/dist/")) {
     // In production, examples are bundled in dist/examples/mcp/
     return join(__dirname, "../../../examples/mcp");
