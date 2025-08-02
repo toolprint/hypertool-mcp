@@ -156,6 +156,33 @@ Create focused toolsets for different workflows:
 → Deep dives with organized notes
 ```
 
+### 📁 Server Groups (NEW!)
+
+Organize your MCP servers into logical groups for easy management:
+
+```bash
+# Create a development group
+hypertool-mcp mcp group create development -d "All development servers"
+
+# Add servers to the group
+hypertool-mcp mcp group add development git-server docker-server filesystem-server
+
+# Run with a specific group
+hypertool-mcp --group development
+
+# List all groups
+hypertool-mcp mcp group list
+
+# Show servers in a group
+hypertool-mcp mcp group show development
+```
+
+Server groups make it easy to:
+- 🚀 Launch related servers together
+- 📊 Organize servers by project or environment
+- 🔄 Switch between different server configurations
+- 🎯 Maintain focused tool contexts
+
 ### 🎬 Real Chat Example
 ```
 You: "I need to debug our API"

@@ -159,6 +159,10 @@ const mcpServerRunOptions = [
       theme.info("Log level") + " (trace, debug, info, warn, error, fatal)",
     defaultValue: "info",
   },
+  {
+    flags: "--group <name>",
+    description: theme.info("Server group name to load servers from"),
+  },
 ];
 
 /**
@@ -229,6 +233,7 @@ async function runMcpServer(options: any): Promise<void> {
     linkedApp: options.linkedApp,
     profile: options.profile,
     logLevel,
+    group: options.group,
   };
 
   // ! We use dynamic imports to ensure that the transport and logging configuration is initialized

@@ -46,6 +46,7 @@ import {
 } from "./tools/index.js";
 import chalk from "chalk";
 import { output } from "../utils/output.js";
+import { theme, semantic } from "../utils/theme.js";
 import {
   detectExternalMCPs,
   formatExternalMCPsMessage,
@@ -295,9 +296,42 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     }
 
     try {
+      // Initialize database before loading configs
+      const { getDatabaseService } = await import("../db/nedbService.js");
+      const dbService = getDatabaseService();
+      await dbService.init();
+      logger.debug("Database initialized successfully");
+
       // Load server configs from MCP config.
-      const serverConfigs: Record<string, ServerConfig> =
+      let serverConfigs: Record<string, ServerConfig> =
         await this.loadMcpConfigOrExit(options);
+
+      // Sync servers with database
+      const { ServerSyncManager } = await import("../config-manager/serverSync.js");
+      const syncManager = new ServerSyncManager(dbService);
+      await syncManager.syncServers(serverConfigs);
+      logger.debug("Server configurations synced with database");
+
+      // If group is specified, load servers from the group instead
+      if (this.runtimeOptions?.group) {
+        logger.debug(`Loading servers from group: ${this.runtimeOptions.group}`);
+        try {
+          const groupServers = await syncManager.getServersForGroup(this.runtimeOptions.group);
+          serverConfigs = {};
+          for (const server of groupServers) {
+            serverConfigs[server.name] = server.config;
+          }
+          const isStdioTransport = options.transport.type === "stdio";
+          if (!isStdioTransport) {
+            console.log(theme.info(`Loaded ${groupServers.length} servers from group "${this.runtimeOptions.group}"`));
+          }
+        } catch (error) {
+          console.error(
+            semantic.messageError(`❌ Failed to load group "${this.runtimeOptions.group}": ${(error as Error).message}`)
+          );
+          process.exit(1);
+        }
+      }
 
       // Detect external MCPs
       const externalMCPs = await detectExternalMCPs();
@@ -568,6 +602,16 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
       if (this.connectionManager) {
         await this.connectionManager.stop();
+      }
+
+      // Close database
+      try {
+        const { getDatabaseService } = await import("../db/nedbService.js");
+        const dbService = getDatabaseService();
+        await dbService.close();
+        logger.debug("Database closed successfully");
+      } catch (error) {
+        logger.error("Error closing database:", error);
       }
 
       // Stop the base server
