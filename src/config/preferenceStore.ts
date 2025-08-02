@@ -48,6 +48,13 @@ export interface CompleteConfig extends UserPreferences {
     /** Maximum number of concurrent server connections */
     maxConcurrentConnections?: number;
   };
+
+  /** Feature flags for experimental functionality */
+  featureFlags?: {
+    /** Enable NeDB database storage instead of file-based configuration */
+    nedbEnabled?: boolean;
+    // Future feature flags can be added here
+  };
 }
 
 /**
@@ -184,6 +191,69 @@ export async function saveLastEquippedToolset(
   const preferences = await loadUserPreferences();
   preferences.lastEquippedToolset = toolsetName;
   await saveUserPreferences(preferences);
+}
+
+/**
+ * Get a specific feature flag value
+ */
+export async function getFeatureFlag(flagName: string): Promise<boolean | undefined> {
+  try {
+    await ensureConfigDir();
+    const content = await fs.readFile(CONFIG_FILE, "utf-8");
+    const config = JSON.parse(content) as CompleteConfig;
+    
+    return config.featureFlags?.[flagName as keyof typeof config.featureFlags];
+  } catch (error) {
+    // If config doesn't exist or is invalid, return undefined
+    return undefined;
+  }
+}
+
+/**
+ * Set a specific feature flag value
+ */
+export async function setFeatureFlag(flagName: string, value: boolean): Promise<void> {
+  await ensureConfigDir();
+
+  // Load existing config to preserve all fields
+  let existingConfig: Partial<CompleteConfig> = {};
+  try {
+    const content = await fs.readFile(CONFIG_FILE, "utf-8");
+    existingConfig = JSON.parse(content) as CompleteConfig;
+  } catch {
+    // File doesn't exist or is invalid, use empty object
+  }
+
+  // Ensure featureFlags section exists
+  if (!existingConfig.featureFlags) {
+    existingConfig.featureFlags = {};
+  }
+
+  // Set the specific flag
+  (existingConfig.featureFlags as any)[flagName] = value;
+  existingConfig.lastUpdated = new Date().toISOString();
+
+  await fs.writeFile(
+    CONFIG_FILE,
+    JSON.stringify(existingConfig, null, 2),
+    "utf-8"
+  );
+}
+
+/**
+ * Get all feature flags
+ */
+export async function getFeatureFlags(): Promise<Record<string, boolean> | undefined> {
+  try {
+    await ensureConfigDir();
+    const content = await fs.readFile(CONFIG_FILE, "utf-8");
+    const config = JSON.parse(content) as CompleteConfig;
+    
+    return config.featureFlags as Record<string, boolean> | undefined;
+  } catch (error) {
+    // If config doesn't exist or is invalid, return undefined
+    return undefined;
+  }
 }
 
 /**

@@ -2,7 +2,7 @@
  * Migration utility to add missing type fields to MCP server configurations
  */
 
-import { MCPConfig, MCPServerConfig } from '../types/index.js';
+import { MCPConfig, MCPServerConfig } from "../types/index.js";
 
 /**
  * Add missing type fields to server configurations
@@ -18,7 +18,7 @@ export function addMissingTypeFields(config: MCPConfig): MCPConfig {
   const updatedServers: Record<string, MCPServerConfig> = {};
 
   for (const [name, server] of Object.entries(config.mcpServers)) {
-    if (!server || typeof server !== 'object') {
+    if (!server || typeof server !== "object") {
       updatedServers[name] = server as any;
       continue;
     }
@@ -29,23 +29,26 @@ export function addMissingTypeFields(config: MCPConfig): MCPConfig {
         // Has command field, must be stdio type
         updatedServers[name] = {
           ...server,
-          type: 'stdio'
+          type: "stdio",
         } as MCPServerConfig;
         modified = true;
         console.log(`Added type "stdio" to server "${name}"`);
       } else if (server.url) {
         // Has url field, determine if http or sse based on other indicators
         // Default to http unless there are SSE-specific indicators
-        const inferredType = server.url.includes('sse') || server.events ? 'sse' : 'http';
+        const inferredType =
+          server.url.includes("sse") || server.events ? "sse" : "http";
         updatedServers[name] = {
           ...server,
-          type: inferredType
+          type: inferredType,
         } as MCPServerConfig;
         modified = true;
         console.log(`Added type "${inferredType}" to server "${name}"`);
       } else {
         // Unknown configuration, skip
-        console.warn(`Server "${name}" has no recognizable fields (command or url), skipping type migration`);
+        console.warn(
+          `Server "${name}" has no recognizable fields (command or url), skipping type migration`
+        );
         updatedServers[name] = server as any;
       }
     } else {
@@ -54,12 +57,12 @@ export function addMissingTypeFields(config: MCPConfig): MCPConfig {
   }
 
   if (modified) {
-    console.info('Added missing type fields to MCP server configurations');
+    console.info("Added missing type fields to MCP server configurations");
   }
 
   return {
     ...config,
-    mcpServers: updatedServers
+    mcpServers: updatedServers,
   };
 }
 
@@ -74,7 +77,7 @@ export function needsTypeMigration(config: MCPConfig): boolean {
   }
 
   for (const server of Object.values(config.mcpServers)) {
-    if (server && typeof server === 'object' && !server.type) {
+    if (server && typeof server === "object" && !server.type) {
       return true;
     }
   }

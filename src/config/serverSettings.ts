@@ -38,13 +38,14 @@ export async function loadServerSettings(): Promise<ServerSettings> {
     const { readFile } = await import("fs/promises");
     const { join } = await import("path");
     const { homedir } = await import("os");
-    
+
     const configPath = join(homedir(), ".toolprint/hypertool-mcp/config.json");
     const content = await readFile(configPath, "utf-8");
     const fullConfig = JSON.parse(content) as CompleteConfig;
-    
+
     if (fullConfig.serverSettings?.maxConcurrentConnections !== undefined) {
-      settings.maxConcurrentConnections = fullConfig.serverSettings.maxConcurrentConnections;
+      settings.maxConcurrentConnections =
+        fullConfig.serverSettings.maxConcurrentConnections;
     }
   } catch {
     // Config file doesn't exist or is invalid, use defaults
@@ -126,14 +127,20 @@ export async function logServerSettingsSource(): Promise<void> {
   const settings = await loadServerSettings();
 
   console.log("Server Settings Configuration:");
-  console.log(`  Max Concurrent Connections: ${settings.maxConcurrentConnections}`);
-  
+  console.log(
+    `  Max Concurrent Connections: ${settings.maxConcurrentConnections}`
+  );
+
   if (envValue) {
     const parsed = parseInt(envValue, 10);
     if (!isNaN(parsed) && parsed > 0) {
-      console.log(`  Source: Environment variable (HYPERTOOL_MAX_CONNECTIONS=${envValue})`);
+      console.log(
+        `  Source: Environment variable (HYPERTOOL_MAX_CONNECTIONS=${envValue})`
+      );
     } else {
-      console.log(`  Source: Config file or default (invalid env var: ${envValue})`);
+      console.log(
+        `  Source: Config file or default (invalid env var: ${envValue})`
+      );
     }
   } else {
     // Check if it's from config file
@@ -141,18 +148,25 @@ export async function logServerSettingsSource(): Promise<void> {
       const { readFile } = await import("fs/promises");
       const { join } = await import("path");
       const { homedir } = await import("os");
-      
-      const configPath = join(homedir(), ".toolprint/hypertool-mcp/config.json");
+
+      const configPath = join(
+        homedir(),
+        ".toolprint/hypertool-mcp/config.json"
+      );
       const content = await readFile(configPath, "utf-8");
       const fullConfig = JSON.parse(content) as CompleteConfig;
-      
+
       if (fullConfig.serverSettings?.maxConcurrentConnections !== undefined) {
         console.log(`  Source: Config file (${configPath})`);
       } else {
-        console.log(`  Source: Default value (${DEFAULT_POOL_CONFIG.maxConcurrentConnections})`);
+        console.log(
+          `  Source: Default value (${DEFAULT_POOL_CONFIG.maxConcurrentConnections})`
+        );
       }
     } catch {
-      console.log(`  Source: Default value (${DEFAULT_POOL_CONFIG.maxConcurrentConnections})`);
+      console.log(
+        `  Source: Default value (${DEFAULT_POOL_CONFIG.maxConcurrentConnections})`
+      );
     }
   }
 }

@@ -27,9 +27,7 @@ export function createGroupDeleteCommand(): Command {
         // Find the group
         const group = await dbService.groups.findByName(name);
         if (!group) {
-          console.error(
-            semantic.messageError(`❌ Group "${name}" not found`)
-          );
+          console.error(semantic.messageError(`❌ Group "${name}" not found`));
           process.exit(1);
         }
 
@@ -42,7 +40,7 @@ export function createGroupDeleteCommand(): Command {
             {
               type: "confirm",
               name: "confirmDelete",
-              message: `Are you sure you want to delete group "${name}"? (contains ${serverCount} server${serverCount === 1 ? '' : 's'})`,
+              message: `Are you sure you want to delete group "${name}"? (contains ${serverCount} server${serverCount === 1 ? "" : "s"})`,
               default: false,
             },
           ]);
@@ -62,9 +60,13 @@ export function createGroupDeleteCommand(): Command {
           console.log(
             semantic.messageSuccess(`✅ Group "${name}" deleted successfully`)
           );
-          
+
           if (serverCount > 0) {
-            console.log(theme.info(`   Note: The ${serverCount} server${serverCount === 1 ? '' : 's'} in this group were not affected.`));
+            console.log(
+              theme.info(
+                `   Note: The ${serverCount} server${serverCount === 1 ? "" : "s"} in this group were not affected.`
+              )
+            );
           }
         } else {
           console.error(
@@ -77,7 +79,9 @@ export function createGroupDeleteCommand(): Command {
       } catch (error) {
         logger.error("Failed to delete group:", error);
         console.error(
-          semantic.messageError(`❌ Failed to delete group: ${(error as Error).message}`)
+          semantic.messageError(
+            `❌ Failed to delete group: ${(error as Error).message}`
+          )
         );
         process.exit(1);
       }

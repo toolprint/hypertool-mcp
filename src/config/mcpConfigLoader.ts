@@ -1,114 +1,80 @@
 /**
- * MCP configuration file discovery and loading
+ * MCP configuration loading - routes between database and file-based approaches
  */
 
-import * as fs from "fs/promises";
 import * as path from "path";
 import * as os from "os";
-import { loadUserPreferences, updateMcpConfigPath } from "./preferenceStore.js";
+import { loadUserPreferences } from "./preferenceStore.js";
 import { APP_TECHNICAL_NAME, BRAND_NAME } from "./appConfig.js";
 import { createChildLogger } from "../utils/logging.js";
-import { MainConfig } from "../config-manager/types/index.js";
+import { getDatabaseService } from "../db/nedbService.js";
+import { ServerConfig } from "../types/config.js";
+import { IConfigSource } from "../db/interfaces.js";
+import { isNedbEnabled } from "./environment.js";
+import {
+  discoverMcpConfigFile,
+  loadMcpConfigFile,
+} from "./mcpConfigFileLoader.js";
 
 const logger = createChildLogger({ module: "config/discovery" });
 
 /**
- * Standard locations to search for MCP configuration files
+ * Get configuration source from database
  */
-const STANDARD_CONFIG_LOCATIONS = [
-  // Current working directory
-  ".mcp.json",
-  "mcp.json",
-  `.${APP_TECHNICAL_NAME}.json`,
-  `${APP_TECHNICAL_NAME}.json`,
-
-  // User home directory
-  `~/.${BRAND_NAME.toLowerCase()}/${APP_TECHNICAL_NAME}/mcp.json`,
-  `~/.${APP_TECHNICAL_NAME}.json`,
-  "~/.mcp.json",
-];
-
-/**
- * Resolve home directory paths
- */
-function resolvePath(filePath: string): string {
-  if (filePath.startsWith("~/")) {
-    return path.join(os.homedir(), filePath.slice(2));
-  }
-  return path.resolve(filePath);
-}
-
-/**
- * Check if a file exists and is readable
- */
-async function fileExists(filePath: string): Promise<boolean> {
+async function getConfigSource(
+  sourceType: "global" | "app" | "profile",
+  appId?: string,
+  profileId?: string
+): Promise<IConfigSource | null> {
   try {
-    await fs.access(resolvePath(filePath), fs.constants.R_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
+    const dbService = getDatabaseService();
+    await dbService.init();
 
-/**
- * Resolve app-specific configuration path
- */
-async function resolveAppConfig(appId: string, profile?: string): Promise<string | null> {
-  try {
-    // Load main config to get app-specific config paths
-    const configPath = path.join(
-      os.homedir(),
-      `.${BRAND_NAME.toLowerCase()}`,
-      APP_TECHNICAL_NAME,
-      'config.json'
-    );
-    
-    const configContent = await fs.readFile(configPath, 'utf-8');
-    const config: MainConfig = JSON.parse(configContent);
-    
-    const appConfig = config.applications?.[appId];
-    if (!appConfig?.mcpConfig) {
-      return null;
-    }
-    
-    // If profile is specified, look for profile-specific config
-    if (profile) {
-      const profilePath = path.join(
-        os.homedir(),
-        `.${BRAND_NAME.toLowerCase()}`,
-        APP_TECHNICAL_NAME,
-        'mcp',
-        'profiles',
-        appId,
-        `${profile}.json`
-      );
-      
-      if (await fileExists(profilePath)) {
-        return profilePath;
+    // Find the most appropriate config source
+    const sources = await dbService.configSources.findAll();
+
+    let matchingSource: IConfigSource | null = null;
+    let highestPriority = -1;
+
+    for (const source of sources) {
+      if (source.type === sourceType) {
+        if (sourceType === "global" && source.priority > highestPriority) {
+          matchingSource = source;
+          highestPriority = source.priority;
+        } else if (
+          sourceType === "app" &&
+          source.appId === appId &&
+          source.priority > highestPriority
+        ) {
+          matchingSource = source;
+          highestPriority = source.priority;
+        } else if (
+          sourceType === "profile" &&
+          source.appId === appId &&
+          source.profileId === profileId &&
+          source.priority > highestPriority
+        ) {
+          matchingSource = source;
+          highestPriority = source.priority;
+        }
       }
     }
-    
-    // Return app's default config path
-    return path.join(
-      os.homedir(),
-      `.${BRAND_NAME.toLowerCase()}`,
-      APP_TECHNICAL_NAME,
-      appConfig.mcpConfig
-    );
+
+    return matchingSource;
   } catch (error) {
-    logger.debug('Failed to resolve app config:', error);
+    logger.debug("Failed to get config source:", error);
     return null;
   }
 }
 
 /**
- * Discover MCP configuration file
+ * Discover MCP configuration - routes to database or file-based based on feature flag
  *
- * @param cliConfigPath - Path provided via --mcp-config flag (highest priority override)
+ * @param cliConfigPath - Path provided via --mcp-config flag (for backward compatibility)
  * @param updatePreference - Whether to update user preference when using CLI path
  * @param linkedApp - Application ID to load config for
  * @param profile - Profile ID for workspace/project config
- * @returns Object with config path and source information
+ * @returns Object with config and source information
  */
 export async function discoverMcpConfig(
   cliConfigPath?: string,
@@ -119,168 +85,179 @@ export async function discoverMcpConfig(
   configPath: string | null;
   source: "cli" | "app" | "preference" | "discovered" | "none";
   errorMessage?: string;
+  configSource?: IConfigSource;
 }> {
-  // Check for test environment override first (for test isolation)
-  const testConfigPath = process.env.HYPERTOOL_TEST_CONFIG;
-  if (testConfigPath) {
-    const resolvedTestPath = resolvePath(testConfigPath);
-    if (await fileExists(resolvedTestPath)) {
-      return {
-        configPath: resolvedTestPath,
-        source: "cli",
-      };
-    }
-  }
-  
-  
-  // 1. Check CLI argument first (highest priority override)
-  if (cliConfigPath) {
-    const resolvedPath = resolvePath(cliConfigPath);
-
-    if (await fileExists(resolvedPath)) {
-      logger.debug(`[CONFIG] Using CLI config file: ${resolvedPath}`);
-    } else {
-      logger.debug(`[CONFIG] CLI config file not found: ${resolvedPath}`);
-      return {
-        configPath: null,
-        source: "none",
-        errorMessage: `MCP config file not found at specified path: ${resolvedPath}`,
-      };
-    }
-
-    if (await fileExists(resolvedPath)) {
-      // Update user preference if requested
-      if (updatePreference) {
-        try {
-          await updateMcpConfigPath(resolvedPath);
-        } catch (error) {
-          // Don't fail if preference update fails
-          logger.warn(
-            "Warning: Could not update MCP config preference:",
-            error
-          );
-        }
-      }
-
-      return {
-        configPath: resolvedPath,
-        source: "cli",
-      };
-    } else {
-      return {
-        configPath: null,
-        source: "none",
-        errorMessage: `MCP config file not found at specified path: ${resolvedPath}`,
-      };
-    }
+  // Check if NeDB is enabled
+  if (!isNedbEnabled()) {
+    logger.debug("NeDB disabled - using file-based configuration");
+    return discoverMcpConfigFile(
+      cliConfigPath,
+      updatePreference,
+      linkedApp,
+      profile
+    );
   }
 
-  // 2. Check for linked app (second priority)
-  if (linkedApp) {
-    const appConfigPath = await resolveAppConfig(linkedApp, profile);
-    if (appConfigPath && await fileExists(appConfigPath)) {
-      return {
-        configPath: appConfigPath,
-        source: "app",
-      };
-    } else {
-      return {
-        configPath: null,
-        source: "none",
-        errorMessage: `Could not find configuration for app '${linkedApp}'${profile ? ` with profile '${profile}'` : ''}`,
-      };
-    }
-  }
-
-  // 3. Check user preference
+  logger.debug("NeDB enabled - using database configuration");
   try {
-    const preferences = await loadUserPreferences();
-    if (preferences.mcpConfigPath) {
-      const resolvedPath = resolvePath(preferences.mcpConfigPath);
+    const dbService = getDatabaseService();
+    await dbService.init();
 
-      if (await fileExists(resolvedPath)) {
+    // 1. Check for linked app with profile (highest priority)
+    if (linkedApp && profile) {
+      const source = await getConfigSource("profile", linkedApp, profile);
+      if (source) {
         return {
-          configPath: resolvedPath,
-          source: "preference",
+          configPath: source.path, // Keep for backward compatibility
+          source: "app",
+          configSource: source,
+        };
+      }
+    }
+
+    // 2. Check for linked app without profile
+    if (linkedApp) {
+      const source = await getConfigSource("app", linkedApp);
+      if (source) {
+        return {
+          configPath: source.path, // Keep for backward compatibility
+          source: "app",
+          configSource: source,
         };
       } else {
-        // Preference points to non-existent file, continue to discovery
-        logger.warn(
-          `Warning: Preferred MCP config file not found: ${resolvedPath}`
-        );
+        return {
+          configPath: null,
+          source: "none",
+          errorMessage: `Could not find configuration for app '${linkedApp}'${profile ? ` with profile '${profile}'` : ""}`,
+        };
       }
     }
-  } catch (error) {
-    // Continue to discovery if preference loading fails
-    logger.warn("Warning: Could not load user preferences:", error);
-  }
 
-  // 4. Search standard locations
-  for (const location of STANDARD_CONFIG_LOCATIONS) {
-    const resolvedPath = resolvePath(location);
+    // 3. Check user preference (from database)
+    try {
+      const preferences = await loadUserPreferences();
+      if (preferences.mcpConfigPath) {
+        // Find config source by path
+        const sources = await dbService.configSources.findByPath(
+          preferences.mcpConfigPath
+        );
+        if (sources) {
+          return {
+            configPath: sources.path,
+            source: "preference",
+            configSource: sources,
+          };
+        }
+      }
+    } catch (error) {
+      logger.warn("Warning: Could not load user preferences:", error);
+    }
 
-    if (await fileExists(resolvedPath)) {
+    // 4. Use global config source
+    const globalSource = await getConfigSource("global");
+    if (globalSource) {
       return {
-        configPath: resolvedPath,
+        configPath: globalSource.path,
         source: "discovered",
+        configSource: globalSource,
       };
     }
-  }
 
-  // 5. No config found
-  return {
-    configPath: null,
-    source: "none",
-    errorMessage: generateNoConfigFoundMessage(),
-  };
+    // 5. No config found
+    return {
+      configPath: null,
+      source: "none",
+      errorMessage: generateNoConfigFoundMessage(),
+    };
+  } catch (error) {
+    logger.error("Failed to discover MCP config:", error);
+    return {
+      configPath: null,
+      source: "none",
+      errorMessage: `Failed to load configuration: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
 }
 
 /**
  * Generate helpful error message when no config is found
  */
 function generateNoConfigFoundMessage(): string {
-  const locations = STANDARD_CONFIG_LOCATIONS.map((loc) =>
-    loc.startsWith("~/") ? loc : `./${loc}`
-  ).join("\n  - ");
-
-  return `No MCP configuration file found. Searched in:
-  - ${locations}
+  return `No MCP configuration found in database.
 
 To get started:
-  1. Create a .mcp.json file in your current directory, or
-  2. Use --mcp-config <path> to specify a custom location, or
-  3. Run '${APP_TECHNICAL_NAME} --help' for more configuration options
-
-Example .mcp.json:
-{
-  "mcpServers": {
-    "example": {
-      "type": "stdio",
-      "command": "example-mcp-server",
-      "args": []
-    }
-  }
-}`;
+  1. Run '${APP_TECHNICAL_NAME} config backup' to import configurations from applications
+  2. Run '${APP_TECHNICAL_NAME} config link' to link applications to HyperTool
+  3. Run '${APP_TECHNICAL_NAME} --help' for more configuration options`;
 }
 
 /**
- * Load and validate MCP configuration from discovered path
+ * Load and validate MCP configuration - routes to database or file-based based on feature flag
  */
-export async function loadMcpConfig(configPath: string): Promise<any> {
-  try {
-    const content = await fs.readFile(configPath, "utf-8");
-    const config = JSON.parse(content);
+export async function loadMcpConfig(
+  configPath: string,
+  configSource?: IConfigSource
+): Promise<any> {
+  // Check if NeDB is enabled
+  if (!isNedbEnabled()) {
+    logger.debug("NeDB disabled - loading from file");
+    return loadMcpConfigFile(configPath, configSource);
+  }
 
-    // Basic validation - ensure mcpServers field exists
-    if (!config.mcpServers || typeof config.mcpServers !== "object") {
-      throw new Error("Invalid MCP config: missing 'mcpServers' field");
+  logger.debug("NeDB enabled - loading from database");
+  try {
+    const dbService = getDatabaseService();
+    await dbService.init();
+
+    // If we have a config source, load servers associated with it
+    if (configSource) {
+      const servers = await dbService.servers.findAll();
+      const sourceServers = servers.filter(
+        (s) => s.sourceId === configSource.id
+      );
+
+      // Convert to MCP config format
+      const mcpServers: Record<string, ServerConfig> = {};
+      for (const server of sourceServers) {
+        mcpServers[server.name] = server.config;
+      }
+
+      const config = {
+        mcpServers,
+        _metadata: {
+          source: configSource.type,
+          sourceId: configSource.id,
+          path: configSource.path,
+        },
+      };
+
+      // Basic validation - ensure mcpServers field exists
+      if (!config.mcpServers || typeof config.mcpServers !== "object") {
+        throw new Error("Invalid MCP config: missing 'mcpServers' field");
+      }
+
+      return config;
     }
+
+    // Fallback: load all servers if no specific source
+    const servers = await dbService.servers.findAll();
+    const mcpServers: Record<string, ServerConfig> = {};
+
+    for (const server of servers) {
+      mcpServers[server.name] = server.config;
+    }
+
+    const config = {
+      mcpServers,
+      _metadata: {
+        source: "database",
+        loadedFrom: "all-servers",
+      },
+    };
 
     return config;
   } catch (error) {
-    if (error instanceof SyntaxError) {
-      throw new Error(`Invalid JSON in MCP config file: ${error.message}`);
-    }
+    logger.error("Failed to load MCP config from database:", error);
     throw error;
   }
 }

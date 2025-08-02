@@ -2,23 +2,28 @@
  * NeDB implementation of the ServerConfigGroup repository
  */
 
-import Datastore from 'nedb';
-import { v4 as uuidv4 } from 'uuid';
-import { 
-  ServerConfigGroup, 
-  ServerConfigRecord, 
-  IServerConfigGroupRepository, 
-  IServerConfigRecordRepository 
-} from '../interfaces.js';
-import { createChildLogger } from '../../utils/logging.js';
+import Datastore from "nedb";
+import { v4 as uuidv4 } from "uuid";
+import {
+  ServerConfigGroup,
+  ServerConfigRecord,
+  IServerConfigGroupRepository,
+  IServerConfigRecordRepository,
+} from "../interfaces.js";
+import { createChildLogger } from "../../utils/logging.js";
 
-const logger = createChildLogger({ module: 'NeDBServerConfigGroupRepository' });
+const logger = createChildLogger({ module: "NeDBServerConfigGroupRepository" });
 
-export class NeDBServerConfigGroupRepository implements IServerConfigGroupRepository {
+export class NeDBServerConfigGroupRepository
+  implements IServerConfigGroupRepository
+{
   private db: Datastore;
   private serverRepository: IServerConfigRecordRepository;
 
-  constructor(datastore: Datastore, serverRepository: IServerConfigRecordRepository) {
+  constructor(
+    datastore: Datastore,
+    serverRepository: IServerConfigRecordRepository
+  ) {
     this.db = datastore;
     this.serverRepository = serverRepository;
   }
@@ -26,7 +31,7 @@ export class NeDBServerConfigGroupRepository implements IServerConfigGroupReposi
   /**
    * Add a new server configuration group
    */
-  async add(group: Omit<ServerConfigGroup, 'id'>): Promise<ServerConfigGroup> {
+  async add(group: Omit<ServerConfigGroup, "id">): Promise<ServerConfigGroup> {
     return new Promise((resolve, reject) => {
       const record: ServerConfigGroup = {
         ...group,
@@ -35,7 +40,7 @@ export class NeDBServerConfigGroupRepository implements IServerConfigGroupReposi
 
       this.db.insert(record, (err, newDoc) => {
         if (err) {
-          logger.error('Failed to add group record:', err);
+          logger.error("Failed to add group record:", err);
           reject(err);
         } else {
           resolve(newDoc as ServerConfigGroup);
@@ -55,12 +60,12 @@ export class NeDBServerConfigGroupRepository implements IServerConfigGroupReposi
         { returnUpdatedDocs: true },
         (err, numReplaced, updatedDoc) => {
           if (err) {
-            logger.error('Failed to update group record:', err);
+            logger.error("Failed to update group record:", err);
             reject(err);
           } else if (numReplaced === 0) {
             resolve(null);
           } else {
-            resolve((updatedDoc as unknown) as ServerConfigGroup);
+            resolve(updatedDoc as unknown as ServerConfigGroup);
           }
         }
       );
@@ -74,7 +79,7 @@ export class NeDBServerConfigGroupRepository implements IServerConfigGroupReposi
     return new Promise((resolve, reject) => {
       this.db.remove({ id }, {}, (err, numRemoved) => {
         if (err) {
-          logger.error('Failed to delete group record:', err);
+          logger.error("Failed to delete group record:", err);
           reject(err);
         } else {
           resolve(numRemoved > 0);
@@ -90,7 +95,7 @@ export class NeDBServerConfigGroupRepository implements IServerConfigGroupReposi
     return new Promise((resolve, reject) => {
       this.db.findOne({ id }, (err, doc) => {
         if (err) {
-          logger.error('Failed to find group record by ID:', err);
+          logger.error("Failed to find group record by ID:", err);
           reject(err);
         } else {
           resolve(doc as ServerConfigGroup | null);
@@ -106,7 +111,7 @@ export class NeDBServerConfigGroupRepository implements IServerConfigGroupReposi
     return new Promise((resolve, reject) => {
       this.db.findOne({ name }, (err, doc) => {
         if (err) {
-          logger.error('Failed to find group record by name:', err);
+          logger.error("Failed to find group record by name:", err);
           reject(err);
         } else {
           resolve(doc as ServerConfigGroup | null);
@@ -122,7 +127,7 @@ export class NeDBServerConfigGroupRepository implements IServerConfigGroupReposi
     return new Promise((resolve, reject) => {
       this.db.find({}, (err: Error | null, docs: any[]) => {
         if (err) {
-          logger.error('Failed to find all group records:', err);
+          logger.error("Failed to find all group records:", err);
           reject(err);
         } else {
           resolve(docs as ServerConfigGroup[]);

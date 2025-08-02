@@ -26,9 +26,7 @@ export function createGroupShowCommand(): Command {
         // Find the group
         const group = await dbService.groups.findByName(name);
         if (!group) {
-          console.error(
-            semantic.messageError(`❌ Group "${name}" not found`)
-          );
+          console.error(semantic.messageError(`❌ Group "${name}" not found`));
           process.exit(1);
         }
 
@@ -42,7 +40,7 @@ export function createGroupShowCommand(): Command {
             name: group.name,
             description: group.description,
             serverCount: servers.length,
-            servers: servers.map(server => ({
+            servers: servers.map((server) => ({
               id: server.id,
               name: server.name,
               type: server.type,
@@ -69,7 +67,7 @@ export function createGroupShowCommand(): Command {
         if (servers.length > 0) {
           output.displaySpaceBuffer();
           console.log(theme.label("Servers in group:"));
-          
+
           for (const server of servers) {
             console.log(theme.info(`  • ${server.name} (${server.type})`));
           }
@@ -77,14 +75,18 @@ export function createGroupShowCommand(): Command {
           output.displaySpaceBuffer();
           console.log(theme.muted("No servers in this group."));
           console.log(theme.muted("\nTo add servers:"));
-          console.log(theme.command(`  hypertool-mcp mcp group add ${name} <server-name>`));
+          console.log(
+            theme.command(`  hypertool-mcp mcp group add ${name} <server-name>`)
+          );
         }
 
         await dbService.close();
       } catch (error) {
         logger.error("Failed to show group:", error);
         console.error(
-          semantic.messageError(`❌ Failed to show group: ${(error as Error).message}`)
+          semantic.messageError(
+            `❌ Failed to show group: ${(error as Error).message}`
+          )
         );
         process.exit(1);
       }

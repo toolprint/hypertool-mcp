@@ -62,11 +62,11 @@ export function createGroupAddCommand(): Command {
 
         // Display results
         output.displaySeparator();
-        
+
         if (addedCount > 0) {
           console.log(
             semantic.messageSuccess(
-              `✅ Added ${addedCount} server${addedCount === 1 ? '' : 's'} to group "${groupName}"`
+              `✅ Added ${addedCount} server${addedCount === 1 ? "" : "s"} to group "${groupName}"`
             )
           );
         }
@@ -74,20 +74,26 @@ export function createGroupAddCommand(): Command {
         if (errors.length > 0) {
           output.displaySpaceBuffer();
           console.log(theme.warning("⚠️  Warnings:"));
-          errors.forEach(error => {
+          errors.forEach((error) => {
             console.log(theme.warning(`   • ${error}`));
           });
         }
 
         // Show current group status
         output.displaySpaceBuffer();
-        console.log(theme.info(`Group "${groupName}" now contains ${group.serverIds.length} server${group.serverIds.length === 1 ? '' : 's'}`));
+        console.log(
+          theme.info(
+            `Group "${groupName}" now contains ${group.serverIds.length} server${group.serverIds.length === 1 ? "" : "s"}`
+          )
+        );
 
         await dbService.close();
       } catch (error) {
         logger.error("Failed to add servers to group:", error);
         console.error(
-          semantic.messageError(`❌ Failed to add servers to group: ${(error as Error).message}`)
+          semantic.messageError(
+            `❌ Failed to add servers to group: ${(error as Error).message}`
+          )
         );
         process.exit(1);
       }

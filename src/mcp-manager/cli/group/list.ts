@@ -68,7 +68,9 @@ export function createGroupListCommand(): Command {
       } catch (error) {
         logger.error("Failed to list groups:", error);
         console.error(
-          semantic.messageError(`❌ Failed to list groups: ${(error as Error).message}`)
+          semantic.messageError(
+            `❌ Failed to list groups: ${(error as Error).message}`
+          )
         );
         process.exit(1);
       }

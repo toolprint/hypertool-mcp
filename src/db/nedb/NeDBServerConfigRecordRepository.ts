@@ -2,14 +2,21 @@
  * NeDB implementation of the ServerConfigRecord repository
  */
 
-import Datastore from 'nedb';
-import { v4 as uuidv4 } from 'uuid';
-import { ServerConfigRecord, IServerConfigRecordRepository } from '../interfaces.js';
-import { createChildLogger } from '../../utils/logging.js';
+import Datastore from "nedb";
+import { v4 as uuidv4 } from "uuid";
+import {
+  ServerConfigRecord,
+  IServerConfigRecordRepository,
+} from "../interfaces.js";
+import { createChildLogger } from "../../utils/logging.js";
 
-const logger = createChildLogger({ module: 'NeDBServerConfigRecordRepository' });
+const logger = createChildLogger({
+  module: "NeDBServerConfigRecordRepository",
+});
 
-export class NeDBServerConfigRecordRepository implements IServerConfigRecordRepository {
+export class NeDBServerConfigRecordRepository
+  implements IServerConfigRecordRepository
+{
   private db: Datastore;
 
   constructor(datastore: Datastore) {
@@ -19,7 +26,9 @@ export class NeDBServerConfigRecordRepository implements IServerConfigRecordRepo
   /**
    * Add a new server configuration record
    */
-  async add(server: Omit<ServerConfigRecord, 'id'>): Promise<ServerConfigRecord> {
+  async add(
+    server: Omit<ServerConfigRecord, "id">
+  ): Promise<ServerConfigRecord> {
     return new Promise((resolve, reject) => {
       const record: ServerConfigRecord = {
         ...server,
@@ -28,7 +37,7 @@ export class NeDBServerConfigRecordRepository implements IServerConfigRecordRepo
 
       this.db.insert(record, (err, newDoc) => {
         if (err) {
-          logger.error('Failed to add server record:', err);
+          logger.error("Failed to add server record:", err);
           reject(err);
         } else {
           resolve(newDoc as ServerConfigRecord);
@@ -48,12 +57,12 @@ export class NeDBServerConfigRecordRepository implements IServerConfigRecordRepo
         { returnUpdatedDocs: true },
         (err, numReplaced, updatedDoc) => {
           if (err) {
-            logger.error('Failed to update server record:', err);
+            logger.error("Failed to update server record:", err);
             reject(err);
           } else if (numReplaced === 0) {
             resolve(null);
           } else {
-            resolve((updatedDoc as unknown) as ServerConfigRecord);
+            resolve(updatedDoc as unknown as ServerConfigRecord);
           }
         }
       );
@@ -67,7 +76,7 @@ export class NeDBServerConfigRecordRepository implements IServerConfigRecordRepo
     return new Promise((resolve, reject) => {
       this.db.remove({ id }, {}, (err, numRemoved) => {
         if (err) {
-          logger.error('Failed to delete server record:', err);
+          logger.error("Failed to delete server record:", err);
           reject(err);
         } else {
           resolve(numRemoved > 0);
@@ -83,7 +92,7 @@ export class NeDBServerConfigRecordRepository implements IServerConfigRecordRepo
     return new Promise((resolve, reject) => {
       this.db.findOne({ id }, (err, doc) => {
         if (err) {
-          logger.error('Failed to find server record by ID:', err);
+          logger.error("Failed to find server record by ID:", err);
           reject(err);
         } else {
           resolve(doc as ServerConfigRecord | null);
@@ -99,7 +108,7 @@ export class NeDBServerConfigRecordRepository implements IServerConfigRecordRepo
     return new Promise((resolve, reject) => {
       this.db.findOne({ name }, (err, doc) => {
         if (err) {
-          logger.error('Failed to find server record by name:', err);
+          logger.error("Failed to find server record by name:", err);
           reject(err);
         } else {
           resolve(doc as ServerConfigRecord | null);
@@ -115,7 +124,7 @@ export class NeDBServerConfigRecordRepository implements IServerConfigRecordRepo
     return new Promise((resolve, reject) => {
       this.db.find({}, (err: Error | null, docs: any[]) => {
         if (err) {
-          logger.error('Failed to find all server records:', err);
+          logger.error("Failed to find all server records:", err);
           reject(err);
         } else {
           resolve(docs as ServerConfigRecord[]);

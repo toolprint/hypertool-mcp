@@ -31,17 +31,19 @@ export class StandardTransformer implements ConfigTransformer {
     // Add missing type fields to servers for backward compatibility
     let hasAddedTypes = false;
     for (const [name, server] of Object.entries(mcpServers)) {
-      if (server && typeof server === 'object' && !server.type) {
+      if (server && typeof server === "object" && !server.type) {
         // Default to stdio if has command field
         if (server.command) {
-          server.type = 'stdio';
+          server.type = "stdio";
           hasAddedTypes = true;
         }
       }
     }
 
     if (hasAddedTypes) {
-      console.warn('Added missing "type" fields to server configurations. Please update your config files to include explicit type fields.');
+      console.warn(
+        'Added missing "type" fields to server configurations. Please update your config files to include explicit type fields.'
+      );
     }
 
     return {

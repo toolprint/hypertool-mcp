@@ -12,12 +12,7 @@ import {
   ToolDiscoveryEngine,
 } from "../discovery/index.js";
 import { IConnectionManager, ConnectionManager } from "../connection/index.js";
-import {
-  MCPConfigParser,
-  APP_NAME,
-  APP_TECHNICAL_NAME,
-  ServerConfig,
-} from "../config/index.js";
+import { APP_NAME, APP_TECHNICAL_NAME, ServerConfig } from "../config/index.js";
 import ora from "ora";
 
 // Helper to create conditional spinners
@@ -58,7 +53,6 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   private requestRouter?: IRequestRouter;
   private discoveryEngine?: IToolDiscoveryEngine;
   private connectionManager?: IConnectionManager;
-  private configParser?: MCPConfigParser;
   private toolsetManager: ToolsetManager;
   private runtimeOptions?: RuntimeOptions;
   private toolModules: ToolModule[] = [];
@@ -85,47 +79,45 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   private async loadMcpConfigOrExit(
     options: ServerInitOptions
   ): Promise<Record<string, ServerConfig>> {
-    // Initialize config parser
+    // Initialize spinner
     const isStdio = options.transport.type === "stdio";
     const mainSpinner = createSpinner("Loading MCP configuration...", isStdio);
-    this.configParser = new MCPConfigParser();
 
-    // Load configuration if path provided
+    // Load configuration from database
     let serverConfigs: Record<string, ServerConfig> = {};
-    if (options.configPath) {
-      const parseResult = await this.configParser.parseFile(options.configPath);
 
-      if (parseResult.success && parseResult.config) {
-        serverConfigs = parseResult.config.mcpServers || {};
-        const serverCount = Object.keys(serverConfigs).length;
+    try {
+      const { loadMcpConfig } = await import("../config/mcpConfigLoader.js");
+      const config = await loadMcpConfig(
+        options.configPath || "",
+        options.configSource
+      );
+
+      serverConfigs = config.mcpServers || {};
+      const serverCount = Object.keys(serverConfigs).length;
+
+      if (options.configSource) {
         mainSpinner.succeed(
-          `Loaded ${serverCount} MCP server${serverCount !== 1 ? "s" : ""} from config. | Path: ${chalk.yellow(options.configPath)}`
+          `Loaded ${serverCount} MCP server${serverCount !== 1 ? "s" : ""} from database. | Source: ${chalk.yellow(options.configSource.type)}`
         );
       } else {
-        mainSpinner.fail("Failed to load MCP configuration");
-        logger.error(`\n❌ FATAL ERROR: Failed to load MCP configuration`);
-        if (parseResult.error) {
-          logger.error(`   Error: ${parseResult.error}`);
-        }
-        if (parseResult.validationErrors) {
-          logger.error(`   Validation errors:`);
-          parseResult.validationErrors.forEach((err: string) => {
-            logger.error(`     • ${err}`);
-          });
-        }
-        logger.error(
-          `\n💡 Resolution: Fix the configuration file and restart the server.`
+        mainSpinner.succeed(
+          `Loaded ${serverCount} MCP server${serverCount !== 1 ? "s" : ""} from database.`
         );
-        logger.error(`   Configuration file: ${options.configPath}`);
-        logger.error(
-          `\n🚫 ${APP_NAME} server cannot start with invalid configuration.`
-        );
-        process.exit(1);
       }
-    } else {
-      mainSpinner.succeed(
-        "No configuration file specified - running without external servers"
+    } catch (error) {
+      mainSpinner.fail("Failed to load MCP configuration from database");
+      logger.error(`\n❌ FATAL ERROR: Failed to load MCP configuration`);
+      logger.error(
+        `   Error: ${error instanceof Error ? error.message : String(error)}`
       );
+      logger.error(
+        `\n💡 Resolution: Run 'hypertool-mcp config backup' to import configurations.`
+      );
+      logger.error(
+        `\n🚫 ${APP_NAME} server cannot start without configuration.`
+      );
+      process.exit(1);
     }
 
     return serverConfigs;
@@ -226,20 +218,22 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     // Load server settings with proper priority (env > config > default)
     const { loadServerSettings } = await import("../config/serverSettings.js");
     const serverSettings = await loadServerSettings();
-    
+
     // Create connection manager with configured pool settings
     this.connectionManager = new ConnectionManager({
       maxConcurrentConnections: serverSettings.maxConcurrentConnections,
     });
-    
+
     const isStdio = options.transport.type === "stdio";
-    
+
     // Log the connection pool configuration if in debug mode or if env var is set
     if (options.debug || process.env.HYPERTOOL_MAX_CONNECTIONS) {
-      const { logServerSettingsSource } = await import("../config/serverSettings.js");
+      const { logServerSettingsSource } = await import(
+        "../config/serverSettings.js"
+      );
       await logServerSettingsSource();
     }
-    
+
     let mainSpinner = createSpinner(
       `🔗 Setting up Connection Manager (max ${serverSettings.maxConcurrentConnections} connections)...`,
       isStdio
@@ -307,27 +301,39 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         await this.loadMcpConfigOrExit(options);
 
       // Sync servers with database
-      const { ServerSyncManager } = await import("../config-manager/serverSync.js");
+      const { ServerSyncManager } = await import(
+        "../config-manager/serverSync.js"
+      );
       const syncManager = new ServerSyncManager(dbService);
       await syncManager.syncServers(serverConfigs);
       logger.debug("Server configurations synced with database");
 
       // If group is specified, load servers from the group instead
       if (this.runtimeOptions?.group) {
-        logger.debug(`Loading servers from group: ${this.runtimeOptions.group}`);
+        logger.debug(
+          `Loading servers from group: ${this.runtimeOptions.group}`
+        );
         try {
-          const groupServers = await syncManager.getServersForGroup(this.runtimeOptions.group);
+          const groupServers = await syncManager.getServersForGroup(
+            this.runtimeOptions.group
+          );
           serverConfigs = {};
           for (const server of groupServers) {
             serverConfigs[server.name] = server.config;
           }
           const isStdioTransport = options.transport.type === "stdio";
           if (!isStdioTransport) {
-            console.log(theme.info(`Loaded ${groupServers.length} servers from group "${this.runtimeOptions.group}"`));
+            console.log(
+              theme.info(
+                `Loaded ${groupServers.length} servers from group "${this.runtimeOptions.group}"`
+              )
+            );
           }
         } catch (error) {
           console.error(
-            semantic.messageError(`❌ Failed to load group "${this.runtimeOptions.group}": ${(error as Error).message}`)
+            semantic.messageError(
+              `❌ Failed to load group "${this.runtimeOptions.group}": ${(error as Error).message}`
+            )
           );
           process.exit(1);
         }

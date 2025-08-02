@@ -48,10 +48,10 @@ describe("MCP Server stdio transport", () => {
       transport = new StdioClientTransport({
         command: "node",
         args: [serverPath, "--transport", "stdio"],
-        env: { 
-          ...process.env, 
+        env: {
+          ...process.env,
           NODE_ENV: "test",
-          HYPERTOOL_TEST_CONFIG: configPath
+          HYPERTOOL_TEST_CONFIG: configPath,
         },
       });
 
@@ -91,10 +91,10 @@ describe("MCP Server stdio transport", () => {
     transport = new StdioClientTransport({
       command: "node",
       args: [serverPath, "--transport", "stdio"],
-      env: { 
-        ...process.env, 
+      env: {
+        ...process.env,
         NODE_ENV: "test",
-        HYPERTOOL_TEST_CONFIG: configPath
+        HYPERTOOL_TEST_CONFIG: configPath,
       },
     });
 
@@ -131,10 +131,10 @@ describe("MCP Server stdio transport", () => {
       transport = new StdioClientTransport({
         command: "node",
         args: [serverPath, "--transport", "stdio"],
-        env: { 
-          ...process.env, 
+        env: {
+          ...process.env,
           NODE_ENV: "test",
-          HYPERTOOL_TEST_CONFIG: configPath
+          HYPERTOOL_TEST_CONFIG: configPath,
         },
       });
 

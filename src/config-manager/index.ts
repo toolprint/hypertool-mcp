@@ -3,7 +3,7 @@
  *
  * This module provides centralized configuration management for integrating
  * HyperTool with multiple MCP client applications.
- * 
+ *
  * TODO: Full Profile Management System
  * - Implement profile creation, switching, and deletion
  * - Add profile-specific configuration storage
@@ -22,14 +22,26 @@ import {
   PreferencesConfig,
   ApplicationDefinition,
   Toolset,
-  AppMCPConfig
-} from './types/index.js';
-import { AppRegistry } from './apps/registry.js';
-import { BackupManager } from './backup/manager.js';
-import { TransformerRegistry } from './transformers/base.js';
-import { EnvironmentManager, EnvironmentConfig } from '../config/environment.js';
-import { ConfigMigration } from './migration.js';
-import { addMissingTypeFields, needsTypeMigration } from './utils/type-migration.js';
+  AppMCPConfig,
+} from "./types/index.js";
+import { ServerConfig } from "../types/config.js";
+import { AppRegistry } from "./apps/registry.js";
+import { BackupManager } from "./backup/manager.js";
+import { TransformerRegistry } from "./transformers/base.js";
+import {
+  EnvironmentManager,
+  EnvironmentConfig,
+} from "../config/environment.js";
+import { ConfigMigration } from "./migration.js";
+import {
+  addMissingTypeFields,
+  needsTypeMigration,
+} from "./utils/type-migration.js";
+import { createChildLogger } from "../utils/logging.js";
+import { isNedbEnabled } from "../config/environment.js";
+import { MCPConfigParser } from "../config/mcpConfigParser.js";
+
+const logger = createChildLogger({ module: "ConfigurationManager" });
 
 export class ConfigurationManager {
   private basePath: string;
@@ -104,12 +116,17 @@ export class ConfigurationManager {
     // Check if migration is needed first
     const migration = new ConfigMigration(this.basePath);
     if (await migration.needsMigration()) {
-      console.log('Migrating from global mcp.json to per-app configurations...');
+      console.log(
+        "Migrating from global mcp.json to per-app configurations..."
+      );
       const migrationResult = await migration.migrate();
       if (!migrationResult.success) {
-        console.warn('Migration completed with errors:', migrationResult.errors);
+        console.warn(
+          "Migration completed with errors:",
+          migrationResult.errors
+        );
       } else {
-        console.log('Migration completed successfully');
+        console.log("Migration completed successfully");
       }
     }
     // Create backup first
@@ -128,13 +145,15 @@ export class ConfigurationManager {
 
     // Import from each application and save to per-app configs
     const appConfigPaths: Record<string, string> = {};
-    
+
     for (const [appId, app] of Object.entries(apps)) {
       try {
         const result = await this.importFromApplicationWithPath(appId, app);
         if (result && result.config) {
           // Merge servers with metadata
-          for (const [serverName, serverConfig] of Object.entries(result.config.mcpServers)) {
+          for (const [serverName, serverConfig] of Object.entries(
+            result.config.mcpServers
+          )) {
             mergedServers.mcpServers[serverName] = serverConfig;
 
             // Add metadata
@@ -153,7 +172,7 @@ export class ConfigurationManager {
 
           imported.push(appId);
           importedDetails.push({ appId, configPath: result.configPath });
-          
+
           // Save app-specific config and track path
           const appConfigPath = await this.saveAppConfig(appId, result.config);
           appConfigPaths[appId] = appConfigPath;
@@ -298,113 +317,223 @@ export class ConfigurationManager {
   }
 
   /**
-   * Save the merged MCP configuration (deprecated - for backwards compatibility)
+   * Save the merged MCP configuration to database or file based on feature flag
    */
   private async saveMergedConfig(config: MCPConfig): Promise<void> {
-    const configPath = join(this.basePath, "mcp.json");
-    
-    // Add missing type fields if needed
-    const migratedConfig = needsTypeMigration(config) ? addMissingTypeFields(config) : config;
-    
-    await this.fs.writeFile(
-      configPath,
-      JSON.stringify(migratedConfig, null, 2),
-      "utf-8"
-    );
-  }
+    if (!isNedbEnabled()) {
+      // File-based approach
+      const configPath = join(this.basePath, "mcp.json");
 
-  /**
-   * Save app-specific MCP configuration
-   */
-  private async saveAppConfig(appId: string, config: MCPConfig): Promise<string> {
-    const configPath = join(this.basePath, 'mcp', `${appId}.json`);
-    
-    // Ensure mcp directory exists
-    await this.fs.mkdir(join(this.basePath, 'mcp'), { recursive: true });
-    
-    // Add missing type fields if needed
-    const migratedConfig = needsTypeMigration(config) ? addMissingTypeFields(config) : config;
-    
-    // Add metadata
-    const appConfig: AppMCPConfig = {
-      ...migratedConfig,
-      _metadata: {
-        ...migratedConfig._metadata,
-        app: appId,
-        importedAt: new Date().toISOString(),
-        lastModified: new Date().toISOString()
+      // Ensure the directory exists
+      await this.fs.mkdir(this.basePath, { recursive: true });
+
+      // Write the configuration file
+      await this.fs.writeFile(
+        configPath,
+        JSON.stringify(config, null, 2),
+        "utf-8"
+      );
+
+      logger.info(`Saved merged configuration to file: ${configPath}`);
+      return;
+    }
+
+    // Database approach
+    const { getDatabaseService } = await import("../db/nedbService.js");
+    const dbService = getDatabaseService();
+    await dbService.init();
+
+    // Create or update global config source
+    let globalSource = await dbService.configSources.findByPath("global");
+    if (!globalSource) {
+      globalSource = await dbService.configSources.add({
+        type: "global",
+        path: "global",
+        priority: 100,
+        lastSynced: Date.now(),
+      });
+    }
+
+    // Save all servers to database with source reference
+    for (const [serverName, serverConfig] of Object.entries(
+      config.mcpServers
+    )) {
+      // Skip websocket servers as they're not supported yet
+      if (serverConfig.type === "websocket") {
+        logger.warn(
+          `Skipping websocket server "${serverName}" - not supported`
+        );
+        continue;
       }
-    };
-    
-    await this.fs.writeFile(
-      configPath,
-      JSON.stringify(appConfig, null, 2),
-      'utf-8'
-    );
-    
-    return `mcp/${appId}.json`;
+
+      const existingServer = await dbService.servers.findByName(serverName);
+
+      if (!existingServer) {
+        await dbService.servers.add({
+          name: serverName,
+          type: serverConfig.type as "stdio" | "http" | "sse",
+          config: serverConfig as ServerConfig,
+          lastModified: Date.now(),
+          checksum: this.calculateChecksum(serverConfig as ServerConfig),
+          sourceId: globalSource.id,
+        });
+      } else {
+        await dbService.servers.update({
+          ...existingServer,
+          config: serverConfig as ServerConfig,
+          type: serverConfig.type as "stdio" | "http" | "sse",
+          lastModified: Date.now(),
+          checksum: this.calculateChecksum(serverConfig as ServerConfig),
+          sourceId: globalSource.id,
+        });
+      }
+    }
   }
 
   /**
-   * Update the main configuration file with imported apps
+   * Calculate checksum for a server configuration
    */
-  private async updateMainConfig(importedApps: string[], appConfigPaths: Record<string, string>): Promise<void> {
-    const configPath = join(this.basePath, 'config.json');
-    
-    let config: MainConfig;
-    try {
-      const content = await this.fs.readFile(configPath, "utf-8");
-      config = JSON.parse(content);
-    } catch {
-      config = {
-        version: "1.0.0",
-        applications: {},
+  private calculateChecksum(config: ServerConfig): string {
+    const crypto = require("crypto");
+    const configString = JSON.stringify(config, Object.keys(config).sort());
+    return crypto.createHash("sha256").update(configString).digest("hex");
+  }
+
+  /**
+   * Save app-specific MCP configuration to database or file based on feature flag
+   */
+  private async saveAppConfig(
+    appId: string,
+    config: MCPConfig
+  ): Promise<string> {
+    if (!isNedbEnabled()) {
+      // File-based approach
+      const mcpDir = join(this.basePath, "mcp");
+      const configPath = join(mcpDir, `${appId}.json`);
+
+      // Ensure the mcp directory exists
+      await this.fs.mkdir(mcpDir, { recursive: true });
+
+      // Add metadata
+      const appConfig: AppMCPConfig = {
+        ...config,
+        _metadata: {
+          app: appId,
+          importedAt: new Date().toISOString(),
+          lastModified: new Date().toISOString(),
+          ...(config._metadata || {}),
+        },
       };
+
+      // Write the configuration file
+      await this.fs.writeFile(
+        configPath,
+        JSON.stringify(appConfig, null, 2),
+        "utf-8"
+      );
+
+      logger.info(`Saved app configuration to file: ${configPath}`);
+      return configPath;
     }
 
-    // Update last backup timestamp
-    config.lastBackup = new Date().toISOString();
+    // Database approach
+    const { getDatabaseService } = await import("../db/nedbService.js");
+    const dbService = getDatabaseService();
+    await dbService.init();
 
-    // Update application entries
-    for (const appId of importedApps) {
-      const app = await this.registry.getApplication(appId);
-      if (!app) continue;
+    // Create or update app config source
+    const configPath = `app/${appId}`;
+    let appSource = await dbService.configSources.findByPath(configPath);
 
-      const platformConfig = this.registry.getPlatformConfig(app);
-      if (!platformConfig) continue;
-
-      config.applications[appId] = {
-        configPath: this.registry.resolvePath(platformConfig.configPath),
-        lastSync: new Date().toISOString(),
-        format: platformConfig.format,
-        mcpConfig: appConfigPaths[appId]
-      };
+    if (!appSource) {
+      appSource = await dbService.configSources.add({
+        type: "app",
+        appId: appId,
+        path: configPath,
+        priority: 50,
+        lastSynced: Date.now(),
+      });
+    } else {
+      await dbService.configSources.update({
+        ...appSource,
+        lastSynced: Date.now(),
+      });
     }
 
-    // Save updated config
-    await this.fs.writeFile(
-      configPath,
-      JSON.stringify(config, null, 2),
-      "utf-8"
-    );
+    // Save all servers to database with source reference
+    for (const [serverName, serverConfig] of Object.entries(
+      config.mcpServers
+    )) {
+      // Skip websocket servers as they're not supported yet
+      if (serverConfig.type === "websocket") {
+        logger.warn(
+          `Skipping websocket server "${serverName}" - not supported`
+        );
+        continue;
+      }
+
+      const existingServer = await dbService.servers.findByName(serverName);
+
+      if (!existingServer) {
+        await dbService.servers.add({
+          name: serverName,
+          type: serverConfig.type as "stdio" | "http" | "sse",
+          config: serverConfig as ServerConfig,
+          lastModified: Date.now(),
+          checksum: this.calculateChecksum(serverConfig as ServerConfig),
+          sourceId: appSource.id,
+        });
+      } else {
+        // Update only if this source has higher or equal priority
+        const existingSource = existingServer.sourceId
+          ? await dbService.configSources.findById(existingServer.sourceId)
+          : null;
+
+        if (!existingSource || appSource.priority >= existingSource.priority) {
+          await dbService.servers.update({
+            ...existingServer,
+            config: serverConfig as ServerConfig,
+            type: serverConfig.type as "stdio" | "http" | "sse",
+            lastModified: Date.now(),
+            checksum: this.calculateChecksum(serverConfig as ServerConfig),
+            sourceId: appSource.id,
+          });
+        }
+      }
+    }
+
+    return configPath;
+  }
+
+  /**
+   * Update the main configuration in database
+   */
+  private async updateMainConfig(
+    importedApps: string[],
+    appConfigPaths: Record<string, string>
+  ): Promise<void> {
+    // This method is no longer needed as all config is stored in database
+    // Keep it empty for backward compatibility
   }
 
   /**
    * Generate default toolsets for each application
    */
-  private async generateDefaultToolsets(mergedConfig: MCPConfig): Promise<void> {
-    const prefsPath = join(this.basePath, 'config.json');
-    
+  private async generateDefaultToolsets(
+    mergedConfig: MCPConfig
+  ): Promise<void> {
+    const prefsPath = join(this.basePath, "config.json");
+
     let prefs: PreferencesConfig;
     try {
       const content = await this.fs.readFile(prefsPath, "utf-8");
       prefs = JSON.parse(content);
-      
+
       // Ensure toolsets property exists (for consolidated config structure)
       if (!prefs.toolsets) {
         prefs.toolsets = {};
       }
-      
+
       // Ensure appDefaults property exists
       if (!prefs.appDefaults) {
         prefs.appDefaults = {};
@@ -473,12 +602,16 @@ export class ConfigurationManager {
   /**
    * Link HyperTool configuration to specified applications
    */
-  async linkApplications(appConfigs: Array<{
-    appId: string;
-    appName?: string;
-    configType: 'global' | 'per-app';
-    perAppInit?: 'empty' | 'copy' | 'import';
-  }> | string[]): Promise<{
+  async linkApplications(
+    appConfigs:
+      | Array<{
+          appId: string;
+          appName?: string;
+          configType: "global" | "per-app";
+          perAppInit?: "empty" | "copy" | "import";
+        }>
+      | string[]
+  ): Promise<{
     linked: string[];
     failed: string[];
   }> {
@@ -491,15 +624,15 @@ export class ConfigurationManager {
     // Handle legacy string array format for backward compatibility
     let configs: Array<{
       appId: string;
-      configType: 'global' | 'per-app';
-      perAppInit?: 'empty' | 'copy' | 'import';
+      configType: "global" | "per-app";
+      perAppInit?: "empty" | "copy" | "import";
     }>;
-    
-    if (Array.isArray(appConfigs) && typeof appConfigs[0] === 'string') {
+
+    if (Array.isArray(appConfigs) && typeof appConfigs[0] === "string") {
       // Legacy format - convert to new format
-      configs = (appConfigs as string[]).map(appId => ({
+      configs = (appConfigs as string[]).map((appId) => ({
         appId,
-        configType: 'global' as const
+        configType: "global" as const,
       }));
     } else {
       configs = appConfigs as any;
@@ -507,7 +640,7 @@ export class ConfigurationManager {
 
     for (const config of configs) {
       const { appId, configType, perAppInit } = config;
-      
+
       if (!apps[appId]) {
         console.warn(`Application ${appId} not found`);
         failed.push(appId);
@@ -517,13 +650,13 @@ export class ConfigurationManager {
       try {
         // Determine the config path based on user choice
         let configPath: string;
-        
-        if (configType === 'global') {
+
+        if (configType === "global") {
           configPath = join(this.basePath, "mcp.json");
         } else {
           // Per-app config
           const appConfigPath = join(this.basePath, "mcp", `${appId}.json`);
-          
+
           // Check if per-app config needs to be created
           let configExists = false;
           try {
@@ -532,14 +665,14 @@ export class ConfigurationManager {
           } catch {
             configExists = false;
           }
-          
+
           if (!configExists && perAppInit) {
             await this.initializePerAppConfig(appId, perAppInit);
           }
-          
+
           configPath = appConfigPath;
         }
-        
+
         await this.linkApplication(appId, apps[appId], configPath);
         linked.push(appId);
       } catch (error) {
@@ -555,85 +688,93 @@ export class ConfigurationManager {
    * Initialize per-app configuration
    */
   private async initializePerAppConfig(
-    appId: string, 
-    initMethod: 'empty' | 'copy' | 'import'
+    appId: string,
+    initMethod: "empty" | "copy" | "import"
   ): Promise<void> {
     const appConfigPath = join(this.basePath, "mcp", `${appId}.json`);
     const mcpDir = join(this.basePath, "mcp");
-    
+
     // Ensure mcp directory exists
     await fs.mkdir(mcpDir, { recursive: true });
-    
+
     let config: any = {
       mcpServers: {},
       _metadata: {
         app: appId,
         createdAt: new Date().toISOString(),
-        lastModified: new Date().toISOString()
-      }
+        lastModified: new Date().toISOString(),
+      },
     };
-    
+
     switch (initMethod) {
-      case 'empty':
+      case "empty":
         // Already initialized with empty mcpServers
         break;
-        
-      case 'copy':
+
+      case "copy":
         // Copy from global config
         try {
           const globalConfigPath = join(this.basePath, "mcp.json");
-          const globalContent = await fs.readFile(globalConfigPath, 'utf-8');
+          const globalContent = await fs.readFile(globalConfigPath, "utf-8");
           const globalConfig = JSON.parse(globalContent);
-          
+
           config.mcpServers = globalConfig.mcpServers || {};
           if (globalConfig._metadata) {
             config._metadata = {
               ...config._metadata,
-              copiedFrom: 'global',
-              sources: globalConfig._metadata.sources
+              copiedFrom: "global",
+              sources: globalConfig._metadata.sources,
             };
           }
         } catch (error) {
-          console.warn('Failed to copy global config, using empty config instead');
+          console.warn(
+            "Failed to copy global config, using empty config instead"
+          );
         }
         break;
-        
-      case 'import':
+
+      case "import":
         // Import from application's existing config
         const apps = await this.registry.getEnabledApplications();
         const app = apps[appId];
         if (app) {
           const appDef = app as any;
           const platformConfig = this.registry.getPlatformConfig(appDef);
-          
+
           if (platformConfig) {
-            const configPath = this.registry.resolvePath(platformConfig.configPath);
-            
+            const configPath = this.registry.resolvePath(
+              platformConfig.configPath
+            );
+
             try {
               await fs.access(configPath);
-              const content = await fs.readFile(configPath, 'utf-8');
+              const content = await fs.readFile(configPath, "utf-8");
               const appConfig = JSON.parse(content);
-              
+
               // Import all servers except hypertool itself
               if (appConfig.mcpServers) {
-                for (const [name, server] of Object.entries(appConfig.mcpServers)) {
-                  if (name !== 'hypertool' && name !== 'toolprint-hypertool') {
+                for (const [name, server] of Object.entries(
+                  appConfig.mcpServers
+                )) {
+                  if (name !== "hypertool" && name !== "toolprint-hypertool") {
                     config.mcpServers[name] = server;
                   }
                 }
               }
-              
+
               config._metadata.importedFrom = configPath;
             } catch (error) {
-              console.warn(`Failed to import from ${appId} config, using empty config instead`);
+              console.warn(
+                `Failed to import from ${appId} config, using empty config instead`
+              );
             }
           }
         }
         break;
     }
-    
+
     // Write the per-app config
-    await fs.writeFile(appConfigPath, JSON.stringify(config, null, 2), 'utf-8');
+    await fs.writeFile(appConfigPath, JSON.stringify(config, null, 2), "utf-8");
   }
 
   /**
@@ -660,7 +801,7 @@ export class ConfigurationManager {
       // Use local development build
       const localBinPath = join(process.cwd(), "dist", "bin.js");
       hyperToolProxy = {
-        "hypertool": {
+        hypertool: {
           type: "stdio" as const,
           command: "node",
           args: [
@@ -676,7 +817,7 @@ export class ConfigurationManager {
     } else {
       // Use published NPM package
       hyperToolProxy = {
-        "hypertool": {
+        hypertool: {
           type: "stdio" as const,
           command: "npx",
           args: [
@@ -834,10 +975,7 @@ export class ConfigurationManager {
       );
       const standardConfig = transformer.toStandard(config);
 
-      if (
-        standardConfig.mcpServers &&
-        standardConfig.mcpServers["hypertool"]
-      ) {
+      if (standardConfig.mcpServers && standardConfig.mcpServers["hypertool"]) {
         // Remove hypertool entry
         delete standardConfig.mcpServers["hypertool"];
 

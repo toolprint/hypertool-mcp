@@ -1,6 +1,6 @@
 /**
  * Conflict resolution step - Handle server name conflicts
- * 
+ *
  * TODO: This step is currently disabled in favor of per-application configuration
  * approach which eliminates naming conflicts by keeping each app's servers in
  * separate namespaces. This code is kept for potential future use with
@@ -8,12 +8,12 @@
  */
 
 // import inquirer from 'inquirer';
-import { WizardState, WizardStep } from '../setup/types.js';
+import { WizardState, WizardStep } from "../setup/types.js";
 // import { output } from '../../utils/output.js';
 // import { theme } from '../../utils/theme.js';
 
 export class ConflictResolutionStep implements WizardStep {
-  name = 'conflictResolution';
+  name = "conflictResolution";
   canSkip = true;
 
   async run(state: WizardState): Promise<WizardState> {

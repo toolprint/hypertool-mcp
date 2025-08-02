@@ -91,7 +91,9 @@ export function createGroupCreateCommand(): Command {
         });
 
         output.displaySeparator();
-        console.log(semantic.messageSuccess(`✅ Group "${name}" created successfully`));
+        console.log(
+          semantic.messageSuccess(`✅ Group "${name}" created successfully`)
+        );
         console.log(theme.info(`   ID: ${group.id}`));
         if (group.description) {
           console.log(theme.info(`   Description: ${group.description}`));
@@ -101,14 +103,18 @@ export function createGroupCreateCommand(): Command {
         if (serverIds.length === 0) {
           output.displaySpaceBuffer();
           console.log(theme.muted("To add servers to this group:"));
-          console.log(theme.command(`  hypertool-mcp mcp group add ${name} <server-name>`));
+          console.log(
+            theme.command(`  hypertool-mcp mcp group add ${name} <server-name>`)
+          );
         }
 
         await dbService.close();
       } catch (error) {
         logger.error("Failed to create group:", error);
         console.error(
-          semantic.messageError(`❌ Failed to create group: ${(error as Error).message}`)
+          semantic.messageError(
+            `❌ Failed to create group: ${(error as Error).message}`
+          )
         );
         process.exit(1);
       }

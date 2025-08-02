@@ -9,6 +9,7 @@ import { homedir } from "os";
 import inquirer from "inquirer";
 import { output } from "../../utils/output.js";
 import { theme } from "../../utils/theme.js";
+import { isNedbEnabled } from "../../config/environment.js";
 
 export interface MCPConfig {
   mcpServers?: Record<
@@ -209,6 +210,11 @@ export async function migrateToHyperToolConfig(
     output.info(
       `[DRY RUN] Would copy ${serverCount} servers from backup to: ${context.hyperToolConfigPath}`
     );
+    if (isNedbEnabled()) {
+      output.info(
+        `[DRY RUN] Would also sync servers to database (NeDB mode enabled)`
+      );
+    }
     return originalConfig;
   }
 
@@ -217,6 +223,14 @@ export async function migrateToHyperToolConfig(
   };
 
   await writeJsonFile(context.hyperToolConfigPath, hyperToolConfig);
+
+  // If NeDB is enabled, we should notify that database sync will happen
+  // when HyperTool starts up and reads the config file
+  if (isNedbEnabled()) {
+    output.info(
+      "📊 Database mode detected - servers will be synced to database on first run"
+    );
+  }
 
   return originalConfig;
 }
@@ -235,7 +249,7 @@ export async function promptForCleanupOptions(): Promise<boolean> {
  */
 export function createHyperToolProxyConfig(hyperToolConfigPath: string): any {
   return {
-    "hypertool": {
+    hypertool: {
       type: "stdio",
       command: "npx",
       args: [
@@ -307,6 +321,18 @@ export async function displaySetupSummary(
     output.warn("⚠️  Manual cleanup selected - you may have duplicate servers");
   }
 
+  // Show database mode information if enabled
+  if (isNedbEnabled()) {
+    output.displaySpaceBuffer(1);
+    output.info("📊 Database Mode: ENABLED");
+    output.displayInstruction(
+      "   HyperTool is using database-backed configuration storage"
+    );
+    output.displayInstruction(
+      "   To manage servers, use: hypertool-mcp config show servers"
+    );
+  }
+
   output.displaySpaceBuffer(1);
   output.displaySubHeader("🔄 Next steps:");
   output.displayInstruction(`1. Restart ${integrationName}`);
@@ -358,6 +384,14 @@ export async function displaySetupPlan(
 
     output.info("✨ Result: HyperTool proxy replaces all servers in .mcp.json");
     output.info("💡 Original servers remain accessible through HyperTool");
+
+    if (isNedbEnabled()) {
+      output.displaySpaceBuffer(1);
+      output.info("📊 Database Mode: ENABLED");
+      output.info("   • Servers will be stored in NeDB database");
+      output.info("   • Use 'hypertool-mcp config show' commands to manage");
+    }
+
     output.displaySpaceBuffer(1);
 
     return true;

@@ -63,11 +63,11 @@ export function createGroupRemoveCommand(): Command {
 
         // Display results
         output.displaySeparator();
-        
+
         if (removedCount > 0) {
           console.log(
             semantic.messageSuccess(
-              `✅ Removed ${removedCount} server${removedCount === 1 ? '' : 's'} from group "${groupName}"`
+              `✅ Removed ${removedCount} server${removedCount === 1 ? "" : "s"} from group "${groupName}"`
             )
           );
         }
@@ -75,20 +75,26 @@ export function createGroupRemoveCommand(): Command {
         if (errors.length > 0) {
           output.displaySpaceBuffer();
           console.log(theme.warning("⚠️  Warnings:"));
-          errors.forEach(error => {
+          errors.forEach((error) => {
             console.log(theme.warning(`   • ${error}`));
           });
         }
 
         // Show current group status
         output.displaySpaceBuffer();
-        console.log(theme.info(`Group "${groupName}" now contains ${group.serverIds.length} server${group.serverIds.length === 1 ? '' : 's'}`));
+        console.log(
+          theme.info(
+            `Group "${groupName}" now contains ${group.serverIds.length} server${group.serverIds.length === 1 ? "" : "s"}`
+          )
+        );
 
         await dbService.close();
       } catch (error) {
         logger.error("Failed to remove servers from group:", error);
         console.error(
-          semantic.messageError(`❌ Failed to remove servers from group: ${(error as Error).message}`)
+          semantic.messageError(
+            `❌ Failed to remove servers from group: ${(error as Error).message}`
+          )
         );
         process.exit(1);
       }

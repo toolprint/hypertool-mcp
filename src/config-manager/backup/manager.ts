@@ -19,6 +19,13 @@ import {
 } from "../types/index.js";
 import { AppRegistry } from "../apps/registry.js";
 import { TransformerRegistry } from "../transformers/base.js";
+import { getDatabaseService } from "../../db/nedbService.js";
+import {
+  ServerConfigRecord,
+  ServerConfigGroup,
+  IConfigSource,
+} from "../../db/interfaces.js";
+import { isNedbEnabled } from "../../config/environment.js";
 
 export class BackupManager {
   private basePath: string;
@@ -76,6 +83,7 @@ export class BackupManager {
       // Create temporary directory for backup contents
       const tempDir = join(this.backupDir, "temp", backupName);
       await this.fs.mkdir(join(tempDir, "config"), { recursive: true });
+      await this.fs.mkdir(join(tempDir, "database"), { recursive: true });
 
       // Get all enabled applications
       const apps = await this.registry.getEnabledApplications();
@@ -106,6 +114,14 @@ export class BackupManager {
           }
         } catch (error) {
           console.warn(`Failed to backup ${appId}:`, error);
+        }
+      }
+
+      // Export database contents if NeDB is enabled
+      if (isNedbEnabled()) {
+        const dbExportResult = await this.exportDatabase(tempDir);
+        if (dbExportResult) {
+          metadata.database = dbExportResult;
         }
       }
 
@@ -449,6 +465,18 @@ export class BackupManager {
           }
         }
 
+        // Restore database if present and NeDB is enabled
+        if (isNedbEnabled()) {
+          const dbDir = join(extractedDir, "database");
+          try {
+            await this.fs.access(dbDir);
+            await this.restoreDatabase(dbDir);
+          } catch (error) {
+            // Database directory might not exist in older backups
+            console.warn("No database backup found or restore failed:", error);
+          }
+        }
+
         return {
           success: true,
           restored,
@@ -582,5 +610,136 @@ export class BackupManager {
     }
 
     return "0.0.0";
+  }
+
+  /**
+   * Export database contents for backup
+   */
+  private async exportDatabase(tempDir: string): Promise<{
+    servers_count: number;
+    groups_count: number;
+    sources_count: number;
+    export_files: string[];
+  }> {
+    try {
+      const dbService = getDatabaseService();
+      await dbService.init();
+
+      const dbDir = join(tempDir, "database");
+      const exportFiles: string[] = [];
+
+      // Export servers
+      const servers = await dbService.servers.findAll();
+      const serversPath = join(dbDir, "servers.json");
+      await this.fs.writeFile(
+        serversPath,
+        JSON.stringify(servers, null, 2),
+        "utf-8"
+      );
+      exportFiles.push("servers.json");
+
+      // Export groups
+      const groups = await dbService.groups.findAll();
+      const groupsPath = join(dbDir, "groups.json");
+      await this.fs.writeFile(
+        groupsPath,
+        JSON.stringify(groups, null, 2),
+        "utf-8"
+      );
+      exportFiles.push("groups.json");
+
+      // Export config sources
+      const sources = await dbService.configSources.findAll();
+      const sourcesPath = join(dbDir, "sources.json");
+      await this.fs.writeFile(
+        sourcesPath,
+        JSON.stringify(sources, null, 2),
+        "utf-8"
+      );
+      exportFiles.push("sources.json");
+
+      return {
+        servers_count: servers.length,
+        groups_count: groups.length,
+        sources_count: sources.length,
+        export_files: exportFiles,
+      };
+    } catch (error) {
+      console.warn("Failed to export database:", error);
+      return {
+        servers_count: 0,
+        groups_count: 0,
+        sources_count: 0,
+        export_files: [],
+      };
+    }
+  }
+
+  /**
+   * Restore database from backup
+   */
+  private async restoreDatabase(dbDir: string): Promise<void> {
+    const dbService = getDatabaseService();
+    await dbService.init();
+
+    // Restore servers
+    const serversPath = join(dbDir, "servers.json");
+    try {
+      const serversContent = await this.fs.readFile(serversPath, "utf-8");
+      const servers: ServerConfigRecord[] = JSON.parse(serversContent);
+
+      // Clear existing servers and add from backup
+      const existingServers = await dbService.servers.findAll();
+      for (const server of existingServers) {
+        await dbService.servers.delete(server.id);
+      }
+
+      for (const server of servers) {
+        const { id, ...serverData } = server;
+        await dbService.servers.add(serverData);
+      }
+    } catch (error) {
+      console.warn("Failed to restore servers:", error);
+    }
+
+    // Restore groups
+    const groupsPath = join(dbDir, "groups.json");
+    try {
+      const groupsContent = await this.fs.readFile(groupsPath, "utf-8");
+      const groups: ServerConfigGroup[] = JSON.parse(groupsContent);
+
+      // Clear existing groups and add from backup
+      const existingGroups = await dbService.groups.findAll();
+      for (const group of existingGroups) {
+        await dbService.groups.delete(group.id);
+      }
+
+      for (const group of groups) {
+        const { id, ...groupData } = group;
+        await dbService.groups.add(groupData);
+      }
+    } catch (error) {
+      console.warn("Failed to restore groups:", error);
+    }
+
+    // Restore config sources
+    const sourcesPath = join(dbDir, "sources.json");
+    try {
+      const sourcesContent = await this.fs.readFile(sourcesPath, "utf-8");
+      const sources: IConfigSource[] = JSON.parse(sourcesContent);
+
+      // Clear existing sources and add from backup
+      const existingSources = await dbService.configSources.findAll();
+      for (const source of existingSources) {
+        await dbService.configSources.delete(source.id);
+      }
+
+      for (const source of sources) {
+        const { id, ...sourceData } = source;
+        await dbService.configSources.add(sourceData);
+      }
+    } catch (error) {
+      console.warn("Failed to restore config sources:", error);
+    }
   }
 }
