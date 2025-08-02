@@ -20,6 +20,8 @@
     "test:backup": "vitest run --grep 'backup|restore|BackupManager'",
     "test:config": "vitest run src/config src/config-manager",
     "test:toolset": "vitest run src/toolset",
+    "test:stdio": "vitest run src/integration/stdio-transport.test.ts --reporter=verbose",
+    "test:stdio:debug": "DEBUG=* vitest run src/integration/stdio-transport.test.ts --reporter=verbose --testTimeout=60000",
     "build": "rm -rf dist && tsc && npm run copy-examples && chmod +x dist/bin.js",
     "copy-examples": "mkdir -p dist/examples && cp -r examples/mcp dist/examples/",
     "build:watch": "tsc --watch",

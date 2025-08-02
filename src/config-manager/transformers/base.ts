@@ -55,7 +55,7 @@ export class StandardTransformer implements ConfigTransformer {
   /**
    * Convert from standard format to standard format (pass-through)
    */
-  fromStandard(standardConfig: MCPConfig): any {
+  fromStandard(standardConfig: MCPConfig, existingConfig?: any): any {
     return standardConfig;
   }
 

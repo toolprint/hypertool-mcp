@@ -528,13 +528,8 @@ async function checkHealth(
     );
   }
 
-  // Check if applications have HyperTool linked (excluding Claude Code which uses project-local configs)
-  const linkableApps = applications.filter(
-    (app) =>
-      app.installed &&
-      app.name !== "Claude Code" &&
-      app.name !== "Claude Code (User)"
-  );
+  // Check if applications have HyperTool linked
+  const linkableApps = applications.filter((app) => app.installed);
   const linkedApps = linkableApps.filter((app) => app.hasConfig);
 
   if (linkableApps.length > 0 && linkedApps.length === 0) {
@@ -654,11 +649,7 @@ function displayApplications(applications: ApplicationStatus[]): void {
           output.info(`     📄 MCP Config: ${theme.muted(app.mcpConfigPath)}`);
         }
 
-        if (
-          !app.hasConfig &&
-          app.name !== "Claude Code" &&
-          app.name !== "Claude Code (User)"
-        ) {
+        if (!app.hasConfig) {
           output.info(`     ${theme.warning("Not linked to HyperTool")}`);
         }
       } else {

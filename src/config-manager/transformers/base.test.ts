@@ -156,4 +156,47 @@ describe("StandardTransformer", () => {
       expect(result.mcpServers).toEqual(bareConfig);
     });
   });
+
+  describe("fromStandard", () => {
+    it("should pass through standard format without existingConfig", () => {
+      const config = {
+        mcpServers: {
+          test: {
+            type: "stdio" as const,
+            command: "test",
+          },
+        },
+      };
+
+      const result = transformer.fromStandard(config);
+
+      expect(result).toEqual(config);
+    });
+
+    it("should pass through standard format with existingConfig (ignored)", () => {
+      const config = {
+        mcpServers: {
+          test: {
+            type: "stdio" as const,
+            command: "test",
+          },
+        },
+      };
+
+      const existingConfig = {
+        someField: "should-be-ignored",
+        mcpServers: {
+          old: {
+            type: "stdio",
+            command: "old",
+          },
+        },
+      };
+
+      const result = transformer.fromStandard(config, existingConfig);
+
+      // StandardTransformer ignores existingConfig
+      expect(result).toEqual(config);
+    });
+  });
 });

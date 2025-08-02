@@ -6,6 +6,9 @@
 import { beforeEach, afterEach } from 'vitest';
 import { vol } from 'memfs';
 
+// Set test environment
+process.env.NODE_ENV = 'test';
+
 // Ensure clean state before each test
 beforeEach(() => {
   vol.reset();

@@ -13,6 +13,7 @@ import { output } from "../../utils/output.js";
 import { theme } from "../../utils/theme.js";
 import { ConfigurationManager } from "../../config-manager/index.js";
 import { WizardState, SetupOptions, WizardStep } from "./types.js";
+import { getHomeDir } from "../../utils/paths.js";
 
 // Import wizard steps
 import { WelcomeStep } from "../steps/welcome.js";
@@ -124,7 +125,7 @@ export class SetupWizard {
 
       try {
         const configPath = path.join(
-          os.homedir(),
+          getHomeDir(),
           ".toolprint",
           "hypertool-mcp",
           "config.json"

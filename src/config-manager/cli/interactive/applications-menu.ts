@@ -182,12 +182,7 @@ export async function showApplicationDetail(
     });
   }
 
-  if (
-    app.installed &&
-    !app.hasConfig &&
-    app.name !== "Claude Code" &&
-    app.name !== "Claude Code (User)"
-  ) {
+  if (app.installed && !app.hasConfig) {
     choices.push({
       name: "🔗 Link to HyperTool",
       value: { action: "link" },

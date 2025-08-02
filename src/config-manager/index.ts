@@ -830,14 +830,6 @@ export class ConfigurationManager {
       };
     }
 
-    // Transform to app-specific format
-    const transformer = TransformerRegistry.getTransformer(
-      platformConfig.format
-    );
-    const appSpecificConfig = transformer.fromStandard({
-      mcpServers: hyperToolProxy,
-    });
-
     // Resolve configuration path
     let configPath = this.registry.resolvePath(platformConfig.configPath);
 
@@ -848,6 +840,39 @@ export class ConfigurationManager {
         platformConfig.configPath.replace("./", "")
       );
     }
+
+    // Read existing configuration if it exists
+    let existingConfig: any = null;
+    try {
+      const existingContent = await this.fs.readFile(configPath, "utf-8");
+      existingConfig = JSON.parse(existingContent);
+    } catch (error) {
+      // File doesn't exist or is invalid, that's OK
+    }
+
+    // Transform to app-specific format
+    const transformerName =
+      platformConfig.format === "custom" && platformConfig.transformer
+        ? platformConfig.transformer
+        : platformConfig.format;
+    const transformer = TransformerRegistry.getTransformer(transformerName);
+
+    // For Claude Code, we need to merge servers to preserve existing ones
+    let configToTransform = { mcpServers: hyperToolProxy };
+    if (transformerName === "claude-code" && existingConfig) {
+      const standardExisting = transformer.toStandard(existingConfig);
+      configToTransform = {
+        mcpServers: {
+          ...standardExisting.mcpServers,
+          ...hyperToolProxy,
+        },
+      };
+    }
+
+    const appSpecificConfig = transformer.fromStandard(
+      configToTransform,
+      existingConfig
+    );
 
     // Ensure directory exists
     const dir = join(configPath, "..");
@@ -970,17 +995,19 @@ export class ConfigurationManager {
       const config = JSON.parse(content);
 
       // Check if config has hypertool
-      const transformer = TransformerRegistry.getTransformer(
-        platformConfig.format
-      );
+      const transformerName =
+        platformConfig.format === "custom" && platformConfig.transformer
+          ? platformConfig.transformer
+          : platformConfig.format;
+      const transformer = TransformerRegistry.getTransformer(transformerName);
       const standardConfig = transformer.toStandard(config);
 
       if (standardConfig.mcpServers && standardConfig.mcpServers["hypertool"]) {
         // Remove hypertool entry
         delete standardConfig.mcpServers["hypertool"];
 
-        // Write back the config without hypertool
-        const updatedConfig = transformer.fromStandard(standardConfig);
+        // Transform back to app format
+        const updatedConfig = transformer.fromStandard(standardConfig, config);
         await this.fs.writeFile(
           configPath,
           JSON.stringify(updatedConfig, null, 2),
@@ -1013,17 +1040,43 @@ export class ConfigurationManager {
 
     const configPath = this.registry.resolvePath(platformConfig.configPath);
 
-    // Write empty config or remove the file
-    const transformer = TransformerRegistry.getTransformer(
-      platformConfig.format
-    );
-    const emptyConfig = transformer.fromStandard({ mcpServers: {} });
+    try {
+      const content = await this.fs.readFile(configPath, "utf-8");
+      const config = JSON.parse(content);
 
-    await this.fs.writeFile(
-      configPath,
-      JSON.stringify(emptyConfig, null, 2),
-      "utf-8"
-    );
+      // Get transformer with correct name resolution
+      const transformerName =
+        platformConfig.format === "custom" && platformConfig.transformer
+          ? platformConfig.transformer
+          : platformConfig.format;
+      const transformer = TransformerRegistry.getTransformer(transformerName);
+      const standardConfig = transformer.toStandard(config);
+
+      // Remove hypertool entry
+      delete standardConfig.mcpServers["hypertool"];
+
+      // Transform back to app format
+      const updatedConfig = transformer.fromStandard(standardConfig, config);
+      await this.fs.writeFile(
+        configPath,
+        JSON.stringify(updatedConfig, null, 2),
+        "utf-8"
+      );
+    } catch (error) {
+      // If config doesn't exist or is invalid, create empty one
+      const transformerName =
+        platformConfig.format === "custom" && platformConfig.transformer
+          ? platformConfig.transformer
+          : platformConfig.format;
+      const transformer = TransformerRegistry.getTransformer(transformerName);
+      const emptyConfig = transformer.fromStandard({ mcpServers: {} });
+
+      await this.fs.writeFile(
+        configPath,
+        JSON.stringify(emptyConfig, null, 2),
+        "utf-8"
+      );
+    }
   }
 
   /**

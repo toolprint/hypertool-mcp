@@ -4,12 +4,12 @@
 
 import * as fs from "fs/promises";
 import * as path from "path";
-import { homedir } from "os";
 import { ToolsetConfig } from "../toolset/types.js";
 import { APP_TECHNICAL_NAME, BRAND_NAME } from "./appConfig.js";
+import { getHomeDir } from "../utils/paths.js";
 
 // Configuration directory structure
-const BRAND_CONFIG_DIR = path.join(homedir(), `.${BRAND_NAME.toLowerCase()}`);
+const BRAND_CONFIG_DIR = path.join(getHomeDir(), `.${BRAND_NAME.toLowerCase()}`);
 const APP_CONFIG_DIR = path.join(BRAND_CONFIG_DIR, APP_TECHNICAL_NAME);
 const CONFIG_FILE = path.join(APP_CONFIG_DIR, "config.json");
 

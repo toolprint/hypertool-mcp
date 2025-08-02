@@ -380,33 +380,45 @@ describe("BackupManager", () => {
 
   describe("error handling", () => {
     it("should handle backup creation errors gracefully", async () => {
-      // Mock tar.create to throw error
-      vi.mocked(tar.create).mockRejectedValueOnce(
-        new Error("Tar creation failed")
+      await env.setup(new ExistingConfigScenario(["claude-desktop"]));
+      
+      // In test mode, we need to mock fs operations instead of tar
+      const originalMkdir = vol.promises.mkdir;
+      vol.promises.mkdir = vi.fn().mockRejectedValueOnce(
+        new Error("Directory creation failed")
       );
 
-      await env.setup(new ExistingConfigScenario(["claude-desktop"]));
       const result = await backupManager.createBackup();
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("Tar creation failed");
+      expect(result.error).toContain("Directory creation failed");
+      
+      // Restore original
+      vol.promises.mkdir = originalMkdir;
     });
 
     it("should handle restore errors gracefully", async () => {
       await env.setup(new ExistingConfigScenario(["claude-desktop"]));
       const backupResult = await backupManager.createBackup();
 
-      // Mock tar.extract to throw error
-      vi.mocked(tar.extract).mockRejectedValueOnce(
-        new Error("Tar extraction failed")
-      );
+      // In test mode, mock fs.readFile to simulate error
+      const originalReadFile = vol.promises.readFile;
+      vol.promises.readFile = vi.fn().mockImplementation((path: string) => {
+        if (path.includes("metadata.yaml")) {
+          throw new Error("File read failed");
+        }
+        return originalReadFile.call(vol.promises, path);
+      });
 
       const restoreResult = await backupManager.restoreBackup(
         backupResult.backupId!
       );
 
       expect(restoreResult.success).toBe(false);
-      expect(restoreResult.error).toContain("Tar extraction failed");
+      expect(restoreResult.error).toContain("File read failed");
+      
+      // Restore original
+      vol.promises.readFile = originalReadFile;
     });
   });
 

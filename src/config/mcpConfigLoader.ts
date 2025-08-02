@@ -3,7 +3,6 @@
  */
 
 import * as path from "path";
-import * as os from "os";
 import { loadUserPreferences } from "./preferenceStore.js";
 import { APP_TECHNICAL_NAME, BRAND_NAME } from "./appConfig.js";
 import { createChildLogger } from "../utils/logging.js";

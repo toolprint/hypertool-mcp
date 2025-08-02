@@ -125,7 +125,7 @@ export interface ConfigTransformer {
   /**
    * Convert from standard MCP format to app-specific format
    */
-  fromStandard(standardConfig: MCPConfig): any;
+  fromStandard(standardConfig: MCPConfig, existingConfig?: any): any;
 
   /**
    * Validate app-specific configuration format

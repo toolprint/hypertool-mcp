@@ -4,13 +4,13 @@
  */
 
 import * as path from "path";
-import * as os from "os";
 import * as fs from "fs/promises";
 import { loadUserPreferences, saveUserPreferences } from "./preferenceStore.js";
 import { APP_TECHNICAL_NAME } from "./appConfig.js";
 import { createChildLogger } from "../utils/logging.js";
 import { MCPConfigParser } from "./mcpConfigParser.js";
 import { IConfigSource } from "../db/interfaces.js";
+import { getHomeDir } from "../utils/paths.js";
 
 const logger = createChildLogger({ module: "config/file-discovery" });
 
@@ -46,6 +46,28 @@ export async function discoverMcpConfigFile(
   errorMessage?: string;
   configSource?: IConfigSource;
 }> {
+  // 0. Check for test environment override (highest priority)
+  const testConfigPath = process.env.HYPERTOOL_TEST_CONFIG;
+  if (testConfigPath && process.env.NODE_ENV === "test") {
+    logger.debug(`Using test config from environment: ${testConfigPath}`);
+    if (await fileExists(testConfigPath)) {
+      logger.info(`Using config from test environment: ${testConfigPath}`);
+      return {
+        configPath: testConfigPath,
+        source: "cli",
+        configSource: {
+          id: "test",
+          type: "global",
+          path: testConfigPath,
+          priority: 200, // Higher than CLI to ensure test isolation
+          lastSynced: Date.now(),
+        },
+      };
+    } else {
+      logger.warn(`Test config file not found: ${testConfigPath}`);
+    }
+  }
+
   // 1. Check for CLI-provided path (highest priority)
   if (cliConfigPath) {
     logger.debug(`Checking CLI-provided config path: ${cliConfigPath}`);
@@ -87,7 +109,7 @@ export async function discoverMcpConfigFile(
 
   // 2. Check for linked app config (per-app config)
   if (linkedApp) {
-    const basePath = path.join(os.homedir(), ".toolprint/hypertool-mcp");
+    const basePath = path.join(getHomeDir(), ".toolprint/hypertool-mcp");
     const perAppPath = path.join(basePath, "mcp", `${linkedApp}.json`);
 
     logger.debug(`Checking per-app config: ${perAppPath}`);
@@ -151,7 +173,7 @@ export async function discoverMcpConfigFile(
 
   // 4. Check default location
   const defaultPath = path.join(
-    os.homedir(),
+    getHomeDir(),
     ".toolprint/hypertool-mcp/mcp.json"
   );
   logger.debug(`Checking default config path: ${defaultPath}`);
@@ -185,7 +207,7 @@ export async function discoverMcpConfigFile(
  */
 function generateNoConfigFoundMessage(): string {
   const defaultPath = path.join(
-    os.homedir(),
+    getHomeDir(),
     ".toolprint/hypertool-mcp/mcp.json"
   );
 
@@ -245,7 +267,7 @@ export async function loadMcpConfigFile(
  * Get all available per-app configurations
  */
 export async function getAllAppConfigs(): Promise<Record<string, any>> {
-  const basePath = path.join(os.homedir(), ".toolprint/hypertool-mcp");
+  const basePath = path.join(getHomeDir(), ".toolprint/hypertool-mcp");
   const mcpDir = path.join(basePath, "mcp");
   const configs: Record<string, any> = {};
 

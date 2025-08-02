@@ -7,7 +7,7 @@ import { output } from "../../utils/output.js";
 import { theme } from "../../utils/theme.js";
 import { ConfigurationManager } from "../../config-manager/index.js";
 import { join } from "path";
-import { homedir } from "os";
+import { getHomeDir } from "../../utils/paths.js";
 import { loadExampleConfig } from "./exampleConfigs.js";
 
 export class ExecutionStep implements WizardStep {
@@ -108,7 +108,7 @@ export class ExecutionStep implements WizardStep {
 
     // Save it as the global default at ~/.toolprint/hypertool-mcp/mcp.json
     const globalConfigPath = join(
-      homedir(),
+      getHomeDir(),
       ".toolprint",
       "hypertool-mcp",
       "mcp.json"
@@ -122,7 +122,7 @@ export class ExecutionStep implements WizardStep {
 
     // Update main config to note the source
     const mainConfigPath = join(
-      homedir(),
+      getHomeDir(),
       ".toolprint",
       "hypertool-mcp",
       "config.json"
@@ -206,7 +206,7 @@ export class ExecutionStep implements WizardStep {
 
     const fs = (await import("fs")).promises;
     const configPath = join(
-      homedir(),
+      getHomeDir(),
       ".toolprint",
       "hypertool-mcp",
       "config.json"
@@ -253,12 +253,11 @@ export class ExecutionStep implements WizardStep {
   private async savePerAppConfig(appId: string, config: any): Promise<void> {
     const fs = (await import("fs")).promises;
     const path = await import("path");
-    const os = await import("os");
 
     // Get base path from environment or default location
     const basePath =
       process.env.HYPERTOOL_CONFIG_PATH ||
-      path.join(os.homedir(), ".toolprint", "hypertool-mcp");
+      path.join(getHomeDir(), ".toolprint", "hypertool-mcp");
 
     const configPath = path.join(basePath, "mcp", `${appId}.json`);
     await fs.mkdir(path.join(basePath, "mcp"), { recursive: true });

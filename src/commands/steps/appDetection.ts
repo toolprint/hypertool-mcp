@@ -27,7 +27,7 @@ export class AppDetectionStep implements WizardStep {
       output.info("Supported applications:");
       output.info("  • Claude Desktop (macOS)");
       output.info("  • Cursor");
-      output.info("  • Claude Code (project-specific)");
+      output.info("  • Claude Code");
       output.displaySpaceBuffer(1);
 
       // Ask if they want to continue anyway
@@ -175,36 +175,27 @@ export class AppDetectionStep implements WizardStep {
       });
     }
 
-    // Check Claude Code (current project)
-    const currentDir = process.cwd();
-    const projectMcpPath = join(currentDir, ".mcp.json");
-    const gitPath = join(currentDir, ".git");
+    // Check Claude Code (global)
+    const claudeCodePath = join(homedir(), ".claude.json");
 
-    if (
-      (await this.pathExists(gitPath)) ||
-      (await this.pathExists(projectMcpPath))
-    ) {
-      const hasConfig = await this.pathExists(projectMcpPath);
+    if (await this.pathExists(claudeCodePath)) {
       let serverCount = 0;
 
-      if (hasConfig) {
-        try {
-          const content = await fs.readFile(projectMcpPath, "utf-8");
-          const config = JSON.parse(content);
-          serverCount = Object.keys(config.mcpServers || {}).length;
-        } catch {
-          // Ignore parse errors
-        }
+      try {
+        const content = await fs.readFile(claudeCodePath, "utf-8");
+        const config = JSON.parse(content);
+        serverCount = Object.keys(config.mcpServers || {}).length;
+      } catch {
+        // Ignore parse errors
+        // .claude.json exists but may not have mcpServers yet
       }
-
-      const projectName = currentDir.split("/").pop() || "current project";
 
       apps.push({
         id: "claude-code",
-        displayName: `🤖 Claude Code (${projectName})`,
-        configPath: projectMcpPath,
+        displayName: "🤖 Claude Code",
+        configPath: claudeCodePath,
         detected: true,
-        hasExistingConfig: hasConfig,
+        hasExistingConfig: true, // File exists, so we consider it configured
         serverCount,
       });
     }
