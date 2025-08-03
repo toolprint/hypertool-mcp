@@ -38,7 +38,7 @@ import {
   needsTypeMigration,
 } from "./utils/type-migration.js";
 import { createChildLogger } from "../utils/logging.js";
-import { isNedbEnabled } from "../config/environment.js";
+import { isNedbEnabledAsync } from "../config/environment.js";
 import { MCPConfigParser } from "../config/mcpConfigParser.js";
 
 const logger = createChildLogger({ module: "ConfigurationManager" });
@@ -320,7 +320,7 @@ export class ConfigurationManager {
    * Save the merged MCP configuration to database or file based on feature flag
    */
   private async saveMergedConfig(config: MCPConfig): Promise<void> {
-    if (!isNedbEnabled()) {
+    if (!(await isNedbEnabledAsync())) {
       // File-based approach
       const configPath = join(this.basePath, "mcp.json");
 
@@ -406,7 +406,7 @@ export class ConfigurationManager {
     appId: string,
     config: MCPConfig
   ): Promise<string> {
-    if (!isNedbEnabled()) {
+    if (!(await isNedbEnabledAsync())) {
       // File-based approach
       const mcpDir = join(this.basePath, "mcp");
       const configPath = join(mcpDir, `${appId}.json`);

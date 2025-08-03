@@ -80,6 +80,20 @@ export class ReviewStep implements WizardStep {
       `${theme.label("Installation type:")} ${this.getInstallationTypeDisplay(state.installationType)}`
     );
 
+    // Experimental features
+    if (state.experimental) {
+      output.displaySpaceBuffer(1);
+      output.info(
+        `${theme.label("Experimental features:")} ${theme.warning("ENABLED")}`
+      );
+      output.info(
+        theme.muted("  • NeDB database storage")
+      );
+      output.info(
+        theme.muted("  • Future experimental features will be auto-enabled")
+      );
+    }
+
     output.displaySeparator();
 
     // Warning for dry run

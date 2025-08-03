@@ -2,7 +2,7 @@
  * NeDB implementation of the ServerConfigGroup repository
  */
 
-import Datastore from "nedb";
+import Datastore from "@seald-io/nedb";
 import { v4 as uuidv4 } from "uuid";
 import {
   ServerConfigGroup,
@@ -98,7 +98,7 @@ export class NeDBServerConfigGroupRepository
           logger.error("Failed to find group record by ID:", err);
           reject(err);
         } else {
-          resolve(doc as ServerConfigGroup | null);
+          resolve(doc as unknown as ServerConfigGroup | null);
         }
       });
     });
@@ -114,7 +114,7 @@ export class NeDBServerConfigGroupRepository
           logger.error("Failed to find group record by name:", err);
           reject(err);
         } else {
-          resolve(doc as ServerConfigGroup | null);
+          resolve(doc as unknown as ServerConfigGroup | null);
         }
       });
     });

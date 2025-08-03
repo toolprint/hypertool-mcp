@@ -15,6 +15,16 @@ import { ConfigurationManager } from "../../config-manager/index.js";
 import { WizardState, SetupOptions, WizardStep } from "./types.js";
 import { getHomeDir } from "../../utils/paths.js";
 
+/**
+ * Exception thrown when user cancels the setup wizard
+ */
+export class SetupCancelledException extends Error {
+  constructor(message = "Setup cancelled by user") {
+    super(message);
+    this.name = "SetupCancelledException";
+  }
+}
+
 // Import wizard steps
 import { WelcomeStep } from "../steps/welcome.js";
 import { AppDetectionStep } from "../steps/appDetection.js";
@@ -52,6 +62,7 @@ export class SetupWizard {
       dryRun: options.dryRun || false,
       nonInteractive: options.yes || false,
       verbose: options.verbose || false,
+      experimental: options.experimental || false,
       // Pass through CLI options for non-interactive mode
       ...options,
     };
@@ -96,17 +107,14 @@ export class SetupWizard {
         // Check if user cancelled
         if (this.state.cancelled) {
           output.info(theme.warning("\n✖ Setup cancelled by user"));
-          process.exit(0);
+          throw new SetupCancelledException();
         }
       }
 
-      // Success!
-      if (!this.state.dryRun) {
-        process.exit(0);
-      }
+      // Success - just return normally
     } catch (error) {
-      output.error(`Setup failed: ${error}`);
-      process.exit(1);
+      // Re-throw the error to let the caller handle it
+      throw error;
     }
   }
 

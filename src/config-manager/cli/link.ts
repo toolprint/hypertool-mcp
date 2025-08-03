@@ -7,7 +7,7 @@ import inquirer from "inquirer";
 import { theme } from "../../utils/theme.js";
 import { ConfigurationManager } from "../index.js";
 import { output } from "../../utils/output.js";
-import { isNedbEnabled } from "../../config/environment.js";
+import { isNedbEnabledAsync } from "../../config/environment.js";
 
 interface AppLinkConfig {
   appId: string;
@@ -135,7 +135,7 @@ export function createLinkCommand(): Command {
               let configExists = false;
 
               // In NeDB mode, check database instead of file
-              if (isNedbEnabled()) {
+              if (await isNedbEnabledAsync()) {
                 // Config existence will be checked by ConfigurationManager
                 configExists = false; // Always show init options in NeDB mode
               } else {
@@ -260,7 +260,7 @@ export function createLinkCommand(): Command {
         );
 
         // Show database mode information if enabled
-        if (isNedbEnabled()) {
+        if (await isNedbEnabledAsync()) {
           output.displaySpaceBuffer(1);
           output.info("📊 Database Mode: ENABLED");
           output.displayInstruction(

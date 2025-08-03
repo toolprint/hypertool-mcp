@@ -19,13 +19,13 @@ import {
 } from "../types/index.js";
 import { AppRegistry } from "../apps/registry.js";
 import { TransformerRegistry } from "../transformers/base.js";
-import { getDatabaseService } from "../../db/nedbService.js";
+import { getCompositeDatabaseService } from "../../db/compositeDatabaseService.js";
 import {
   ServerConfigRecord,
   ServerConfigGroup,
   IConfigSource,
 } from "../../db/interfaces.js";
-import { isNedbEnabled } from "../../config/environment.js";
+import { isNedbEnabledAsync } from "../../config/environment.js";
 
 export class BackupManager {
   private basePath: string;
@@ -138,7 +138,7 @@ export class BackupManager {
       }
 
       // Export database contents if NeDB is enabled
-      if (isNedbEnabled()) {
+      if (await isNedbEnabledAsync()) {
         const dbExportResult = await this.exportDatabase(tempDir);
         if (dbExportResult) {
           metadata.database = dbExportResult;
@@ -534,7 +534,7 @@ export class BackupManager {
         }
 
         // Restore database if present and NeDB is enabled
-        if (isNedbEnabled()) {
+        if (await isNedbEnabledAsync()) {
           const dbDir = join(extractedDir, "database");
           try {
             await this.fs.access(dbDir);
@@ -697,7 +697,7 @@ export class BackupManager {
     export_files: string[];
   }> {
     try {
-      const dbService = getDatabaseService();
+      const dbService = getCompositeDatabaseService();
       await dbService.init();
 
       const dbDir = join(tempDir, "database");
@@ -754,7 +754,7 @@ export class BackupManager {
    * Restore database from backup
    */
   private async restoreDatabase(dbDir: string): Promise<void> {
-    const dbService = getDatabaseService();
+    const dbService = getCompositeDatabaseService();
     await dbService.init();
 
     // Restore servers

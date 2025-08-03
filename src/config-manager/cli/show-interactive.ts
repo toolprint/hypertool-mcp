@@ -31,8 +31,8 @@ import {
   showToolDetail,
 } from "./interactive/toolsets-menu.js";
 import { getMcpServers, getApplicationStatus, getToolsets, ServerInfo, ApplicationStatus, ToolsetInfo } from "./show.js";
-import { isNedbEnabled } from "../../config/environment.js";
-import { getDatabaseService } from "../../db/nedbService.js";
+import { isNedbEnabledAsync } from "../../config/environment.js";
+import { getCompositeDatabaseService } from "../../db/compositeDatabaseService.js";
 import { ServerConfigGroup } from "../../db/interfaces.js";
 import { ServerFilterOptions } from "./interactive/types.js";
 import * as yaml from "yaml";
@@ -108,9 +108,10 @@ export class InteractiveNavigator {
 
     // Get server groups if database is enabled
     let groups = undefined;
-    if (isNedbEnabled()) {
+    const nedbEnabled = await isNedbEnabledAsync();
+    if (nedbEnabled) {
       try {
-        const dbService = getDatabaseService();
+        const dbService = getCompositeDatabaseService();
         await dbService.init();
         groups = await dbService.groups.findAll();
       } catch (error) {

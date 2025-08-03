@@ -2,7 +2,7 @@
  * NeDB implementation of the ConfigSource repository
  */
 
-import Datastore from "nedb";
+import Datastore from "@seald-io/nedb";
 import { v4 as uuidv4 } from "uuid";
 import { IConfigSource, IConfigSourceRepository } from "../interfaces.js";
 import { createChildLogger } from "../../utils/logging.js";
@@ -86,7 +86,7 @@ export class NeDBConfigSourceRepository implements IConfigSourceRepository {
           logger.error("Failed to find config source by ID:", err);
           reject(err);
         } else {
-          resolve(doc as IConfigSource | null);
+          resolve(doc as unknown as IConfigSource | null);
         }
       });
     });
@@ -102,7 +102,7 @@ export class NeDBConfigSourceRepository implements IConfigSourceRepository {
           logger.error("Failed to find config source by path:", err);
           reject(err);
         } else {
-          resolve(doc as IConfigSource | null);
+          resolve(doc as unknown as IConfigSource | null);
         }
       });
     });

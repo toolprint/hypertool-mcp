@@ -83,11 +83,13 @@ describe('Backup and Restore Integration Tests', () => {
   let manager: ConfigurationManager;
 
   beforeEach(async () => {
+    vi.useFakeTimers();
     env = new TestEnvironment('/tmp/hypertool-test');
   });
 
   afterEach(async () => {
     await env.teardown();
+    vi.useRealTimers();
   });
 
   describe('Fresh Installation', () => {
@@ -287,8 +289,12 @@ describe('Backup and Restore Integration Tests', () => {
       const cursorDir = '/tmp/hypertool-test/.cursor';
       const files = await env.listDirectory('/tmp/hypertool-test');
       // Manually remove from memfs
-      const vol = (global as any).__memfs_vol__;
-      vol.rmdirSync(cursorDir, { recursive: true });
+      const { vol } = await import('memfs');
+      try {
+        vol.rmdirSync(cursorDir, { recursive: true });
+      } catch (e) {
+        // Directory might not exist, which is fine
+      }
       
       // Restore should handle missing directory
       const restoreResult = await manager.restoreBackup(backupResult.backupId!);
@@ -329,8 +335,8 @@ describe('Backup and Restore Integration Tests', () => {
       // Create multiple backups
       const backup1 = await manager.createBackup();
       
-      // Wait a bit to ensure different timestamps
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Fast-forward time to ensure different timestamps
+      vi.advanceTimersByTime(50);
       
       // Change config and create another backup
       // Modify a config file to simulate changes

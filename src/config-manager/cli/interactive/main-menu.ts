@@ -11,12 +11,12 @@ import {
   MenuChoice,
   SummaryStats,
 } from "./types.js";
-import { isNedbEnabled } from "../../../config/environment.js";
+import { isNedbEnabledAsync } from "../../../config/environment.js";
 
 /**
  * Calculate summary statistics from configuration data
  */
-export function calculateSummaryStats(data: ConfigurationData): SummaryStats {
+export async function calculateSummaryStats(data: ConfigurationData): Promise<SummaryStats> {
   // Server statistics
   const serverStats = {
     total: data.servers.length,
@@ -45,7 +45,8 @@ export function calculateSummaryStats(data: ConfigurationData): SummaryStats {
 
   // Group statistics (if database is enabled)
   let groupStats;
-  if (data.groups && isNedbEnabled()) {
+  const nedbEnabled = await isNedbEnabledAsync();
+  if (data.groups && nedbEnabled) {
     groupStats = {
       total: data.groups.length,
       active: data.groups.filter((g) => g.serverIds && g.serverIds.length > 0)
@@ -111,8 +112,9 @@ function formatApplicationStats(stats: SummaryStats): string {
 /**
  * Format server groups statistics section
  */
-function formatGroupStats(stats: SummaryStats): string {
-  if (!stats.groups || !isNedbEnabled()) {
+async function formatGroupStats(stats: SummaryStats): Promise<string> {
+  const nedbEnabled = await isNedbEnabledAsync();
+  if (!stats.groups || !nedbEnabled) {
     return "";
   }
 
@@ -138,7 +140,7 @@ function formatToolsetStats(stats: SummaryStats): string {
 export async function showMainMenu(
   data: ConfigurationData
 ): Promise<{ action: string; nextView?: ViewType }> {
-  const stats = calculateSummaryStats(data);
+  const stats = await calculateSummaryStats(data);
 
   // Clear screen and display header
   console.clear();
@@ -153,8 +155,9 @@ export async function showMainMenu(
   output.displaySpaceBuffer(1);
 
   // Only show groups if database is enabled
-  if (isNedbEnabled() && stats.groups) {
-    output.log(formatGroupStats(stats));
+  const nedbEnabled = await isNedbEnabledAsync();
+  if (nedbEnabled && stats.groups) {
+    output.log(await formatGroupStats(stats));
     output.displaySpaceBuffer(1);
   }
 
@@ -174,7 +177,7 @@ export async function showMainMenu(
   ];
 
   // Add server groups option if database is enabled
-  if (isNedbEnabled() && stats.groups) {
+  if (nedbEnabled && stats.groups) {
     choices.push({
       name: "View Server Groups",
       value: { action: "navigate", view: ViewType.GROUPS_LIST },

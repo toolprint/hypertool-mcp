@@ -2,7 +2,7 @@
  * NeDB implementation of the ServerConfigRecord repository
  */
 
-import Datastore from "nedb";
+import Datastore from "@seald-io/nedb";
 import { v4 as uuidv4 } from "uuid";
 import {
   ServerConfigRecord,
@@ -95,7 +95,7 @@ export class NeDBServerConfigRecordRepository
           logger.error("Failed to find server record by ID:", err);
           reject(err);
         } else {
-          resolve(doc as ServerConfigRecord | null);
+          resolve(doc as unknown as ServerConfigRecord | null);
         }
       });
     });
@@ -111,7 +111,7 @@ export class NeDBServerConfigRecordRepository
           logger.error("Failed to find server record by name:", err);
           reject(err);
         } else {
-          resolve(doc as ServerConfigRecord | null);
+          resolve(doc as unknown as ServerConfigRecord | null);
         }
       });
     });

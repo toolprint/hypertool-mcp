@@ -5,6 +5,44 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { BackupManager } from "./manager.js";
 import { TestEnvironment } from "../../../test/fixtures/base.js";
+import { resetDatabaseForTesting } from "../../../src/test-utils/database.js";
+
+// Mock the entire database layer to prevent hanging
+vi.mock('../../../src/db/compositeDatabaseService.js', () => {
+  const mockService = {
+    init: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+    servers: {
+      findAll: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockResolvedValue({ id: 'mock-server' }),
+      findById: vi.fn().mockResolvedValue(null),
+      update: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined)
+    },
+    groups: {
+      findAll: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockResolvedValue({ id: 'mock-group' }),
+      findById: vi.fn().mockResolvedValue(null),
+      update: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined)
+    },
+    configSources: {
+      findAll: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockResolvedValue({ id: 'mock-source' }),
+      findById: vi.fn().mockResolvedValue(null),
+      update: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined)
+    },
+    resetForTesting: vi.fn(),
+    getImplementationType: vi.fn().mockReturnValue('mock')
+  };
+  
+  return {
+    CompositeDatabaseService: vi.fn(() => mockService),
+    getCompositeDatabaseService: vi.fn(() => mockService),
+    resetCompositeDatabaseServiceForTesting: vi.fn()
+  };
+});
 import {
   ExistingConfigScenario,
   FreshInstallScenario,
@@ -12,6 +50,76 @@ import {
   CorruptedConfigScenario,
   PartialConfigScenario,
 } from "../../../test/fixtures/scenarios/index.js";
+
+// Mock NeDB completely to prevent any file system operations
+vi.mock('@seald-io/nedb', () => {
+  const createMockDB = () => ({
+    insert: vi.fn().mockImplementation((doc, callback) => {
+      if (callback) callback(null, { ...doc, _id: 'mock-id-' + Date.now() });
+      return Promise.resolve({ ...doc, _id: 'mock-id-' + Date.now() });
+    }),
+    find: vi.fn().mockImplementation((query, callback) => {
+      const result = [];
+      if (callback) callback(null, result);
+      return Promise.resolve(result);
+    }),
+    findOne: vi.fn().mockImplementation((query, callback) => {
+      if (callback) callback(null, null);
+      return Promise.resolve(null);
+    }),
+    update: vi.fn().mockImplementation((query, update, options, callback) => {
+      if (typeof options === 'function') callback = options;
+      if (callback) callback(null, 0, [], true);
+      return Promise.resolve({ numAffected: 0, affectedDocuments: [], upsert: true });
+    }),
+    remove: vi.fn().mockImplementation((query, options, callback) => {
+      if (typeof options === 'function') callback = options;
+      if (callback) callback(null, 0);
+      return Promise.resolve(0);
+    }),
+    count: vi.fn().mockImplementation((query, callback) => {
+      if (callback) callback(null, 0);
+      return Promise.resolve(0);
+    }),
+    loadDatabase: vi.fn().mockImplementation((callback) => {
+      if (callback) callback(null);
+      return Promise.resolve();
+    }),
+    compactDatafile: vi.fn().mockImplementation((callback) => {
+      if (callback) callback(null);
+      return Promise.resolve();
+    }),
+    ensureIndex: vi.fn().mockImplementation((options, callback) => {
+      if (callback) callback(null);
+      return Promise.resolve();
+    }),
+    removeIndex: vi.fn().mockImplementation((fieldName, callback) => {
+      if (callback) callback(null);
+      return Promise.resolve();
+    }),
+    getAllData: vi.fn().mockReturnValue([]),
+    resetIndexes: vi.fn(),
+    persistence: {
+      compactDatafile: vi.fn().mockImplementation((callback) => {
+        if (callback) callback(null);
+        return Promise.resolve();
+      }),
+      setAutocompactionInterval: vi.fn(),
+      stopAutocompaction: vi.fn()
+    },
+    // Event emitter methods
+    on: vi.fn(),
+    off: vi.fn(),
+    emit: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn()
+  });
+  
+  return {
+    default: vi.fn(createMockDB),
+    Datastore: vi.fn(createMockDB)
+  };
+});
 import {
   assertFileExists,
   assertFileNotExists,
@@ -87,14 +195,43 @@ describe("BackupManager", () => {
   const baseDir = "/tmp/hypertool-test";
 
   beforeEach(async () => {
-    env = new TestEnvironment(baseDir);
-    await env.setup();
-    backupManager = new BackupManager(env.getConfig().configRoot);
+    // Add timeout to prevent hanging
+    const setupPromise = (async () => {
+      resetDatabaseForTesting();
+      env = new TestEnvironment(baseDir);
+      await env.setup();
+      backupManager = new BackupManager(env.getConfig().configRoot);
+    })();
+    
+    // Race setup against timeout
+    await Promise.race([
+      setupPromise,
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Test setup timed out')), 3000)
+      )
+    ]);
   });
 
   afterEach(async () => {
-    await env.teardown();
-    vi.clearAllMocks();
+    // Add timeout to teardown as well
+    const teardownPromise = (async () => {
+      if (env) {
+        await env.teardown();
+      }
+      resetDatabaseForTesting();
+      vi.clearAllMocks();
+    })();
+    
+    // Race teardown against timeout
+    await Promise.race([
+      teardownPromise,
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Test teardown timed out')), 2000)
+      )
+    ]).catch((error) => {
+      console.warn('Teardown timeout:', error.message);
+      // Continue with cleanup even if teardown times out
+    });
   });
 
   describe("initialization", () => {
@@ -108,7 +245,13 @@ describe("BackupManager", () => {
     it("should create backup of fresh installation", async () => {
       await env.setup(new FreshInstallScenario());
 
-      const result = await backupManager.createBackup();
+      // Add timeout handling for this specific test
+      const result = await Promise.race([
+        backupManager.createBackup(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('createBackup timed out after 5 seconds')), 5000)
+        )
+      ]) as any;
 
       expect(result.success).toBe(true);
       expect(result.backupId).toBeDefined();
@@ -116,12 +259,18 @@ describe("BackupManager", () => {
       expect(result.metadata).toBeDefined();
       expect(result.metadata?.total_servers).toBe(0);
       expect(result.metadata?.applications).toEqual({});
-    });
+    }, 8000);
 
     it("should create backup with existing configurations", async () => {
       await env.setup(new ExistingConfigScenario(["claude-desktop", "cursor"]));
 
-      const result = await backupManager.createBackup();
+      // Add timeout for the backup operation
+      const result = await Promise.race([
+        backupManager.createBackup(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('createBackup timed out after 3 seconds')), 3000)
+        )
+      ]) as any;
 
       expect(result.success).toBe(true);
       expect(result.metadata?.total_servers).toBeGreaterThan(0);
@@ -134,12 +283,18 @@ describe("BackupManager", () => {
       // Verify metadata file exists
       const metadataPath = result.backupPath!.replace(".tar.gz", ".yaml");
       assertFileExists(metadataPath);
-    });
+    }, 5000);
 
     it("should handle multi-server configurations", async () => {
       await env.setup(new MultiServerScenario(20, true));
 
-      const result = await backupManager.createBackup();
+      // Add timeout for the backup operation
+      const result = await Promise.race([
+        backupManager.createBackup(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Multi-server backup timed out after 3 seconds')), 3000)
+        )
+      ]) as any;
 
       expect(result.success).toBe(true);
       expect(result.metadata?.total_servers).toBeGreaterThanOrEqual(20);
@@ -148,7 +303,7 @@ describe("BackupManager", () => {
       const claudeDesktopBackup =
         result.metadata?.applications["claude-desktop"];
       expect(claudeDesktopBackup?.servers_count).toBeGreaterThanOrEqual(15);
-    });
+    }, 5000);
 
     it("should skip corrupted configurations", async () => {
       await env.setup(

@@ -14,7 +14,7 @@ vi.mock("../config/environment.js", async () => {
   return {
     ...actual,
     isTestMode: () => true,
-    isNedbEnabled: () => false,
+    isNedbEnabledAsync: () => Promise.resolve(false),
   };
 });
 

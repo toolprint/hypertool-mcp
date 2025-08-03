@@ -3,7 +3,7 @@
  */
 
 import { Command } from "commander";
-import { SetupWizard } from "./setup.js";
+import { SetupWizard, SetupCancelledException } from "./setup.js";
 import { theme } from "../../utils/theme.js";
 
 export function createSetupCommand(): Command {
@@ -29,6 +29,7 @@ export function createSetupCommand(): Command {
       "Use specific example configuration (everything, development, etc.)"
     )
     .option("--list-examples", "List available example configurations")
+    .option("--experimental", "Enable all experimental features")
     .action(async (options) => {
       // Handle --list-examples first
       if (options.listExamples) {
@@ -67,13 +68,30 @@ export function createSetupCommand(): Command {
           verbose: options.verbose,
           example: options.example,
           listExamples: options.listExamples,
+          experimental: options.experimental,
         };
 
         const wizard = new SetupWizard(setupOptions);
         await wizard.run();
+        
+        // Setup completed successfully - exit cleanly only if not in test
+        if (!process.env.NODE_ENV?.includes('test')) {
+          process.exit(0);
+        }
       } catch (error) {
+        if (error instanceof SetupCancelledException) {
+          // User cancelled - exit cleanly only if not in test
+          if (!process.env.NODE_ENV?.includes('test')) {
+            process.exit(0);
+          }
+          return;
+        }
+        
         console.error(theme.error("Setup failed:"), error);
-        process.exit(1);
+        if (!process.env.NODE_ENV?.includes('test')) {
+          process.exit(1);
+        }
+        throw error; // Re-throw for tests
       }
     });
 

@@ -3,7 +3,7 @@
  * Manages initialization and provides access to repositories
  */
 
-import Datastore from "nedb";
+import Datastore from "@seald-io/nedb";
 import * as path from "path";
 import * as fs from "fs/promises";
 import {

@@ -29,4 +29,5 @@ export {
   createGetCommand,
   createAddCommand,
   createRemoveCommand,
+  createGroupCommands,
 };

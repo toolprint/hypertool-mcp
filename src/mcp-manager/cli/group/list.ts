@@ -3,7 +3,7 @@
  */
 
 import { Command } from "commander";
-import { getDatabaseService } from "../../../db/nedbService.js";
+import { getCompositeDatabaseService } from "../../../db/compositeDatabaseService.js";
 import { theme, semantic } from "../../../utils/theme.js";
 import { output } from "../../../utils/output.js";
 import { createChildLogger } from "../../../utils/logging.js";
@@ -19,7 +19,7 @@ export function createGroupListCommand(): Command {
     .action(async (options) => {
       try {
         // Initialize database
-        const dbService = getDatabaseService();
+        const dbService = getCompositeDatabaseService();
         await dbService.init();
 
         // Get all groups

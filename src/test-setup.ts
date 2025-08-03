@@ -10,17 +10,17 @@ import pino from "pino";
 // Mock the logging module to prevent file I/O during tests
 // but use a real Pino logger configured for console output only
 vi.mock("./utils/logging.js", () => {
-  // Create a simple console-only Pino logger for tests
+  // Create a minimal test logger for better performance
   const testLogger = pino({
-    level: "info",
-    transport: {
+    level: process.env.TEST_VERBOSE ? "info" : "silent", // Silent unless explicitly verbose
+    transport: process.env.TEST_VERBOSE ? {
       target: "pino-pretty",
       options: {
         colorize: false,
         translateTime: false,
-        ignore: "pid,hostname",
+        ignore: "pid,hostname,time",
       },
-    },
+    } : undefined,
   });
 
   const mockLogger = {

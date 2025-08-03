@@ -4,7 +4,7 @@
 
 import { Command } from "commander";
 import inquirer from "inquirer";
-import { getDatabaseService } from "../../../db/nedbService.js";
+import { getCompositeDatabaseService } from "../../../db/compositeDatabaseService.js";
 import { theme, semantic } from "../../../utils/theme.js";
 import { output } from "../../../utils/output.js";
 import { createChildLogger } from "../../../utils/logging.js";
@@ -22,7 +22,7 @@ export function createGroupCreateCommand(): Command {
     .action(async (name, options) => {
       try {
         // Initialize database
-        const dbService = getDatabaseService();
+        const dbService = getCompositeDatabaseService();
         await dbService.init();
 
         // Prompt for name if not provided

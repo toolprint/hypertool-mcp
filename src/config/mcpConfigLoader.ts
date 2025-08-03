@@ -6,10 +6,10 @@ import * as path from "path";
 import { loadUserPreferences } from "./preferenceStore.js";
 import { APP_TECHNICAL_NAME, BRAND_NAME } from "./appConfig.js";
 import { createChildLogger } from "../utils/logging.js";
-import { getDatabaseService } from "../db/nedbService.js";
+import { getCompositeDatabaseService } from "../db/compositeDatabaseService.js";
 import { ServerConfig } from "../types/config.js";
 import { IConfigSource } from "../db/interfaces.js";
-import { isNedbEnabled } from "./environment.js";
+import { getFeatureFlagService } from "./featureFlagService.js";
 import {
   discoverMcpConfigFile,
   loadMcpConfigFile,
@@ -26,7 +26,7 @@ async function getConfigSource(
   profileId?: string
 ): Promise<IConfigSource | null> {
   try {
-    const dbService = getDatabaseService();
+    const dbService = getCompositeDatabaseService();
     await dbService.init();
 
     // Find the most appropriate config source
@@ -86,8 +86,11 @@ export async function discoverMcpConfig(
   errorMessage?: string;
   configSource?: IConfigSource;
 }> {
-  // Check if NeDB is enabled
-  if (!isNedbEnabled()) {
+  // Check if NeDB is enabled using the feature flag service
+  const featureFlagService = getFeatureFlagService();
+  await featureFlagService.initialize();
+  
+  if (!featureFlagService.isNedbEnabled()) {
     logger.debug("NeDB disabled - using file-based configuration");
     return discoverMcpConfigFile(
       cliConfigPath,
@@ -99,7 +102,7 @@ export async function discoverMcpConfig(
 
   logger.debug("NeDB enabled - using database configuration");
   try {
-    const dbService = getDatabaseService();
+    const dbService = getCompositeDatabaseService();
     await dbService.init();
 
     // 1. Check for linked app with profile (highest priority)
@@ -197,15 +200,18 @@ export async function loadMcpConfig(
   configPath: string,
   configSource?: IConfigSource
 ): Promise<any> {
-  // Check if NeDB is enabled
-  if (!isNedbEnabled()) {
+  // Check if NeDB is enabled using the feature flag service
+  const featureFlagService = getFeatureFlagService();
+  await featureFlagService.initialize();
+  
+  if (!featureFlagService.isNedbEnabled()) {
     logger.debug("NeDB disabled - loading from file");
     return loadMcpConfigFile(configPath, configSource);
   }
 
   logger.debug("NeDB enabled - loading from database");
   try {
-    const dbService = getDatabaseService();
+    const dbService = getCompositeDatabaseService();
     await dbService.init();
 
     // If we have a config source, load servers associated with it

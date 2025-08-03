@@ -5,11 +5,11 @@
 import { Command } from "commander";
 import { theme } from "../../utils/theme.js";
 import { output } from "../../utils/output.js";
-import { getDatabaseService } from "../../db/nedbService.js";
+import { getCompositeDatabaseService } from "../../db/compositeDatabaseService.js";
 import { promises as fs } from "fs";
 import { dirname } from "path";
 import { ServerConfig } from "../../types/config.js";
-import { isNedbEnabled } from "../../config/environment.js";
+import { isNedbEnabledAsync } from "../../config/environment.js";
 
 export function createExportCommand(): Command {
   const exportCmd = new Command("export");
@@ -23,7 +23,7 @@ export function createExportCommand(): Command {
     .action(async (groupName, options) => {
       try {
         // Check if NeDB is enabled
-        if (!isNedbEnabled()) {
+        if (!(await isNedbEnabledAsync())) {
           output.error(
             "❌ Database features are not available when HYPERTOOL_NEDB_ENABLED is not set"
           );
@@ -33,7 +33,7 @@ export function createExportCommand(): Command {
           process.exit(1);
         }
 
-        const dbService = getDatabaseService();
+        const dbService = getCompositeDatabaseService();
         await dbService.init();
 
         // Find the group

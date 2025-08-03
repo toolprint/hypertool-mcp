@@ -22,6 +22,7 @@ export interface WizardState {
   dryRun: boolean;
   nonInteractive: boolean;
   verbose: boolean;
+  experimental?: boolean;
 
   // State
   cancelled?: boolean;
@@ -105,6 +106,7 @@ export interface SetupOptions {
   verbose?: boolean; // Show detailed output
   example?: string; // Use specific example config
   listExamples?: boolean; // List available examples
+  experimental?: boolean; // Enable all experimental features
 
   // Internal
   isFirstRun?: boolean; // True when no config exists

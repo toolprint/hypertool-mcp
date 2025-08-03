@@ -190,28 +190,12 @@ async function loadFeatureFlagsFromConfig(): Promise<Record<string, boolean> | u
   }
 }
 
-/**
- * Convenience function to check if NeDB is enabled (synchronous)
- * Priority: Environment variable > default (false)
- * 
- * Note: This synchronous version only checks environment variables.
- * Use isNedbEnabledAsync() if you need to check config.json as well.
- */
-export function isNedbEnabled(): boolean {
-  const config = EnvironmentManager.getInstance().getConfig();
-  
-  // Environment variable takes highest precedence
-  if (config.nedbEnabled !== undefined) {
-    return config.nedbEnabled === true;
-  }
-  
-  // Default to false if no environment variable is set
-  return false;
-}
 
 /**
  * Async version of isNedbEnabled that checks config.json as fallback
  * Priority: Environment variable > config.json > default (false)
+ * 
+ * @deprecated Use FeatureFlagService.isNedbEnabled() for better feature flag management
  */
 export async function isNedbEnabledAsync(): Promise<boolean> {
   const config = EnvironmentManager.getInstance().getConfig();

@@ -46,7 +46,13 @@ export class ExecutionStep implements WizardStep {
         name: "Linking applications",
         action: () => this.linkApplications(state),
       },
-    ].filter(Boolean);
+      state.experimental
+        ? {
+            name: "Enabling experimental features",
+            action: () => this.enableExperimentalFeatures(state),
+          }
+        : null,
+    ].filter((step): step is NonNullable<typeof step> => step !== null);
 
     // Execute each step
     for (let i = 0; i < steps.length; i++) {
@@ -295,5 +301,56 @@ export class ExecutionStep implements WizardStep {
     };
 
     await fs.writeFile(mainConfigPath, JSON.stringify(mainConfig, null, 2));
+  }
+
+  private async enableExperimentalFeatures(state: WizardState): Promise<void> {
+    if (state.dryRun) return;
+
+    const fs = (await import("fs")).promises;
+    const path = await import("path");
+    
+    // Update main config.json to enable all experimental features
+    const mainConfigPath = path.join(
+      getHomeDir(),
+      ".toolprint",
+      "hypertool-mcp",
+      "config.json"
+    );
+
+    let mainConfig: any = {};
+    try {
+      const content = await fs.readFile(mainConfigPath, "utf-8");
+      mainConfig = JSON.parse(content);
+    } catch {
+      mainConfig = { version: "1.0.0" };
+    }
+
+    // Enable all experimental feature flags
+    if (!mainConfig.featureFlags) {
+      mainConfig.featureFlags = {};
+    }
+
+    // Enable NeDB and any future experimental features
+    mainConfig.featureFlags.nedbEnabled = true;
+    
+    // Add a marker that experimental mode was enabled
+    mainConfig.experimentalMode = {
+      enabled: true,
+      enabledAt: new Date().toISOString(),
+      enabledBy: "setup-wizard",
+    };
+
+    await fs.writeFile(
+      mainConfigPath,
+      JSON.stringify(mainConfig, null, 2),
+      "utf-8"
+    );
+
+    output.info(
+      theme.muted("  → Enabled all experimental features")
+    );
+    output.info(
+      theme.warning("  ⚠️  Experimental features may be unstable or change in future versions")
+    );
   }
 }

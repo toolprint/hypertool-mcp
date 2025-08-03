@@ -591,11 +591,13 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     createGetCommand,
     createAddCommand,
     createRemoveCommand,
+    createGroupCommands,
   } = await import("./mcp-manager/cli/index.js");
   mcpCommand.addCommand(createListCommand());
   mcpCommand.addCommand(createGetCommand());
   mcpCommand.addCommand(createAddCommand());
   mcpCommand.addCommand(createRemoveCommand());
+  mcpCommand.addCommand(createGroupCommands());
 
   program.addCommand(mcpCommand);
 
