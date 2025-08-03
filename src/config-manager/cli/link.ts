@@ -7,12 +7,13 @@ import inquirer from "inquirer";
 import { theme } from "../../utils/theme.js";
 import { ConfigurationManager } from "../index.js";
 import { output } from "../../utils/output.js";
+import { isNedbEnabledAsync } from "../../config/environment.js";
 
 interface AppLinkConfig {
   appId: string;
   appName: string;
-  configType: 'global' | 'per-app';
-  perAppInit?: 'empty' | 'copy' | 'import';
+  configType: "global" | "per-app";
+  perAppInit?: "empty" | "copy" | "import";
 }
 
 export function createLinkCommand(): Command {
@@ -55,118 +56,129 @@ export function createLinkCommand(): Command {
 
         // Configure each selected app
         const appConfigs: AppLinkConfig[] = [];
-        
+
         // If using flags (non-interactive), use default config type
         if (options.all || options.app) {
           for (const appId of selectedApps) {
             appConfigs.push({
               appId,
               appName: apps[appId].name,
-              configType: 'global', // Default to global for non-interactive
+              configType: "global", // Default to global for non-interactive
             });
           }
         } else {
           // Interactive mode
           // If no --all flag and no specific app, show interactive selection
           if (!options.all && !options.app && appIds.length > 1) {
-          const { selected } = await inquirer.prompt([
-            {
-              type: "checkbox",
-              name: "selected",
-              message: "Select applications to link to HyperTool:",
-              choices: appIds.map((id) => ({
-                name: `${apps[id].name} (${id})`,
-                value: id,
-                checked: true,
-              })),
-              validate: (answer) => {
-                if (answer.length < 1) {
-                  return "You must select at least one application.";
-                }
-                return true;
+            const { selected } = await inquirer.prompt([
+              {
+                type: "checkbox",
+                name: "selected",
+                message: "Select applications to link to HyperTool:",
+                choices: appIds.map((id) => ({
+                  name: `${apps[id].name} (${id})`,
+                  value: id,
+                  checked: true,
+                })),
+                validate: (answer) => {
+                  if (answer.length < 1) {
+                    return "You must select at least one application.";
+                  }
+                  return true;
+                },
               },
-            },
-          ]);
-          selectedApps = selected;
+            ]);
+            selectedApps = selected;
           }
 
           // Interactive configuration for each selected app
           for (const appId of selectedApps) {
-          const appName = apps[appId].name;
-          
-          output.displaySpaceBuffer(1);
-          output.info(theme.label(`Configuring ${appName}:`));
-          
-          // Ask about config type
-          const { configType } = await inquirer.prompt([{
-            type: 'list',
-            name: 'configType',
-            message: `How should ${appName} connect to HyperTool?`,
-            choices: [
+            const appName = apps[appId].name;
+
+            output.displaySpaceBuffer(1);
+            output.info(theme.label(`Configuring ${appName}:`));
+
+            // Ask about config type
+            const { configType } = await inquirer.prompt([
               {
-                name: 'Use global config (shared with all apps)',
-                value: 'global'
-              },
-              {
-                name: 'Use per-app config (separate servers for this app)',
-                value: 'per-app'
-              }
-            ],
-            default: 'global'
-          }]);
-          
-          let perAppInit: 'empty' | 'copy' | 'import' | undefined;
-          
-          if (configType === 'per-app') {
-            // Check if per-app config already exists
-            const { promises: fs } = await import('fs');
-            const { join } = await import('path');
-            const { homedir } = await import('os');
-            
-            const perAppConfigPath = join(
-              homedir(),
-              '.toolprint/hypertool-mcp/mcp',
-              `${appId}.json`
-            );
-            
-            let configExists = false;
-            try {
-              await fs.access(perAppConfigPath);
-              configExists = true;
-            } catch {
-              configExists = false;
-            }
-            
-            if (!configExists) {
-              const { initMethod } = await inquirer.prompt([{
-                type: 'list',
-                name: 'initMethod',
-                message: `No per-app config exists for ${appName}. How would you like to proceed?`,
+                type: "list",
+                name: "configType",
+                message: `How should ${appName} connect to HyperTool?`,
                 choices: [
                   {
-                    name: 'Start with empty config',
-                    value: 'empty'
+                    name: "Use global config (shared with all apps)",
+                    value: "global",
                   },
                   {
-                    name: 'Copy current global config',
-                    value: 'copy'
+                    name: "Use per-app config (separate servers for this app)",
+                    value: "per-app",
                   },
+                ],
+                default: "global",
+              },
+            ]);
+
+            let perAppInit: "empty" | "copy" | "import" | undefined;
+
+            if (configType === "per-app") {
+              // Check if per-app config already exists
+              const { promises: fs } = await import("fs");
+              const { join } = await import("path");
+              const { homedir } = await import("os");
+
+              const perAppConfigPath = join(
+                homedir(),
+                ".toolprint/hypertool-mcp/mcp",
+                `${appId}.json`
+              );
+
+              let configExists = false;
+
+              // In NeDB mode, check database instead of file
+              if (await isNedbEnabledAsync()) {
+                // Config existence will be checked by ConfigurationManager
+                configExists = false; // Always show init options in NeDB mode
+              } else {
+                try {
+                  await fs.access(perAppConfigPath);
+                  configExists = true;
+                } catch {
+                  configExists = false;
+                }
+              }
+
+              if (!configExists) {
+                const { initMethod } = await inquirer.prompt([
                   {
-                    name: `Import from ${appName}'s existing config`,
-                    value: 'import'
-                  }
-                ]
-              }]);
-              perAppInit = initMethod;
+                    type: "list",
+                    name: "initMethod",
+                    message: `No per-app config exists for ${appName}. How would you like to proceed?`,
+                    choices: [
+                      {
+                        name: "Start with empty config",
+                        value: "empty",
+                      },
+                      {
+                        name: "Copy current global config",
+                        value: "copy",
+                      },
+                      {
+                        name: `Import from ${appName}'s existing config`,
+                        value: "import",
+                      },
+                    ],
+                  },
+                ]);
+                perAppInit = initMethod;
+              }
             }
-          }
-          
-          appConfigs.push({
-            appId,
-            appName,
-            configType,
-            perAppInit
-          });
+
+            appConfigs.push({
+              appId,
+              appName,
+              configType,
+              perAppInit,
+            });
           }
         }
 
@@ -176,13 +188,16 @@ export function createLinkCommand(): Command {
 
           output.displaySubHeader("Would link HyperTool to:");
           for (const config of appConfigs) {
-            const configTypeLabel = config.configType === 'global' ? 'Global config' : 'Per-app config';
+            const configTypeLabel =
+              config.configType === "global"
+                ? "Global config"
+                : "Per-app config";
             let details = `• ${config.appName} → ${configTypeLabel}`;
-            
+
             if (config.perAppInit) {
               details += ` (${config.perAppInit})`;
             }
-            
+
             output.displayInstruction(details);
           }
 
@@ -195,16 +210,17 @@ export function createLinkCommand(): Command {
         output.displaySpaceBuffer(1);
         output.displaySubHeader("Link Summary:");
         for (const config of appConfigs) {
-          const configTypeLabel = config.configType === 'global' ? 'Global config' : 'Per-app config';
+          const configTypeLabel =
+            config.configType === "global" ? "Global config" : "Per-app config";
           let details = `• ${config.appName} → ${configTypeLabel}`;
-          
+
           if (config.perAppInit) {
             details += ` (${config.perAppInit})`;
           }
-          
+
           output.displayInstruction(details);
         }
-        
+
         output.displaySpaceBuffer(1);
         const { confirm } = await inquirer.prompt([
           {
@@ -242,6 +258,18 @@ export function createLinkCommand(): Command {
         output.displayInstruction(
           "2. Your MCP tools are now proxied through HyperTool"
         );
+
+        // Show database mode information if enabled
+        if (await isNedbEnabledAsync()) {
+          output.displaySpaceBuffer(1);
+          output.info("📊 Database Mode: ENABLED");
+          output.displayInstruction(
+            "   Per-app configs are stored in the NeDB database"
+          );
+          output.displayInstruction(
+            "   Use 'hypertool-mcp config show sources' to view all configurations"
+          );
+        }
       } catch (error) {
         output.error("❌ Linking failed:");
         output.error(error instanceof Error ? error.message : String(error));

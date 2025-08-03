@@ -49,7 +49,6 @@ enum FigletFont {
 
 const PREFERRED_FONT = FigletFont.SubZero;
 
-
 /**
  * Custom console display output that also conditionally
  * logs to the console and the logger where appropriate

@@ -7,6 +7,7 @@ import { createListCommand } from "./list.js";
 import { createGetCommand } from "./get.js";
 import { createAddCommand } from "./add.js";
 import { createRemoveCommand } from "./remove.js";
+import { createGroupCommands } from "./group/index.js";
 
 export function createMCPManagementCommands(): Command {
   const mcp = new Command("mcp");
@@ -16,7 +17,8 @@ export function createMCPManagementCommands(): Command {
     .addCommand(createListCommand())
     .addCommand(createGetCommand())
     .addCommand(createAddCommand())
-    .addCommand(createRemoveCommand());
+    .addCommand(createRemoveCommand())
+    .addCommand(createGroupCommands());
 
   return mcp;
 }
@@ -27,4 +29,5 @@ export {
   createGetCommand,
   createAddCommand,
   createRemoveCommand,
+  createGroupCommands,
 };

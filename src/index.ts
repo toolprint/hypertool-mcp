@@ -159,6 +159,10 @@ const mcpServerRunOptions = [
       theme.info("Log level") + " (trace, debug, info, warn, error, fatal)",
     defaultValue: "info",
   },
+  {
+    flags: "--group <name>",
+    description: theme.info("Server group name to load servers from"),
+  },
 ];
 
 /**
@@ -229,6 +233,7 @@ async function runMcpServer(options: any): Promise<void> {
     linkedApp: options.linkedApp,
     profile: options.profile,
     logLevel,
+    group: options.group,
   };
 
   // ! We use dynamic imports to ensure that the transport and logging configuration is initialized
@@ -283,7 +288,7 @@ async function runMcpServer(options: any): Promise<void> {
   if (runtimeOptions.debug) {
     const sourceText = {
       cli: "command line argument",
-      app: `application config (${runtimeOptions.linkedApp}${runtimeOptions.profile ? `/${runtimeOptions.profile}` : ''})`,
+      app: `application config (${runtimeOptions.linkedApp}${runtimeOptions.profile ? `/${runtimeOptions.profile}` : ""})`,
       preference: "user preference",
       discovered: "automatic discovery",
       none: "unknown source",
@@ -388,6 +393,7 @@ async function runMcpServer(options: any): Promise<void> {
     transport: transportConfig,
     debug: runtimeOptions.debug,
     configPath: configResult.configPath,
+    configSource: configResult.configSource,
   });
 
   await server.start(initOptions, runtimeOptions);
@@ -458,7 +464,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--insecure",
       theme.warning("Allow tools with changed reference hashes") +
-      semantic.messageError(" (insecure mode)"),
+        semantic.messageError(" (insecure mode)"),
       false
     )
     .option(
@@ -467,18 +473,19 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     )
     .option(
       "--mcp-config <path>",
-      theme.info("Path to MCP configuration file") + 
-      theme.muted(" (overrides all other config sources)")
+      theme.info("Path to MCP configuration file") +
+        theme.muted(" (overrides all other config sources)")
     )
     .option(
       "--linked-app <app-id>",
       theme.info("Link to specific application configuration") +
-      "\n" + theme.label("Options: claude-desktop, cursor, claude-code")
+        "\n" +
+        theme.label("Options: claude-desktop, cursor, claude-code")
     )
     .option(
       "--profile <profile-id>",
       theme.info("Use specific profile for workspace/project") +
-      theme.muted(" (basic support - full profile management TODO)")
+        theme.muted(" (basic support - full profile management TODO)")
     )
     .option(
       "--log-level <level>",
@@ -488,21 +495,23 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--dry-run",
       theme.info("Show what would be done without making changes") +
-      theme.warning(" (only valid with --install)"),
+        theme.warning(" (only valid with --install)"),
       false
     )
     .option(
       "--install [app]",
       theme.warning("⚠️  DEPRECATED: Use 'hypertool-mcp setup' instead\n") +
-      theme.info("Install and configure integrations (legacy support)\n") +
-      theme.label(
-        "Options: all (default), claude-desktop (cd), cursor, claude-code (cc)\n"
-      ) +
-      theme.muted("Examples:\n") +
-      theme.muted(
-        "  hypertool-mcp setup               # Modern setup (recommended)\n"
-      ) +
-      theme.muted("  hypertool-mcp --install           # Legacy install (deprecated)\n")
+        theme.info("Install and configure integrations (legacy support)\n") +
+        theme.label(
+          "Options: all (default), claude-desktop (cd), cursor, claude-code (cc)\n"
+        ) +
+        theme.muted("Examples:\n") +
+        theme.muted(
+          "  hypertool-mcp setup               # Modern setup (recommended)\n"
+        ) +
+        theme.muted(
+          "  hypertool-mcp --install           # Legacy install (deprecated)\n"
+        )
     );
 
   // Add config subcommands
@@ -510,18 +519,19 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     "./config-manager/cli/index.js"
   );
   program.addCommand(createConfigCommands());
-  
+
   // Add setup command directly
   const setupModule = await import("./commands/setup/index.js");
   program.addCommand(setupModule.createSetupCommand());
-  
+
   // Add mcp command with subcommands
-  const mcpCommand = new Command('mcp')
-    .description('MCP server operations and management');
-  
+  const mcpCommand = new Command("mcp").description(
+    "MCP server operations and management"
+  );
+
   // Add 'run' subcommand for running the MCP server
-  const runCommand = new Command('run')
-    .description('Run the MCP server (default if no subcommand specified)')
+  const runCommand = new Command("run")
+    .description("Run the MCP server (default if no subcommand specified)")
     .option(
       "--transport <type>",
       theme.info("Transport protocol to use") + " (http, stdio)",
@@ -530,7 +540,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--port <number>",
       theme.info("Port number for HTTP transport") +
-      " (only valid with --transport http)"
+        " (only valid with --transport http)"
     )
     .option(
       "--debug",
@@ -540,7 +550,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .option(
       "--insecure",
       theme.warning("Allow tools with changed reference hashes") +
-      semantic.messageError(" (insecure mode)"),
+        semantic.messageError(" (insecure mode)"),
       false
     )
     .option(
@@ -549,18 +559,19 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     )
     .option(
       "--mcp-config <path>",
-      theme.info("Path to MCP configuration file") + 
-      theme.muted(" (overrides all other config sources)")
+      theme.info("Path to MCP configuration file") +
+        theme.muted(" (overrides all other config sources)")
     )
     .option(
       "--linked-app <app-id>",
       theme.info("Link to specific application configuration") +
-      "\n" + theme.label("Options: claude-desktop, cursor, claude-code")
+        "\n" +
+        theme.label("Options: claude-desktop, cursor, claude-code")
     )
     .option(
       "--profile <profile-id>",
       theme.info("Use specific profile for workspace/project") +
-      theme.muted(" (basic support - full profile management TODO)")
+        theme.muted(" (basic support - full profile management TODO)")
     )
     .option(
       "--log-level <level>",
@@ -571,86 +582,103 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
       // Run the MCP server with the given options
       await runMcpServer(options);
     });
-  
+
   mcpCommand.addCommand(runCommand);
-  
+
   // Add MCP server management commands directly
-  const { createListCommand, createGetCommand, createAddCommand, createRemoveCommand } = await import("./mcp-manager/cli/index.js");
+  const {
+    createListCommand,
+    createGetCommand,
+    createAddCommand,
+    createRemoveCommand,
+    createGroupCommands,
+  } = await import("./mcp-manager/cli/index.js");
   mcpCommand.addCommand(createListCommand());
   mcpCommand.addCommand(createGetCommand());
   mcpCommand.addCommand(createAddCommand());
   mcpCommand.addCommand(createRemoveCommand());
-  
+  mcpCommand.addCommand(createGroupCommands());
+
   program.addCommand(mcpCommand);
-  
+
   // Check if this is first run (no config exists)
   const { SetupWizard } = await import("./commands/setup/setup.js");
   const isFirstRun = await SetupWizard.isFirstRun();
-  
+
   // If no command is specified, default to 'mcp run' or 'setup'
   // But only if the first argument isn't already a known command
   const cliArgs = process.argv.slice(2);
-  const knownCommands = ['config', 'mcp', 'setup', 'help'];
-  const knownMcpSubcommands = ['run', 'list', 'get', 'add', 'remove'];
-  
+  const knownCommands = ["config", "mcp", "setup", "help"];
+  const knownMcpSubcommands = ["run", "list", "get", "add", "remove"];
+
   // Check if any argument is a known command
   let hasCommand = false;
   let hasMcpCommand = false;
   for (const arg of cliArgs) {
     if (knownCommands.includes(arg)) {
       hasCommand = true;
-      if (arg === 'mcp') {
+      if (arg === "mcp") {
         hasMcpCommand = true;
       }
       break;
     }
   }
-  
+
   // Also check for special global options that should not trigger mcp command
-  const hasSpecialGlobalOption = cliArgs.includes('--help') || cliArgs.includes('-h') || 
-                                cliArgs.includes('--version') || cliArgs.includes('-V') ||
-                                cliArgs.some(arg => arg.startsWith('--install'));
-  
+  const hasSpecialGlobalOption =
+    cliArgs.includes("--help") ||
+    cliArgs.includes("-h") ||
+    cliArgs.includes("--version") ||
+    cliArgs.includes("-V") ||
+    cliArgs.some((arg) => arg.startsWith("--install"));
+
   // If we have arguments but no command and no special global options, insert 'mcp run'
   if (cliArgs.length > 0 && !hasCommand && !hasSpecialGlobalOption) {
-    process.argv.splice(2, 0, 'mcp', 'run');
+    process.argv.splice(2, 0, "mcp", "run");
   }
   // If we have 'mcp' command but no subcommand, insert 'run'
   else if (hasMcpCommand && cliArgs.length === 1) {
-    process.argv.splice(3, 0, 'run');
+    process.argv.splice(3, 0, "run");
   }
   // If we have 'mcp' followed by options (not a subcommand), insert 'run'
-  else if (hasMcpCommand && cliArgs.length > 1 && !knownMcpSubcommands.includes(cliArgs[1]) && cliArgs[1].startsWith('--')) {
-    process.argv.splice(3, 0, 'run');
+  else if (
+    hasMcpCommand &&
+    cliArgs.length > 1 &&
+    !knownMcpSubcommands.includes(cliArgs[1]) &&
+    cliArgs[1].startsWith("--")
+  ) {
+    process.argv.splice(3, 0, "run");
   }
   // If no arguments at all, default to 'setup' for first run or 'mcp run'
   else if (cliArgs.length === 0) {
     if (isFirstRun) {
-      console.log(theme.success('🎯 Welcome to Hypertool MCP!'));
-      console.log(theme.info('   No configuration detected. Let\'s get you set up!\n'));
-      console.log(theme.muted('   Running: hypertool-mcp setup\n'));
-      process.argv.push('setup');
+      console.log(theme.success("🎯 Welcome to Hypertool MCP!"));
+      console.log(
+        theme.info("   No configuration detected. Let's get you set up!\n")
+      );
+      console.log(theme.muted("   Running: hypertool-mcp setup\n"));
+      process.argv.push("setup");
     } else {
-      process.argv.push('mcp', 'run');
+      process.argv.push("mcp", "run");
     }
   }
-  
+
   // Check if we have 'mcp' command but no subcommand and need to add 'run'
   // (hasMcpCommand is already declared above)
   if (hasMcpCommand) {
-    const mcpIndex = cliArgs.indexOf('mcp');
+    const mcpIndex = cliArgs.indexOf("mcp");
     const nextArg = cliArgs[mcpIndex + 1];
     // If there's no next arg or it's an option (starts with --), add 'run'
-    if (!nextArg || nextArg.startsWith('--')) {
-      process.argv.splice(2 + mcpIndex + 1, 0, 'run');
+    if (!nextArg || nextArg.startsWith("--")) {
+      process.argv.splice(2 + mcpIndex + 1, 0, "run");
     }
   }
-  
+
   await program.parseAsync();
 
   // If we get here and no command was executed, we're done
   const args = process.argv.slice(2);
-  if (args.length > 0 && (args[0] === 'config' || args[0] === 'help')) {
+  if (args.length > 0 && (args[0] === "config" || args[0] === "help")) {
     // Subcommand was handled, exit
     process.exit(0);
   }
@@ -663,7 +691,9 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
       semantic.messageError("❌ --dry-run flag can only be used with --install")
     );
     console.error(
-      theme.warning("   Usage: hypertool-mcp --install claude-desktop --dry-run")
+      theme.warning(
+        "   Usage: hypertool-mcp --install claude-desktop --dry-run"
+      )
     );
     throw new Error("Invalid install option");
   }
@@ -672,18 +702,30 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     // Show deprecation warning
     console.error("");
     console.error(theme.warning("⚠️  DEPRECATION WARNING"));
-    console.error(theme.warning("   The --install flag is deprecated and will be removed in a future version."));
-    console.error(theme.info("   Please use the modern setup command instead:"));
+    console.error(
+      theme.warning(
+        "   The --install flag is deprecated and will be removed in a future version."
+      )
+    );
+    console.error(
+      theme.info("   Please use the modern setup command instead:")
+    );
     console.error(theme.info(""));
     console.error(theme.success("   hypertool-mcp setup"));
     console.error(theme.info(""));
-    console.error(theme.muted("   The setup command provides a better interactive experience with"));
-    console.error(theme.muted("   more configuration options and non-interactive support."));
+    console.error(
+      theme.muted(
+        "   The setup command provides a better interactive experience with"
+      )
+    );
+    console.error(
+      theme.muted("   more configuration options and non-interactive support.")
+    );
     console.error("");
-    
+
     // Wait a moment for the user to see the warning
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     // options.install will be true if no app specified, or a string if app specified
     const installApp =
       typeof options.install === "string" ? options.install : "all";

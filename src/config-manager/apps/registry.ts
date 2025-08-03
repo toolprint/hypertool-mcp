@@ -75,20 +75,6 @@ export class AppRegistry {
           enabled: true,
           platforms: {
             all: {
-              configPath: "./.mcp.json",
-              format: "standard",
-            },
-          },
-          detection: {
-            type: "project-local",
-            indicator: ".mcp.json",
-          },
-        },
-        "claude-code-user": {
-          name: "Claude Code (User)",
-          enabled: true,
-          platforms: {
-            all: {
               configPath: "~/.claude.json",
               format: "custom",
               transformer: "claude-code",

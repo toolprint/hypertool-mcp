@@ -1,6 +1,6 @@
 /**
  * Setup wizard - Interactive configuration setup for Hypertool MCP
- * 
+ *
  * TODO: Profile Management Integration
  * - Add profile selection step to setup wizard
  * - Allow users to create new profiles during setup
@@ -9,28 +9,35 @@
  * - Implement profile templates for common setups
  */
 
-import { output } from '../../utils/output.js';
-import { theme } from '../../utils/theme.js';
-import { ConfigurationManager } from '../../config-manager/index.js';
-import { 
-  WizardState, 
-  SetupOptions, 
-  WizardStep
-} from './types.js';
+import { output } from "../../utils/output.js";
+import { theme } from "../../utils/theme.js";
+import { ConfigurationManager } from "../../config-manager/index.js";
+import { WizardState, SetupOptions, WizardStep } from "./types.js";
+import { getHomeDir } from "../../utils/paths.js";
+
+/**
+ * Exception thrown when user cancels the setup wizard
+ */
+export class SetupCancelledException extends Error {
+  constructor(message = "Setup cancelled by user") {
+    super(message);
+    this.name = "SetupCancelledException";
+  }
+}
 
 // Import wizard steps
-import { WelcomeStep } from '../steps/welcome.js';
-import { AppDetectionStep } from '../steps/appDetection.js';
-import { ConfigDiscoveryStep } from '../steps/configDiscovery.js';
-import { ImportStrategyStep } from '../steps/importStrategy.js';
-import { ExampleSelectionStep } from '../steps/exampleSelection.js';
-import { ServerSelectionStep } from '../steps/serverSelection.js';
-import { ConflictResolutionStep } from '../steps/conflictResolution.js';
-import { ToolsetCreationStep } from '../steps/toolsetCreation.js';
-import { InstallationTypeStep } from '../steps/installationType.js';
-import { ReviewStep } from '../steps/review.js';
-import { ExecutionStep } from '../steps/execution.js';
-import { CompletionStep } from '../steps/completion.js';
+import { WelcomeStep } from "../steps/welcome.js";
+import { AppDetectionStep } from "../steps/appDetection.js";
+import { ConfigDiscoveryStep } from "../steps/configDiscovery.js";
+import { ImportStrategyStep } from "../steps/importStrategy.js";
+import { ExampleSelectionStep } from "../steps/exampleSelection.js";
+import { ServerSelectionStep } from "../steps/serverSelection.js";
+import { ConflictResolutionStep } from "../steps/conflictResolution.js";
+import { ToolsetCreationStep } from "../steps/toolsetCreation.js";
+import { InstallationTypeStep } from "../steps/installationType.js";
+import { ReviewStep } from "../steps/review.js";
+import { ExecutionStep } from "../steps/execution.js";
+import { CompletionStep } from "../steps/completion.js";
 
 export class SetupWizard {
   private state: WizardState;
@@ -41,22 +48,23 @@ export class SetupWizard {
   constructor(options: SetupOptions = {}) {
     this.options = options;
     this.configManager = ConfigurationManager.fromEnvironment();
-    
+
     // Initialize state
     this.state = {
       detectedApps: [],
       existingConfigs: [],
       selectedApps: [],
-      importStrategy: 'per-app',
+      importStrategy: "per-app",
       perAppSelections: {},
       toolsets: [],
-      installationType: 'standard',
+      installationType: "standard",
       serverNameMapping: {},
       dryRun: options.dryRun || false,
       nonInteractive: options.yes || false,
       verbose: options.verbose || false,
+      experimental: options.experimental || false,
       // Pass through CLI options for non-interactive mode
-      ...options
+      ...options,
     };
 
     // Define wizard steps
@@ -72,7 +80,7 @@ export class SetupWizard {
       new InstallationTypeStep(),
       new ReviewStep(),
       new ExecutionStep(this.configManager),
-      new CompletionStep()
+      new CompletionStep(),
     ];
   }
 
@@ -85,7 +93,7 @@ export class SetupWizard {
       if (!this.options.dryRun && !this.state.nonInteractive) {
         output.clearTerminal();
       }
-      
+
       // Run through wizard steps
       for (const step of this.steps) {
         // Skip certain steps in non-interactive mode
@@ -98,18 +106,15 @@ export class SetupWizard {
 
         // Check if user cancelled
         if (this.state.cancelled) {
-          output.info(theme.warning('\n✖ Setup cancelled by user'));
-          process.exit(0);
+          output.info(theme.warning("\n✖ Setup cancelled by user"));
+          throw new SetupCancelledException();
         }
       }
 
-      // Success!
-      if (!this.state.dryRun) {
-        process.exit(0);
-      }
+      // Success - just return normally
     } catch (error) {
-      output.error(`Setup failed: ${error}`);
-      process.exit(1);
+      // Re-throw the error to let the caller handle it
+      throw error;
     }
   }
 
@@ -120,22 +125,26 @@ export class SetupWizard {
     try {
       const configManager = ConfigurationManager.fromEnvironment();
       await configManager.initialize();
-      
+
       // Check if config.json exists and has content
-      const fs = (await import('fs')).promises;
-      const path = await import('path');
-      const os = await import('os');
-      
+      const fs = (await import("fs")).promises;
+      const path = await import("path");
+      const os = await import("os");
+
       try {
         const configPath = path.join(
-          os.homedir(),
-          '.toolprint',
-          'hypertool-mcp',
-          'config.json'
+          getHomeDir(),
+          ".toolprint",
+          "hypertool-mcp",
+          "config.json"
         );
-        const content = await fs.readFile(configPath, 'utf-8');
+        const content = await fs.readFile(configPath, "utf-8");
         const config = JSON.parse(content);
-        return !config || !config.applications || Object.keys(config.applications).length === 0;
+        return (
+          !config ||
+          !config.applications ||
+          Object.keys(config.applications).length === 0
+        );
       } catch {
         return true;
       }
@@ -151,9 +160,9 @@ export class SetupWizard {
   static async runNonInteractive(options: SetupOptions): Promise<void> {
     const wizard = new SetupWizard({
       ...options,
-      yes: true
+      yes: true,
     });
-    
+
     await wizard.run();
   }
 }

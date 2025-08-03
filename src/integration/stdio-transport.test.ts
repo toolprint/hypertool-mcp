@@ -1,10 +1,22 @@
-import { describe, it, expect, afterEach, beforeAll } from "vitest";
+import { describe, it, expect, afterEach, beforeAll, vi, beforeEach } from "vitest";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { join } from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import { existsSync } from "fs";
+import { existsSync, mkdtempSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { promises as fs } from "fs";
+
+// Mock environment to force test mode and prevent real home directory usage
+vi.mock("../config/environment.js", async () => {
+  const actual = await vi.importActual("../config/environment.js");
+  return {
+    ...actual,
+    isTestMode: () => true,
+    isNedbEnabled: () => false,
+  };
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -14,6 +26,7 @@ describe("MCP Server stdio transport", () => {
   const configPath = join(__dirname, "../../mcp.test.json");
   let client: Client | null = null;
   let transport: StdioClientTransport | null = null;
+  let testHome: string | null = null;
 
   beforeAll(() => {
     // Ensure the server is built
@@ -27,6 +40,22 @@ describe("MCP Server stdio transport", () => {
     }
   });
 
+  beforeEach(async () => {
+    // Create a temporary directory for test isolation
+    testHome = mkdtempSync(join(tmpdir(), 'hypertool-test-'));
+    
+    // Create the necessary directory structure
+    const toolprintDir = join(testHome, '.toolprint', 'hypertool-mcp');
+    await fs.mkdir(toolprintDir, { recursive: true });
+    
+    // Create a minimal config.json to prevent user preference loading
+    const configJson = join(toolprintDir, 'config.json');
+    await fs.writeFile(configJson, JSON.stringify({
+      toolsets: {},
+      version: "1.0.0"
+    }, null, 2));
+  });
+
   afterEach(async () => {
     // Clean up client and transport
     if (client) {
@@ -37,21 +66,31 @@ describe("MCP Server stdio transport", () => {
       await transport.close();
       transport = null;
     }
+    
+    // Clean up temp directory
+    if (testHome) {
+      try {
+        rmSync(testHome, { recursive: true, force: true });
+      } catch (error) {
+        console.warn('Failed to clean up test directory:', error);
+      }
+      testHome = null;
+    }
   });
 
-  // Reduced timeout with minimal memory server configuration in mcp.test.json
+  // Uses global testTimeout for stdio server startup and MCP protocol initialization
   it(
     "should connect via stdio and call tools successfully",
-    { timeout: 5000 },
     async () => {
       // Create stdio transport using environment variable override (CLI parsing issue workaround)
       transport = new StdioClientTransport({
         command: "node",
         args: [serverPath, "--transport", "stdio"],
-        env: { 
-          ...process.env, 
+        env: {
+          ...process.env,
           NODE_ENV: "test",
-          HYPERTOOL_TEST_CONFIG: configPath
+          HYPERTOOL_TEST_CONFIG: configPath,
+          HYPERTOOL_TEST_HOME: testHome,
         },
       });
 
@@ -86,15 +125,16 @@ describe("MCP Server stdio transport", () => {
     }
   );
 
-  // Reduced timeout with minimal memory server configuration in mcp.test.json
-  it("should handle concurrent operations", { timeout: 5000 }, async () => {
+  // Uses global testTimeout for stdio server startup and concurrent operations
+  it("should handle concurrent operations", async () => {
     transport = new StdioClientTransport({
       command: "node",
       args: [serverPath, "--transport", "stdio"],
-      env: { 
-        ...process.env, 
+      env: {
+        ...process.env,
         NODE_ENV: "test",
-        HYPERTOOL_TEST_CONFIG: configPath
+        HYPERTOOL_TEST_CONFIG: configPath,
+        HYPERTOOL_TEST_HOME: testHome,
       },
     });
 
@@ -123,18 +163,17 @@ describe("MCP Server stdio transport", () => {
     expect(result3.content).toBeDefined();
   });
 
-  // Reduced timeout with minimal memory server configuration in mcp.test.json
+  // Uses global testTimeout for stdio server startup and error handling  
   it(
     "should properly handle errors without breaking stdio protocol",
-    { timeout: 5000 },
     async () => {
       transport = new StdioClientTransport({
         command: "node",
         args: [serverPath, "--transport", "stdio"],
-        env: { 
-          ...process.env, 
+        env: {
+          ...process.env,
           NODE_ENV: "test",
-          HYPERTOOL_TEST_CONFIG: configPath
+          HYPERTOOL_TEST_CONFIG: configPath,
         },
       });
 

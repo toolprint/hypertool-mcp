@@ -7,6 +7,7 @@ import inquirer from "inquirer";
 import { theme } from "../../utils/theme.js";
 import { ConfigurationManager } from "../index.js";
 import { output } from "../../utils/output.js";
+import { safeProcessExit } from "../../utils/testEnvironment.js";
 
 export function createBackupCommand(): Command {
   const backup = new Command("backup");
@@ -73,7 +74,7 @@ export function createBackupCommand(): Command {
       } catch (error) {
         output.error("❌ Backup failed:");
         output.error(error instanceof Error ? error.message : String(error));
-        process.exit(1);
+        safeProcessExit(1, "Backup operation failed");
       }
     });
 
@@ -119,18 +120,18 @@ export function createRestoreCommand(): Command {
         } else if (options.latest) {
           if (backups.length === 0) {
             output.error("No backups available.");
-            process.exit(1);
+            safeProcessExit(1);
           }
           if (!backups[0].path) {
             output.error("Backup path not available.");
-            process.exit(1);
+            safeProcessExit(1);
           }
           backupPath = backups[0].path;
         } else {
           // Interactive selection
           if (backups.length === 0) {
             output.error("No backups available.");
-            process.exit(1);
+            safeProcessExit(1);
           }
 
           const choices = backups.map((backup) => {
@@ -180,7 +181,7 @@ export function createRestoreCommand(): Command {
       } catch (error) {
         output.error("❌ Restoration failed:");
         output.error(error instanceof Error ? error.message : String(error));
-        process.exit(1);
+        safeProcessExit(1, "Restore operation failed");
       }
     });
 

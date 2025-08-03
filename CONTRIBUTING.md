@@ -120,6 +120,52 @@ npm run test:coverage
 - Aim for high test coverage
 - Use descriptive test names
 
+#### Configuration Transformer Testing
+
+When adding or modifying configuration transformers:
+
+1. **Create comprehensive tests** for your transformer in `src/config-manager/transformers/[name].test.ts`
+2. **Test all transformer methods**:
+   - `toStandard()`: Converting from app format to standard MCP format
+   - `fromStandard()`: Converting from standard format to app format
+   - `validate()`: Validating configuration structure
+3. **Test configuration preservation**: Ensure `fromStandard()` preserves existing configuration when the `existingConfig` parameter is provided
+4. **Use realistic test fixtures**: Create test data that represents real-world configurations
+5. **Test edge cases**: Handle missing fields, invalid data, and error scenarios
+
+Example test structure:
+```typescript
+describe("MyTransformer", () => {
+  describe("toStandard", () => {
+    it("should convert app format to standard format", () => {
+      // Test conversion logic
+    });
+  });
+
+  describe("fromStandard", () => {
+    it("should preserve existing config when provided", () => {
+      // Test that all non-MCP fields are preserved
+    });
+  });
+
+  describe("validate", () => {
+    it("should validate correct configuration", () => {
+      // Test validation logic
+    });
+  });
+});
+```
+
+#### Integration Testing
+
+For application integrations:
+
+1. **Create integration tests** in `src/integration/[app-name]-integration.test.ts`
+2. **Test the full setup flow**: Import → Link → Verify
+3. **Test unlink and restore**: Ensure clean removal and restoration
+4. **Test error scenarios**: Handle corrupted configs, missing files, permissions
+5. **Use the test utilities** from `src/config-manager/test-utils.ts`
+
 ## Commit Message Guidelines
 
 We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:

@@ -11,6 +11,7 @@ describe("MetaMCPServer", () => {
   let config: MetaMCPServerConfig;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     config = {
       name: "test-server",
       version: "1.0.0",
@@ -26,6 +27,7 @@ describe("MetaMCPServer", () => {
     if (server.getStatus().state === ServerState.RUNNING) {
       await server.stop();
     }
+    vi.useRealTimers();
   });
 
   describe("Constructor", () => {
@@ -73,8 +75,8 @@ describe("MetaMCPServer", () => {
 
       (server as any).setState(ServerState.RUNNING);
 
-      // Wait a bit to ensure uptime is tracked
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      // Fast-forward time to ensure uptime is tracked
+      vi.advanceTimersByTime(10);
 
       const status = server.getStatus();
       expect(status.uptime).toBeGreaterThan(0);

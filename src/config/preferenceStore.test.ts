@@ -30,9 +30,16 @@ vi.mock("os", () => ({
 describe("PreferenceStore - Last Equipped Toolset", () => {
   let mockPreferences: UserPreferences;
   let preferenceStore: any;
+  let fsMock: any;
+
+  // Set up mocks once before all tests
+  beforeAll(async () => {
+    fsMock = await import("fs/promises");
+    preferenceStore = await import("./preferenceStore.js");
+  });
 
   beforeEach(async () => {
-    // Clear all mocks
+    // Clear all mocks (faster than resetModules)
     vi.clearAllMocks();
 
     // Initialize mock preferences
@@ -41,15 +48,11 @@ describe("PreferenceStore - Last Equipped Toolset", () => {
       version: "1.0.0",
     };
 
-    // Set up fs mock behaviors
-    const fsMock = await import("fs/promises");
-
-    // Mock readFile to return our mock preferences
+    // Set up fs mock behaviors for each test
     vi.mocked(fsMock.readFile).mockImplementation(async () => {
       return JSON.stringify(mockPreferences);
     });
 
-    // Mock writeFile to update our mock preferences
     vi.mocked(fsMock.writeFile).mockImplementation(
       async (_path: any, content: any) => {
         mockPreferences = JSON.parse(content as string);
@@ -57,20 +60,14 @@ describe("PreferenceStore - Last Equipped Toolset", () => {
       }
     );
 
-    // Mock mkdir to always succeed
+    // Mock mkdir and access to always succeed
     vi.mocked(fsMock.mkdir).mockResolvedValue(undefined);
-
-    // Mock access to always succeed (file exists)
     vi.mocked(fsMock.access).mockResolvedValue(undefined);
-
-    // Import the module fresh for each test
-    vi.resetModules();
-    preferenceStore = await import("./preferenceStore.js");
   });
 
   afterEach(() => {
-    vi.resetAllMocks();
-    vi.resetModules();
+    // Only clear mocks, don't reset modules (expensive)
+    vi.clearAllMocks();
   });
 
   it("should save and retrieve last equipped toolset", async () => {

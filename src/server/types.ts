@@ -33,6 +33,7 @@ export interface MetaMCPServerConfig {
 export interface ServerInitOptions {
   transport: TransportConfig;
   configPath?: string;
+  configSource?: any; // IConfigSource from db/interfaces
   debug?: boolean;
 }
 

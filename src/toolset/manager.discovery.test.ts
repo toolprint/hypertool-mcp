@@ -2,7 +2,7 @@
  * Test ToolsetManager integration with DiscoveryEngine toolsChanged events
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { ToolsetManager } from "./manager.js";
 import { ToolsetConfig, ToolsetChangeEvent } from "./types.js";
 import {
@@ -103,12 +103,17 @@ describe("ToolsetManager Discovery Integration", () => {
   };
 
   beforeEach(() => {
+    vi.useFakeTimers();
     toolsetManager = new ToolsetManager();
     mockDiscovery = new MockDiscoveryEngine();
     mockDiscovery.setTools([sampleTool]);
 
     // Connect the toolset manager to the discovery engine
     toolsetManager.setDiscoveryEngine(mockDiscovery);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("should emit toolsetChanged when active toolset tools are affected by discovery changes", async () => {
@@ -263,7 +268,7 @@ describe("ToolsetManager Discovery Integration", () => {
     mockDiscovery.simulateToolsChanged(discoveryEvent);
 
     // Wait a short time to ensure no event is emitted
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    vi.advanceTimersByTime(100);
 
     // Verify no event was emitted
     expect(eventEmitted).toBe(false);
@@ -300,7 +305,7 @@ describe("ToolsetManager Discovery Integration", () => {
     mockDiscovery.simulateToolsChanged(discoveryEvent);
 
     // Wait a short time to ensure no event is emitted
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    vi.advanceTimersByTime(100);
 
     // Verify no event was emitted
     expect(toolsetHandler).not.toHaveBeenCalled();

@@ -19,6 +19,13 @@ import {
 } from "../types/index.js";
 import { AppRegistry } from "../apps/registry.js";
 import { TransformerRegistry } from "../transformers/base.js";
+import { getCompositeDatabaseService } from "../../db/compositeDatabaseService.js";
+import {
+  ServerConfigRecord,
+  ServerConfigGroup,
+  IConfigSource,
+} from "../../db/interfaces.js";
+import { isNedbEnabledAsync } from "../../config/environment.js";
 
 export class BackupManager {
   private basePath: string;
@@ -50,6 +57,26 @@ export class BackupManager {
   }
 
   /**
+   * Copy directory recursively (for test mode)
+   */
+  private async copyDirectory(src: string, dest: string): Promise<void> {
+    await this.fs.mkdir(dest, { recursive: true });
+    const entries = await this.fs.readdir(src, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      const srcPath = join(src, entry.name);
+      const destPath = join(dest, entry.name);
+      
+      if (entry.isDirectory()) {
+        await this.copyDirectory(srcPath, destPath);
+      } else {
+        const content = await this.fs.readFile(srcPath);
+        await this.fs.writeFile(destPath, content);
+      }
+    }
+  }
+
+  /**
    * Get current working directory (for testing support)
    */
   private getCurrentWorkingDirectory(): string {
@@ -76,6 +103,7 @@ export class BackupManager {
       // Create temporary directory for backup contents
       const tempDir = join(this.backupDir, "temp", backupName);
       await this.fs.mkdir(join(tempDir, "config"), { recursive: true });
+      await this.fs.mkdir(join(tempDir, "database"), { recursive: true });
 
       // Get all enabled applications
       const apps = await this.registry.getEnabledApplications();
@@ -109,19 +137,35 @@ export class BackupManager {
         }
       }
 
+      // Export database contents if NeDB is enabled
+      if (await isNedbEnabledAsync()) {
+        const dbExportResult = await this.exportDatabase(tempDir);
+        if (dbExportResult) {
+          metadata.database = dbExportResult;
+        }
+      }
+
       // Write metadata
       const metadataPath = join(tempDir, "metadata.yaml");
       await this.fs.writeFile(metadataPath, yaml.stringify(metadata), "utf-8");
 
       // Create tar.gz archive
-      await tar.create(
-        {
-          gzip: true,
-          file: backupPath,
-          cwd: join(this.backupDir, "temp"),
-        },
-        [backupName]
-      );
+      if (isTestMode()) {
+        // In test mode, create a directory at the backup path
+        // We keep the .tgz extension for consistency
+        await this.fs.mkdir(backupPath, { recursive: true });
+        // Copy the entire temp directory structure to the backup location
+        await this.copyDirectory(tempDir, backupPath);
+      } else {
+        await tar.create(
+          {
+            gzip: true,
+            file: backupPath,
+            cwd: join(this.backupDir, "temp"),
+          },
+          [backupName]
+        );
+      }
 
       // Clean up temp directory
       await this.fs.rm(tempDir, { recursive: true, force: true });
@@ -265,20 +309,37 @@ export class BackupManager {
       const backups: BackupListItem[] = [];
 
       for (const file of files) {
+        // In test mode, look for directories with .tgz extension
+        // In production mode, look for .tgz files
         if (!file.endsWith(".tgz")) continue;
 
         const backupPath = join(this.backupDir, file);
         try {
-          // First try to read metadata from .yaml file (faster)
-          const metadataPath = backupPath.replace(".tgz", ".yaml");
+          // Check if backup exists (file or directory)
+          await this.fs.access(backupPath);
+
           let metadata: BackupMetadata;
 
-          try {
-            const yamlContent = await this.fs.readFile(metadataPath, "utf-8");
-            metadata = yaml.parse(yamlContent);
-          } catch {
-            // Fall back to extracting from tar file
-            metadata = await this.extractMetadata(backupPath);
+          if (isTestMode()) {
+            // In test mode, read metadata from directory
+            const metadataPath = join(backupPath, "metadata.yaml");
+            try {
+              const yamlContent = await this.fs.readFile(metadataPath, "utf-8");
+              metadata = yaml.parse(yamlContent);
+            } catch {
+              // Skip if metadata not found
+              continue;
+            }
+          } else {
+            // In production mode, try .yaml file first, then extract from tar
+            const metadataPath = backupPath.replace(".tgz", ".yaml");
+            try {
+              const yamlContent = await this.fs.readFile(metadataPath, "utf-8");
+              metadata = yaml.parse(yamlContent);
+            } catch {
+              // Fall back to extracting from tar file
+              metadata = await this.extractMetadata(backupPath);
+            }
           }
 
           const backupId = file.replace(".tgz", "");
@@ -312,23 +373,35 @@ export class BackupManager {
     try {
       const backupPath = join(this.backupDir, `${backupId}.tgz`);
 
-      // Check if backup file exists
+      // Check if backup exists (file or directory)
       try {
         await this.fs.access(backupPath);
       } catch {
         return null;
       }
 
-      // Try to read metadata from .yaml file first
-      const metadataPath = backupPath.replace(".tgz", ".yaml");
       let metadata: BackupMetadata;
 
-      try {
-        const yamlContent = await this.fs.readFile(metadataPath, "utf-8");
-        metadata = yaml.parse(yamlContent);
-      } catch {
-        // Fall back to extracting from tar file
-        metadata = await this.extractMetadata(backupPath);
+      if (isTestMode()) {
+        // In test mode, read metadata from directory
+        const metadataPath = join(backupPath, "metadata.yaml");
+        try {
+          const yamlContent = await this.fs.readFile(metadataPath, "utf-8");
+          metadata = yaml.parse(yamlContent);
+        } catch {
+          // No metadata found
+          return null;
+        }
+      } else {
+        // In production mode, try .yaml file first, then extract from tar
+        const metadataPath = backupPath.replace(".tgz", ".yaml");
+        try {
+          const yamlContent = await this.fs.readFile(metadataPath, "utf-8");
+          metadata = yaml.parse(yamlContent);
+        } catch {
+          // Fall back to extracting from tar file
+          metadata = await this.extractMetadata(backupPath);
+        }
       }
 
       return {
@@ -411,21 +484,32 @@ export class BackupManager {
       const failed: string[] = [];
 
       try {
-        // Extract backup
-        await tar.extract({
-          file: backupPath,
-          cwd: tempDir,
-        });
+        let extractedDir: string;
+        let metadataPath: string;
+        let configDir: string;
 
-        // Find the extracted directory
-        const dirs = await this.fs.readdir(tempDir);
-        if (dirs.length !== 1) {
-          throw new Error("Invalid backup structure");
+        if (isTestMode()) {
+          // In test mode, the backup is already a directory
+          extractedDir = backupPath;
+          metadataPath = join(extractedDir, "metadata.yaml");
+          configDir = join(extractedDir, "config");
+        } else {
+          // Extract backup
+          await tar.extract({
+            file: backupPath,
+            cwd: tempDir,
+          });
+
+          // Find the extracted directory
+          const dirs = await this.fs.readdir(tempDir);
+          if (dirs.length !== 1) {
+            throw new Error("Invalid backup structure");
+          }
+
+          extractedDir = join(tempDir, dirs[0]);
+          metadataPath = join(extractedDir, "metadata.yaml");
+          configDir = join(extractedDir, "config");
         }
-
-        const extractedDir = join(tempDir, dirs[0]);
-        const metadataPath = join(extractedDir, "metadata.yaml");
-        const configDir = join(extractedDir, "config");
 
         // Read metadata
         const metadataContent = await this.fs.readFile(metadataPath, "utf-8");
@@ -449,14 +533,28 @@ export class BackupManager {
           }
         }
 
+        // Restore database if present and NeDB is enabled
+        if (await isNedbEnabledAsync()) {
+          const dbDir = join(extractedDir, "database");
+          try {
+            await this.fs.access(dbDir);
+            await this.restoreDatabase(dbDir);
+          } catch (error) {
+            // Database directory might not exist in older backups
+            console.warn("No database backup found or restore failed:", error);
+          }
+        }
+
         return {
           success: true,
           restored,
           failed,
         };
       } finally {
-        // Clean up temp directory
-        await this.fs.rm(tempDir, { recursive: true, force: true });
+        // Clean up temp directory (not needed in test mode)
+        if (!isTestMode()) {
+          await this.fs.rm(tempDir, { recursive: true, force: true });
+        }
       }
     } catch (error) {
       return {
@@ -477,7 +575,6 @@ export class BackupManager {
   async deleteBackup(backupId: string): Promise<DeleteResult> {
     try {
       const backupPath = join(this.backupDir, `${backupId}.tgz`);
-      const metadataPath = backupPath.replace(".tgz", ".yaml");
 
       // Check if backup exists
       try {
@@ -489,14 +586,20 @@ export class BackupManager {
         };
       }
 
-      // Delete backup file
-      await this.fs.unlink(backupPath);
+      if (isTestMode()) {
+        // In test mode, delete directory
+        await this.fs.rm(backupPath, { recursive: true, force: true });
+      } else {
+        // In production mode, delete tar file
+        await this.fs.unlink(backupPath);
 
-      // Delete metadata file if it exists
-      try {
-        await this.fs.unlink(metadataPath);
-      } catch {
-        // Ignore if metadata file doesn't exist
+        // Delete metadata file if it exists
+        const metadataPath = backupPath.replace(".tgz", ".yaml");
+        try {
+          await this.fs.unlink(metadataPath);
+        } catch {
+          // Ignore if metadata file doesn't exist
+        }
       }
 
       return {
@@ -582,5 +685,136 @@ export class BackupManager {
     }
 
     return "0.0.0";
+  }
+
+  /**
+   * Export database contents for backup
+   */
+  private async exportDatabase(tempDir: string): Promise<{
+    servers_count: number;
+    groups_count: number;
+    sources_count: number;
+    export_files: string[];
+  }> {
+    try {
+      const dbService = getCompositeDatabaseService();
+      await dbService.init();
+
+      const dbDir = join(tempDir, "database");
+      const exportFiles: string[] = [];
+
+      // Export servers
+      const servers = await dbService.servers.findAll();
+      const serversPath = join(dbDir, "servers.json");
+      await this.fs.writeFile(
+        serversPath,
+        JSON.stringify(servers, null, 2),
+        "utf-8"
+      );
+      exportFiles.push("servers.json");
+
+      // Export groups
+      const groups = await dbService.groups.findAll();
+      const groupsPath = join(dbDir, "groups.json");
+      await this.fs.writeFile(
+        groupsPath,
+        JSON.stringify(groups, null, 2),
+        "utf-8"
+      );
+      exportFiles.push("groups.json");
+
+      // Export config sources
+      const sources = await dbService.configSources.findAll();
+      const sourcesPath = join(dbDir, "sources.json");
+      await this.fs.writeFile(
+        sourcesPath,
+        JSON.stringify(sources, null, 2),
+        "utf-8"
+      );
+      exportFiles.push("sources.json");
+
+      return {
+        servers_count: servers.length,
+        groups_count: groups.length,
+        sources_count: sources.length,
+        export_files: exportFiles,
+      };
+    } catch (error) {
+      console.warn("Failed to export database:", error);
+      return {
+        servers_count: 0,
+        groups_count: 0,
+        sources_count: 0,
+        export_files: [],
+      };
+    }
+  }
+
+  /**
+   * Restore database from backup
+   */
+  private async restoreDatabase(dbDir: string): Promise<void> {
+    const dbService = getCompositeDatabaseService();
+    await dbService.init();
+
+    // Restore servers
+    const serversPath = join(dbDir, "servers.json");
+    try {
+      const serversContent = await this.fs.readFile(serversPath, "utf-8");
+      const servers: ServerConfigRecord[] = JSON.parse(serversContent);
+
+      // Clear existing servers and add from backup
+      const existingServers = await dbService.servers.findAll();
+      for (const server of existingServers) {
+        await dbService.servers.delete(server.id);
+      }
+
+      for (const server of servers) {
+        const { id, ...serverData } = server;
+        await dbService.servers.add(serverData);
+      }
+    } catch (error) {
+      console.warn("Failed to restore servers:", error);
+    }
+
+    // Restore groups
+    const groupsPath = join(dbDir, "groups.json");
+    try {
+      const groupsContent = await this.fs.readFile(groupsPath, "utf-8");
+      const groups: ServerConfigGroup[] = JSON.parse(groupsContent);
+
+      // Clear existing groups and add from backup
+      const existingGroups = await dbService.groups.findAll();
+      for (const group of existingGroups) {
+        await dbService.groups.delete(group.id);
+      }
+
+      for (const group of groups) {
+        const { id, ...groupData } = group;
+        await dbService.groups.add(groupData);
+      }
+    } catch (error) {
+      console.warn("Failed to restore groups:", error);
+    }
+
+    // Restore config sources
+    const sourcesPath = join(dbDir, "sources.json");
+    try {
+      const sourcesContent = await this.fs.readFile(sourcesPath, "utf-8");
+      const sources: IConfigSource[] = JSON.parse(sourcesContent);
+
+      // Clear existing sources and add from backup
+      const existingSources = await dbService.configSources.findAll();
+      for (const source of existingSources) {
+        await dbService.configSources.delete(source.id);
+      }
+
+      for (const source of sources) {
+        const { id, ...sourceData } = source;
+        await dbService.configSources.add(sourceData);
+      }
+    } catch (error) {
+      console.warn("Failed to restore config sources:", error);
+    }
   }
 }

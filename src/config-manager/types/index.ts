@@ -66,6 +66,12 @@ export interface BackupMetadata {
     arch: string;
     node_version: string;
   };
+  database?: {
+    servers_count: number;
+    groups_count: number;
+    sources_count: number;
+    export_files: string[];
+  };
 }
 
 /**
@@ -119,7 +125,7 @@ export interface ConfigTransformer {
   /**
    * Convert from standard MCP format to app-specific format
    */
-  fromStandard(standardConfig: MCPConfig): any;
+  fromStandard(standardConfig: MCPConfig, existingConfig?: any): any;
 
   /**
    * Validate app-specific configuration format
@@ -237,9 +243,12 @@ export interface AppMCPConfig extends MCPConfig {
     profile?: string;
     importedAt: string;
     lastModified: string;
-    sources?: Record<string, {
-      app: string;
-      importedAt: string;
-    }>;
+    sources?: Record<
+      string,
+      {
+        app: string;
+        importedAt: string;
+      }
+    >;
   };
 }

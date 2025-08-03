@@ -7,6 +7,7 @@ import inquirer from "inquirer";
 import { semantic } from "../../utils/theme.js";
 import { ConfigurationManager } from "../index.js";
 import { output } from "../../utils/output.js";
+import { isNedbEnabledAsync } from "../../config/environment.js";
 
 /**
  * Get human-readable time ago string
@@ -230,6 +231,18 @@ export function createUnlinkCommand(): Command {
         output.displayInstruction(
           '• You can re-link applications at any time with "hypertool-mcp config link"'
         );
+
+        // Show database mode information if enabled
+        if (await isNedbEnabledAsync()) {
+          output.displaySpaceBuffer(1);
+          output.info("📊 Database Mode: ENABLED");
+          output.displayInstruction(
+            "   Server configurations remain in the database after unlinking"
+          );
+          output.displayInstruction(
+            "   Use 'hypertool-mcp config show servers' to manage database entries"
+          );
+        }
       } catch (error) {
         output.error("❌ Unlink failed:");
         output.error(error instanceof Error ? error.message : String(error));

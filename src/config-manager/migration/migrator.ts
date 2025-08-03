@@ -63,10 +63,7 @@ export class ConfigMigrator {
     // Migrate Claude Desktop
     try {
       const claudeConfig = await this.migrateLegacyConfig(
-        join(
-          homedir(),
-          "Library/Application Support/Claude/mcp.hypertool.json"
-        )
+        join(homedir(), "Library/Application Support/Claude/mcp.hypertool.json")
       );
       if (claudeConfig) {
         Object.assign(mergedServers.mcpServers, claudeConfig.mcpServers);

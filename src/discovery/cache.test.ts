@@ -2,7 +2,7 @@
  * Unit tests for tool cache with TTL validation
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { ToolCache } from "./cache.js";
 import { DiscoveredTool, DiscoveryConfig } from "./types.js";
 
@@ -33,11 +33,13 @@ describe("ToolCache", () => {
   };
 
   beforeEach(() => {
+    vi.useFakeTimers();
     cache = new ToolCache(config);
   });
 
   afterEach(() => {
     cache.destroy();
+    vi.useRealTimers();
   });
 
   describe("basic operations", () => {
@@ -80,8 +82,8 @@ describe("ToolCache", () => {
       let retrieved = await cache.get("expiring-key");
       expect(retrieved).toEqual(mockTool);
 
-      // Wait for expiration
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      // Fast-forward time past TTL
+      vi.advanceTimersByTime(1200);
 
       // Should be expired
       retrieved = await cache.get("expiring-key");
@@ -213,7 +215,7 @@ describe("ToolCache", () => {
       await cache.set("expired2", mockTool, 1);
 
       // Wait for expiration and cleanup
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      vi.advanceTimersByTime(100);
 
       // Trigger cleanup by trying to access
       await cache.get("expired1");

@@ -39,6 +39,9 @@ export interface RuntimeOptions {
 
   /** Log level for the application */
   logLevel?: string;
+
+  /** Server group name to load servers from */
+  group?: string;
 }
 
 /**

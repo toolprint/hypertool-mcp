@@ -393,6 +393,19 @@ npx -y @toolprint/hypertool-mcp setup --yes
 # Debug output
 export DEBUG=1
 npx -y @toolprint/hypertool-mcp setup --yes
+
+# Enable database-backed configuration (experimental)
+export HYPERTOOL_NEDB_ENABLED=true
+npx -y @toolprint/hypertool-mcp
+
+# Configuration storage mode
+# When HYPERTOOL_NEDB_ENABLED is not set or false:
+#   - Configurations are stored in ~/.toolprint/hypertool-mcp/mcp.json
+#   - Per-app configs in ~/.toolprint/hypertool-mcp/mcp/*.json
+# When HYPERTOOL_NEDB_ENABLED is true:
+#   - Configurations are stored in an embedded NeDB database
+#   - Enables advanced features like server groups and conflict resolution
+#   - Database commands (config show servers/groups/sources) become available
 ```
 
 ### CI/CD Integration
