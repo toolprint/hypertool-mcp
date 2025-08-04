@@ -63,13 +63,12 @@ AI: "Equipped! I now have just the tools needed for development"
 ## 🎬 Demo
 
 ### Hotswap toolsets across 100+ tools
+_Targeted toolsets across any number of MCPs. Live hotwswapping toolsets_
 
 <div align="center">
   <a href="https://www.youtube.com/watch?v=43fkKOBayCg">
-    <img src="./demos/build_dynamic_toolsets.mp4" alt="HyperTool Demo - Click for full video" width="800">
+    <img src="./demos/build_dynamic_toolsets_1080p_25fps.gif" alt="HyperTool Demo - Click for full video" width="800">
   </a>
-  <br>
-  <sub>Click to watch the full demo on YouTube</sub>
 </div>
 
 ## 🏗️ How It Works
