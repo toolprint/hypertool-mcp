@@ -116,17 +116,12 @@ export class ConfigurationManager {
     // Check if migration is needed first
     const migration = new ConfigMigration(this.basePath);
     if (await migration.needsMigration()) {
-      console.log(
-        "Migrating from global mcp.json to per-app configurations..."
-      );
+      logger.info("Migrating from global mcp.json to per-app configurations...");
       const migrationResult = await migration.migrate();
       if (!migrationResult.success) {
-        console.warn(
-          "Migration completed with errors:",
-          migrationResult.errors
-        );
+        logger.warn("Migration completed with errors", { errors: migrationResult.errors });
       } else {
-        console.log("Migration completed successfully");
+        logger.info("Migration completed successfully");
       }
     }
     // Create backup first
@@ -178,7 +173,7 @@ export class ConfigurationManager {
           appConfigPaths[appId] = appConfigPath;
         }
       } catch (error) {
-        console.warn(`Failed to import from ${appId}:`, error);
+        logger.warn(`Failed to import from ${appId}`, { appId, error });
         failed.push(appId);
       }
     }
@@ -251,7 +246,7 @@ export class ConfigurationManager {
     // Validate configuration
     const validation = transformer.validate(appConfig);
     if (!validation.valid) {
-      console.warn(`Invalid configuration for ${appId}:`, validation.errors);
+      logger.warn(`Invalid configuration for ${appId}`, { appId, errors: validation.errors });
       return null;
     }
 
@@ -309,7 +304,7 @@ export class ConfigurationManager {
     // Validate configuration
     const validation = transformer.validate(appConfig);
     if (!validation.valid) {
-      console.warn(`Invalid configuration for ${appId}:`, validation.errors);
+      logger.warn(`Invalid configuration for ${appId}`, { appId, errors: validation.errors });
       return null;
     }
 
@@ -642,7 +637,7 @@ export class ConfigurationManager {
       const { appId, configType, perAppInit } = config;
 
       if (!apps[appId]) {
-        console.warn(`Application ${appId} not found`);
+        logger.warn(`Application ${appId} not found`, { appId });
         failed.push(appId);
         continue;
       }
@@ -676,7 +671,7 @@ export class ConfigurationManager {
         await this.linkApplication(appId, apps[appId], configPath);
         linked.push(appId);
       } catch (error) {
-        console.warn(`Failed to link ${appId}:`, error);
+        logger.warn(`Failed to link ${appId}`, { appId, error });
         failed.push(appId);
       }
     }
@@ -727,9 +722,7 @@ export class ConfigurationManager {
             };
           }
         } catch (error) {
-          console.warn(
-            "Failed to copy global config, using empty config instead"
-          );
+          logger.warn("Failed to copy global config, using empty config instead");
         }
         break;
 
@@ -764,9 +757,7 @@ export class ConfigurationManager {
 
               config._metadata.importedFrom = configPath;
             } catch (error) {
-              console.warn(
-                `Failed to import from ${appId} config, using empty config instead`
-              );
+              logger.warn(`Failed to import from ${appId} config, using empty config instead`, { appId });
             }
           }
         }
@@ -952,7 +943,7 @@ export class ConfigurationManager {
           }
           unlinked.push(appId);
         } catch (error) {
-          console.warn(`Failed to process ${appId}:`, error);
+          logger.warn(`Failed to process ${appId}`, { appId, error });
           failed.push(appId);
         }
       }
@@ -963,7 +954,7 @@ export class ConfigurationManager {
           await this.removeHypertoolFromApp(appId);
           unlinked.push(appId);
         } catch (error) {
-          console.warn(`Failed to unlink ${appId}:`, error);
+          logger.warn(`Failed to unlink ${appId}`, { appId, error });
           failed.push(appId);
         }
       }
@@ -1018,7 +1009,7 @@ export class ConfigurationManager {
       }
     } catch (error) {
       // Config might not exist or be invalid
-      console.warn(`Could not check config for ${appId}:`, error);
+      logger.warn(`Could not check config for ${appId}`, { appId, error });
     }
 
     return false;

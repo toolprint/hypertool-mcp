@@ -7,6 +7,9 @@ import { join } from "path";
 import { homedir } from "os";
 import { ConfigurationManager } from "../index.js";
 import { MCPConfig } from "../types/index.js";
+import { createChildLogger } from "../../utils/logging.js";
+
+const logger = createChildLogger({ module: "ConfigMigrator" });
 
 export class ConfigMigrator {
   private configManager: ConfigurationManager;
@@ -70,7 +73,7 @@ export class ConfigMigrator {
         migrated.push("claude-desktop");
       }
     } catch (error) {
-      console.warn("Failed to migrate Claude Desktop config:", error);
+      logger.warn("Failed to migrate Claude Desktop config", { error });
       failed.push("claude-desktop");
     }
 
@@ -84,7 +87,7 @@ export class ConfigMigrator {
         migrated.push("cursor");
       }
     } catch (error) {
-      console.warn("Failed to migrate Cursor config:", error);
+      logger.warn("Failed to migrate Cursor config", { error });
       failed.push("cursor");
     }
 
@@ -158,7 +161,7 @@ export class ConfigMigrator {
     for (const path of legacyPaths) {
       try {
         await fs.unlink(path);
-        console.log(`Removed legacy config: ${path}`);
+        logger.info(`Removed legacy config: ${path}`, { path });
       } catch {
         // File doesn't exist or can't be removed, ignore
       }

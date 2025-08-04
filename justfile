@@ -156,8 +156,8 @@ test-install: build
     echo "🧪 Testing npx execution..."
     npx @toolprint/hypertool-mcp --version
     
-    echo "🧪 Testing examples accessibility..."
-    node -e "console.log(require('child_process').execSync('hypertool-mcp list-saved-toolsets 2>&1', {encoding: 'utf8'}).includes('toolsets') ? '✅ CLI commands working' : '❌ CLI commands failed')"
+    echo "🧪 Testing CLI functionality..."
+    node -e "console.log(require('child_process').execSync('hypertool-mcp --help 2>&1', {encoding: 'utf8'}).includes('Usage:') ? '✅ CLI commands working' : '❌ CLI commands failed')"
     
     # Cleanup tarball
     rm -f toolprint-hypertool-mcp-*.tgz
@@ -170,8 +170,9 @@ test-install: build
     echo "🖥️  CLI Usage:"
     echo "  hypertool-mcp --help                    # Show all commands"
     echo "  hypertool-mcp --version                 # Show version"
-    echo "  hypertool-mcp list-available-tools      # List all available tools"
-    echo "  hypertool-mcp list-saved-toolsets       # List saved toolsets"
+    echo "  hypertool-mcp setup                     # Interactive setup wizard"
+    echo "  hypertool-mcp mcp run                   # Run MCP server"
+    echo "  hypertool-mcp config show               # Show current configuration"
     echo "  hypertool-mcp --mcp-config config.json  # Use custom MCP config"
     echo ""
     echo "🔧 MCP Configuration (.mcp.json):"
