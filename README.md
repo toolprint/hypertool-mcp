@@ -63,7 +63,7 @@ AI: "Equipped! I now have just the tools needed for development"
 ## 🎬 Demo
 
 ### Hotswap toolsets across 100+ tools
-_Targeted toolsets across any number of MCPs. Live hotwswapping toolsets_
+_Targeted toolsets across any number of MCPs. Swap to the best toolset for a goal with a tool call. Dynamic tool registration._
 
 <div align="center">
   <a href="https://www.youtube.com/watch?v=43fkKOBayCg">
