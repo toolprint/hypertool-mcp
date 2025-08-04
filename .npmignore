@@ -57,3 +57,8 @@ yarn-debug.log*
 
 # Package files
 *.tgz
+
+# asset files
+demos/
+demos/**
+assets/

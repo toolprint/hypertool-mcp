@@ -63,10 +63,11 @@ AI: "Equipped! I now have just the tools needed for development"
 ## 🎬 Demo
 
 ### Hotswap toolsets across 100+ tools
+_Targeted toolsets across any number of MCPs. Swap to the best toolset for a goal with a tool call. Dynamic tool registration._
 
 <div align="center">
   <a href="https://www.youtube.com/watch?v=43fkKOBayCg">
-    <img src="https://img.youtube.com/vi/43fkKOBayCg/maxresdefault.jpg" alt="HyperTool Demo Video" width="800">
+    <img src="./demos/build_dynamic_toolsets_1080p_25fps.gif" alt="HyperTool Demo - Click for full video" width="800">
   </a>
 </div>
 
