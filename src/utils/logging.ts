@@ -250,6 +250,7 @@ export class Logger {
     delete otherBindings.module;
     
     // Create child logger with module context
+    // mcp-logger 0.0.7+ handles caching natively to prevent memory leaks
     const childMcpLogger = this.mcpLogger.child({
       context: {
         module,
@@ -334,4 +335,24 @@ export function createChildLogger(bindings: { module: string }): Logger {
     selectedLoggingConfig = config;
   }
   return globalLogger.child(bindings);
+}
+
+/**
+ * Get diagnostic information about child loggers from the native mcp-logger cache
+ * Useful for debugging EventEmitter memory leaks
+ */
+export function getLoggerDiagnostics(): {
+  hasGlobalLogger: boolean;
+  cacheStats?: any;
+} {
+  const result: any = {
+    hasGlobalLogger: globalLogger !== null
+  };
+  
+  // Access native mcp-logger cache stats if available through public API
+  if (globalLogger?.mcp && typeof globalLogger.mcp.getChildLoggerCacheStats === 'function') {
+    result.cacheStats = globalLogger.mcp.getChildLoggerCacheStats();
+  }
+  
+  return result;
 }
