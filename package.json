@@ -107,6 +107,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.15.1",
     "@seald-io/nedb": "^4.1.2",
+    "@toolprint/mcp-logger": "^0.0.6",
     "@types/chalk": "^0.4.31",
     "@types/express": "^5.0.3",
     "@types/figlet": "^1.7.0",
@@ -121,7 +122,7 @@
     "node-cache": "^5.1.2",
     "ora": "^8.2.0",
     "pino": "^9.7.0",
-    "pino-pretty": "^13.0.0",
+    "pino-pretty": "^13.1.1",
     "tar": "^7.4.3",
     "uuid": "^11.0.2",
     "yaml": "^2.8.0",

@@ -3,6 +3,9 @@
  * HyperTool MCP server main entry point
  */
 
+// Increase max listeners early to prevent warnings from MCP SDK and other dependencies
+process.setMaxListeners(30);
+
 import { Command, Argument } from "commander";
 import { RuntimeOptions, RuntimeTransportType } from "./types/runtime.js";
 import {
@@ -13,6 +16,9 @@ import {
 } from "./config/appConfig.js";
 import type { TransportConfig } from "./server/types.js";
 import { theme, semantic } from "./utils/theme.js";
+import { createChildLogger } from "./utils/logging.js";
+
+const logger = createChildLogger({ module: "main" });
 
 async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
   // Default to 'all' if no option provided
@@ -238,26 +244,24 @@ async function runMcpServer(options: any): Promise<void> {
 
   // ! We use dynamic imports to ensure that the transport and logging configuration is initialized
   // ! in the correct order.
-  // Initialize logger based on transport type
-  const { getLogger, STDIO_LOGGING_CONFIG } = await import(
-    "./utils/logging.js"
-  );
-  const logger =
-    runtimeOptions.transport === "stdio"
-      ? getLogger(STDIO_LOGGING_CONFIG) // stderr + file logging for stdio transport
-      : getLogger();
+  // Initialize logger with transport-aware configuration
+  const { getLogger } = await import("./utils/logging.js");
+  const logger = getLogger(undefined, runtimeOptions);
+
+  // Set up process warning listener to capture Node.js warnings in logs
+  process.on('warning', (warning) => {
+    logger.warn('Node.js warning', {
+      name: warning.name,
+      message: warning.message,
+      stack: warning.stack
+    });
+  });
 
   // Dynamic imports for all modules that might create worker threads
   const { displayBanner, displayServerRuntimeInfo, output } = await import(
     "./utils/output.js"
   );
   const { discoverMcpConfig } = await import("./config/mcpConfigLoader.js");
-
-  // Update logger configuration
-  logger.updateConfig({
-    level: (runtimeOptions.logLevel ||
-      (runtimeOptions.debug ? "debug" : "info")) as any,
-  });
 
   // Discover MCP configuration
   const configResult = await discoverMcpConfig(
@@ -320,18 +324,12 @@ async function runMcpServer(options: any): Promise<void> {
     isShuttingDown = true;
 
     if (runtimeOptions.debug) {
-      console.log(
-        theme.warning(
-          `🛑 Shutting down HyperTool server... (${signal || "manual"})`
-        )
-      );
+      logger.debug(`Shutting down HyperTool server... (${signal || "manual"})`);
     }
 
     // Set a hard timeout to force exit if graceful shutdown fails
     const forceExitTimeout = setTimeout(() => {
-      console.error(
-        semantic.messageError("⚠️  Forcefully exiting after timeout...")
-      );
+      logger.error("Forcefully exiting after timeout - graceful shutdown failed");
       process.exit(1);
     }, 5000); // 5 second timeout
 
@@ -524,6 +522,9 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   const setupModule = await import("./commands/setup/index.js");
   program.addCommand(setupModule.createSetupCommand());
 
+  // Toolset management is available via MCP tools when server is running
+  // No top-level CLI commands needed per docs/NAVIGATION.md
+
   // Add mcp command with subcommands
   const mcpCommand = new Command("mcp").description(
     "MCP server operations and management"
@@ -608,7 +609,12 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   // If no command is specified, default to 'mcp run' or 'setup'
   // But only if the first argument isn't already a known command
   const cliArgs = process.argv.slice(2);
-  const knownCommands = ["config", "mcp", "setup", "help"];
+  const knownCommands = [
+    "config", 
+    "mcp", 
+    "setup", 
+    "help"
+  ];
   const knownMcpSubcommands = ["run", "list", "get", "add", "remove"];
 
   // Check if any argument is a known command
@@ -745,6 +751,7 @@ async function main(): Promise<void> {
     // Parse CLI arguments - this will handle commands and options
     await parseCliArguments();
   } catch (error) {
+    logger.error("Failed to start HyperTool server", { error });
     console.error(
       semantic.messageError(`❌ Failed to start HyperTool server:`),
       error

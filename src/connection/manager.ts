@@ -124,7 +124,7 @@ export class ConnectionManager
     try {
       await connection.connect();
     } catch (error) {
-      console.error(`Failed to connect to server "${serverName}":`, error);
+      this._logger.error(`Failed to connect to server "${serverName}"`, { error });
       throw error;
     }
   }
@@ -143,7 +143,7 @@ export class ConnectionManager
     try {
       await connection.disconnect();
     } catch (error) {
-      console.error(`Failed to disconnect from server "${serverName}":`, error);
+      this._logger.error(`Failed to disconnect from server "${serverName}"`, { error });
       throw error;
     }
   }
@@ -199,7 +199,7 @@ export class ConnectionManager
         connectedServers: this.getConnectedServers(),
       });
     } catch (error) {
-      console.error("Failed to start connection manager:", error);
+      this._logger.error("Failed to start connection manager", { error });
       throw error;
     }
   }
@@ -220,7 +220,7 @@ export class ConnectionManager
         serverCount: Object.keys(this.servers).length,
       });
     } catch (error) {
-      console.error("Failed to stop connection manager:", error);
+      this._logger.error("Failed to stop connection manager", { error });
       throw error;
     }
   }
@@ -237,7 +237,7 @@ export class ConnectionManager
           `💡 Resolution: Use a unique server name or remove the existing server first.\n` +
           `📋 Existing servers: ${Object.keys(this.servers).join(", ")}`
       );
-      console.error(error.message);
+      this._logger.error("Server name conflict detected", { serverName, existingServers: Object.keys(this.servers) });
       throw error;
     }
 
@@ -255,10 +255,7 @@ export class ConnectionManager
       try {
         await this.connect(serverName);
       } catch (error) {
-        console.warn(
-          `Failed to auto-connect to new server "${serverName}":`,
-          error
-        );
+        this._logger.warn(`Failed to auto-connect to new server "${serverName}"`, { error });
       }
     }
 

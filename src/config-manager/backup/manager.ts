@@ -26,6 +26,9 @@ import {
   IConfigSource,
 } from "../../db/interfaces.js";
 import { isNedbEnabledAsync } from "../../config/environment.js";
+import { createChildLogger } from "../../utils/logging.js";
+
+const logger = createChildLogger({ module: "BackupManager" });
 
 export class BackupManager {
   private basePath: string;
@@ -133,7 +136,7 @@ export class BackupManager {
             metadata.total_servers += backupResult.servers_count;
           }
         } catch (error) {
-          console.warn(`Failed to backup ${appId}:`, error);
+          logger.warn(`Failed to backup ${appId}`, { appId, error });
         }
       }
 
@@ -528,7 +531,7 @@ export class BackupManager {
             await this.restoreApplication(appId, appBackup, configDir);
             restored.push(appId);
           } catch (error) {
-            console.warn(`Failed to restore ${appId}:`, error);
+            logger.warn(`Failed to restore ${appId}`, { appId, error });
             failed.push(appId);
           }
         }
@@ -541,7 +544,7 @@ export class BackupManager {
             await this.restoreDatabase(dbDir);
           } catch (error) {
             // Database directory might not exist in older backups
-            console.warn("No database backup found or restore failed:", error);
+            logger.warn("No database backup found or restore failed", { error });
           }
         }
 
@@ -740,7 +743,7 @@ export class BackupManager {
         export_files: exportFiles,
       };
     } catch (error) {
-      console.warn("Failed to export database:", error);
+      logger.warn("Failed to export database", { error });
       return {
         servers_count: 0,
         groups_count: 0,
@@ -774,7 +777,7 @@ export class BackupManager {
         await dbService.servers.add(serverData);
       }
     } catch (error) {
-      console.warn("Failed to restore servers:", error);
+      logger.warn("Failed to restore servers", { error });
     }
 
     // Restore groups
@@ -794,7 +797,7 @@ export class BackupManager {
         await dbService.groups.add(groupData);
       }
     } catch (error) {
-      console.warn("Failed to restore groups:", error);
+      logger.warn("Failed to restore groups", { error });
     }
 
     // Restore config sources
@@ -814,7 +817,7 @@ export class BackupManager {
         await dbService.configSources.add(sourceData);
       }
     } catch (error) {
-      console.warn("Failed to restore config sources:", error);
+      logger.warn("Failed to restore config sources", { error });
     }
   }
 }

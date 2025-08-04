@@ -56,15 +56,13 @@ vi.mock("./utils/logging.js", () => {
       enableFile: false,
       serverName: "test",
       format: "pretty",
-      colorize: false,
     },
-    STDIO_LOGGING_CONFIG: {
+    createLoggingConfig: vi.fn(() => ({
       level: "info",
-      enableConsole: false,
+      enableConsole: true,
       enableFile: false,
       serverName: "test",
       format: "pretty",
-      colorize: false,
-    },
+    })),
   };
 });
