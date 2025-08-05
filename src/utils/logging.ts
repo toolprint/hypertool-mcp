@@ -1,47 +1,22 @@
 /**
- * Streamlined logging framework using @toolprint/mcp-logger 0.0.5 native features
+ * Enhanced logging framework with feature flag support
+ * Supports both Pino (default) and mcp-logger implementations
  */
 
-import { 
-  createLogger, 
-  createLoggerSync, 
-  Logger as McpLogger,
-  LoggerOptions,
-  TransportConfig,
-  ServerMode,
-  InternalLogLevel
-} from "@toolprint/mcp-logger";
-import { join } from "path";
-import { homedir } from "os";
-import { APP_TECHNICAL_NAME, BRAND_NAME } from "../config/appConfig.js";
 import { RuntimeOptions } from "../types/runtime.js";
+import { LoggerInterface, LoggingConfig, LogContext, LogLevel } from "./logger/interfaces.js";
+import { DEFAULT_PINO_LOGGING_CONFIG } from "./logger/pinoLogger.js";
+import { 
+  getLoggerFactory, 
+  createLoggerWithFeatureFlag, 
+  createLoggerSyncWithFeatureFlag 
+} from "./logger/factory.js";
 
-// Type for log context - can be any serializable object, Error, or unknown value
-type LogContext = 
-  | Record<string, unknown> 
-  | string 
-  | number 
-  | boolean 
-  | null 
-  | undefined 
-  | Error 
-  | unknown;
+// Re-export types for backward compatibility
+export type { LogContext, LogLevel, LoggingConfig };
 
-export interface LoggingConfig {
-  level: InternalLogLevel;
-  enableConsole: boolean;
-  enableFile: boolean;
-  serverName: string;
-  format: "json" | "pretty";
-}
-
-export const DEFAULT_LOGGING_CONFIG: LoggingConfig = {
-  level: process.env.NODE_ENV === "development" ? "debug" : "info",
-  enableConsole: true,
-  enableFile: true,
-  serverName: APP_TECHNICAL_NAME,
-  format: "pretty",
-};
+// Use Pino defaults as the main defaults
+export const DEFAULT_LOGGING_CONFIG = DEFAULT_PINO_LOGGING_CONFIG;
 
 /**
  * Create logging configuration based on runtime options and environment
@@ -54,259 +29,181 @@ export function createLoggingConfig(runtimeOptions?: RuntimeOptions): LoggingCon
     ...DEFAULT_LOGGING_CONFIG,
     format,
     // Override level if provided in runtime options
-    level: (runtimeOptions?.logLevel as InternalLogLevel) || DEFAULT_LOGGING_CONFIG.level,
-  };
-}
-
-
-/**
- * Get the log file path for a given server name
- */
-function getLogFilePath(serverName: string): string {
-  const logDir = join(
-    homedir(),
-    `.${BRAND_NAME.toLowerCase()}`,
-    serverName,
-    "logs"
-  );
-  return join(logDir, `${serverName}.log`);
-}
-
-/**
- * Convert LoggingConfig to mcp-logger LoggerOptions with transport-aware mode
- */
-function configToLoggerOptions(config: LoggingConfig, runtimeOptions?: RuntimeOptions): LoggerOptions {
-  const transports: TransportConfig[] = [];
-  
-  // Determine ServerMode based on runtime transport
-  const mode: ServerMode = runtimeOptions?.transport === 'stdio' ? 'local' : 'remote';
-  
-  // Console/stderr transport - use stderr for stdio mode, console for http mode
-  if (config.enableConsole) {
-    if (mode === 'local') {
-      // stdio mode: use stderr to avoid protocol corruption
-      transports.push({
-        type: 'stderr',
-        enabled: true,
-      });
-    } else {
-      // http mode: use console for visibility
-      transports.push({
-        type: 'console',
-        enabled: true,
-      });
-    }
-  }
-  
-  // File transport
-  if (config.enableFile) {
-    transports.push({
-      type: 'file',
-      enabled: true,
-      options: {
-        path: getLogFilePath(config.serverName),
-        mkdir: true,
-        append: true
-      }
-    });
-  }
-  
-  return {
-    mode,
-    level: config.level,
-    format: config.format,
-    transports
+    level: (runtimeOptions?.logLevel as LogLevel) || DEFAULT_LOGGING_CONFIG.level,
   };
 }
 
 /**
- * Logger class that wraps mcp-logger with our API compatibility layer
+ * Logger class that wraps the feature-flag-selected implementation
+ * Maintains backward compatibility with existing API
  */
-export class Logger {
-  private mcpLogger: McpLogger;
-  private config: LoggingConfig;
-  private runtimeOptions?: RuntimeOptions;
+export class Logger implements LoggerInterface {
+  private implementation: LoggerInterface;
+  private childLoggerCache = new Map<string, Logger>();
 
   constructor(config: Partial<LoggingConfig> = {}, runtimeOptions?: RuntimeOptions) {
-    this.config = { ...DEFAULT_LOGGING_CONFIG, ...config };
-    this.runtimeOptions = runtimeOptions;
-    
-    // Start with sync logger for immediate availability, then upgrade to async
-    const options = configToLoggerOptions(this.config, this.runtimeOptions);
-    this.mcpLogger = createLoggerSync(options);
-    
-    // Upgrade to async logger in background for full file transport functionality
-    this.initializeAsync().catch(() => {
-      // Continue with sync logger if async fails
-    });
+    // Use synchronous factory method for immediate availability
+    this.implementation = createLoggerSyncWithFeatureFlag(config, runtimeOptions);
   }
 
-  /**
-   * Initialize with async logger for full functionality
-   * This enables file transport which only works with async logger in mcp-logger 0.0.6
-   */
-  private async initializeAsync(): Promise<void> {
-    try {
-      const options = configToLoggerOptions(this.config, this.runtimeOptions);
-      this.mcpLogger = await createLogger(options);
-    } catch (error) {
-      // Continue with sync logger if async initialization fails
-      // File transport may not work, but console/stderr will still function
-      // Log this through the sync logger (stderr/console will still work)
-      this.mcpLogger.warn("Failed to initialize async logger, file transport may not work", {
-        error: {
-          name: (error as Error).name,
-          message: (error as Error).message,
-          stack: (error as Error).stack
-        }
-      });
-    }
-  }
-
-  // Helper method to format context for log messages
-  private formatContext(context?: LogContext): Record<string, unknown> | undefined {
-    if (context === undefined || context === null) {
-      return undefined;
-    }
-    
-    if (context instanceof Error) {
-      return {
-        error: {
-          name: context.name,
-          message: context.message,
-          stack: context.stack
-        }
-      };
-    }
-    
-    if (typeof context === 'object') {
-      return context as Record<string, unknown>;
-    }
-    
-    // For primitive types, wrap in a context object
-    return { context };
-  }
-
-  // Public logging methods
+  // Delegate all methods to the underlying implementation
   fatal(message: string, context?: LogContext): void {
-    // mcp-logger doesn't have fatal, use error
-    const formattedContext = this.formatContext(context);
-    if (formattedContext) {
-      this.mcpLogger.error(`[FATAL] ${message}`, formattedContext);
-    } else {
-      this.mcpLogger.error(`[FATAL] ${message}`);
-    }
+    this.implementation.fatal(message, context);
   }
 
   error(message: string, context?: LogContext): void {
-    const formattedContext = this.formatContext(context);
-    if (formattedContext) {
-      this.mcpLogger.error(message, formattedContext);
-    } else {
-      this.mcpLogger.error(message);
-    }
+    this.implementation.error(message, context);
   }
 
   warn(message: string, context?: LogContext): void {
-    const formattedContext = this.formatContext(context);
-    if (formattedContext) {
-      this.mcpLogger.warn(message, formattedContext);
-    } else {
-      this.mcpLogger.warn(message);
-    }
+    this.implementation.warn(message, context);
   }
 
   info(message: string, context?: LogContext): void {
-    const formattedContext = this.formatContext(context);
-    if (formattedContext) {
-      this.mcpLogger.info(message, formattedContext);
-    } else {
-      this.mcpLogger.info(message);
-    }
+    this.implementation.info(message, context);
   }
 
   debug(message: string, context?: LogContext): void {
-    const formattedContext = this.formatContext(context);
-    if (formattedContext) {
-      this.mcpLogger.debug(message, formattedContext);
-    } else {
-      this.mcpLogger.debug(message);
-    }
+    this.implementation.debug(message, context);
   }
 
   trace(message: string, context?: LogContext): void {
-    const formattedContext = this.formatContext(context);
-    if (formattedContext) {
-      this.mcpLogger.trace(message, formattedContext);
-    } else {
-      this.mcpLogger.trace(message);
-    }
+    this.implementation.trace(message, context);
   }
 
-  // Child logger creation using native mcp-logger functionality
   child(bindings: { module?: string; [key: string]: unknown }): Logger {
-    const module = bindings.module;
-    const otherBindings = { ...bindings };
-    delete otherBindings.module;
+    // Create cache key from bindings
+    const cacheKey = JSON.stringify(bindings);
     
-    // Create child logger with module context
-    // mcp-logger 0.0.7+ handles caching natively to prevent memory leaks
-    const childMcpLogger = this.mcpLogger.child({
-      context: {
-        module,
-        ...otherBindings
+    // Check cache first
+    if (this.childLoggerCache.has(cacheKey)) {
+      return this.childLoggerCache.get(cacheKey)!;
+    }
+    
+    // Create new child logger
+    const childImplementation = this.implementation.child(bindings);
+    const childLogger = new Logger();
+    (childLogger as any).implementation = childImplementation;
+    
+    // Cache the child logger
+    this.childLoggerCache.set(cacheKey, childLogger);
+    
+    // Implement cache size limit to prevent unbounded growth
+    if (this.childLoggerCache.size > 100) {
+      const firstKey = this.childLoggerCache.keys().next().value;
+      if (firstKey) {
+        this.childLoggerCache.delete(firstKey);
       }
-    });
-    
-    // Create new Logger instance wrapping the child
-    const childLogger = new Logger(this.config, this.runtimeOptions);
-    childLogger.mcpLogger = childMcpLogger;
+    }
     
     return childLogger;
   }
 
-  // Legacy API compatibility - access to underlying logger
-  get pino(): McpLogger {
-    return this.mcpLogger;
-  }
-
-  get mcp(): McpLogger {
-    return this.mcpLogger;
-  }
-
-  // Update configuration and reinitialize
   updateConfig(config: Partial<LoggingConfig>): void {
-    this.config = { ...this.config, ...config };
-    const options = configToLoggerOptions(this.config, this.runtimeOptions);
-    this.mcpLogger = createLoggerSync(options);
-    
-    // Try to upgrade to async logger in background
-    this.initializeAsync().catch(() => {
-      // Ignore errors, sync logger will continue to work
-    });
+    this.implementation.updateConfig(config);
+  }
+
+  // Legacy API compatibility
+  get pino(): any {
+    return this.implementation.pino;
+  }
+
+  get mcp(): any {
+    return this.implementation.mcp;
+  }
+
+  /**
+   * Get cache statistics for diagnostics
+   */
+  getCacheStats(): {
+    childLoggerCount: number;
+    cacheSize: number;
+    cacheKeys: string[];
+  } {
+    return {
+      childLoggerCount: this.childLoggerCache.size,
+      cacheSize: this.childLoggerCache.size,
+      cacheKeys: Array.from(this.childLoggerCache.keys())
+    };
   }
 }
 
 // Global logger management
 let globalLogger: Logger | null = null;
 let selectedLoggingConfig: Partial<LoggingConfig> | null = null;
+let globalRuntimeOptions: RuntimeOptions | undefined = undefined;
+
+/**
+ * Check if two logging configurations are equivalent
+ */
+function areConfigsEquivalent(config1: Partial<LoggingConfig> | null, config2: Partial<LoggingConfig> | null): boolean {
+  if (config1 === config2) return true;
+  if (!config1 || !config2) return false;
+  
+  // Compare relevant config properties
+  const finalConfig1 = { ...DEFAULT_LOGGING_CONFIG, ...config1 };
+  const finalConfig2 = { ...DEFAULT_LOGGING_CONFIG, ...config2 };
+  
+  return (
+    finalConfig1.level === finalConfig2.level &&
+    finalConfig1.enableConsole === finalConfig2.enableConsole &&
+    finalConfig1.enableFile === finalConfig2.enableFile &&
+    finalConfig1.serverName === finalConfig2.serverName &&
+    finalConfig1.format === finalConfig2.format
+  );
+}
+
+/**
+ * Check if runtime options are equivalent for logging purposes
+ */
+function areRuntimeOptionsEquivalent(opt1?: RuntimeOptions, opt2?: RuntimeOptions): boolean {
+  if (opt1 === opt2) return true;
+  if (!opt1 || !opt2) return !opt1 && !opt2;
+  
+  return (
+    opt1.transport === opt2.transport &&
+    opt1.logLevel === opt2.logLevel &&
+    opt1.debug === opt2.debug
+  );
+}
 
 /**
  * Get or create the global logger instance
  */
 export function getLogger(config?: Partial<LoggingConfig>, runtimeOptions?: RuntimeOptions): Logger {
-  if (config || runtimeOptions) {
-    const finalConfig = config || createLoggingConfig(runtimeOptions);
-    globalLogger = new Logger(finalConfig, runtimeOptions);
-    selectedLoggingConfig = finalConfig;
+  const finalConfig = config || createLoggingConfig(runtimeOptions);
+  
+  // Check if we can reuse the existing global logger
+  if (globalLogger && 
+      areConfigsEquivalent(selectedLoggingConfig, finalConfig) &&
+      areRuntimeOptionsEquivalent(globalRuntimeOptions, runtimeOptions)) {
     return globalLogger;
   }
 
-  if (!globalLogger) {
-    globalLogger = new Logger();
-  }
-
+  // Create new logger only if config has changed or no logger exists
+  globalLogger = new Logger(finalConfig, runtimeOptions);
+  selectedLoggingConfig = finalConfig;
+  globalRuntimeOptions = runtimeOptions;
+  
   return globalLogger;
+}
+
+/**
+ * Async version of getLogger that properly initializes feature flags
+ */
+export async function getLoggerAsync(config?: Partial<LoggingConfig>, runtimeOptions?: RuntimeOptions): Promise<Logger> {
+  const finalConfig = config || createLoggingConfig(runtimeOptions);
+  const implementation = await createLoggerWithFeatureFlag(finalConfig, runtimeOptions);
+  
+  const logger = new Logger();
+  (logger as any).implementation = implementation;
+  
+  if (config || runtimeOptions) {
+    globalLogger = logger;
+    selectedLoggingConfig = finalConfig;
+  }
+  
+  return logger;
 }
 
 /**
@@ -325,7 +222,6 @@ export function createChildLogger(bindings: { module: string }): Logger {
   if (!globalLogger) {
     const config = createLoggingConfig();
     // For early initialization, assume stdio transport (most common case)
-    // This will be overridden when the main logger is properly initialized
     const runtimeOptions: RuntimeOptions = { 
       transport: 'stdio', 
       debug: false, 
@@ -338,21 +234,84 @@ export function createChildLogger(bindings: { module: string }): Logger {
 }
 
 /**
- * Get diagnostic information about child loggers from the native mcp-logger cache
+ * Async version of createChildLogger that properly initializes feature flags
+ */
+export async function createChildLoggerAsync(bindings: { module: string }): Promise<Logger> {
+  if (!globalLogger) {
+    const config = createLoggingConfig();
+    const runtimeOptions: RuntimeOptions = { 
+      transport: 'stdio', 
+      debug: false, 
+      insecure: false 
+    };
+    globalLogger = await getLoggerAsync(config, runtimeOptions);
+    selectedLoggingConfig = config;
+  }
+  return globalLogger.child(bindings);
+}
+
+/**
+ * Get diagnostic information about the logging system
  * Useful for debugging EventEmitter memory leaks
  */
 export function getLoggerDiagnostics(): {
   hasGlobalLogger: boolean;
+  implementationType: string;
   cacheStats?: any;
 } {
   const result: any = {
-    hasGlobalLogger: globalLogger !== null
+    hasGlobalLogger: globalLogger !== null,
+    implementationType: 'unknown'
   };
   
-  // Access native mcp-logger cache stats if available through public API
-  if (globalLogger?.mcp && typeof globalLogger.mcp.getChildLoggerCacheStats === 'function') {
-    result.cacheStats = globalLogger.mcp.getChildLoggerCacheStats();
+  if (globalLogger) {
+    const impl = (globalLogger as any).implementation;
+    
+    // Detect implementation type
+    if (impl.constructor.name === 'PinoLogger') {
+      result.implementationType = 'pino';
+    } else if (impl.constructor.name === 'McpLoggerWrapper') {
+      result.implementationType = 'mcp-logger';
+    }
+    
+    // Get cache stats from the Logger wrapper itself
+    if (typeof globalLogger.getCacheStats === 'function') {
+      result.cacheStats = globalLogger.getCacheStats();
+    }
   }
   
   return result;
+}
+
+/**
+ * Reset global logger state (mainly for testing)
+ */
+export function resetGlobalLogger(): void {
+  globalLogger = null;
+  selectedLoggingConfig = null;
+  globalRuntimeOptions = undefined;
+  
+  // Reset factory cache
+  const factory = getLoggerFactory();
+  factory.resetCache();
+  
+  // Clear Pino instance cache
+  // Dynamic import to avoid circular dependency
+  import('./logger/pinoLogger.js').then(({ PinoLogger }) => {
+    PinoLogger.clearInstanceCache();
+  }).catch(() => {
+    // Ignore errors during cache clearing
+  });
+}
+
+/**
+ * Force feature flag for testing
+ */
+export function forceSetMcpLoggerEnabled(enabled: boolean): void {
+  const factory = getLoggerFactory();
+  factory.forceSetMcpLoggerEnabled(enabled);
+  // Reset only the global logger state, not the factory cache
+  globalLogger = null;
+  selectedLoggingConfig = null;
+  globalRuntimeOptions = undefined;
 }
