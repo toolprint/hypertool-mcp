@@ -11,16 +11,10 @@ import pino from "pino";
 // but use a real Pino logger configured for console output only
 vi.mock("./utils/logging.js", () => {
   // Create a minimal test logger for better performance
+  // IMPORTANT: Do not use transports here as they add exit listeners
   const testLogger = pino({
     level: process.env.TEST_VERBOSE ? "info" : "silent", // Silent unless explicitly verbose
-    transport: process.env.TEST_VERBOSE ? {
-      target: "pino-pretty",
-      options: {
-        colorize: false,
-        translateTime: false,
-        ignore: "pid,hostname,time",
-      },
-    } : undefined,
+    // No transport - write directly to stdout to avoid exit listeners
   });
 
   const mockLogger = {
@@ -49,7 +43,9 @@ vi.mock("./utils/logging.js", () => {
   return {
     Logger: vi.fn(() => mockLogger),
     getLogger: vi.fn(() => mockLogger),
+    getLoggerAsync: vi.fn(async () => mockLogger),
     createChildLogger: vi.fn((bindings) => mockLogger.child(bindings)),
+    createChildLoggerAsync: vi.fn(async (bindings) => mockLogger.child(bindings)),
     DEFAULT_LOGGING_CONFIG: {
       level: "info",
       enableConsole: true,
@@ -64,5 +60,17 @@ vi.mock("./utils/logging.js", () => {
       serverName: "test",
       format: "pretty",
     })),
+    getLoggerDiagnostics: vi.fn(() => ({
+      hasGlobalLogger: true,
+      implementationType: "pino",
+      cacheStats: {
+        childLoggerCount: 0,
+        cacheSize: 0,
+        cacheKeys: []
+      }
+    })),
+    resetGlobalLogger: vi.fn(),
+    forceSetMcpLoggerEnabled: vi.fn(),
+    getActiveLoggingConfig: vi.fn(() => null),
   };
 });

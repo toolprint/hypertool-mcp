@@ -3,8 +3,16 @@
  * HyperTool MCP server main entry point
  */
 
-// Increase max listeners early to prevent warnings from MCP SDK and other dependencies
-process.setMaxListeners(30);
+// Set max listeners early to prevent warnings from MCP SDK and other dependencies
+// This can be configured via HYPERTOOL_MAX_LISTENERS environment variable
+// Default is 10, but you may need to increase it if you have many MCP servers connected
+// Example: HYPERTOOL_MAX_LISTENERS=30 hypertool-mcp
+const maxListeners = process.env.HYPERTOOL_MAX_LISTENERS 
+  ? parseInt(process.env.HYPERTOOL_MAX_LISTENERS, 10) 
+  : 10;
+if (!isNaN(maxListeners) && maxListeners > 0) {
+  process.setMaxListeners(maxListeners);
+}
 
 import { Command, Argument } from "commander";
 import { RuntimeOptions, RuntimeTransportType } from "./types/runtime.js";
@@ -16,9 +24,7 @@ import {
 } from "./config/appConfig.js";
 import type { TransportConfig } from "./server/types.js";
 import { theme, semantic } from "./utils/theme.js";
-import { createChildLogger } from "./utils/logging.js";
-
-const logger = createChildLogger({ module: "main" });
+// Logger will be initialized later with proper runtime options
 
 async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
   // Default to 'all' if no option provided
@@ -751,7 +757,7 @@ async function main(): Promise<void> {
     // Parse CLI arguments - this will handle commands and options
     await parseCliArguments();
   } catch (error) {
-    logger.error("Failed to start HyperTool server", { error });
+    // Use console.error since logger may not be initialized yet
     console.error(
       semantic.messageError(`❌ Failed to start HyperTool server:`),
       error

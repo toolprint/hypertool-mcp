@@ -11,6 +11,10 @@ import { EnvironmentManager } from '../../src/config/environment.js';
 process.env.NODE_ENV = 'test';
 process.env.VITEST = 'true';
 
+// Increase max listeners to prevent warnings in tests that create many loggers
+// Tests run in parallel and each may create loggers with transports that add exit listeners
+process.setMaxListeners(100);
+
 // Lightweight timer tracking
 const timers = {
   timeouts: new Set<NodeJS.Timeout>(),

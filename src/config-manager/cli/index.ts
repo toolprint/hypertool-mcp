@@ -8,6 +8,7 @@ import { createLinkCommand } from "./link.js";
 import { createUnlinkCommand } from "./unlink.js";
 import { createShowCommand } from "./show.js";
 import { createExportCommand } from "./export.js";
+import { createFlagsCommand } from "./flags.js";
 
 export function createConfigCommands(): Command {
   const config = new Command("config");
@@ -19,7 +20,8 @@ export function createConfigCommands(): Command {
     .addCommand(createRestoreCommand())
     .addCommand(createLinkCommand())
     .addCommand(createUnlinkCommand())
-    .addCommand(createExportCommand());
+    .addCommand(createExportCommand())
+    .addCommand(createFlagsCommand());
 
   return config;
 }
@@ -32,4 +34,5 @@ export {
   createLinkCommand,
   createUnlinkCommand,
   createExportCommand,
+  createFlagsCommand,
 };

@@ -4,12 +4,21 @@
  */
 
 import { getFeatureFlags } from "./preferenceStore.js";
-import { createChildLogger } from "../utils/logging.js";
 
-const logger = createChildLogger({ module: "FeatureFlagService" });
+// Remove logger to avoid circular dependency with logging system
+// We'll use console for critical errors only
+const logger = {
+  debug: (message: string, ...args: any[]) => {
+    if (process.env.DEBUG) console.debug(`[FeatureFlagService] ${message}`, ...args);
+  },
+  info: (message: string, ...args: any[]) => {
+    if (process.env.DEBUG) console.info(`[FeatureFlagService] ${message}`, ...args);
+  }
+};
 
 export interface FeatureFlags {
   nedbEnabled?: boolean;
+  mcpLoggerEnabled?: boolean;
   // Future feature flags can be added here
 }
 
@@ -53,13 +62,25 @@ export class FeatureFlagService {
       logger.debug(`NeDB enabled from environment: ${this.cache.nedbEnabled}`);
     }
 
+    const envMcpLogger = process.env.HYPERTOOL_MCP_LOGGER_ENABLED;
+    if (envMcpLogger !== undefined) {
+      this.cache.mcpLoggerEnabled = ["true", "1", "yes", "on"].includes(
+        envMcpLogger.toLowerCase()
+      );
+      logger.debug(`MCP Logger enabled from environment: ${this.cache.mcpLoggerEnabled}`);
+    }
+
     // 2. Check config.json if not set by environment
-    if (this.cache.nedbEnabled === undefined) {
+    if (this.cache.nedbEnabled === undefined || this.cache.mcpLoggerEnabled === undefined) {
       try {
         const configFlags = await getFeatureFlags();
-        if (configFlags?.nedbEnabled !== undefined) {
+        if (this.cache.nedbEnabled === undefined && configFlags?.nedbEnabled !== undefined) {
           this.cache.nedbEnabled = configFlags.nedbEnabled === true;
           logger.debug(`NeDB enabled from config.json: ${this.cache.nedbEnabled}`);
+        }
+        if (this.cache.mcpLoggerEnabled === undefined && configFlags?.mcpLoggerEnabled !== undefined) {
+          this.cache.mcpLoggerEnabled = configFlags.mcpLoggerEnabled === true;
+          logger.debug(`MCP Logger enabled from config.json: ${this.cache.mcpLoggerEnabled}`);
         }
       } catch (error) {
         logger.debug("Could not load feature flags from config.json:", error);
@@ -70,6 +91,11 @@ export class FeatureFlagService {
     if (this.cache.nedbEnabled === undefined) {
       this.cache.nedbEnabled = false;
       logger.debug("NeDB enabled set to default: false");
+    }
+
+    if (this.cache.mcpLoggerEnabled === undefined) {
+      this.cache.mcpLoggerEnabled = false; // Default to Pino implementation
+      logger.debug("MCP Logger enabled set to default: false");
     }
 
     this.initialized = true;
@@ -87,6 +113,19 @@ export class FeatureFlagService {
       );
     }
     return this.cache.nedbEnabled ?? false;
+  }
+
+  /**
+   * Check if MCP Logger is enabled
+   * @throws Error if service not initialized
+   */
+  isMcpLoggerEnabled(): boolean {
+    if (!this.initialized) {
+      throw new Error(
+        "FeatureFlagService not initialized. Call initialize() first."
+      );
+    }
+    return this.cache.mcpLoggerEnabled ?? false;
   }
 
   /**
@@ -135,4 +174,14 @@ export async function isNedbEnabledViaService(): Promise<boolean> {
   const service = getFeatureFlagService();
   await service.initialize();
   return service.isNedbEnabled();
+}
+
+/**
+ * Convenience function to check if MCP Logger is enabled
+ * Ensures the service is initialized before checking
+ */
+export async function isMcpLoggerEnabledViaService(): Promise<boolean> {
+  const service = getFeatureFlagService();
+  await service.initialize();
+  return service.isMcpLoggerEnabled();
 }
