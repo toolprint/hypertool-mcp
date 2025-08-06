@@ -1,0 +1,103 @@
+runtime: "container"
+name: "hypertool-mcp"
+version: "0.0.31"
+description: "HyperTool MCP proxy server for routing requests between clients and multiple underlying MCP servers"
+author: "OneGrep, Inc."
+license: "MIT"
+repository: "https://github.com/toolprint/hypertool-mcp"
+
+# Container runtime configuration
+startCommand: "node dist/server.js --transport http --port 8080 --host 0.0.0.0"
+build:
+  dockerfile: "Dockerfile"
+  context: "."
+
+# Configuration schema for Smithery deployment
+configSchema:
+  type: "object"
+  required: ["mcpServers"]
+  properties:
+    mcpServers:
+      type: "object"
+      title: "MCP Server Configuration"
+      description: "Configuration for underlying MCP servers - supports any MCP server configuration format"
+      additionalProperties: true
+    debug:
+      type: "boolean"
+      title: "Debug Mode"
+      description: "Enable debug mode with verbose logging"
+      default: false
+    logLevel:
+      type: "string"
+      title: "Log Level"
+      description: "Log level for server output"
+      default: "info"
+      enum: ["trace", "debug", "info", "warn", "error", "fatal"]
+    equipToolset:
+      type: "string"
+      title: "Default Toolset"
+      description: "Toolset name to equip on startup"
+
+# Example configuration showing working MCP server setup
+exampleConfig:
+  mcpServers:
+    git:
+      type: "stdio"
+      command: "uvx"
+      args: ["mcp-server-git", "--repository", "/app"]
+      env:
+        PYTHONUNBUFFERED: "1"
+        UV_SYSTEM_PYTHON: "1"
+    filesystem:
+      type: "stdio"
+      command: "npx"
+      args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+      env:
+        NODE_ENV: "production"
+    memory:
+      type: "stdio"
+      command: "npx"
+      args: ["-y", "@modelcontextprotocol/server-memory"]
+      env:
+        NODE_ENV: "production"
+  debug: false
+  logLevel: "info"
+
+# Environment variables for sensitive data
+environment:
+  - name: "HYPERTOOL_MAX_LISTENERS"
+    description: "Maximum number of event listeners (default: 10)"
+    default: "10"
+  - name: "NODE_ENV" 
+    description: "Node.js environment (development, production, test)"
+    default: "production"
+  - name: "HYPERTOOL_PORT"
+    description: "HTTP server port for container runtime"
+    default: "8080"
+  - name: "HYPERTOOL_HOST"
+    description: "HTTP server host for container runtime"
+    default: "0.0.0.0"
+  - name: "UV_SYSTEM_PYTHON"
+    description: "Use system Python for UV package manager"
+    default: "1"
+  - name: "PYTHONUNBUFFERED"
+    description: "Unbuffered Python output"
+    default: "1"
+
+# Keywords for discoverability
+keywords:
+  - "mcp"
+  - "model-context-protocol" 
+  - "ai-tools"
+  - "toolset"
+  - "proxy"
+  - "claude"
+  - "cursor"
+  - "ai-assistant"
+  - "dynamic-toolset"
+  - "mcp-server"
+  - "mcp-client"
+  - "mcp-proxy"
+  - "toolprint"
+  - "hypertool"
+  - "smithery"

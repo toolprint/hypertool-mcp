@@ -30,6 +30,7 @@ export class McpHttpServer {
   private host: string;
   private transports: Record<string, StreamableHTTPServerTransport> = {};
   private connectionString: string;
+  private sessionTimers: Record<string, NodeJS.Timeout> = {};
 
   constructor(
     mcpServer: Server,
@@ -52,13 +53,20 @@ export class McpHttpServer {
     // Enable JSON parsing
     this.app.use(express.json());
 
+    // Keep connections alive
+    this.app.use((req, res, next) => {
+      res.header("Connection", "keep-alive");
+      res.header("Keep-Alive", "timeout=300, max=1000");
+      next();
+    });
+
     // Enable CORS for development with MCP session support
     this.app.use((req, res, next) => {
       res.header("Access-Control-Allow-Origin", "*");
       res.header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
       res.header(
         "Access-Control-Allow-Headers",
-        "Content-Type, Authorization, Mcp-Session-Id"
+        "Content-Type, Authorization, Mcp-Session-Id, mcp-protocol-version"
       );
       res.header("Access-Control-Expose-Headers", "Mcp-Session-Id");
 
@@ -123,8 +131,9 @@ export class McpHttpServer {
     let transport: StreamableHTTPServerTransport;
 
     if (sessionId && this.transports[sessionId]) {
-      // Reuse existing transport
+      // Reuse existing transport and reset session timer
       transport = this.transports[sessionId];
+      this.resetSessionTimer(sessionId);
     } else if (
       !sessionId &&
       req.method === "POST" &&
@@ -138,6 +147,9 @@ export class McpHttpServer {
             `Streamable HTTP session initialized with ID: ${sessionId}`
           );
           this.transports[sessionId] = transport;
+          
+          // Set up session keep-alive (reset timer on each request)
+          this.resetSessionTimer(sessionId);
         },
       });
 
@@ -145,11 +157,18 @@ export class McpHttpServer {
       transport.onclose = () => {
         const sid = transport.sessionId;
         if (sid && this.transports[sid]) {
-          logger.info(
+          logger.warn(
             `Transport closed for session ${sid}, removing from transports map`
           );
           delete this.transports[sid];
+          this.clearSessionTimer(sid);
         }
+      };
+
+      // Add error handling for transport
+      transport.onerror = (error) => {
+        const sid = transport.sessionId;
+        logger.error(`Transport error for session ${sid}:`, error);
       };
 
       // Connect the transport to the MCP server
@@ -224,7 +243,52 @@ export class McpHttpServer {
   /**
    * Stop the HTTP server
    */
+  /**
+   * Reset session timeout timer
+   */
+  private resetSessionTimer(sessionId: string): void {
+    // Clear existing timer
+    this.clearSessionTimer(sessionId);
+    
+    // Set new timer (30 minutes session timeout)
+    this.sessionTimers[sessionId] = setTimeout(() => {
+      logger.info(`Session ${sessionId} timed out, cleaning up`);
+      this.cleanupSession(sessionId);
+    }, 30 * 60 * 1000); // 30 minutes
+  }
+
+  /**
+   * Clear session timeout timer
+   */
+  private clearSessionTimer(sessionId: string): void {
+    if (this.sessionTimers[sessionId]) {
+      clearTimeout(this.sessionTimers[sessionId]);
+      delete this.sessionTimers[sessionId];
+    }
+  }
+
+  /**
+   * Clean up session and transport
+   */
+  private async cleanupSession(sessionId: string): Promise<void> {
+    if (this.transports[sessionId]) {
+      try {
+        logger.info(`Cleaning up session ${sessionId}`);
+        await this.transports[sessionId].close();
+        delete this.transports[sessionId];
+      } catch (error) {
+        logger.error(`Error cleaning up session ${sessionId}:`, error);
+      }
+    }
+    this.clearSessionTimer(sessionId);
+  }
+
   async stop(): Promise<void> {
+    // Clear all session timers
+    for (const sessionId in this.sessionTimers) {
+      this.clearSessionTimer(sessionId);
+    }
+
     // Close all active transports
     for (const sessionId in this.transports) {
       try {

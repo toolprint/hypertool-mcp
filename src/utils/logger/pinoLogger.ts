@@ -195,6 +195,12 @@ export class PinoLogger implements LoggerInterface {
    * Get the log file path for the current server
    */
   private getLogFilePath(): string {
+    // Check for environment variable override first (used by daemon)
+    if (process.env.HYPERTOOL_LOG_FILE) {
+      return process.env.HYPERTOOL_LOG_FILE;
+    }
+    
+    // Fall back to default path
     const logDir = join(
       homedir(),
       `.${BRAND_NAME.toLowerCase()}`,
