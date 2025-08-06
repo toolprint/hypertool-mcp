@@ -12,6 +12,10 @@ on:
         type: boolean
         default: true
 
+permissions:
+  contents: write
+  actions: read
+
 jobs:
   promote-stable:
     runs-on: ubuntu-latest
