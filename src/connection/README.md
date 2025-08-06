@@ -140,7 +140,7 @@ interface Connection {
 **Examples**:
 
 - `git.status` → Git server's status tool
-- `docker.ps` → Docker server's ps tool  
+- `docker.ps` → Docker server's ps tool
 - `github.create-issue` → GitHub server's issue creation tool
 
 **Conflict Resolution**:
@@ -149,13 +149,13 @@ interface Connection {
 // Multiple servers with same tool name
 servers: {
   "git": ["status", "commit", "push"],
-  "svn": ["status", "commit", "update"]  
+  "svn": ["status", "commit", "update"]
 }
 
 // Tools exposed with namespacing:
 tools: [
   "git.status",    // Unambiguous
-  "git.commit",    // Unambiguous  
+  "git.commit",    // Unambiguous
   "git.push",      // Unique to git
   "svn.status",    // Unambiguous
   "svn.commit",    // Unambiguous
@@ -181,7 +181,7 @@ tools: [
 console.warn("Failed to load config:", error);
 // Server continues with partial state ❌
 
-// After: Immediate termination with guidance  
+// After: Immediate termination with guidance
 console.error(`
 ❌ FATAL ERROR: Failed to initialize server "git"
    Error: Connection for server "git" already exists
@@ -237,7 +237,7 @@ manager.on('failed', ({ serverName, error }) => {
   // Connection attempt failed
 });
 
-// Pool-level events  
+// Pool-level events
 pool.on('connectionAdded', ({ serverName, connection }) => {
   // New server added to pool
 });
@@ -274,7 +274,7 @@ connectionManager.on('disconnected', (event) => {
 ### **Integration Test Scenarios**
 
 - **Server Name Conflicts**: Various conflict types and resolutions
-- **Transport Failures**: Network issues, process crashes, timeouts  
+- **Transport Failures**: Network issues, process crashes, timeouts
 - **Configuration Edge Cases**: Invalid JSON, missing fields, permissions
 - **Health Check Recovery**: Connection drops, server restarts
 
@@ -299,7 +299,7 @@ class MockConnection implements Connection {
 ### **Planned Features**
 
 1. **Connection Pooling**: Reuse connections for multiple tool calls
-2. **Load Balancing**: Distribute requests across server instances  
+2. **Load Balancing**: Distribute requests across server instances
 3. **Circuit Breakers**: Automatic failure detection and recovery
 4. **Metrics Collection**: Connection statistics, performance monitoring
 5. **Protocol Versioning**: MCP protocol version negotiation
@@ -325,7 +325,7 @@ interface ConnectionStrategy {
 ## 📚 Related Documentation
 
 - **[Discovery Engine](../discovery/README.md)**: Tool discovery and caching
-- **[Request Router](../router/README.md)**: Request routing and load balancing  
+- **[Request Router](../router/README.md)**: Request routing and load balancing
 - **[Configuration](../config/README.md)**: MCP configuration parsing
 - **[Types](../types/README.md)**: TypeScript type definitions
 
@@ -334,7 +334,7 @@ interface ConnectionStrategy {
 When modifying connection management logic:
 
 1. **Maintain backward compatibility** for existing configurations
-2. **Add comprehensive tests** for new connection strategies  
+2. **Add comprehensive tests** for new connection strategies
 3. **Update error messages** to be actionable and user-friendly
 4. **Consider multi-transport scenarios** in design decisions
 5. **Document breaking changes** with migration guides

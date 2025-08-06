@@ -179,7 +179,9 @@ export function isTestMode(): boolean {
 /**
  * Load feature flags from config.json
  */
-async function loadFeatureFlagsFromConfig(): Promise<Record<string, boolean> | undefined> {
+async function loadFeatureFlagsFromConfig(): Promise<
+  Record<string, boolean> | undefined
+> {
   try {
     // Dynamic import to avoid circular dependencies
     const { getFeatureFlags } = await import("./preferenceStore.js");
@@ -190,21 +192,20 @@ async function loadFeatureFlagsFromConfig(): Promise<Record<string, boolean> | u
   }
 }
 
-
 /**
  * Async version of isNedbEnabled that checks config.json as fallback
  * Priority: Environment variable > config.json > default (false)
- * 
+ *
  * @deprecated Use FeatureFlagService.isNedbEnabled() for better feature flag management
  */
 export async function isNedbEnabledAsync(): Promise<boolean> {
   const config = EnvironmentManager.getInstance().getConfig();
-  
+
   // Environment variable takes highest precedence
   if (config.nedbEnabled !== undefined) {
     return config.nedbEnabled === true;
   }
-  
+
   // Check config.json as fallback
   try {
     const configFlags = await loadFeatureFlagsFromConfig();
@@ -214,7 +215,7 @@ export async function isNedbEnabledAsync(): Promise<boolean> {
   } catch (error) {
     // If config.json can't be loaded, continue with default
   }
-  
+
   // Default to false if neither source provides a value
   return false;
 }

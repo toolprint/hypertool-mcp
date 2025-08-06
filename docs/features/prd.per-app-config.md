@@ -171,7 +171,7 @@ class ConnectionManager {
     const servers = await this.loadMcpConfig(configPath);
     // Load only servers for this app context
   }
-  
+
   private resolveConfigPath(appId: string, profile?: string): string {
     if (profile) {
       return `mcp/profiles/${appId}/${profile}.json`;
@@ -189,11 +189,11 @@ class ConnectionManager {
 async function detectConfigurationMode(): Promise<'legacy' | 'per-app'> {
   const hasGlobalConfig = await fileExists('mcp.json');
   const hasPerAppConfigs = await directoryExists('mcp/');
-  
+
   if (!hasPerAppConfigs && hasGlobalConfig) {
     return 'legacy'; // Use global config for all apps
   }
-  
+
   return 'per-app';
 }
 ```
@@ -203,10 +203,10 @@ async function detectConfigurationMode(): Promise<'legacy' | 'per-app'> {
 ```typescript
 async function migrateToPerAppConfigs(): Promise<void> {
   const globalConfig = await loadGlobalMcpConfig();
-  
+
   // Group servers by source application if metadata available
   const serversByApp = groupServersByApp(globalConfig);
-  
+
   // Create per-app configs
   for (const [appId, servers] of Object.entries(serversByApp)) {
     await saveMcpConfig(`mcp/${appId}.json`, {
@@ -218,7 +218,7 @@ async function migrateToPerAppConfigs(): Promise<void> {
       }
     });
   }
-  
+
   // Archive global config
   await archiveGlobalConfig();
 }
@@ -262,7 +262,7 @@ hypertool-mcp --linked-app claude-code --profile ml-project
 async function importFromApplication(appId: string): Promise<void> {
   const appConfig = await loadApplicationConfig(appId);
   const mcpConfigPath = `mcp/${appId}.json`;
-  
+
   // Save to app-specific file instead of merging
   await saveMcpConfig(mcpConfigPath, {
     mcpServers: appConfig.mcpServers,
@@ -272,7 +272,7 @@ async function importFromApplication(appId: string): Promise<void> {
       lastModified: new Date().toISOString()
     }
   });
-  
+
   // Update main config to reference the app's MCP config
   await updateApplicationReference(appId, mcpConfigPath);
 }
@@ -329,7 +329,7 @@ interface EnhancedToolsetConfig extends ToolsetConfig {
 ## Dependencies
 
 - Enhanced setup wizard system
-- Configuration management infrastructure  
+- Configuration management infrastructure
 - CLI argument parsing system
 - Connection management system
 - Backup and restore system
@@ -353,7 +353,7 @@ hypertool-mcp config list
 
 # Output:
 # claude-desktop: 3 servers (mcp/claude-desktop.json)
-# cursor: 5 servers (mcp/cursor.json)  
+# cursor: 5 servers (mcp/cursor.json)
 # claude-code: 2 servers (mcp/claude-code.json)
 ```
 
@@ -363,7 +363,7 @@ hypertool-mcp config list
 # Run with Claude Desktop configuration
 hypertool-mcp --linked-app claude-desktop
 
-# Run with Cursor configuration  
+# Run with Cursor configuration
 hypertool-mcp --linked-app cursor
 
 # Run with Claude Code project profile

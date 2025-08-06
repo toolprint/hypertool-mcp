@@ -1,8 +1,8 @@
 <context>
-# Overview  
+# Overview
 Meta-MCP is a TypeScript-based proxy MCP server that acts as a single entry point for multiple underlying MCP servers. It dynamically exposes a configurable subset of tools from connected MCP servers, allowing users to create custom toolsets by combining tools from different servers. The proxy handles tool discovery, caching, and request routing transparently across multiple transport protocols.
 
-# Core Features  
+# Core Features
 - **MCP Server Proxy**: Acts as a single MCP server that proxies requests to multiple underlying MCP servers
 - **Multi-Transport Support**: Supports both streamable HTTP and stdio transports for client connections, built on Express.js framework
 - **Dynamic Tool Discovery**: Automatically discovers and caches available tools from connected MCP servers
@@ -14,9 +14,9 @@ Meta-MCP is a TypeScript-based proxy MCP server that acts as a single entry poin
 - **Toolset Management**: Allows users to create, save, and load custom toolset configurations
 - **TypeScript Implementation**: Full TypeScript type safety and modern development practices
 
-# User Experience  
+# User Experience
 - **Primary User**: Developers using Claude Code with multiple MCP servers who want simplified tool management
-- **Key User Flows**: 
+- **Key User Flows**:
   - Point server to existing .mcp.json file on first launch
   - Server discovers available tools from running MCP servers
   - User configures custom toolset (subset of available tools)
@@ -27,7 +27,7 @@ Meta-MCP is a TypeScript-based proxy MCP server that acts as a single entry poin
 - **Error Handling**: Clear warnings when underlying servers are unavailable or tools can't be loaded
 </context>
 <PRD>
-# Technical Architecture  
+# Technical Architecture
 - **TypeScript MCP Server**: Standard MCP server implementation following cco-mcp best practices
 - **Express.js Framework**: Modern HTTP server built on Express.js with middleware support for extensibility
 - **Transport Layer**: Support for both streamable HTTP (/mcp endpoint) and stdio transports for maximum compatibility
@@ -39,10 +39,10 @@ Meta-MCP is a TypeScript-based proxy MCP server that acts as a single entry poin
 - **Request Router**: Routes incoming tool requests to appropriate underlying servers
 - **Health Monitor**: Periodically checks underlying server availability with reconnection logic
 
-# Development Roadmap  
+# Development Roadmap
 **Phase 1 - Core Proxy Functionality (MVP)**
 - Implement TypeScript MCP server with Express.js framework and streamable HTTP transport
-- Support both stdio and streamable HTTP (/mcp endpoint) transport modes  
+- Support both stdio and streamable HTTP (/mcp endpoint) transport modes
 - Add .mcp.json file parsing and server discovery
 - Create tool discovery and caching system with TypeScript types
 - Implement basic request proxying for tool calls
@@ -72,7 +72,7 @@ Meta-MCP is a TypeScript-based proxy MCP server that acts as a single entry poin
 7. **Health Monitoring**: Track server availability and handle connection failures
 8. **Persistence Layer**: Save user preferences and toolset configurations
 
-# Risks and Mitigations  
+# Risks and Mitigations
 - **Underlying Server Failures**: Dependent servers may become unavailable
   - Mitigation: Implement health checks, graceful degradation, and clear error messages
 - **Tool Schema Conflicts**: Different servers may have tools with same names
@@ -96,7 +96,7 @@ The dynamic tool registration system is the core innovation of HyperTool MCP tha
 - **Usage**: Used by toolset creation tools and administrative functions
 - **Independence**: Operates independently of equipped toolsets
 
-### Layer 2: Dynamic Tool Registration  
+### Layer 2: Dynamic Tool Registration
 - **Purpose**: Real-time registration/unregistration of tools based on equipped toolset
 - **Function**: MCP server's `getAvailableTools()` method
 - **Behavior**: Only returns currently registered tools from equipped toolset
@@ -166,13 +166,13 @@ The dynamic tool registration system is the core innovation of HyperTool MCP tha
     "inputSchema": { /* original git.status schema */ }
   },
   {
-    "name": "git_commit", 
+    "name": "git_commit",
     "description": "Commit changes to git repository",
     "inputSchema": { /* original git.commit schema */ }
   },
   {
     "name": "docker_ps",
-    "description": "List running Docker containers", 
+    "description": "List running Docker containers",
     "inputSchema": { /* original docker.ps schema */ }
   },
   {
@@ -183,7 +183,7 @@ The dynamic tool registration system is the core innovation of HyperTool MCP tha
 ]
 ```
 
-### Toolset Unequip Flow  
+### Toolset Unequip Flow
 1. User calls `unequip-toolset`
 2. System unregisters all currently registered tools
 3. Clear internal registration state
@@ -195,7 +195,7 @@ The dynamic tool registration system is the core innovation of HyperTool MCP tha
 // 1. MCP client calls: git_search_repositories({"query": "typescript"})
 // 2. Router receives: name="git_search_repositories", args={"query": "typescript"}
 // 3. Router reverse-flattens: "git_search_repositories" → "git.search_repositories"
-// 4. Router extracts: serverName="git", toolName="search_repositories"  
+// 4. Router extracts: serverName="git", toolName="search_repositories"
 // 5. Router proxies to git server: toolName="search_repositories", args={"query": "typescript"}
 // 6. Git server responds with repository list
 // 7. Response returned to client unchanged
@@ -208,7 +208,7 @@ The dynamic tool registration system is the core innovation of HyperTool MCP tha
     "namespacedName": "git.search_repositories"
   },
   "linear_create_issue": {
-    "serverName": "linear", 
+    "serverName": "linear",
     "originalName": "create_issue",
     "namespacedName": "linear.create_issue"
   }
@@ -217,7 +217,7 @@ The dynamic tool registration system is the core innovation of HyperTool MCP tha
 
 ## Schema Preservation
 - **Input Schemas**: Preserved exactly from original tool definitions
-- **Output Schemas**: Preserved exactly from original tool definitions  
+- **Output Schemas**: Preserved exactly from original tool definitions
 - **Descriptions**: Preserved exactly from original tool definitions
 - **Annotations**: All annotations preserved including title, readOnlyHint, etc.
 - **No Modification**: Zero alteration of tool behavior or interface
@@ -231,7 +231,7 @@ const toolset = {
   "name": "dev-tools",
   "tools": [
     {"namespacedName": "git.status"},      // git server offline
-    {"namespacedName": "docker.ps"},       // docker server online  
+    {"namespacedName": "docker.ps"},       // docker server online
     {"namespacedName": "linear.create_issue"} // linear server online
   ]
 }
@@ -251,7 +251,7 @@ console.log("✅ git server reconnected, registering tools: git_status");
 async function equipToolset(toolsetName) {
   const tools = await loadToolsetTools(toolsetName);
   const registered = [];
-  
+
   try {
     for (const tool of tools) {
       await registerTool(tool);
@@ -278,7 +278,7 @@ async function equipToolset(name) {
   if (registrationLock) {
     throw new Error("Registration operation in progress, please wait");
   }
-  
+
   registrationLock = true;
   try {
     // Perform registration...
@@ -289,7 +289,7 @@ async function equipToolset(name) {
 
 // User rapidly calls:
 // 1. equip-toolset dev-tools    → succeeds, locks during operation
-// 2. equip-toolset data-tools   → fails with "operation in progress"  
+// 2. equip-toolset data-tools   → fails with "operation in progress"
 // 3. unequip-toolset           → waits for lock, then succeeds
 ```
 
@@ -298,21 +298,21 @@ async function equipToolset(name) {
 // Before any toolset equipped
 getAvailableTools() → [
   // Only built-in toolset management tools
-  "discover-all-tools", 
+  "discover-all-tools",
   "build-toolset",
-  "equip-toolset", 
+  "equip-toolset",
   "unequip-toolset"
 ]
 
-// After equipping "dev-essentials" toolset  
+// After equipping "dev-essentials" toolset
 getAvailableTools() → [
   // Built-in tools + registered toolset tools
   "discover-all-tools",
-  "build-toolset", 
+  "build-toolset",
   "equip-toolset",
   "unequip-toolset",
   "git_status",
-  "git_commit", 
+  "git_commit",
   "docker_ps",
   "linear_create_issue"
 ]
@@ -322,7 +322,7 @@ getAvailableTools() → [
   // Back to only built-in tools
   "discover-all-tools",
   "build-toolset",
-  "equip-toolset", 
+  "equip-toolset",
   "unequip-toolset"
 ]
 ```
@@ -413,7 +413,7 @@ Each module should create its own child logger:
 // In src/server/index.ts
 const logger = createLogger('server');
 
-// In src/discovery/engine.ts  
+// In src/discovery/engine.ts
 const logger = createLogger('discovery');
 
 // In src/router/index.ts
@@ -430,7 +430,7 @@ const logger = createLogger('router');
   - Handle special cases (startup messages, CLI output)
 
 ### 8. Transport Mode Support
-- **stdio Mode**: 
+- **stdio Mode**:
   - Use stdout for logs to avoid mixing with MCP protocol
   - Consider using stderr for error logs
   - Pretty-print by default
@@ -493,7 +493,7 @@ interface LoggerFactory {
 6. Add child loggers to all major modules
 7. Test in both stdio and HTTP transport modes
 
-# Appendix  
+# Appendix
 - **Target MCP Servers**: git, docker, context7, task-master, claude-task, and others
 - **Configuration Format**: JSON-based toolset definitions with server mappings
 - **Deployment**: Single TypeScript executable that can be run as MCP server

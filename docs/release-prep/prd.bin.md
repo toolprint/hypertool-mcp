@@ -57,7 +57,7 @@ Implement comprehensive npm package publishing workflow for HyperTool MCP under 
   },
   "keywords": [
     "mcp",
-    "model-context-protocol", 
+    "model-context-protocol",
     "ai-tools",
     "toolset",
     "proxy",

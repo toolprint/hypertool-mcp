@@ -3,16 +3,16 @@
  * Provides utilities for timeouts, retries, and cleanup
  */
 
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 /**
  * Timeout configuration for different test types
  */
 export const TEST_TIMEOUTS = {
-  unit: 3000,        // 3 seconds for unit tests
+  unit: 3000, // 3 seconds for unit tests
   integration: 10000, // 10 seconds for integration tests
-  e2e: 30000,        // 30 seconds for e2e tests
-  default: 5000      // 5 seconds default
+  e2e: 30000, // 30 seconds for e2e tests
+  default: 5000, // 5 seconds default
 } as const;
 
 /**
@@ -26,15 +26,17 @@ export function withTimeout<T>(
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new Error(errorMessage || `Operation timed out after ${timeoutMs}ms`));
+      reject(
+        new Error(errorMessage || `Operation timed out after ${timeoutMs}ms`)
+      );
     }, timeoutMs);
 
     promise
-      .then(result => {
+      .then((result) => {
         clearTimeout(timer);
         resolve(result);
       })
-      .catch(error => {
+      .catch((error) => {
         clearTimeout(timer);
         reject(error);
       });
@@ -58,24 +60,24 @@ export async function retry<T>(
     maxRetries = 3,
     delay = 100,
     backoff = true,
-    timeout = TEST_TIMEOUTS.default
+    timeout = TEST_TIMEOUTS.default,
   } = options;
 
   let lastError: Error;
-  
+
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await withTimeout(fn(), timeout);
     } catch (error) {
       lastError = error as Error;
-      
+
       if (attempt < maxRetries - 1) {
         const waitTime = backoff ? delay * Math.pow(2, attempt) : delay;
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
       }
     }
   }
-  
+
   throw lastError!;
 }
 
@@ -94,19 +96,19 @@ export async function waitFor(
   const {
     timeout = TEST_TIMEOUTS.default,
     interval = 50,
-    errorMessage = 'Condition not met within timeout'
+    errorMessage = "Condition not met within timeout",
   } = options;
 
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < timeout) {
     const result = await condition();
     if (result) {
       return;
     }
-    await new Promise(resolve => setTimeout(resolve, interval));
+    await new Promise((resolve) => setTimeout(resolve, interval));
   }
-  
+
   throw new Error(errorMessage);
 }
 
@@ -120,12 +122,12 @@ export function createDeferred<T>(): {
 } {
   let resolve: (value: T) => void;
   let reject: (error: Error) => void;
-  
+
   const promise = new Promise<T>((res, rej) => {
     resolve = res;
     reject = rej;
   });
-  
+
   return { promise, resolve: resolve!, reject: reject! };
 }
 
@@ -199,12 +201,12 @@ export class AsyncTestFixture {
     // Run cleanup functions in reverse order
     const fns = [...this.cleanupFns].reverse();
     this.cleanupFns = [];
-    
+
     for (const fn of fns) {
       try {
         await fn();
       } catch (error) {
-        console.error('Cleanup error:', error);
+        console.error("Cleanup error:", error);
       }
     }
   }
@@ -247,7 +249,7 @@ export const mockTimers = {
   async runOnlyPendingTimers(): Promise<void> {
     vi.runOnlyPendingTimers();
     await flushPromises();
-  }
+  },
 };
 
 /**
@@ -255,7 +257,7 @@ export const mockTimers = {
  * Useful for ensuring async operations complete
  */
 export function flushPromises(): Promise<void> {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     setImmediate(resolve);
   });
 }
@@ -264,15 +266,15 @@ export function flushPromises(): Promise<void> {
  * Create a test timeout guard
  * Automatically fails test if it takes too long
  */
-export function createTimeoutGuard(
-  timeoutMs: number = TEST_TIMEOUTS.default
-): { cancel: () => void } {
+export function createTimeoutGuard(timeoutMs: number = TEST_TIMEOUTS.default): {
+  cancel: () => void;
+} {
   const timer = setTimeout(() => {
     throw new Error(`Test exceeded timeout of ${timeoutMs}ms`);
   }, timeoutMs);
 
   return {
-    cancel: () => clearTimeout(timer)
+    cancel: () => clearTimeout(timer),
   };
 }
 

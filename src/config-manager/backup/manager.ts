@@ -65,11 +65,11 @@ export class BackupManager {
   private async copyDirectory(src: string, dest: string): Promise<void> {
     await this.fs.mkdir(dest, { recursive: true });
     const entries = await this.fs.readdir(src, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       const srcPath = join(src, entry.name);
       const destPath = join(dest, entry.name);
-      
+
       if (entry.isDirectory()) {
         await this.copyDirectory(srcPath, destPath);
       } else {
@@ -544,7 +544,9 @@ export class BackupManager {
             await this.restoreDatabase(dbDir);
           } catch (error) {
             // Database directory might not exist in older backups
-            logger.warn("No database backup found or restore failed", { error });
+            logger.warn("No database backup found or restore failed", {
+              error,
+            });
           }
         }
 

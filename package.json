@@ -55,6 +55,9 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
+    "pre-commit": "pre-commit run",
+    "pre-commit:all": "pre-commit run --all-files",
+    "pre-commit:install": "pip install pre-commit && pre-commit install",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish",
@@ -152,7 +155,8 @@
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "markdownlint-cli2": "^0.13.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.15.1",

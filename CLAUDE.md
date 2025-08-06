@@ -32,7 +32,7 @@ When creating new PRDs for features, bugs, or improvements:
    - Set appropriate priority (P0-P3) based on impact
 3. **Save PRDs in Correct Location**:
    - Bug PRDs: `docs/bugs/[bug-name].md`
-   - Feature PRDs: `docs/features/[feature-name].md`  
+   - Feature PRDs: `docs/features/[feature-name].md`
    - General PRDs: `docs/[prd-name].md`
 4. **Keep PRDs Updated**: Update status and revision history as work progresses
 
@@ -87,7 +87,7 @@ When creating new PRDs for features, bugs, or improvements:
 Create your code in logical directories under `src/`:
 
 - `src/server/` - Core MCP server implementation
-- `src/config/` - Configuration parsing and validation  
+- `src/config/` - Configuration parsing and validation
 - `src/connection/` - Connection management and pooling
 - `src/discovery/` - Tool discovery and caching
 - `src/router/` - Request routing logic
@@ -108,7 +108,7 @@ Create your code in logical directories under `src/`:
    # Find your base branch (usually integration, cs-setup, or main)
    git log --oneline --graph | head -10  # Look for where your branch diverged
    git merge <base-branch-name>  # e.g., git merge integration
-   
+
    # IMPORTANT: All branches are LOCAL only - never pull from origin
    # Your base branch is always a local branch, not a remote one
    ```
@@ -129,7 +129,7 @@ else:
   - Find first task where details doesn't contain "Assigned to claude-squad"
   - Call mcp__task-master__update_task --id X --append --prompt "Assigned to claude-squad session-$(date +%s)"
   - Call mcp__task-master__set_task_status --id X --status in-progress
-  
+
 # Then proceed with development work
 ```
 

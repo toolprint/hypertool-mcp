@@ -42,7 +42,7 @@ Assistant: "I found 26 tools (or 52 with secrets config)..."
 You: "Create a toolset called 'startup-ops' with slack, linear, stripe, and github"
 Assistant: "Created 'startup-ops' toolset with business operation tools"
 
-You: "Switch to the startup-ops toolset"  
+You: "Switch to the startup-ops toolset"
 Assistant: "Equipped 'startup-ops'! I now see only the business tools you need"
 ```
 
@@ -51,7 +51,7 @@ Assistant: "Equipped 'startup-ops'! I now see only the business tools you need"
 ### 🆓 `mcp.everything.json` - 26 Servers (Zero Setup)
 Perfect for immediate use without any API keys or accounts:
 
-#### 🛠️ Development & Infrastructure  
+#### 🛠️ Development & Infrastructure
 - **docker** - Container management (local Docker daemon)
 - **terraform** - Infrastructure as code (file operations)
 - **kubernetes** - K8s cluster operations (local kubectl config)
@@ -174,7 +174,7 @@ Just use `mcp.everything.json` - it works immediately!
 
 ---
 
-**💡 Pro Tips:** 
+**💡 Pro Tips:**
 - Start with `mcp.everything.json` for immediate use
 - Upgrade to `mcp.everything-with-secrets.json` as you add API keys
 - Use hypertool to create focused toolsets from either configuration!

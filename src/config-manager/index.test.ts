@@ -84,7 +84,7 @@ describe("ConfigurationManager", () => {
       numStartups: 5,
       installMethod: "brew",
       autoUpdates: true,
-      tipsHistory: { "ide-hotkey": 2, "search": 1 },
+      tipsHistory: { "ide-hotkey": 2, search: 1 },
       mcpServers: {
         "existing-server": {
           type: "stdio",
@@ -349,7 +349,7 @@ describe("ConfigurationManager", () => {
       // Create a backup first
       const backupResult = await configManager.createBackup();
       const backupId = backupResult.backupId!;
-      
+
       expect(backupResult.success).toBe(true);
 
       // Modify the config to simulate linking hypertool
@@ -380,7 +380,7 @@ describe("ConfigurationManager", () => {
       });
 
       expect(result.unlinked).toContain("claude-code");
-      
+
       // Log for debugging
       if (result.restoredWithHypertool) {
         console.log("Restored with hypertool:", result.restoredWithHypertool);

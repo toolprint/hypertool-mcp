@@ -39,26 +39,26 @@ export class CursorFixture {
    * Install Cursor with configuration
    */
   static async install(
-    env: TestEnvironment, 
+    env: TestEnvironment,
     options: {
       withServers?: boolean;
       customServers?: Record<string, MCPServerConfig>;
       withBackup?: boolean;
     } = {}
   ): Promise<void> {
-    const { 
-      withServers = true, 
+    const {
+      withServers = true,
       customServers,
       withBackup = false
     } = options;
 
-    const servers = withServers 
+    const servers = withServers
       ? (customServers || this.getDefaultServers())
       : {};
-    
+
     const config = this.createConfig(servers);
     const configPath = '.cursor/mcp.json';
-    
+
     const files: Record<string, string> = {
       [configPath]: config
     };
@@ -105,7 +105,7 @@ export class CursorFixture {
   ): Promise<void> {
     const configPath = '.cursor/mcp.json';
     const hypertoolPath = '.cursor/mcp.hypertool.json';
-    
+
     // Main config only has hypertool
     const mainConfig = {
       mcpServers: {
@@ -138,7 +138,7 @@ export class CursorFixture {
    * Check if Cursor is installed in the environment
    */
   static async isInstalled(env: TestEnvironment): Promise<boolean> {
-    return await env.fileExists('.cursor/mcp.json') || 
+    return await env.fileExists('.cursor/mcp.json') ||
            await env.fileExists('.cursor/settings.json');
   }
 

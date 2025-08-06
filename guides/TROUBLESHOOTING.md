@@ -12,7 +12,7 @@
    ```
    You: "List my active toolset"
    AI: "Current toolset: 'writing' with tools: notion, slack, grammarly"
-   
+
    Solution: Switch to a toolset that includes the tool you need
    ```
 
@@ -20,7 +20,7 @@
    ```bash
    # Check server health
    hypertool-mcp mcp health
-   
+
    # If server is down, check your .mcp.hypertool.json config
    ```
 
@@ -40,7 +40,7 @@
      "mcpServers": {
        "hypertool": {
          "command": "npx",
-         "args": ["-y", "@toolprint/hypertool-mcp@latest", 
+         "args": ["-y", "@toolprint/hypertool-mcp@latest",
                   "--mcp-config", ".mcp.hypertool.json",
                   "--equip-toolset", "dev-essentials"]
        }
@@ -66,7 +66,7 @@
    ```json
    // ❌ Wrong
    "command": "mcp-server-filesystem"
-   
+
    // ✅ Correct
    "command": "npx",
    "args": ["-y", "@modelcontextprotocol/server-filesystem"]
@@ -140,10 +140,10 @@
    ```bash
    # ❌ Wrong
    sudo npm install -g @toolprint/hypertool-mcp
-   
+
    # ✅ Better: Use npx
    npx @toolprint/hypertool-mcp
-   
+
    # ✅ Or fix npm permissions
    npm config set prefix ~/.npm-global
    export PATH=~/.npm-global/bin:$PATH

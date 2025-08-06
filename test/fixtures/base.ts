@@ -39,7 +39,7 @@ export class TestEnvironment {
   constructor(baseDir: string = '/tmp/hypertool-test') {
     this.baseDir = baseDir;
     this.envManager = EnvironmentManager.getInstance();
-    
+
     // Set test mode
     this.envManager.setMode(EnvironmentMode.TEST, baseDir);
     this.config = this.envManager.getConfig();
@@ -51,7 +51,7 @@ export class TestEnvironment {
   async setup(scenario?: TestScenario): Promise<void> {
     // Reset memfs
     vol.reset();
-    
+
     // Create base directory structure using mkdirSync to ensure proper directory creation
     const dirsToCreate = [
       this.config.configRoot,
@@ -134,7 +134,7 @@ export class TestEnvironment {
         applications: {}
       }, null, 2)
     );
-    
+
     // Apply scenario if provided
     if (scenario) {
       await scenario.apply(this);
@@ -170,13 +170,13 @@ export class TestEnvironment {
     for (const [path, content] of Object.entries(files)) {
       // Convert relative paths to absolute paths under baseDir
       const absolutePath = path.startsWith('/') ? path : join(this.baseDir, path);
-      
+
       // Ensure parent directory exists
       const parentDir = absolutePath.substring(0, absolutePath.lastIndexOf('/'));
       if (parentDir) {
         vol.mkdirSync(parentDir, { recursive: true });
       }
-      
+
       // Write the file
       vol.writeFileSync(absolutePath, content);
     }
@@ -238,9 +238,9 @@ export class TestEnvironment {
    */
   async createProjectDir(projectName: string, withMcpConfig: boolean = true): Promise<string> {
     const projectPath = join(this.baseDir, 'projects', projectName);
-    
+
     vol.mkdirSync(projectPath, { recursive: true });
-    
+
     if (withMcpConfig) {
       vol.writeFileSync(
         join(projectPath, '.mcp.json'),
@@ -249,10 +249,10 @@ export class TestEnvironment {
         }, null, 2)
       );
     }
-    
+
     // Create .git directory to simulate a project
     vol.mkdirSync(join(projectPath, '.git'), { recursive: true });
-    
+
     return projectPath;
   }
 

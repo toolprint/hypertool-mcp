@@ -74,7 +74,7 @@ export class FileDatabaseService implements IDatabaseService {
     const groupRepo = new FileServerConfigGroupRepository(this._servers);
     await groupRepo.init();
     this._groups = groupRepo;
-    
+
     this._configSources = new NullConfigSourceRepository();
 
     this.isInitialized = true;

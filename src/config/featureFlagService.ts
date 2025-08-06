@@ -9,11 +9,13 @@ import { getFeatureFlags } from "./preferenceStore.js";
 // We'll use console for critical errors only
 const logger = {
   debug: (message: string, ...args: any[]) => {
-    if (process.env.DEBUG) console.debug(`[FeatureFlagService] ${message}`, ...args);
+    if (process.env.DEBUG)
+      console.debug(`[FeatureFlagService] ${message}`, ...args);
   },
   info: (message: string, ...args: any[]) => {
-    if (process.env.DEBUG) console.info(`[FeatureFlagService] ${message}`, ...args);
-  }
+    if (process.env.DEBUG)
+      console.info(`[FeatureFlagService] ${message}`, ...args);
+  },
 };
 
 export interface FeatureFlags {
@@ -67,20 +69,35 @@ export class FeatureFlagService {
       this.cache.mcpLoggerEnabled = ["true", "1", "yes", "on"].includes(
         envMcpLogger.toLowerCase()
       );
-      logger.debug(`MCP Logger enabled from environment: ${this.cache.mcpLoggerEnabled}`);
+      logger.debug(
+        `MCP Logger enabled from environment: ${this.cache.mcpLoggerEnabled}`
+      );
     }
 
     // 2. Check config.json if not set by environment
-    if (this.cache.nedbEnabled === undefined || this.cache.mcpLoggerEnabled === undefined) {
+    if (
+      this.cache.nedbEnabled === undefined ||
+      this.cache.mcpLoggerEnabled === undefined
+    ) {
       try {
         const configFlags = await getFeatureFlags();
-        if (this.cache.nedbEnabled === undefined && configFlags?.nedbEnabled !== undefined) {
+        if (
+          this.cache.nedbEnabled === undefined &&
+          configFlags?.nedbEnabled !== undefined
+        ) {
           this.cache.nedbEnabled = configFlags.nedbEnabled === true;
-          logger.debug(`NeDB enabled from config.json: ${this.cache.nedbEnabled}`);
+          logger.debug(
+            `NeDB enabled from config.json: ${this.cache.nedbEnabled}`
+          );
         }
-        if (this.cache.mcpLoggerEnabled === undefined && configFlags?.mcpLoggerEnabled !== undefined) {
+        if (
+          this.cache.mcpLoggerEnabled === undefined &&
+          configFlags?.mcpLoggerEnabled !== undefined
+        ) {
           this.cache.mcpLoggerEnabled = configFlags.mcpLoggerEnabled === true;
-          logger.debug(`MCP Logger enabled from config.json: ${this.cache.mcpLoggerEnabled}`);
+          logger.debug(
+            `MCP Logger enabled from config.json: ${this.cache.mcpLoggerEnabled}`
+          );
         }
       } catch (error) {
         logger.debug("Could not load feature flags from config.json:", error);

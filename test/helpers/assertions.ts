@@ -11,7 +11,7 @@ import { join } from 'path';
 export function assertBackupCreated(configPath: string): void {
   const backupPath = configPath.replace('.json', '.backup.json');
   const exists = vol.existsSync(backupPath);
-  
+
   if (!exists) {
     throw new Error(`Expected backup file at ${backupPath} but it was not found`);
   }
@@ -24,11 +24,11 @@ export function assertHasHypertoolConfig(configPath: string): void {
   try {
     const content = vol.readFileSync(configPath, 'utf-8') as string;
     const config = JSON.parse(content);
-    
+
     const hasHypertool = Object.keys(config.mcpServers || {}).some(
       key => key.toLowerCase().includes('hypertool')
     );
-    
+
     if (!hasHypertool) {
       throw new Error(`Config at ${configPath} does not contain hypertool server`);
     }
@@ -44,12 +44,12 @@ export function assertHasHypertoolConfig(configPath: string): void {
  * Assert that hypertool config file exists with migrated servers
  */
 export function assertHypertoolConfigExists(
-  baseConfigPath: string, 
+  baseConfigPath: string,
   expectedServers: string[]
 ): void {
   // Determine hypertool config path based on app
   let hypertoolPath: string;
-  
+
   if (baseConfigPath.includes('claude_desktop_config.json')) {
     hypertoolPath = baseConfigPath.replace('claude_desktop_config.json', 'mcp.hypertool.json');
   } else if (baseConfigPath.includes('.cursor/mcp.json')) {
@@ -59,14 +59,14 @@ export function assertHypertoolConfigExists(
   } else {
     throw new Error(`Unknown config path pattern: ${baseConfigPath}`);
   }
-  
+
   try {
     const content = vol.readFileSync(hypertoolPath, 'utf-8') as string;
     const config = JSON.parse(content);
-    
+
     const actualServers = Object.keys(config.mcpServers || {});
     const missingServers = expectedServers.filter(s => !actualServers.includes(s));
-    
+
     if (missingServers.length > 0) {
       throw new Error(
         `Hypertool config at ${hypertoolPath} missing servers: ${missingServers.join(', ')}`
@@ -88,7 +88,7 @@ export function assertSlashCommandsInstalled(
   projectPath?: string
 ): void {
   let commandsPath: string;
-  
+
   if (location === 'global') {
     // Global commands are at ~/.claude/commands/ht/
     commandsPath = join('/tmp/hypertool-test', '.claude/commands/ht');
@@ -99,17 +99,17 @@ export function assertSlashCommandsInstalled(
     }
     commandsPath = join(projectPath, '.claude/commands/ht');
   }
-  
+
   const expectedFiles = ['list-all-tools.md', 'use-toolset.md'];
   const missingFiles: string[] = [];
-  
+
   for (const file of expectedFiles) {
     const filePath = join(commandsPath, file);
     if (!vol.existsSync(filePath)) {
       missingFiles.push(file);
     }
   }
-  
+
   if (missingFiles.length > 0) {
     throw new Error(
       `Slash commands not installed at ${commandsPath}. Missing: ${missingFiles.join(', ')}`

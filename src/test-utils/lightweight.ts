@@ -3,9 +3,9 @@
  * Replaces heavyweight TestEnvironment with focused utilities
  */
 
-import { vol } from 'memfs';
-import { join } from 'path';
-import type { ApplicationRegistry } from '../config-manager/types/index.js';
+import { vol } from "memfs";
+import { join } from "path";
+import type { ApplicationRegistry } from "../config-manager/types/index.js";
 
 /**
  * Minimal filesystem setup for tests
@@ -26,57 +26,57 @@ export function createMinimalFs(options: MinimalFsOptions = {}): {
   configRoot: string;
   cleanup: () => void;
 } {
-  const baseDir = options.baseDir || '/tmp/hypertool-test';
-  const configRoot = join(baseDir, '.hypertool');
+  const baseDir = options.baseDir || "/tmp/hypertool-test";
+  const configRoot = join(baseDir, ".hypertool");
 
   // Reset memfs for clean state
   vol.reset();
 
   // Create only the essential directories
   vol.mkdirSync(configRoot, { recursive: true });
-  
+
   if (options.createRegistry) {
-    const appsDir = join(configRoot, 'apps');
+    const appsDir = join(configRoot, "apps");
     vol.mkdirSync(appsDir, { recursive: true });
-    
+
     // Create minimal registry
     const registry: ApplicationRegistry = {
-      version: '1.0.0',
+      version: "1.0.0",
       applications: {
-        'cursor': {
-          name: 'Cursor IDE',
+        cursor: {
+          name: "Cursor IDE",
           enabled: true,
           platforms: {
             all: {
-              configPath: '~/.cursor/mcp.json',
-              format: 'standard'
-            }
+              configPath: "~/.cursor/mcp.json",
+              format: "standard",
+            },
           },
           detection: {
-            type: 'directory',
-            path: '~/.cursor'
-          }
-        }
-      }
+            type: "directory",
+            path: "~/.cursor",
+          },
+        },
+      },
     };
-    
+
     vol.writeFileSync(
-      join(appsDir, 'registry.json'),
+      join(appsDir, "registry.json"),
       JSON.stringify(registry, null, 2)
     );
   }
 
   if (options.createConfig) {
     vol.writeFileSync(
-      join(configRoot, 'config.json'),
-      JSON.stringify({ version: '1.0.0', applications: {} }, null, 2)
+      join(configRoot, "config.json"),
+      JSON.stringify({ version: "1.0.0", applications: {} }, null, 2)
     );
   }
 
   return {
     baseDir,
     configRoot,
-    cleanup: () => vol.reset()
+    cleanup: () => vol.reset(),
   };
 }
 
@@ -84,9 +84,12 @@ export function createMinimalFs(options: MinimalFsOptions = {}): {
  * Creates a mock application structure
  * Lightweight alternative to TestEnvironment.createMockApp
  */
-export function createMockApp(appId: string, files: Record<string, string>): void {
+export function createMockApp(
+  appId: string,
+  files: Record<string, string>
+): void {
   for (const [path, content] of Object.entries(files)) {
-    const dir = path.substring(0, path.lastIndexOf('/'));
+    const dir = path.substring(0, path.lastIndexOf("/"));
     if (dir) {
       vol.mkdirSync(dir, { recursive: true });
     }
@@ -99,15 +102,15 @@ export function createMockApp(appId: string, files: Record<string, string>): voi
  */
 export const testFs = {
   write: (path: string, content: string) => {
-    const dir = path.substring(0, path.lastIndexOf('/'));
+    const dir = path.substring(0, path.lastIndexOf("/"));
     if (dir) vol.mkdirSync(dir, { recursive: true });
     vol.writeFileSync(path, content);
   },
-  
+
   read: (path: string): string => {
-    return vol.readFileSync(path, 'utf-8') as string;
+    return vol.readFileSync(path, "utf-8") as string;
   },
-  
+
   exists: (path: string): boolean => {
     try {
       vol.statSync(path);
@@ -116,28 +119,28 @@ export const testFs = {
       return false;
     }
   },
-  
+
   mkdir: (path: string) => {
     vol.mkdirSync(path, { recursive: true });
   },
-  
-  reset: () => vol.reset()
+
+  reset: () => vol.reset(),
 };
 
 /**
  * Mock environment config for tests
  * Avoids the heavyweight EnvironmentManager singleton
  */
-export function createMockEnvConfig(baseDir: string = '/tmp/hypertool-test') {
+export function createMockEnvConfig(baseDir: string = "/tmp/hypertool-test") {
   return {
-    mode: 'test' as const,
+    mode: "test" as const,
     baseDir,
-    configRoot: join(baseDir, '.hypertool'),
-    registryPath: join(baseDir, '.hypertool/apps/registry.json'),
-    backupRoot: join(baseDir, '.hypertool/backups'),
-    cacheRoot: join(baseDir, '.hypertool/cache'),
-    setupScriptsRoot: join(baseDir, '.hypertool/setup'),
-    logsRoot: join(baseDir, '.hypertool/logs')
+    configRoot: join(baseDir, ".hypertool"),
+    registryPath: join(baseDir, ".hypertool/apps/registry.json"),
+    backupRoot: join(baseDir, ".hypertool/backups"),
+    cacheRoot: join(baseDir, ".hypertool/cache"),
+    setupScriptsRoot: join(baseDir, ".hypertool/setup"),
+    logsRoot: join(baseDir, ".hypertool/logs"),
   };
 }
 
@@ -146,22 +149,22 @@ export function createMockEnvConfig(baseDir: string = '/tmp/hypertool-test') {
  */
 export const platformMock = {
   current: process.platform,
-  
+
   set: (platform: NodeJS.Platform) => {
-    Object.defineProperty(process, 'platform', {
+    Object.defineProperty(process, "platform", {
       value: platform,
       writable: true,
-      configurable: true
+      configurable: true,
     });
   },
-  
+
   reset: () => {
-    Object.defineProperty(process, 'platform', {
+    Object.defineProperty(process, "platform", {
       value: platformMock.current,
       writable: true,
-      configurable: true
+      configurable: true,
     });
-  }
+  },
 };
 
 /**
@@ -178,11 +181,11 @@ export function withTimeout<T>(
     }, timeoutMs);
 
     fn()
-      .then(result => {
+      .then((result) => {
         clearTimeout(timer);
         resolve(result);
       })
-      .catch(error => {
+      .catch((error) => {
         clearTimeout(timer);
         reject(error);
       });
@@ -203,13 +206,13 @@ export async function runScenario(scenario: LightweightScenario): Promise<{
   cleanup: () => Promise<void>;
 }> {
   await scenario.setup();
-  
+
   return {
     cleanup: async () => {
       if (scenario.teardown) {
         await scenario.teardown();
       }
       vol.reset();
-    }
+    },
   };
 }

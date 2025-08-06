@@ -18,7 +18,7 @@ export interface RuntimeOptions {
 
   /** Port number for HTTP transport (only valid with transport=http) */
   port?: number;
-  
+
   /** Host address for HTTP transport (only valid with transport=http) */
   host?: string;
 

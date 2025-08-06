@@ -42,12 +42,12 @@ vi.mock('../../src/config-manager/index.js', async () => {
       static fromEnvironment() {
         return new MockConfigurationManager();
       }
-      
+
       async initialize() {
         // Mock initialization - no file system operations needed
         return Promise.resolve();
       }
-      
+
       async linkApplications(appIds: string[]) {
         // Mock implementation - return successful result
         const appArray = Array.isArray(appIds) ? appIds : [];
@@ -60,13 +60,25 @@ vi.mock('../../src/config-manager/index.js', async () => {
   };
 });
 
+// Mock fs module to ensure no applications are detected
+vi.mock('fs', async () => {
+  const actual = await vi.importActual('fs');
+  return {
+    ...actual,
+    promises: {
+      ...actual.promises,
+      access: vi.fn().mockRejectedValue(new Error('Path does not exist'))
+    }
+  };
+});
+
 describe('Setup Command - Non-Interactive Mode', () => {
   const mockHomeDir = '/home/user';
   const mockConfigPath = join(mockHomeDir, '.toolprint', 'hypertool-mcp');
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock os.homedir
     vi.spyOn(require('os'), 'homedir').mockReturnValue(mockHomeDir);
   });
@@ -94,7 +106,7 @@ describe('Setup Command - Non-Interactive Mode', () => {
       });
 
       await wizard.run();
-      
+
       // In dry run, no actual files are created, but the flow should complete
       expect(true).toBe(true);
     });
@@ -200,7 +212,7 @@ describe('Setup Command - Non-Interactive Mode', () => {
         dryRun: true,
         isFirstRun: true
       });
-      
+
       // Should complete setup flow
       await expect(wizard.run()).resolves.not.toThrow();
     });
@@ -211,7 +223,7 @@ describe('Setup Command - Non-Interactive Mode', () => {
         dryRun: true,
         isFirstRun: false
       });
-      
+
       // Should complete setup flow
       await expect(wizard.run()).resolves.not.toThrow();
     });

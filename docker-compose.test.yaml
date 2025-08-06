@@ -34,28 +34,28 @@ services:
       - HYPERTOOL_HOST=0.0.0.0
       - HYPERTOOL_LOG_LEVEL=info
       - HYPERTOOL_DEBUG=false
-      
+
       # Docker-specific settings
       - DOCKER_CONTAINER=true
       - RUNNING_IN_DOCKER=true
       - UV_SYSTEM_PYTHON=1
-      
+
       # Optional: Equip specific toolset on startup
       # - HYPERTOOL_EQUIP_TOOLSET=development
-      
+
       # Optional: Use specific server group
       # - HYPERTOOL_GROUP=production-servers
-      
+
       # Optional: Custom MCP config path
       # - HYPERTOOL_MCP_CONFIG=/app/config/mcp.json
-    
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
-    
+
     # Resource limits (adjust based on your needs)
     deploy:
       resources:
@@ -65,7 +65,7 @@ services:
         reservations:
           cpus: '0.1'
           memory: 128M
-    
+
     # Labels for organization
     labels:
       - "com.toolprint.service=hypertool-mcp"

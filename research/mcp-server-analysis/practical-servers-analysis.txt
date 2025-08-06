@@ -22,7 +22,7 @@
 
 ### DATA PROCESSING (Practical Business Use)
 15. **CSV Processor** - Data analysis, business reporting
-16. **JSON Tools** - API data processing, configuration management  
+16. **JSON Tools** - API data processing, configuration management
 17. **Excel Converter** - Business data conversion, reporting workflows
 18. **MarkItDown** - Microsoft's document conversion tool, practical utility
 19. **Pandoc** - Universal document converter, publishing workflows

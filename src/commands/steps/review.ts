@@ -86,9 +86,7 @@ export class ReviewStep implements WizardStep {
       output.info(
         `${theme.label("Experimental features:")} ${theme.warning("ENABLED")}`
       );
-      output.info(
-        theme.muted("  • NeDB database storage")
-      );
+      output.info(theme.muted("  • NeDB database storage"));
       output.info(
         theme.muted("  • Future experimental features will be auto-enabled")
       );

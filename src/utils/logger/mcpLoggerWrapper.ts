@@ -3,20 +3,25 @@
  * Wraps the existing mcp-logger implementation for feature flag compatibility
  */
 
-import { 
-  createLogger, 
-  createLoggerSync, 
+import {
+  createLogger,
+  createLoggerSync,
   Logger as McpLogger,
   LoggerOptions,
   TransportConfig,
   ServerMode,
-  InternalLogLevel
+  InternalLogLevel,
 } from "@toolprint/mcp-logger";
 import { join } from "path";
 import { homedir } from "os";
 import { APP_TECHNICAL_NAME, BRAND_NAME } from "../../config/appConfig.js";
 import { RuntimeOptions } from "../../types/runtime.js";
-import { LoggerInterface, LoggingConfig, LogContext, LogLevel } from "./interfaces.js";
+import {
+  LoggerInterface,
+  LoggingConfig,
+  LogContext,
+  LogLevel,
+} from "./interfaces.js";
 
 export const DEFAULT_MCP_LOGGING_CONFIG: LoggingConfig = {
   level: process.env.NODE_ENV === "development" ? "debug" : "info",
@@ -34,10 +39,13 @@ export class McpLoggerWrapper implements LoggerInterface {
   private config: LoggingConfig;
   private runtimeOptions?: RuntimeOptions;
 
-  constructor(config: Partial<LoggingConfig> = {}, runtimeOptions?: RuntimeOptions) {
+  constructor(
+    config: Partial<LoggingConfig> = {},
+    runtimeOptions?: RuntimeOptions
+  ) {
     this.config = { ...DEFAULT_MCP_LOGGING_CONFIG, ...config };
     this.runtimeOptions = runtimeOptions;
-    
+
     // Determine format from environment variable or config
     if (process.env.LOG_FORMAT === "json") {
       this.config.format = "json";
@@ -47,11 +55,14 @@ export class McpLoggerWrapper implements LoggerInterface {
     if (runtimeOptions?.logLevel) {
       this.config.level = runtimeOptions.logLevel as LogLevel;
     }
-    
+
     // Start with sync logger for immediate availability, then upgrade to async
-    const options = this.configToLoggerOptions(this.config, this.runtimeOptions);
+    const options = this.configToLoggerOptions(
+      this.config,
+      this.runtimeOptions
+    );
     this.mcpLogger = createLoggerSync(options);
-    
+
     // Upgrade to async logger in background for full file transport functionality
     this.initializeAsync().catch(() => {
       // Continue with sync logger if async fails
@@ -63,64 +74,74 @@ export class McpLoggerWrapper implements LoggerInterface {
    */
   private async initializeAsync(): Promise<void> {
     try {
-      const options = this.configToLoggerOptions(this.config, this.runtimeOptions);
+      const options = this.configToLoggerOptions(
+        this.config,
+        this.runtimeOptions
+      );
       this.mcpLogger = await createLogger(options);
     } catch (error) {
       // Continue with sync logger if async initialization fails
-      this.mcpLogger.warn("Failed to initialize async logger, file transport may not work", {
-        error: {
-          name: (error as Error).name,
-          message: (error as Error).message,
-          stack: (error as Error).stack
+      this.mcpLogger.warn(
+        "Failed to initialize async logger, file transport may not work",
+        {
+          error: {
+            name: (error as Error).name,
+            message: (error as Error).message,
+            stack: (error as Error).stack,
+          },
         }
-      });
+      );
     }
   }
 
   /**
    * Convert LoggingConfig to mcp-logger LoggerOptions with transport-aware mode
    */
-  private configToLoggerOptions(config: LoggingConfig, runtimeOptions?: RuntimeOptions): LoggerOptions {
+  private configToLoggerOptions(
+    config: LoggingConfig,
+    runtimeOptions?: RuntimeOptions
+  ): LoggerOptions {
     const transports: TransportConfig[] = [];
-    
+
     // Determine ServerMode based on runtime transport
-    const mode: ServerMode = runtimeOptions?.transport === 'stdio' ? 'local' : 'remote';
-    
+    const mode: ServerMode =
+      runtimeOptions?.transport === "stdio" ? "local" : "remote";
+
     // Console/stderr transport - use stderr for stdio mode, console for http mode
     if (config.enableConsole) {
-      if (mode === 'local') {
+      if (mode === "local") {
         // stdio mode: use stderr to avoid protocol corruption
         transports.push({
-          type: 'stderr',
+          type: "stderr",
           enabled: true,
         });
       } else {
         // http mode: use console for visibility
         transports.push({
-          type: 'console',
+          type: "console",
           enabled: true,
         });
       }
     }
-    
+
     // File transport
     if (config.enableFile) {
       transports.push({
-        type: 'file',
+        type: "file",
         enabled: true,
         options: {
           path: this.getLogFilePath(config.serverName),
           mkdir: true,
-          append: true
-        }
+          append: true,
+        },
       });
     }
-    
+
     return {
       mode,
       level: config.level as InternalLogLevel,
       format: config.format,
-      transports
+      transports,
     };
   }
 
@@ -140,25 +161,27 @@ export class McpLoggerWrapper implements LoggerInterface {
   /**
    * Format context for log messages with Error handling
    */
-  private formatContext(context?: LogContext): Record<string, unknown> | undefined {
+  private formatContext(
+    context?: LogContext
+  ): Record<string, unknown> | undefined {
     if (context === undefined || context === null) {
       return undefined;
     }
-    
+
     if (context instanceof Error) {
       return {
         error: {
           name: context.name,
           message: context.message,
-          stack: context.stack
-        }
+          stack: context.stack,
+        },
       };
     }
-    
-    if (typeof context === 'object') {
+
+    if (typeof context === "object") {
       return context as Record<string, unknown>;
     }
-    
+
     // For primitive types, wrap in a context object
     return { context };
   }
@@ -222,24 +245,27 @@ export class McpLoggerWrapper implements LoggerInterface {
   /**
    * Create child logger using native mcp-logger functionality
    */
-  child(bindings: { module?: string; [key: string]: unknown }): LoggerInterface {
+  child(bindings: {
+    module?: string;
+    [key: string]: unknown;
+  }): LoggerInterface {
     const module = bindings.module;
     const otherBindings = { ...bindings };
     delete otherBindings.module;
-    
+
     // Create child logger with module context
     // mcp-logger 0.0.7+ handles caching natively to prevent memory leaks
     const childMcpLogger = this.mcpLogger.child({
       context: {
         module,
-        ...otherBindings
-      }
+        ...otherBindings,
+      },
     });
-    
+
     // Create new wrapper instance for the child
     const childLogger = new McpLoggerWrapper(this.config, this.runtimeOptions);
     childLogger.mcpLogger = childMcpLogger;
-    
+
     return childLogger;
   }
 
@@ -248,9 +274,12 @@ export class McpLoggerWrapper implements LoggerInterface {
    */
   updateConfig(config: Partial<LoggingConfig>): void {
     this.config = { ...this.config, ...config };
-    const options = this.configToLoggerOptions(this.config, this.runtimeOptions);
+    const options = this.configToLoggerOptions(
+      this.config,
+      this.runtimeOptions
+    );
     this.mcpLogger = createLoggerSync(options);
-    
+
     // Try to upgrade to async logger in background
     this.initializeAsync().catch(() => {
       // Ignore errors, sync logger will continue to work

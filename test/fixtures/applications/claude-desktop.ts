@@ -39,7 +39,7 @@ export class ClaudeDesktopFixture {
    * Install Claude Desktop with configuration
    */
   static async install(
-    env: TestEnvironment, 
+    env: TestEnvironment,
     options: {
       withServers?: boolean;
       customServers?: Record<string, MCPServerConfig>;
@@ -47,19 +47,19 @@ export class ClaudeDesktopFixture {
       platform?: 'darwin' | 'win32';
     } = {}
   ): Promise<void> {
-    const { 
-      withServers = true, 
+    const {
+      withServers = true,
       customServers,
       withBackup = false,
       platform = 'darwin'
     } = options;
 
-    const servers = withServers 
+    const servers = withServers
       ? (customServers || this.getDefaultServers())
       : {};
-    
+
     const config = this.createConfig(servers);
-    
+
     // Platform-specific paths
     const configPaths = {
       darwin: 'Library/Application Support/Claude/claude_desktop_config.json',
@@ -67,7 +67,7 @@ export class ClaudeDesktopFixture {
     };
 
     const configPath = configPaths[platform];
-    
+
     const files: Record<string, string> = {
       [configPath]: config
     };
@@ -82,7 +82,7 @@ export class ClaudeDesktopFixture {
       const hypertoolConfig = {
         mcpServers: servers
       };
-      files[configPath.replace('claude_desktop_config.json', 'mcp.hypertool.json')] = 
+      files[configPath.replace('claude_desktop_config.json', 'mcp.hypertool.json')] =
         JSON.stringify(hypertoolConfig, null, 2);
     }
 
@@ -94,7 +94,7 @@ export class ClaudeDesktopFixture {
    */
   static async installCorrupted(env: TestEnvironment): Promise<void> {
     const configPath = 'Library/Application Support/Claude/claude_desktop_config.json';
-    
+
     await env.createAppStructure('claude-desktop', {
       [configPath]: '{ invalid json }'
     });
@@ -109,7 +109,7 @@ export class ClaudeDesktopFixture {
   ): Promise<void> {
     const configPath = 'Library/Application Support/Claude/claude_desktop_config.json';
     const hypertoolPath = 'Library/Application Support/Claude/mcp.hypertool.json';
-    
+
     // Main config only has hypertool
     const mainConfig = {
       mcpServers: {
@@ -149,7 +149,7 @@ export class ClaudeDesktopFixture {
         return true;
       }
     }
-    
+
     return false;
   }
 }

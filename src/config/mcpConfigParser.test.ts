@@ -449,7 +449,10 @@ describe("MCPConfigParser", () => {
       expect(result.success).toBe(true);
       expect(result.config).toBeDefined();
       expect(mockFs.access).toHaveBeenCalledWith(expectedAbsolutePath);
-      expect(mockFs.readFile).toHaveBeenCalledWith(expectedAbsolutePath, "utf-8");
+      expect(mockFs.readFile).toHaveBeenCalledWith(
+        expectedAbsolutePath,
+        "utf-8"
+      );
     });
 
     it("should handle relative paths with parent directories", async () => {
@@ -472,7 +475,10 @@ describe("MCPConfigParser", () => {
       expect(result.success).toBe(true);
       expect(result.config).toBeDefined();
       expect(mockFs.access).toHaveBeenCalledWith(expectedAbsolutePath);
-      expect(mockFs.readFile).toHaveBeenCalledWith(expectedAbsolutePath, "utf-8");
+      expect(mockFs.readFile).toHaveBeenCalledWith(
+        expectedAbsolutePath,
+        "utf-8"
+      );
     });
 
     it("should handle file not found error", async () => {

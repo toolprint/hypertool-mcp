@@ -25,20 +25,20 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      
+
       - name: Validate version format
         run: |
           if ! echo "${{ inputs.version }}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "Error: Version must be in format x.y.z (e.g., 1.2.3)"
             exit 1
           fi
-      
+
       - name: Validate version exists on NPM
         run: |
           if ! npm view @toolprint/hypertool-mcp@${{ inputs.version }} version >/dev/null 2>&1; then
@@ -48,7 +48,7 @@ jobs:
             exit 1
           fi
           echo "✅ Version ${{ inputs.version }} found on NPM"
-      
+
       - name: Promote to stable and latest tags
         run: |
           echo "Promoting @toolprint/hypertool-mcp@${{ inputs.version }} to stable and latest..."
@@ -57,12 +57,12 @@ jobs:
           echo "✅ Successfully promoted to stable and latest"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
+
       - name: Show current dist-tag status
         run: |
           echo "Current NPM dist-tags:"
           npm dist-tag ls @toolprint/hypertool-mcp
-      
+
       - name: Generate changelog for release
         if: inputs.create_release == true
         id: changelog
@@ -70,38 +70,38 @@ jobs:
           # Get the previous stable version tag
           PREV_TAG=$(git tag -l "v*" --sort=-version:refname | head -2 | tail -1)
           CURRENT_TAG="v${{ inputs.version }}"
-          
+
           if [ -z "$PREV_TAG" ]; then
             PREV_TAG=$(git rev-list --max-parents=0 HEAD)
           fi
-          
+
           echo "Generating changelog from $PREV_TAG to $CURRENT_TAG"
-          
+
           # Generate changelog
           CHANGELOG=$(git log --pretty=format:"- %s (%h)" "$PREV_TAG..HEAD" 2>/dev/null || git log --pretty=format:"- %s (%h)" HEAD~10..HEAD)
-          
+
           # Save to file for GitHub release
           cat > RELEASE_CHANGELOG.md << EOF
           ## What's Changed
-          
+
           $CHANGELOG
-          
+
           **Full Changelog**: https://github.com/toolprint/hypertool-mcp/compare/$PREV_TAG...$CURRENT_TAG
-          
+
           ## Installation
-          
+
           \`\`\`bash
           # Install latest stable version
           npm install -g @toolprint/hypertool-mcp
           npx @toolprint/hypertool-mcp
-          
+
           # Or install specific version
           npm install -g @toolprint/hypertool-mcp@${{ inputs.version }}
           \`\`\`
           EOF
-          
+
           echo "changelog-file=RELEASE_CHANGELOG.md" >> $GITHUB_OUTPUT
-      
+
       - name: Create GitHub Release
         if: inputs.create_release == true
         uses: actions/create-release@v1
@@ -113,7 +113,7 @@ jobs:
           body_path: ${{ steps.changelog.outputs.changelog-file }}
           draft: false
           prerelease: false
-      
+
       - name: Summary
         run: |
           echo "🎉 Successfully promoted version ${{ inputs.version }} to stable!"

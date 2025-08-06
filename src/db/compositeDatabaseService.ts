@@ -70,7 +70,9 @@ export class CompositeDatabaseService implements IDatabaseService {
 
     // Determine which implementation to use
     const useNedb = featureFlagService.isNedbEnabled();
-    logger.info(`Using ${useNedb ? "NeDB" : "file-based"} database implementation`);
+    logger.info(
+      `Using ${useNedb ? "NeDB" : "file-based"} database implementation`
+    );
 
     // Create appropriate implementation
     if (useNedb) {
@@ -104,10 +106,15 @@ export class CompositeDatabaseService implements IDatabaseService {
    * Only available in test environment
    */
   resetForTesting(): void {
-    if (process.env.NODE_ENV !== 'test' && !process.env.NODE_ENV?.includes('test')) {
-      throw new Error('resetForTesting() can only be called in test environment');
+    if (
+      process.env.NODE_ENV !== "test" &&
+      !process.env.NODE_ENV?.includes("test")
+    ) {
+      throw new Error(
+        "resetForTesting() can only be called in test environment"
+      );
     }
-    
+
     this.isInitialized = false;
     this.implementation = undefined;
   }
@@ -141,10 +148,15 @@ export function getCompositeDatabaseService(): IDatabaseService {
  * Only available in test environment
  */
 export function resetCompositeDatabaseServiceForTesting(): void {
-  if (process.env.NODE_ENV !== 'test' && !process.env.NODE_ENV?.includes('test')) {
-    throw new Error('resetCompositeDatabaseServiceForTesting() can only be called in test environment');
+  if (
+    process.env.NODE_ENV !== "test" &&
+    !process.env.NODE_ENV?.includes("test")
+  ) {
+    throw new Error(
+      "resetCompositeDatabaseServiceForTesting() can only be called in test environment"
+    );
   }
-  
+
   if (instance) {
     instance.resetForTesting();
     instance = null;

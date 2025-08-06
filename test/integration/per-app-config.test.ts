@@ -30,7 +30,7 @@ describe('Per-App Configuration Integration', () => {
       // Create app-specific config
       const mcpDir = join(env.getConfig().configRoot, 'mcp');
       vol.mkdirSync(mcpDir, { recursive: true });
-      
+
       const appConfig = {
         mcpServers: {
           'test-server': {
@@ -65,7 +65,7 @@ describe('Per-App Configuration Integration', () => {
       // Verify the config can be loaded
       const configPath = join(mcpDir, 'claude-desktop.json');
       expect(vol.existsSync(configPath)).toBe(true);
-      
+
       const loadedConfig = JSON.parse(vol.readFileSync(configPath, 'utf-8') as string);
       expect(loadedConfig.mcpServers['test-server']).toBeDefined();
     });
@@ -74,7 +74,7 @@ describe('Per-App Configuration Integration', () => {
       // Create profile directory
       const profileDir = join(env.getConfig().configRoot, 'mcp', 'profiles', 'claude-desktop');
       vol.mkdirSync(profileDir, { recursive: true });
-      
+
       const profileConfig = {
         mcpServers: {
           'project-server': {
@@ -95,7 +95,7 @@ describe('Per-App Configuration Integration', () => {
       // Verify profile config exists
       const profilePath = join(profileDir, 'my-project.json');
       expect(vol.existsSync(profilePath)).toBe(true);
-      
+
       const loadedProfile = JSON.parse(vol.readFileSync(profilePath, 'utf-8') as string);
       expect(loadedProfile._metadata.profile).toBe('my-project');
     });
@@ -119,7 +119,7 @@ describe('Per-App Configuration Integration', () => {
 
       const mcpDir = join(env.getConfig().configRoot, 'mcp');
       vol.mkdirSync(mcpDir, { recursive: true });
-      
+
       const appConfig = {
         mcpServers: {
           'app-server': {
@@ -153,7 +153,7 @@ describe('Per-App Configuration Integration', () => {
       // When loading with --linked-app, should get app-specific config
       const appConfigPath = join(mcpDir, 'claude-desktop.json');
       const loadedConfig = JSON.parse(vol.readFileSync(appConfigPath, 'utf-8') as string);
-      
+
       expect(loadedConfig.mcpServers['app-server']).toBeDefined();
       expect(loadedConfig.mcpServers['global-server']).toBeUndefined();
     });
@@ -163,17 +163,17 @@ describe('Per-App Configuration Integration', () => {
     it('should maintain global mcp.json during transition', async () => {
       // Setup apps with configs
       await env.setup(new ExistingConfigScenario(['claude-desktop', 'cursor']));
-      
+
       // Global mcp.json should exist after import
       const globalPath = join(env.getConfig().configRoot, 'mcp.json');
-      
+
       // Create a mock global config
       vol.writeFileSync(globalPath, JSON.stringify({
         mcpServers: {
           'test': { command: 'test' }
         }
       }));
-      
+
       expect(vol.existsSync(globalPath)).toBe(true);
     });
 
@@ -221,7 +221,7 @@ describe('Per-App Configuration Integration', () => {
           'claude-desktop': 'claude-desktop-default'
         }
       };
-      
+
       vol.writeFileSync(
         join(env.getConfig().configRoot, 'config.json'),
         JSON.stringify(config, null, 2)
@@ -231,7 +231,7 @@ describe('Per-App Configuration Integration', () => {
       const loaded = JSON.parse(
         vol.readFileSync(join(env.getConfig().configRoot, 'config.json'), 'utf-8') as string
       );
-      
+
       expect(loaded.toolsets['claude-desktop-default']).toBeDefined();
       expect(loaded.appDefaults['claude-desktop']).toBe('claude-desktop-default');
     });

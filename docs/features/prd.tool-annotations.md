@@ -183,12 +183,12 @@ _hydrateToolNotes(tool: Tool): Tool {
   // Look for notes matching this tool by checking both namespacedName and refId
   const toolNotesEntry = this.currentToolset.toolNotes.find(entry => {
     // Match by namespacedName if provided
-    if (entry.toolRef.namespacedName && 
+    if (entry.toolRef.namespacedName &&
         entry.toolRef.namespacedName === discoveredTool.namespacedName) {
       return true;
     }
     // Match by refId if provided
-    if (entry.toolRef.refId && 
+    if (entry.toolRef.refId &&
         entry.toolRef.refId === discoveredTool.toolHash) {
       return true;
     }
@@ -201,7 +201,7 @@ _hydrateToolNotes(tool: Tool): Tool {
 
   // Format and append notes
   const notesSection = this.formatNotesForLLM(toolNotesEntry.notes);
-  tool.description = tool.description 
+  tool.description = tool.description
     ? `${tool.description}\n\n${notesSection}`
     : notesSection;
 
@@ -215,7 +215,7 @@ formatNotesForLLM(notes: ToolsetToolNote[]): string {
   const formattedNotes = notes
     .map(note => `• **${note.name}**: ${note.note}`)
     .join('\n');
-  
+
   return `### Additional Tool Notes\n\n${formattedNotes}`;
 }
 ```
@@ -224,13 +224,13 @@ formatNotesForLLM(notes: ToolsetToolNote[]): string {
 ```typescript
 findDiscoveredToolByFlattenedName(flattenedName: string): DiscoveredTool | null {
   const activeTools = this.getActiveDiscoveredTools();
-  
+
   for (const tool of activeTools) {
     if (this.flattenToolName(tool.namespacedName) === flattenedName) {
       return tool;
     }
   }
-  
+
   return null;
 }
 ```
@@ -267,9 +267,9 @@ findDiscoveredToolByFlattenedName(flattenedName: string): DiscoveredTool | null 
 
 3. LLM sees enhanced tool description:
    "Creates a new issue in Linear
-   
+
    ### Additional Tool Notes
-   
+
    • **team-selection**: Always ask user to confirm the team before creating. Our main teams are: Engineering (id: eng-123), Design (id: des-456), Product (id: prod-789)
    • **label-convention**: Apply labels based on issue type: bug → 'bug' label, feature → 'enhancement' label"
 

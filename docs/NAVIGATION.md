@@ -121,7 +121,7 @@ Completion → [Setup Complete]
 Configuration Menu Flow (Future Enhancement):
 Main Menu
 ├── 📡 View MCP Servers → Server Details → Main Menu
-├── 🎯 View Applications → Application Status → Main Menu  
+├── 🎯 View Applications → Application Status → Main Menu
 ├── 📦 View Toolsets → Toolset Management → Main Menu
 ├── 👥 View Groups (if database enabled) → Group Management → Main Menu
 ├── ⚙️ Interactive Configuration → Config Editor → Main Menu
@@ -150,7 +150,7 @@ Main Menu
 
 **Runtime Modes:**
 - **Production**: `hypertool-mcp` (stdio transport, minimal logging)
-- **Development**: `hypertool-mcp --debug --transport http --port 3000` 
+- **Development**: `hypertool-mcp --debug --transport http --port 3000`
 - **Dry Run**: `hypertool-mcp setup --dry-run` (preview changes only)
 - **Non-Interactive**: `hypertool-mcp setup --yes` (automated setup)
 

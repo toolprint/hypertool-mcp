@@ -68,7 +68,7 @@ environment:
   - name: "HYPERTOOL_MAX_LISTENERS"
     description: "Maximum number of event listeners (default: 10)"
     default: "10"
-  - name: "NODE_ENV" 
+  - name: "NODE_ENV"
     description: "Node.js environment (development, production, test)"
     default: "production"
   - name: "HYPERTOOL_PORT"
@@ -87,7 +87,7 @@ environment:
 # Keywords for discoverability
 keywords:
   - "mcp"
-  - "model-context-protocol" 
+  - "model-context-protocol"
   - "ai-tools"
   - "toolset"
   - "proxy"

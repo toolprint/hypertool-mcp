@@ -458,13 +458,16 @@ export async function getToolsets(basePath: string): Promise<ToolsetInfo[]> {
           });
 
           // Group tools by server
-          serverGroups = toolDetails.reduce((groups, tool) => {
-            if (!groups[tool.serverName]) {
-              groups[tool.serverName] = [];
-            }
-            groups[tool.serverName].push(tool);
-            return groups;
-          }, {} as Record<string, ToolDetail[]>);
+          serverGroups = toolDetails.reduce(
+            (groups, tool) => {
+              if (!groups[tool.serverName]) {
+                groups[tool.serverName] = [];
+              }
+              groups[tool.serverName].push(tool);
+              return groups;
+            },
+            {} as Record<string, ToolDetail[]>
+          );
         }
 
         toolsets.push({

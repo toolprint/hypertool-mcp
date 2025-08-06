@@ -1,0 +1,1176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="511" failures="0" errors="0" time="17.582668708">
+    <testsuite name="src/config/mcpConfigFileLoader.test.ts" timestamp="2025-08-06T22:56:15.312Z" hostname="brians.macbook.pro.wifi.lan" tests="11" failures="0" errors="0" skipped="0" time="0.005472875">
+        <testcase classname="src/config/mcpConfigFileLoader.test.ts" name="mcpConfigFileLoader &gt; discoverMcpConfigFile - CLI Path Resolution &gt; should resolve relative CLI paths to absolute paths" time="0.001783291">
+        </testcase>
+        <testcase classname="src/config/mcpConfigFileLoader.test.ts" name="mcpConfigFileLoader &gt; discoverMcpConfigFile - CLI Path Resolution &gt; should handle relative paths with parent directories" time="0.000205708">
+        </testcase>
+        <testcase classname="src/config/mcpConfigFileLoader.test.ts" name="mcpConfigFileLoader &gt; discoverMcpConfigFile - CLI Path Resolution &gt; should preserve absolute paths unchanged" time="0.0001905">
+        </testcase>
+        <testcase classname="src/config/mcpConfigFileLoader.test.ts" name="mcpConfigFileLoader &gt; discoverMcpConfigFile - CLI Path Resolution &gt; should provide meaningful error messages for non-existent relative paths" time="0.000289833">
+        </testcase>
+        <testcase classname="src/config/mcpConfigFileLoader.test.ts" name="mcpConfigFileLoader &gt; discoverMcpConfigFile - CLI Path Resolution &gt; should resolve paths based on current working directory at call time" time="0.000221041">
+        </testcase>
+        <testcase classname="src/config/mcpConfigFileLoader.test.ts" name="mcpConfigFileLoader &gt; discoverMcpConfigFile - CLI Path Resolution &gt; should store resolved absolute path in user preferences" time="0.00077675">
+        </testcase>
+        <testcase classname="src/config/mcpConfigFileLoader.test.ts" name="mcpConfigFileLoader &gt; discoverMcpConfigFile - CLI Path Resolution &gt; should not update preferences when updatePreference is false" time="0.000179417">
+        </testcase>
+        <testcase classname="src/config/mcpConfigFileLoader.test.ts" name="mcpConfigFileLoader &gt; loadMcpConfigFile &gt; should load config file successfully" time="0.000298459">
+        </testcase>
+        <testcase classname="src/config/mcpConfigFileLoader.test.ts" name="mcpConfigFileLoader &gt; loadMcpConfigFile &gt; should handle parser errors" time="0.000623041">
+        </testcase>
+        <testcase classname="src/config/mcpConfigFileLoader.test.ts" name="mcpConfigFileLoader &gt; Edge cases &gt; should handle test environment config override" time="0.000159625">
+        </testcase>
+        <testcase classname="src/config/mcpConfigFileLoader.test.ts" name="mcpConfigFileLoader &gt; Edge cases &gt; should handle preference save failure gracefully" time="0.00014675">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/config/mcpConfigParser.test.ts" timestamp="2025-08-06T22:56:15.317Z" hostname="brians.macbook.pro.wifi.lan" tests="28" failures="0" errors="0" skipped="0" time="0.006721">
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should parse valid configuration with stdio server" time="0.001683625">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should parse valid configuration with SSE server" time="0.0005075">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should parse configuration with multiple servers" time="0.000651084">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should handle invalid JSON" time="0.000164417">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should validate missing mcpServers field" time="0.000217667">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should allow empty mcpServers" time="0.000129792">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should require explicit type field and fail when missing" time="0.000119125">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should validate invalid server type" time="0.000131">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should validate missing command for stdio server" time="0.000137833">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should validate missing url for SSE server" time="0.000118125">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should validate invalid URL for SSE server" time="0.000116125">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should validate args must be array for stdio server" time="0.000075">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should validate args items must be strings" time="0.000103291">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should handle SSE server with headers" time="0.00010025">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should handle partial errors in non-strict mode" time="0.0001265">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should continue parsing when one server has invalid configuration" time="0.000113834">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should handle mix of missing types and invalid configs" time="0.000185041">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseContent &gt; should fail completely in strict mode with any error" time="0.000085084">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseFile &gt; should read and parse file successfully" time="0.000422958">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseFile &gt; should resolve relative paths to absolute paths" time="0.000133708">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseFile &gt; should handle relative paths with parent directories" time="0.000118875">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseFile &gt; should handle file not found error" time="0.000111542">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseFile &gt; should handle file not found error with relative paths" time="0.0000925">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; parseFile &gt; should handle file read error" time="0.00008">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; static methods &gt; should get server names" time="0.000071584">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; static methods &gt; should get specific server config" time="0.000067">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; path validation &gt; should skip path validation when disabled" time="0.000059625">
+        </testcase>
+        <testcase classname="src/config/mcpConfigParser.test.ts" name="MCPConfigParser &gt; path validation &gt; should handle relative paths when allowed" time="0.000084458">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/config/preferenceStore.test.ts" timestamp="2025-08-06T22:56:15.319Z" hostname="brians.macbook.pro.wifi.lan" tests="5" failures="0" errors="0" skipped="0" time="0.006099916">
+        <testcase classname="src/config/preferenceStore.test.ts" name="PreferenceStore - Last Equipped Toolset &gt; should save and retrieve last equipped toolset" time="0.001081791">
+        </testcase>
+        <testcase classname="src/config/preferenceStore.test.ts" name="PreferenceStore - Last Equipped Toolset &gt; should clear last equipped toolset when setting undefined" time="0.000229542">
+        </testcase>
+        <testcase classname="src/config/preferenceStore.test.ts" name="PreferenceStore - Last Equipped Toolset &gt; should return undefined when no toolset has been equipped" time="0.000097958">
+        </testcase>
+        <testcase classname="src/config/preferenceStore.test.ts" name="PreferenceStore - Last Equipped Toolset &gt; should persist last equipped toolset across preference loads" time="0.000144792">
+        </testcase>
+        <testcase classname="src/config/preferenceStore.test.ts" name="PreferenceStore - Last Equipped Toolset &gt; should work alongside toolset storage" time="0.000536">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/config-manager/index.test.ts" timestamp="2025-08-06T22:56:15.319Z" hostname="brians.macbook.pro.wifi.lan" tests="9" failures="0" errors="0" skipped="0" time="0.024213625">
+        <testcase classname="src/config-manager/index.test.ts" name="ConfigurationManager &gt; linkApplication with Claude Code &gt; should use claude-code transformer when format is custom" time="0.003926709">
+        </testcase>
+        <testcase classname="src/config-manager/index.test.ts" name="ConfigurationManager &gt; linkApplication with Claude Code &gt; should preserve existing Claude Code configuration" time="0.001430166">
+        </testcase>
+        <testcase classname="src/config-manager/index.test.ts" name="ConfigurationManager &gt; linkApplication with Claude Code &gt; should handle missing Claude Code config file" time="0.001222375">
+        </testcase>
+        <testcase classname="src/config-manager/index.test.ts" name="ConfigurationManager &gt; linkApplication with Claude Code &gt; should use standard transformer for non-custom formats" time="0.000735125">
+        </testcase>
+        <testcase classname="src/config-manager/index.test.ts" name="ConfigurationManager &gt; unlinkApplications &gt; should remove only hypertool from Claude Code config" time="0.001295667">
+        </testcase>
+        <testcase classname="src/config-manager/index.test.ts" name="ConfigurationManager &gt; unlinkApplications &gt; should handle restore from backup" time="0.010222209">
+            <system-out>
+Restored with hypertool: [ [32m&apos;claude-code&apos;[39m ]
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/config-manager/index.test.ts" name="ConfigurationManager &gt; importFromApplication with Claude Code &gt; should import servers from Claude Code" time="0.002926292">
+        </testcase>
+        <testcase classname="src/config-manager/index.test.ts" name="ConfigurationManager &gt; Error handling &gt; should handle invalid JSON in Claude Code config" time="0.001196959">
+        </testcase>
+        <testcase classname="src/config-manager/index.test.ts" name="ConfigurationManager &gt; Error handling &gt; should handle missing transformer" time="0.000614708">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/integration/claude-code-integration.test.ts" timestamp="2025-08-06T22:56:15.320Z" hostname="brians.macbook.pro.wifi.lan" tests="8" failures="0" errors="0" skipped="0" time="0.046502084">
+        <testcase classname="src/integration/claude-code-integration.test.ts" name="Claude Code Integration &gt; Full Setup Flow &gt; should complete full setup preserving all Claude Code settings" time="0.017506375">
+        </testcase>
+        <testcase classname="src/integration/claude-code-integration.test.ts" name="Claude Code Integration &gt; Unlink and Restore Flow &gt; should unlink and restore Claude Code config correctly" time="0.020836375">
+        </testcase>
+        <testcase classname="src/integration/claude-code-integration.test.ts" name="Claude Code Integration &gt; Unlink and Restore Flow &gt; should handle unlink without restore" time="0.00101775">
+        </testcase>
+        <testcase classname="src/integration/claude-code-integration.test.ts" name="Claude Code Integration &gt; Error Scenarios &gt; should recover from corrupted Claude Code config" time="0.00057375">
+        </testcase>
+        <testcase classname="src/integration/claude-code-integration.test.ts" name="Claude Code Integration &gt; Error Scenarios &gt; should handle missing Claude Code installation" time="0.003793083">
+        </testcase>
+        <testcase classname="src/integration/claude-code-integration.test.ts" name="Claude Code Integration &gt; Error Scenarios &gt; should handle permission errors gracefully" time="0.000648709">
+        </testcase>
+        <testcase classname="src/integration/claude-code-integration.test.ts" name="Claude Code Integration &gt; Development Mode &gt; should use local development binary when in dev mode" time="0.00066475">
+        </testcase>
+        <testcase classname="src/integration/claude-code-integration.test.ts" name="Claude Code Integration &gt; Development Mode &gt; should use NPM package when not in dev mode" time="0.000519625">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/integration/cli-config-path.test.ts" timestamp="2025-08-06T22:56:15.321Z" hostname="brians.macbook.pro.wifi.lan" tests="6" failures="0" errors="0" skipped="0" time="0.025597125">
+        <testcase classname="src/integration/cli-config-path.test.ts" name="CLI --mcp-config flag integration &gt; should work with relative paths" time="0.007790458">
+        </testcase>
+        <testcase classname="src/integration/cli-config-path.test.ts" name="CLI --mcp-config flag integration &gt; should work with relative paths using parent directories" time="0.0032545">
+        </testcase>
+        <testcase classname="src/integration/cli-config-path.test.ts" name="CLI --mcp-config flag integration &gt; should work with absolute paths" time="0.0016235">
+        </testcase>
+        <testcase classname="src/integration/cli-config-path.test.ts" name="CLI --mcp-config flag integration &gt; should provide helpful error for non-existent relative paths" time="0.002612666">
+        </testcase>
+        <testcase classname="src/integration/cli-config-path.test.ts" name="CLI --mcp-config flag integration &gt; should resolve relative paths consistently" time="0.003789875">
+        </testcase>
+        <testcase classname="src/integration/cli-config-path.test.ts" name="CLI --mcp-config flag integration &gt; should handle nested relative paths" time="0.005881917">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/integration/stdio-transport.test.ts" timestamp="2025-08-06T22:56:15.321Z" hostname="brians.macbook.pro.wifi.lan" tests="3" failures="0" errors="0" skipped="0" time="11.813515875">
+        <testcase classname="src/integration/stdio-transport.test.ts" name="MCP Server stdio transport &gt; should connect via stdio and call tools successfully" time="6.141757125">
+        </testcase>
+        <testcase classname="src/integration/stdio-transport.test.ts" name="MCP Server stdio transport &gt; should handle concurrent operations" time="2.922006917">
+        </testcase>
+        <testcase classname="src/integration/stdio-transport.test.ts" name="MCP Server stdio transport &gt; should properly handle errors without breaking stdio protocol" time="2.749045292">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/errors/errors.test.ts" timestamp="2025-08-06T22:56:15.321Z" hostname="brians.macbook.pro.wifi.lan" tests="18" failures="0" errors="0" skipped="0" time="0.007239125">
+        <testcase classname="src/errors/errors.test.ts" name="MetaMCPError &gt; should create base error with all properties" time="0.001280292">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="MetaMCPError &gt; should generate proper stack trace" time="0.00236925">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="MetaMCPError &gt; should serialize to JSON properly" time="0.0005275">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Specific Error Types &gt; ConnectionError should have correct properties" time="0.000156459">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Specific Error Types &gt; ServerUnavailableError should format message correctly" time="0.00015275">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Specific Error Types &gt; ToolNotFoundError should provide helpful message" time="0.000143">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Specific Error Types &gt; ValidationError should include field information" time="0.000132959">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Specific Error Types &gt; TimeoutError should include operation details" time="0.000124375">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Specific Error Types &gt; ConfigurationError should not be retryable" time="0.000108541">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Error Utilities &gt; isRetryableError should identify retryable errors" time="0.000131917">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Error Utilities &gt; getErrorCode should extract error codes" time="0.000098541">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Error Utilities &gt; getUserFriendlyMessage should provide user messages" time="0.000074708">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Error Context &gt; should preserve context through error chain" time="0.000086458">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Error Context &gt; should handle undefined context gracefully" time="0.00006475">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Error Inheritance &gt; should maintain instanceof relationships" time="0.000071583">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Error Inheritance &gt; should preserve error name" time="0.000120875">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Error Messages &gt; should provide different messages for getUserMessage vs message" time="0.000058917">
+        </testcase>
+        <testcase classname="src/errors/errors.test.ts" name="Error Messages &gt; should handle special cases in user messages" time="0.000137084">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/errors/recovery.test.ts" timestamp="2025-08-06T22:56:15.322Z" hostname="brians.macbook.pro.wifi.lan" tests="27" failures="0" errors="0" skipped="3" time="0.009971125">
+        <testcase classname="src/errors/recovery.test.ts" name="RetryManager &gt; should succeed on first attempt" time="0.002413625">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="RetryManager &gt; should retry retryable errors" time="0.000911375">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="RetryManager &gt; should not retry non-retryable errors" time="0.000822167">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="RetryManager &gt; should respect max attempts" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="RetryManager &gt; should calculate exponential backoff delays" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="RetryManager &gt; should apply jitter to delays" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="CircuitBreaker &gt; should start in CLOSED state" time="0.000196583">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="CircuitBreaker &gt; should execute operation when CLOSED" time="0.000193292">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="CircuitBreaker &gt; should open after threshold failures" time="0.000294542">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="CircuitBreaker &gt; should reject immediately when OPEN" time="0.000340375">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="CircuitBreaker &gt; should transition to HALF_OPEN after recovery timeout" time="0.0004135">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="CircuitBreaker &gt; should close from HALF_OPEN after successful calls" time="0.000200458">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="CircuitBreaker &gt; should return to OPEN from HALF_OPEN on failure" time="0.000258583">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="CircuitBreaker &gt; should emit state change events" time="0.000853125">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="CircuitBreaker &gt; should provide metrics" time="0.000357792">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="CircuitBreaker &gt; should reset circuit breaker" time="0.00020325">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="FallbackManager &gt; should execute primary operation successfully" time="0.000109375">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="FallbackManager &gt; should execute fallback strategy on failure" time="0.00030625">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="FallbackManager &gt; should try multiple fallback strategies" time="0.000140542">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="FallbackManager &gt; should throw original error if no fallbacks work" time="0.000104375">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="ServerUnavailableFallback &gt; should handle connection errors" time="0.000090458">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="ServerUnavailableFallback &gt; should provide fallback response" time="0.000093">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="RecoveryCoordinator &gt; should execute with all recovery mechanisms" time="0.000175208">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="RecoveryCoordinator &gt; should use circuit breaker when specified" time="0.00023625">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="RecoveryCoordinator &gt; should register custom fallback strategies" time="0.000143">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="RecoveryCoordinator &gt; should reset all circuit breakers" time="0.000351625">
+        </testcase>
+        <testcase classname="src/errors/recovery.test.ts" name="RecoveryCoordinator &gt; should cleanup resources" time="0.000125792">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/connection/healthMonitor.test.ts" timestamp="2025-08-06T22:56:15.324Z" hostname="brians.macbook.pro.wifi.lan" tests="20" failures="0" errors="0" skipped="0" time="0.016723459">
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; addConnection &gt; should add connection and initialize health status" time="0.001077625">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; addConnection &gt; should initialize as unhealthy if connection is not connected" time="0.000142875">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; removeConnection &gt; should remove connection from monitoring" time="0.000092958">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; state tracking &gt; should track healthy servers" time="0.000542292">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; state tracking &gt; should track unhealthy servers" time="0.000253875">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; state tracking &gt; should track failed servers" time="0.000193084">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; state change events &gt; should emit state change from healthy to unhealthy" time="0.000283292">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; state change events &gt; should emit state change from healthy to failed" time="0.000121125">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; state change events &gt; should emit state change from unhealthy to healthy" time="0.000130042">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; state change events &gt; should not emit state change if state remains the same" time="0.0000995">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; lastHealthyAt tracking &gt; should update lastHealthyAt when becoming healthy" time="0.011386875">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; lastHealthyAt tracking &gt; should preserve lastHealthyAt when becoming unhealthy" time="0.000326875">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; lastHealthyAt tracking &gt; should preserve lastHealthyAt when failed" time="0.000081041">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; health checks &gt; should perform health check on connected server with successful ping" time="0.000147958">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; health checks &gt; should mark as unhealthy if connected but ping fails" time="0.000058667">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; health checks &gt; should mark as failed if not connected" time="0.000053792">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; health checks &gt; should handle ping errors as failed" time="0.000559042">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; start/stop &gt; should start and stop monitoring" time="0.000354625">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; start/stop &gt; should handle multiple start calls" time="0.00007625">
+        </testcase>
+        <testcase classname="src/connection/healthMonitor.test.ts" name="HealthMonitor &gt; start/stop &gt; should handle multiple stop calls" time="0.000067917">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/connection/manager.test.ts" timestamp="2025-08-06T22:56:15.325Z" hostname="brians.macbook.pro.wifi.lan" tests="22" failures="0" errors="0" skipped="0" time="0.009457125">
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; initialization &gt; should initialize with server configurations" time="0.001757583">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; initialization &gt; should reject double initialization" time="0.000806875">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; initialization &gt; should validate server configurations" time="0.000268625">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; connection management &gt; should connect to a specific server" time="0.000645666">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; connection management &gt; should disconnect from a specific server" time="0.000243875">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; connection management &gt; should reconnect to a server" time="0.000525583">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; connection management &gt; should handle connection to non-existent server" time="0.0002665">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; lifecycle management &gt; should start the connection manager" time="0.000321584">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; lifecycle management &gt; should stop the connection manager" time="0.000161167">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; lifecycle management &gt; should handle multiple start calls gracefully" time="0.000176">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; server management &gt; should add a new server" time="0.000251292">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; server management &gt; should remove a server" time="0.000221166">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; server management &gt; should reject duplicate server names" time="0.000177416">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; event handling &gt; should forward connection events" time="0.00028625">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; event handling &gt; should emit manager-specific events" time="0.00018625">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; statistics &gt; should provide connection statistics" time="0.00019025">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; statistics &gt; should handle empty connection pool" time="0.000173208">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; error handling &gt; should handle connection failures gracefully" time="0.000180041">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; error handling &gt; should handle operations before initialization" time="0.000193167">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; configuration validation &gt; should validate stdio server configuration" time="0.000233167">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; configuration validation &gt; should validate HTTP server configuration" time="0.00123025">
+        </testcase>
+        <testcase classname="src/connection/manager.test.ts" name="ConnectionManager &gt; configuration validation &gt; should reject invalid configuration" time="0.000174792">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/discovery/cache.test.ts" timestamp="2025-08-06T22:56:15.327Z" hostname="brians.macbook.pro.wifi.lan" tests="17" failures="0" errors="0" skipped="0" time="0.007254291">
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; basic operations &gt; should store and retrieve a tool" time="0.002045583">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; basic operations &gt; should return null for non-existent key" time="0.000233958">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; basic operations &gt; should check if key exists" time="0.00026325">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; basic operations &gt; should delete a tool" time="0.000215208">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; TTL functionality &gt; should expire tools after TTL" time="0.000341625">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; TTL functionality &gt; should use default TTL when not specified" time="0.000149458">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; server-based operations &gt; should get tools by server" time="0.000625834">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; server-based operations &gt; should clear tools for a specific server" time="0.000233708">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; server-based operations &gt; should get all cached tools" time="0.000389917">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; cache statistics &gt; should track cache hits and misses" time="0.000637542">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; cache statistics &gt; should provide cache info" time="0.000228">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; cache maintenance &gt; should clear entire cache" time="0.00013425">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; event emission &gt; should emit events for cache operations" time="0.000195417">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; event emission &gt; should emit cleanup events" time="0.00015475">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; event emission &gt; should emit server cleared events" time="0.000142">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; performance &gt; should handle large number of tools efficiently" time="0.0004335">
+        </testcase>
+        <testcase classname="src/discovery/cache.test.ts" name="ToolCache &gt; memory management &gt; should prevent memory leaks with proper cleanup" time="0.000157583">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/discovery/hashUtils.test.ts" timestamp="2025-08-06T22:56:15.328Z" hostname="brians.macbook.pro.wifi.lan" tests="5" failures="0" errors="0" skipped="0" time="0.002314042">
+        <testcase classname="src/discovery/hashUtils.test.ts" name="ToolHashUtils &gt; calculateToolHash &gt; should generate consistent hashes for same tool" time="0.001049916">
+        </testcase>
+        <testcase classname="src/discovery/hashUtils.test.ts" name="ToolHashUtils &gt; calculateToolHash &gt; should generate different hashes when functional fields change" time="0.000357708">
+        </testcase>
+        <testcase classname="src/discovery/hashUtils.test.ts" name="ToolHashUtils &gt; calculateToolHash &gt; should generate same hash when non-functional fields change" time="0.000091708">
+        </testcase>
+        <testcase classname="src/discovery/hashUtils.test.ts" name="ToolHashUtils &gt; detectToolChanges &gt; should detect added tools" time="0.000163917">
+        </testcase>
+        <testcase classname="src/discovery/hashUtils.test.ts" name="ToolHashUtils &gt; detectToolChanges &gt; should detect removed tools" time="0.000114">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/discovery/performance.perf.test.ts" timestamp="2025-08-06T22:56:15.328Z" hostname="brians.macbook.pro.wifi.lan" tests="11" failures="0" errors="0" skipped="0" time="0.21719525">
+        <testcase classname="src/discovery/performance.perf.test.ts" name="Tool Discovery Performance Tests &gt; Tool Cache Performance &gt; should handle 1000 tools efficiently" time="0.009468959">
+        </testcase>
+        <testcase classname="src/discovery/performance.perf.test.ts" name="Tool Discovery Performance Tests &gt; Tool Cache Performance &gt; should handle concurrent access efficiently" time="0.002479791">
+        </testcase>
+        <testcase classname="src/discovery/performance.perf.test.ts" name="Tool Discovery Performance Tests &gt; Tool Cache Performance &gt; should handle server-based operations efficiently" time="0.006118167">
+        </testcase>
+        <testcase classname="src/discovery/performance.perf.test.ts" name="Tool Discovery Performance Tests &gt; Lookup Manager Performance &gt; should handle 1000 tools efficiently" time="0.011390084">
+        </testcase>
+        <testcase classname="src/discovery/performance.perf.test.ts" name="Tool Discovery Performance Tests &gt; Lookup Manager Performance &gt; should handle complex search queries efficiently" time="0.009393875">
+        </testcase>
+        <testcase classname="src/discovery/performance.perf.test.ts" name="Tool Discovery Performance Tests &gt; Lookup Manager Performance &gt; should handle statistics calculation efficiently" time="0.008984167">
+        </testcase>
+        <testcase classname="src/discovery/performance.perf.test.ts" name="Tool Discovery Performance Tests &gt; Hash Calculation Performance &gt; should calculate hashes efficiently for large tool sets" time="0.007240916">
+        </testcase>
+        <testcase classname="src/discovery/performance.perf.test.ts" name="Tool Discovery Performance Tests &gt; Hash Calculation Performance &gt; should detect changes efficiently in large tool sets" time="0.001693042">
+        </testcase>
+        <testcase classname="src/discovery/performance.perf.test.ts" name="Tool Discovery Performance Tests &gt; Memory Usage &gt; should maintain reasonable memory usage with large tool sets" time="0.007183291">
+        </testcase>
+        <testcase classname="src/discovery/performance.perf.test.ts" name="Tool Discovery Performance Tests &gt; Stress Testing &gt; should handle rapid tool updates" time="0.14792925">
+        </testcase>
+        <testcase classname="src/discovery/performance.perf.test.ts" name="Tool Discovery Performance Tests &gt; Stress Testing &gt; should handle concurrent operations under load" time="0.004464542">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/discovery/service.test.ts" timestamp="2025-08-06T22:56:15.329Z" hostname="brians.macbook.pro.wifi.lan" tests="21" failures="0" errors="0" skipped="0" time="0.008552833">
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; initialization &gt; should initialize with default configuration" time="0.00138075">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; initialization &gt; should initialize with custom configuration" time="0.000154708">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; initialization &gt; should throw error if initialized twice" time="0.000736958">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; tool discovery &gt; should discover tools from a connected server" time="0.001297875">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; tool discovery &gt; should discover tools from all connected servers" time="0.000603916">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; tool discovery &gt; should handle discovery errors gracefully" time="0.000368375">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; tool lookup &gt; should find tool by exact name" time="0.000357292">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; tool lookup &gt; should find tool by namespaced name" time="0.000203417">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; tool lookup &gt; should return null for non-existent tool" time="0.000380416">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; tool lookup &gt; should search tools by pattern" time="0.000370917">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; tool lookup &gt; should search tools by server" time="0.000161958">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; tool change detection &gt; should detect when tools are added" time="0.00047175">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; tool change detection &gt; should detect when tools are removed" time="0.000153042">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; tool change detection &gt; should detect when tools are modified" time="0.000136833">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; caching &gt; should cache discovered tools" time="0.000106834">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; caching &gt; should refresh cache when requested" time="0.000174541">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; caching &gt; should clear cache for specific server" time="0.000108291">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; statistics &gt; should provide discovery statistics" time="0.000150375">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; statistics &gt; should provide server states" time="0.000143542">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; lifecycle management &gt; should start and stop automatic discovery" time="0.000121167">
+        </testcase>
+        <testcase classname="src/discovery/service.test.ts" name="ToolDiscoveryEngine &gt; lifecycle management &gt; should handle connection events" time="0.000105084">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/router/router.test.ts" timestamp="2025-08-06T22:56:15.331Z" hostname="brians.macbook.pro.wifi.lan" tests="17" failures="0" errors="0" skipped="0" time="0.004754625">
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; initialization &gt; should initialize with default config" time="0.000969084">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; initialization &gt; should initialize with custom config" time="0.000091958">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; tool route resolution &gt; should resolve namespaced tool names" time="0.000301541">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; tool route resolution &gt; should resolve non-namespaced tool names" time="0.000132334">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; tool route resolution &gt; should return error for unknown tools" time="0.000133459">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; tool route resolution &gt; should return error for disconnected servers" time="0.000113">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; tool call routing &gt; should route tool calls successfully" time="0.000689542">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; tool call routing &gt; should validate required parameters" time="0.000645917">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; tool call routing &gt; should handle tool call errors" time="0.000231791">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; tool call routing &gt; should pass through tool-level errors with isError flag" time="0.00018875">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; tool call routing &gt; should handle unknown tools" time="0.000145583">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; parameter validation &gt; should validate required parameters" time="0.00005725">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; parameter validation &gt; should reject missing required parameters" time="0.000059167">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; parameter validation &gt; should handle empty arguments" time="0.0000525">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; statistics &gt; should track successful requests" time="0.000153042">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; statistics &gt; should track failed requests" time="0.000094792">
+        </testcase>
+        <testcase classname="src/router/router.test.ts" name="RequestRouter &gt; statistics &gt; should clear statistics" time="0.000100625">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/server/base.test.ts" timestamp="2025-08-06T22:56:15.332Z" hostname="brians.macbook.pro.wifi.lan" tests="14" failures="0" errors="0" skipped="0" time="0.007464041">
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Constructor &gt; should create server with correct config" time="0.001860792">
+        </testcase>
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Constructor &gt; should initialize with STOPPED state" time="0.000255708">
+        </testcase>
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Constructor &gt; should initialize with 0 connected clients" time="0.0001675">
+        </testcase>
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Server State Management &gt; should emit stateChanged event when state changes" time="0.000811667">
+        </testcase>
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Server State Management &gt; should track uptime when running" time="0.000833292">
+        </testcase>
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Error Handling &gt; should throw error when starting already running server" time="0.000722042">
+        </testcase>
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Error Handling &gt; should handle unsupported transport type" time="0.000222">
+        </testcase>
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Tool Handling &gt; should return empty tools array by default" time="0.000233416">
+        </testcase>
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Tool Handling &gt; should throw error for unimplemented tool calls" time="0.000212667">
+        </testcase>
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Client Connection Tracking &gt; should increment connected clients count" time="0.000296041">
+        </testcase>
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Client Connection Tracking &gt; should decrement connected clients count" time="0.000158125">
+        </testcase>
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Client Connection Tracking &gt; should not go below 0 connected clients" time="0.000127083">
+        </testcase>
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Client Connection Tracking &gt; should emit clientConnected event" time="0.000537542">
+        </testcase>
+        <testcase classname="src/server/base.test.ts" name="MetaMCPServer &gt; Client Connection Tracking &gt; should emit clientDisconnected event" time="0.000267792">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/server/enhanced.test.ts" timestamp="2025-08-06T22:56:15.352Z" hostname="brians.macbook.pro.wifi.lan" tests="9" failures="0" errors="0" skipped="0" time="0.003189334">
+        <testcase classname="src/server/enhanced.test.ts" name="EnhancedMetaMCPServer &gt; Self-Reference Detection &gt; should detect NPX hypertool-mcp references" time="0.001115833">
+        </testcase>
+        <testcase classname="src/server/enhanced.test.ts" name="EnhancedMetaMCPServer &gt; Self-Reference Detection &gt; should detect direct hypertool-mcp command references" time="0.000127875">
+        </testcase>
+        <testcase classname="src/server/enhanced.test.ts" name="EnhancedMetaMCPServer &gt; Self-Reference Detection &gt; should detect NPX references with package name variation" time="0.000103709">
+        </testcase>
+        <testcase classname="src/server/enhanced.test.ts" name="EnhancedMetaMCPServer &gt; Self-Reference Detection &gt; should detect Node.js references to hypertool-mcp" time="0.000092541">
+        </testcase>
+        <testcase classname="src/server/enhanced.test.ts" name="EnhancedMetaMCPServer &gt; Self-Reference Detection &gt; should not flag legitimate external servers" time="0.000101916">
+        </testcase>
+        <testcase classname="src/server/enhanced.test.ts" name="EnhancedMetaMCPServer &gt; Self-Reference Detection &gt; should not flag HTTP/SSE servers" time="0.000078875">
+        </testcase>
+        <testcase classname="src/server/enhanced.test.ts" name="EnhancedMetaMCPServer &gt; Server Configuration Filtering &gt; should filter out self-referencing servers" time="0.000511083">
+        </testcase>
+        <testcase classname="src/server/enhanced.test.ts" name="EnhancedMetaMCPServer &gt; Server Configuration Filtering &gt; should return all servers when no self-references exist" time="0.000362708">
+        </testcase>
+        <testcase classname="src/server/enhanced.test.ts" name="EnhancedMetaMCPServer &gt; Server Configuration Filtering &gt; should return empty object when all servers are self-references" time="0.000127333">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/server/factory.test.ts" timestamp="2025-08-06T22:56:15.353Z" hostname="brians.macbook.pro.wifi.lan" tests="6" failures="0" errors="0" skipped="0" time="0.002676">
+        <testcase classname="src/server/factory.test.ts" name="MetaMCPServerFactory &gt; createServer &gt; should create server with provided config" time="0.001372208">
+        </testcase>
+        <testcase classname="src/server/factory.test.ts" name="MetaMCPServerFactory &gt; createDefaultServer &gt; should create server with default config for stdio transport" time="0.000305166">
+        </testcase>
+        <testcase classname="src/server/factory.test.ts" name="MetaMCPServerFactory &gt; createDefaultServer &gt; should create server with default config for HTTP transport" time="0.000115958">
+        </testcase>
+        <testcase classname="src/server/factory.test.ts" name="MetaMCPServerFactory &gt; createInitOptions &gt; should create default initialization options" time="0.000106333">
+        </testcase>
+        <testcase classname="src/server/factory.test.ts" name="MetaMCPServerFactory &gt; createInitOptions &gt; should merge provided overrides with defaults" time="0.000109">
+        </testcase>
+        <testcase classname="src/server/factory.test.ts" name="MetaMCPServerFactory &gt; createInitOptions &gt; should partially override transport options" time="0.000084333">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/toolset/loader.test.ts" timestamp="2025-08-06T22:56:15.354Z" hostname="brians.macbook.pro.wifi.lan" tests="14" failures="0" errors="0" skipped="0" time="0.018614916">
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; loadToolsetConfig &gt; should load valid simplified configuration" time="0.004873209">
+        </testcase>
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; loadToolsetConfig &gt; should handle configuration without tools array" time="0.002014083">
+        </testcase>
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; loadToolsetConfig &gt; should handle invalid JSON" time="0.001801209">
+        </testcase>
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; loadToolsetConfig &gt; should handle missing file" time="0.000633417">
+        </testcase>
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; loadToolsetConfig &gt; should normalize configuration" time="0.001010916">
+        </testcase>
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; loadToolsetConfig &gt; should filter out invalid tool references" time="0.000839208">
+        </testcase>
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; loadToolsetConfig &gt; should apply custom validation" time="0.001346791">
+        </testcase>
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; saveToolsetConfig &gt; should save valid configuration" time="0.00122275">
+        </testcase>
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; saveToolsetConfig &gt; should save with pretty formatting" time="0.0007225">
+        </testcase>
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; saveToolsetConfig &gt; should create directory when requested" time="0.001060167">
+        </testcase>
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; saveToolsetConfig &gt; should reject invalid configuration" time="0.000289916">
+        </testcase>
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; saveToolsetConfig &gt; should add lastModified timestamp" time="0.000676208">
+        </testcase>
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; edge cases &gt; should handle config with only refId (no namespacedName)" time="0.000904458">
+        </testcase>
+        <testcase classname="src/toolset/loader.test.ts" name="ToolsetLoader &gt; edge cases &gt; should handle config with special characters in tool names" time="0.000591333">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/toolset/manager.annotations.test.ts" timestamp="2025-08-06T22:56:15.355Z" hostname="brians.macbook.pro.wifi.lan" tests="8" failures="0" errors="0" skipped="0" time="0.003004666">
+        <testcase classname="src/toolset/manager.annotations.test.ts" name="ToolsetManager - Annotations &gt; _hydrateToolNotes &gt; should return tool unchanged when no toolset is loaded" time="0.001123833">
+        </testcase>
+        <testcase classname="src/toolset/manager.annotations.test.ts" name="ToolsetManager - Annotations &gt; _hydrateToolNotes &gt; should return tool unchanged when toolset has no notes" time="0.000281125">
+        </testcase>
+        <testcase classname="src/toolset/manager.annotations.test.ts" name="ToolsetManager - Annotations &gt; _hydrateToolNotes &gt; should add notes to tool description when notes exist" time="0.000257167">
+        </testcase>
+        <testcase classname="src/toolset/manager.annotations.test.ts" name="ToolsetManager - Annotations &gt; _hydrateToolNotes &gt; should match notes by refId when both namespacedName and refId provided in notes" time="0.000219208">
+        </testcase>
+        <testcase classname="src/toolset/manager.annotations.test.ts" name="ToolsetManager - Annotations &gt; _hydrateToolNotes &gt; should handle tools without description" time="0.000114833">
+        </testcase>
+        <testcase classname="src/toolset/manager.annotations.test.ts" name="ToolsetManager - Annotations &gt; formatNotesForLLM &gt; should format notes with markdown" time="0.000085167">
+        </testcase>
+        <testcase classname="src/toolset/manager.annotations.test.ts" name="ToolsetManager - Annotations &gt; getMcpTools with annotations &gt; should include annotations in exposed tools" time="0.000212333">
+        </testcase>
+        <testcase classname="src/toolset/manager.annotations.test.ts" name="ToolsetManager - Annotations &gt; findDiscoveredToolByFlattenedName &gt; should find tool by flattened name" time="0.000163125">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/toolset/manager.discovery.test.ts" timestamp="2025-08-06T22:56:15.356Z" hostname="brians.macbook.pro.wifi.lan" tests="4" failures="0" errors="0" skipped="0" time="0.004058">
+        <testcase classname="src/toolset/manager.discovery.test.ts" name="ToolsetManager Discovery Integration &gt; should emit toolsetChanged when active toolset tools are affected by discovery changes" time="0.0022005">
+        </testcase>
+        <testcase classname="src/toolset/manager.discovery.test.ts" name="ToolsetManager Discovery Integration &gt; should emit toolsetChanged when active toolset tools are removed" time="0.000289417">
+        </testcase>
+        <testcase classname="src/toolset/manager.discovery.test.ts" name="ToolsetManager Discovery Integration &gt; should NOT emit toolsetChanged when unrelated tools change" time="0.000342208">
+        </testcase>
+        <testcase classname="src/toolset/manager.discovery.test.ts" name="ToolsetManager Discovery Integration &gt; should NOT emit toolsetChanged when no toolset is active" time="0.0002885">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/toolset/manager.test.ts" timestamp="2025-08-06T22:56:15.356Z" hostname="brians.macbook.pro.wifi.lan" tests="13" failures="0" errors="0" skipped="0" time="0.012591">
+        <testcase classname="src/toolset/manager.test.ts" name="ToolsetManager &gt; loadConfig &gt; should load valid configuration" time="0.00412775">
+        </testcase>
+        <testcase classname="src/toolset/manager.test.ts" name="ToolsetManager &gt; loadConfig &gt; should reject invalid configuration" time="0.001692292">
+        </testcase>
+        <testcase classname="src/toolset/manager.test.ts" name="ToolsetManager &gt; loadConfig &gt; should handle file read errors" time="0.000339708">
+        </testcase>
+        <testcase classname="src/toolset/manager.test.ts" name="ToolsetManager &gt; saveConfig &gt; should save loaded configuration" time="0.000978">
+        </testcase>
+        <testcase classname="src/toolset/manager.test.ts" name="ToolsetManager &gt; saveConfig &gt; should save to previously loaded path" time="0.001224666">
+        </testcase>
+        <testcase classname="src/toolset/manager.test.ts" name="ToolsetManager &gt; saveConfig &gt; should require path if no previous path" time="0.000342208">
+        </testcase>
+        <testcase classname="src/toolset/manager.test.ts" name="ToolsetManager &gt; generateDefaultConfig &gt; should generate empty configuration" time="0.000535583">
+        </testcase>
+        <testcase classname="src/toolset/manager.test.ts" name="ToolsetManager &gt; generateDefaultConfig &gt; should accept custom options" time="0.000303333">
+        </testcase>
+        <testcase classname="src/toolset/manager.test.ts" name="ToolsetManager &gt; config validation &gt; should validate configuration on set" time="0.000333792">
+        </testcase>
+        <testcase classname="src/toolset/manager.test.ts" name="ToolsetManager &gt; config validation &gt; should validate current configuration" time="0.000370125">
+        </testcase>
+        <testcase classname="src/toolset/manager.test.ts" name="ToolsetManager &gt; config validation &gt; should validate when no config loaded" time="0.000283667">
+        </testcase>
+        <testcase classname="src/toolset/manager.test.ts" name="ToolsetManager &gt; config management &gt; should clear configuration" time="0.000259791">
+        </testcase>
+        <testcase classname="src/toolset/manager.test.ts" name="ToolsetManager &gt; config management &gt; should track config file path" time="0.000980959">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/toolset/validator.test.ts" timestamp="2025-08-06T22:56:15.357Z" hostname="brians.macbook.pro.wifi.lan" tests="12" failures="0" errors="0" skipped="0" time="0.003806375">
+        <testcase classname="src/toolset/validator.test.ts" name="ToolsetValidator &gt; validateToolsetConfig &gt; should validate a valid configuration" time="0.001544792">
+        </testcase>
+        <testcase classname="src/toolset/validator.test.ts" name="ToolsetValidator &gt; validateToolsetConfig &gt; should reject configuration without name" time="0.000359583">
+        </testcase>
+        <testcase classname="src/toolset/validator.test.ts" name="ToolsetValidator &gt; validateToolsetConfig &gt; should reject configuration with empty name" time="0.000142375">
+        </testcase>
+        <testcase classname="src/toolset/validator.test.ts" name="ToolsetValidator &gt; validateToolsetConfig &gt; should reject invalid name formats" time="0.000145625">
+        </testcase>
+        <testcase classname="src/toolset/validator.test.ts" name="ToolsetValidator &gt; validateToolsetConfig &gt; should reject configuration without tools array" time="0.000140208">
+        </testcase>
+        <testcase classname="src/toolset/validator.test.ts" name="ToolsetValidator &gt; validateToolsetConfig &gt; should reject configuration with empty tools array" time="0.000104542">
+        </testcase>
+        <testcase classname="src/toolset/validator.test.ts" name="ToolsetValidator &gt; validateToolsetConfig &gt; should validate individual tool references" time="0.000151167">
+        </testcase>
+        <testcase classname="src/toolset/validator.test.ts" name="ToolsetValidator &gt; validateToolsetConfig &gt; should warn about duplicate tool references" time="0.000099417">
+        </testcase>
+        <testcase classname="src/toolset/validator.test.ts" name="ToolsetValidator &gt; validateToolsetConfig &gt; should validate optional fields" time="0.000152417">
+        </testcase>
+        <testcase classname="src/toolset/validator.test.ts" name="ToolsetValidator &gt; validateToolsetConfig &gt; should accept valid ISO string dates" time="0.000125459">
+        </testcase>
+        <testcase classname="src/toolset/validator.test.ts" name="ToolsetValidator &gt; validateToolsetConfig &gt; should provide suggestions for large toolsets" time="0.000127833">
+        </testcase>
+        <testcase classname="src/toolset/validator.test.ts" name="ToolsetValidator &gt; validateToolsetConfig &gt; should suggest adding refId values" time="0.000060042">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/utils/envConfigParser.test.ts" timestamp="2025-08-06T22:56:15.359Z" hostname="brians.macbook.pro.wifi.lan" tests="21" failures="0" errors="0" skipped="0" time="0.004102584">
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; parseEnvDotNotation &gt; should parse simple mcpServers configuration" time="0.001265666">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; parseEnvDotNotation &gt; should parse array values using numeric indices" time="0.000156916">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; parseEnvDotNotation &gt; should handle nested environment variables" time="0.000134416">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; parseEnvDotNotation &gt; should coerce boolean values correctly" time="0.000150334">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; parseEnvDotNotation &gt; should coerce numeric values correctly" time="0.000112417">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; parseEnvDotNotation &gt; should parse JSON values correctly" time="0.000094792">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; parseEnvDotNotation &gt; should handle mixed configuration patterns" time="0.000125958">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; parseEnvDotNotation &gt; should handle empty environment gracefully" time="0.00006225">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; parseEnvDotNotation &gt; should ignore non-config environment variables" time="0.000081042">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; hasSmitheryConfig &gt; should detect mcpServers configuration" time="0.000094959">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; hasSmitheryConfig &gt; should detect config.mcpServers configuration" time="0.000054125">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; hasSmitheryConfig &gt; should detect CONFIG_MCPSERVERS configuration" time="0.000047291">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; hasSmitheryConfig &gt; should return false when no Smithery config present" time="0.00004725">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; getConfigSourceDescription &gt; should describe configuration sources correctly" time="0.000070625">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; getConfigSourceDescription &gt; should handle empty configuration" time="0.000045459">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; getConfigSourceDescription &gt; should handle partial configuration" time="0.000047542">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; validateParsedConfig &gt; should validate correct configuration" time="0.000452167">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; validateParsedConfig &gt; should detect missing type property" time="0.000215791">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; validateParsedConfig &gt; should detect missing command property for stdio type" time="0.000092708">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; validateParsedConfig &gt; should detect invalid log level" time="0.000081708">
+        </testcase>
+        <testcase classname="src/utils/envConfigParser.test.ts" name="envConfigParser &gt; validateParsedConfig &gt; should detect invalid server configuration" time="0.000089459">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/integration/backup-restore.test.ts" timestamp="2025-08-06T22:56:15.361Z" hostname="brians.macbook.pro.wifi.lan" tests="16" failures="0" errors="0" skipped="0" time="0.0848535">
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Fresh Installation &gt; should handle fresh installation with no existing configs" time="0.011069417">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Fresh Installation &gt; should create necessary directory structure" time="0.001658459">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Existing Configuration Backup &gt; should create backups of existing configurations" time="0.006530167">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Existing Configuration Backup &gt; should import configurations and create hypertool configs" time="0.005289042">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Multi-Server Scenarios &gt; should handle configurations with many servers" time="0.006485416">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Multi-Server Scenarios &gt; should backup complex configurations correctly" time="0.002851208">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Restore Operations &gt; should restore from backup successfully" time="0.011453125">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Restore Operations &gt; should handle selective restore" time="0.006966125">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Restore Operations &gt; should validate restored configurations" time="0.003983792">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Restore Operations &gt; should handle restore with missing applications gracefully" time="0.007872875">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Restore Operations &gt; should preserve backup after restore" time="0.0048135">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Backup Management &gt; should list all backups with proper metadata" time="0.005375875">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Backup Management &gt; should delete old backups" time="0.003749625">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Backup Management &gt; should handle corrupt backup gracefully" time="0.001421834">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Error Scenarios &gt; should handle backup creation failure gracefully" time="0.003839042">
+        </testcase>
+        <testcase classname="test/integration/backup-restore.test.ts" name="Backup and Restore Integration Tests &gt; Error Scenarios &gt; should handle restore of non-existent backup" time="0.000619666">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/integration/per-app-config.test.ts" timestamp="2025-08-06T22:56:15.364Z" hostname="brians.macbook.pro.wifi.lan" tests="8" failures="0" errors="0" skipped="0" time="0.007604209">
+        <testcase classname="test/integration/per-app-config.test.ts" name="Per-App Configuration Integration &gt; CLI flags &gt; should support --linked-app flag" time="0.002903834">
+        </testcase>
+        <testcase classname="test/integration/per-app-config.test.ts" name="Per-App Configuration Integration &gt; CLI flags &gt; should support --profile flag with --linked-app" time="0.000612375">
+        </testcase>
+        <testcase classname="test/integration/per-app-config.test.ts" name="Per-App Configuration Integration &gt; config discovery &gt; should load app-specific config instead of global" time="0.000620875">
+        </testcase>
+        <testcase classname="test/integration/per-app-config.test.ts" name="Per-App Configuration Integration &gt; backwards compatibility &gt; should maintain global mcp.json during transition" time="0.001008">
+        </testcase>
+        <testcase classname="test/integration/per-app-config.test.ts" name="Per-App Configuration Integration &gt; backwards compatibility &gt; should work with legacy --mcp-config flag" time="0.000378833">
+        </testcase>
+        <testcase classname="test/integration/per-app-config.test.ts" name="Per-App Configuration Integration &gt; toolset integration &gt; should create app-specific default toolsets" time="0.0004865">
+        </testcase>
+        <testcase classname="test/integration/per-app-config.test.ts" name="Per-App Configuration Integration &gt; migration scenarios &gt; should handle servers with metadata" time="0.000441625">
+        </testcase>
+        <testcase classname="test/integration/per-app-config.test.ts" name="Per-App Configuration Integration &gt; migration scenarios &gt; should handle servers without metadata" time="0.000312583">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/integration/setup-noninteractive.test.ts" timestamp="2025-08-06T22:56:15.365Z" hostname="brians.macbook.pro.wifi.lan" tests="12" failures="0" errors="0" skipped="0" time="0.038841209">
+        <testcase classname="test/integration/setup-noninteractive.test.ts" name="Setup Command - Non-Interactive Mode &gt; Basic Non-Interactive Flow &gt; should run with --yes flag and no existing config" time="0.006017791">
+        </testcase>
+        <testcase classname="test/integration/setup-noninteractive.test.ts" name="Setup Command - Non-Interactive Mode &gt; Basic Non-Interactive Flow &gt; should detect and configure all applications by default" time="0.002356833">
+        </testcase>
+        <testcase classname="test/integration/setup-noninteractive.test.ts" name="Setup Command - Non-Interactive Mode &gt; CLI Options &gt; should respect --apps flag to select specific applications" time="0.001370625">
+        </testcase>
+        <testcase classname="test/integration/setup-noninteractive.test.ts" name="Setup Command - Non-Interactive Mode &gt; CLI Options &gt; should respect --import-none flag" time="0.002329">
+        </testcase>
+        <testcase classname="test/integration/setup-noninteractive.test.ts" name="Setup Command - Non-Interactive Mode &gt; CLI Options &gt; should respect --development flag" time="0.00264525">
+        </testcase>
+        <testcase classname="test/integration/setup-noninteractive.test.ts" name="Setup Command - Non-Interactive Mode &gt; CLI Options &gt; should respect --skip-toolsets flag" time="0.002852125">
+        </testcase>
+        <testcase classname="test/integration/setup-noninteractive.test.ts" name="Setup Command - Non-Interactive Mode &gt; Error Handling &gt; should fail gracefully when requested apps are not detected" time="0.001598167">
+        </testcase>
+        <testcase classname="test/integration/setup-noninteractive.test.ts" name="Setup Command - Non-Interactive Mode &gt; Default Behaviors &gt; should import all configs by default" time="0.003168708">
+        </testcase>
+        <testcase classname="test/integration/setup-noninteractive.test.ts" name="Setup Command - Non-Interactive Mode &gt; Default Behaviors &gt; should handle server name conflicts automatically" time="0.004867667">
+        </testcase>
+        <testcase classname="test/integration/setup-noninteractive.test.ts" name="Setup Command - Non-Interactive Mode &gt; Default Behaviors &gt; should create default toolset with all tools" time="0.003125708">
+        </testcase>
+        <testcase classname="test/integration/setup-noninteractive.test.ts" name="Setup Command - Non-Interactive Mode &gt; First Run Detection &gt; should detect first run when no config exists" time="0.003603417">
+        </testcase>
+        <testcase classname="test/integration/setup-noninteractive.test.ts" name="Setup Command - Non-Interactive Mode &gt; First Run Detection &gt; should handle existing config scenario" time="0.003684583">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/integration/setup-scripts.test.ts" timestamp="2025-08-06T22:56:15.366Z" hostname="brians.macbook.pro.wifi.lan" tests="10" failures="0" errors="0" skipped="0" time="0.013421416">
+        <testcase classname="test/integration/setup-scripts.test.ts" name="Setup Scripts Integration Tests &gt; Claude Desktop Setup &gt; should install hypertool in fresh Claude Desktop installation" time="0.004399791">
+        </testcase>
+        <testcase classname="test/integration/setup-scripts.test.ts" name="Setup Scripts Integration Tests &gt; Claude Desktop Setup &gt; should backup existing Claude Desktop configuration" time="0.000974416">
+        </testcase>
+        <testcase classname="test/integration/setup-scripts.test.ts" name="Setup Scripts Integration Tests &gt; Cursor Setup &gt; should handle Cursor with existing MCP servers" time="0.001328458">
+        </testcase>
+        <testcase classname="test/integration/setup-scripts.test.ts" name="Setup Scripts Integration Tests &gt; Claude Code Setup &gt; should create .mcp.json if not exists" time="0.001652542">
+        </testcase>
+        <testcase classname="test/integration/setup-scripts.test.ts" name="Setup Scripts Integration Tests &gt; Claude Code Setup &gt; should install slash commands globally" time="0.001071167">
+        </testcase>
+        <testcase classname="test/integration/setup-scripts.test.ts" name="Setup Scripts Integration Tests &gt; Claude Code Setup &gt; should install slash commands locally in project" time="0.000747042">
+        </testcase>
+        <testcase classname="test/integration/setup-scripts.test.ts" name="Setup Scripts Integration Tests &gt; Claude Code Setup &gt; should handle project with existing hypertool setup" time="0.000618625">
+        </testcase>
+        <testcase classname="test/integration/setup-scripts.test.ts" name="Setup Scripts Integration Tests &gt; Error Handling &gt; should handle corrupted configurations gracefully" time="0.000891083">
+        </testcase>
+        <testcase classname="test/integration/setup-scripts.test.ts" name="Setup Scripts Integration Tests &gt; Error Handling &gt; should handle partial configurations" time="0.000549292">
+        </testcase>
+        <testcase classname="test/integration/setup-scripts.test.ts" name="Setup Scripts Integration Tests &gt; Cross-Platform Testing &gt; should handle Windows paths correctly" time="0.000411042">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/config-manager/apps/registry-lightweight.test.ts" timestamp="2025-08-06T22:56:15.367Z" hostname="brians.macbook.pro.wifi.lan" tests="9" failures="0" errors="0" skipped="0" time="0.005721417">
+        <testcase classname="src/config-manager/apps/registry-lightweight.test.ts" name="AppRegistry - Lightweight &gt; basic operations &gt; should create default registry on first load" time="0.002153208">
+        </testcase>
+        <testcase classname="src/config-manager/apps/registry-lightweight.test.ts" name="AppRegistry - Lightweight &gt; basic operations &gt; should save and load registry" time="0.000554708">
+        </testcase>
+        <testcase classname="src/config-manager/apps/registry-lightweight.test.ts" name="AppRegistry - Lightweight &gt; basic operations &gt; should get application by ID" time="0.000533875">
+        </testcase>
+        <testcase classname="src/config-manager/apps/registry-lightweight.test.ts" name="AppRegistry - Lightweight &gt; basic operations &gt; should remove application" time="0.000364292">
+        </testcase>
+        <testcase classname="src/config-manager/apps/registry-lightweight.test.ts" name="AppRegistry - Lightweight &gt; basic operations &gt; should get enabled applications only" time="0.000342875">
+        </testcase>
+        <testcase classname="src/config-manager/apps/registry-lightweight.test.ts" name="AppRegistry - Lightweight &gt; platform handling &gt; should resolve home directory paths" time="0.00027975">
+        </testcase>
+        <testcase classname="src/config-manager/apps/registry-lightweight.test.ts" name="AppRegistry - Lightweight &gt; platform handling &gt; should get platform-specific config" time="0.000281583">
+        </testcase>
+        <testcase classname="src/config-manager/apps/registry-lightweight.test.ts" name="AppRegistry - Lightweight &gt; detection &gt; should detect installed applications by directory" time="0.000322459">
+        </testcase>
+        <testcase classname="src/config-manager/apps/registry-lightweight.test.ts" name="AppRegistry - Lightweight &gt; detection &gt; should detect installed applications by file" time="0.000315584">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/config-manager/backup/manager.test.ts" timestamp="2025-08-06T22:56:15.368Z" hostname="brians.macbook.pro.wifi.lan" tests="21" failures="0" errors="0" skipped="0" time="0.079608459">
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; initialization &gt; should create backup directory on initialization" time="0.002864792">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; createBackup &gt; should create backup of fresh installation" time="0.010429584">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; createBackup &gt; should create backup with existing configurations" time="0.003870917">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; createBackup &gt; should handle multi-server configurations" time="0.0031145">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; createBackup &gt; should skip corrupted configurations" time="0.002650125">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; createBackup &gt; should handle partial configurations" time="0.003010334">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; createBackup &gt; should include system information in metadata" time="0.001905041">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; createBackup &gt; should generate unique backup IDs" time="0.014419">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; listBackups &gt; should list all created backups" time="0.017796792">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; listBackups &gt; should return empty array when no backups exist" time="0.000431875">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; getBackup &gt; should retrieve specific backup by ID" time="0.003767125">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; getBackup &gt; should return null for non-existent backup" time="0.000333042">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; restoreBackup &gt; should restore configurations from backup" time="0.002941709">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; restoreBackup &gt; should handle partial restore when some apps are missing" time="0.00163425">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; restoreBackup &gt; should fail gracefully for non-existent backup" time="0.000274167">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; restoreBackup &gt; should create application directories if they don&apos;t exist" time="0.002538834">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; deleteBackup &gt; should delete backup and its metadata" time="0.001934042">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; deleteBackup &gt; should handle deletion of non-existent backup" time="0.000457666">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; error handling &gt; should handle backup creation errors gracefully" time="0.000830209">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; error handling &gt; should handle restore errors gracefully" time="0.001889375">
+        </testcase>
+        <testcase classname="src/config-manager/backup/manager.test.ts" name="BackupManager &gt; cross-platform support &gt; should handle Windows paths correctly" time="0.001526292">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/config-manager/transformers/base.test.ts" timestamp="2025-08-06T22:56:15.370Z" hostname="brians.macbook.pro.wifi.lan" tests="11" failures="0" errors="0" skipped="0" time="0.003910958">
+        <testcase classname="src/config-manager/transformers/base.test.ts" name="StandardTransformer &gt; validation &gt; should validate stdio transport with command" time="0.001273791">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/base.test.ts" name="StandardTransformer &gt; validation &gt; should validate sse transport with url" time="0.000132125">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/base.test.ts" name="StandardTransformer &gt; validation &gt; should validate http transport with url" time="0.000100959">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/base.test.ts" name="StandardTransformer &gt; validation &gt; should reject stdio transport without command" time="0.000433208">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/base.test.ts" name="StandardTransformer &gt; validation &gt; should reject sse transport without url" time="0.000146125">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/base.test.ts" name="StandardTransformer &gt; validation &gt; should warn about command field in http/sse transport" time="0.000121667">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/base.test.ts" name="StandardTransformer &gt; validation &gt; should reject invalid transport type" time="0.000099375">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/base.test.ts" name="StandardTransformer &gt; toStandard &gt; should pass through standard format" time="0.000337708">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/base.test.ts" name="StandardTransformer &gt; toStandard &gt; should wrap bare server objects" time="0.0000755">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/base.test.ts" name="StandardTransformer &gt; fromStandard &gt; should pass through standard format without existingConfig" time="0.000116292">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/base.test.ts" name="StandardTransformer &gt; fromStandard &gt; should pass through standard format with existingConfig (ignored)" time="0.000068709">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/config-manager/transformers/claude-code.test.ts" timestamp="2025-08-06T22:56:15.371Z" hostname="brians.macbook.pro.wifi.lan" tests="15" failures="0" errors="0" skipped="0" time="0.004119">
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; toStandard &gt; should extract mcpServers from Claude Code format" time="0.001502084">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; toStandard &gt; should handle config without mcpServers" time="0.000111833">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; toStandard &gt; should handle empty mcpServers" time="0.000084166">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; fromStandard &gt; should preserve existing config when provided" time="0.000401625">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; fromStandard &gt; should create minimal config when no existing config provided" time="0.00011275">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; fromStandard &gt; should handle empty mcpServers" time="0.000115209">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; fromStandard &gt; should handle undefined mcpServers" time="0.0000785">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; validate &gt; should validate correct Claude Code config" time="0.000092833">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; validate &gt; should validate config without mcpServers" time="0.000062958">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; validate &gt; should reject non-object config" time="0.000389">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; validate &gt; should reject invalid mcpServers type" time="0.00008125">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; validate &gt; should validate minimal config" time="0.000058125">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; Server replacement &gt; should replace servers with new mcpServers" time="0.000289167">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; Edge cases &gt; should handle deeply nested config preservation" time="0.000063083">
+        </testcase>
+        <testcase classname="src/config-manager/transformers/claude-code.test.ts" name="ClaudeCodeTransformer &gt; Edge cases &gt; should handle arrays in existing config" time="0.000066833">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/scripts/claude-code/setup.demo.test.ts" timestamp="2025-08-06T22:56:15.373Z" hostname="brians.macbook.pro.wifi.lan" tests="2" failures="0" errors="0" skipped="0" time="0.005083292">
+        <testcase classname="src/scripts/claude-code/setup.demo.test.ts" name="Claude Code Setup - Installation Modes Demo &gt; should show global installation flow" time="0.002277084">
+            <system-out>
+
+=== GLOBAL INSTALLATION OUTPUT ===
+🔍 [DRY RUN MODE] - No changes will be made
+🌍 Installing globally to: ~/.claude.json
+⚠️  No .claude.json found in home directory
+
+&gt; To use HyperTool with Claude Code:
+1. Create a .claude.json file in home directory
+2. Add your MCP server configurations
+3. Run this installer again
+
+&gt; Example .claude.json:
+$ {
+  &quot;mcpServers&quot;: {
+    &quot;git&quot;: {
+      &quot;type&quot;: &quot;stdio&quot;,
+      &quot;command&quot;: &quot;git-mcp-server&quot;
+    }
+  }
+}
+[DRY RUN] Would prompt to create a basic .claude.json file
+[DRY RUN] Would create basic .claude.json at /Users/brian/.claude.json
+[DRY RUN] Would ensure directory exists: ~/.claude/
+[DRY RUN] Would install slash commands to: .claude/commands/ht/
+🔍 [DRY RUN] Installation simulation complete
+No actual changes were made to your system.
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.demo.test.ts" name="Claude Code Setup - Installation Modes Demo &gt; should show local installation flow" time="0.002016708">
+            <system-out>
+
+=== LOCAL INSTALLATION OUTPUT ===
+Note: In dry run mode, it defaults to global installation.
+In actual use, when user selects &apos;local&apos;, it would show:
+📁 Installing to project: /path/to/project
+⚠️  No .mcp.json found in current directory
+
+🔍 [DRY RUN MODE] - No changes will be made
+[DRY RUN] Would prompt for installation scope (global vs local)
+🌍 Installing globally to: ~/.claude.json
+⚠️  No .claude.json found in home directory
+
+&gt; To use HyperTool with Claude Code:
+1. Create a .claude.json file in home directory
+2. Add your MCP server configurations
+3. Run this installer again
+
+&gt; Example .claude.json:
+$ {
+  &quot;mcpServers&quot;: {
+    &quot;git&quot;: {
+      &quot;type&quot;: &quot;stdio&quot;,
+      &quot;command&quot;: &quot;git-mcp-server&quot;
+    }
+  }
+}
+[DRY RUN] Would prompt to create a basic .claude.json file
+[DRY RUN] Would create basic .claude.json at /Users/brian/.claude.json
+[DRY RUN] Would ensure directory exists: ~/.claude/
+[DRY RUN] Would install slash commands to: .claude/commands/ht/
+🔍 [DRY RUN] Installation simulation complete
+No actual changes were made to your system.
+
+            </system-out>
+        </testcase>
+    </testsuite>
+    <testsuite name="src/scripts/claude-code/setup.global-local.test.ts" timestamp="2025-08-06T22:56:15.374Z" hostname="brians.macbook.pro.wifi.lan" tests="9" failures="0" errors="0" skipped="0" time="0.007467">
+        <testcase classname="src/scripts/claude-code/setup.global-local.test.ts" name="ClaudeCodeSetup - Global vs Local Installation &gt; Installation Scope Selection &gt; should prompt for installation scope when in a valid project directory" time="0.002815709">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.global-local.test.ts" name="ClaudeCodeSetup - Global vs Local Installation &gt; Installation Scope Selection &gt; should install globally without prompting when not in a project directory" time="0.000566375">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.global-local.test.ts" name="ClaudeCodeSetup - Global vs Local Installation &gt; Installation Scope Selection &gt; should use correct paths for global installation" time="0.000770833">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.global-local.test.ts" name="ClaudeCodeSetup - Global vs Local Installation &gt; Installation Scope Selection &gt; should use correct paths for local installation" time="0.000487083">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.global-local.test.ts" name="ClaudeCodeSetup - Global vs Local Installation &gt; External MCP Import &gt; should detect and offer to import external MCPs" time="0.000628875">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.global-local.test.ts" name="ClaudeCodeSetup - Global vs Local Installation &gt; External MCP Import &gt; should not show import prompt if no external MCPs found" time="0.000491625">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.global-local.test.ts" name="ClaudeCodeSetup - Global vs Local Installation &gt; External MCP Import &gt; should skip already imported MCPs" time="0.000389209">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.global-local.test.ts" name="ClaudeCodeSetup - Global vs Local Installation &gt; Dry Run Mode &gt; should not create files in dry run mode" time="0.00038925">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.global-local.test.ts" name="ClaudeCodeSetup - Global vs Local Installation &gt; Dry Run Mode &gt; should simulate prompts in dry run mode" time="0.000387875">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/scripts/claude-code/setup.test.ts" timestamp="2025-08-06T22:56:15.375Z" hostname="brians.macbook.pro.wifi.lan" tests="10" failures="0" errors="0" skipped="0" time="0.007353708">
+        <testcase classname="src/scripts/claude-code/setup.test.ts" name="Claude Code Integration Setup &gt; ClaudeCodeSetup &gt; should create global .claude/commands/ht directory when installing globally" time="0.003051833">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.test.ts" name="Claude Code Integration Setup &gt; ClaudeCodeSetup &gt; should generate and write all command files" time="0.000497542">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.test.ts" name="Claude Code Integration Setup &gt; ClaudeCodeSetup &gt; should clean and recreate ht commands directory" time="0.000458959">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.test.ts" name="Claude Code Integration Setup &gt; ClaudeCodeSetup &gt; should skip installation when user declines" time="0.000348125">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.test.ts" name="Claude Code Integration Setup &gt; ClaudeCodeSetup &gt; should handle file system errors gracefully" time="0.000922459">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.test.ts" name="Claude Code Integration Setup &gt; createCommandTemplates &gt; should generate all required command templates" time="0.00042325">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.test.ts" name="Claude Code Integration Setup &gt; createCommandTemplates &gt; should generate valid markdown content for each template" time="0.000566041">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.test.ts" name="Claude Code Integration Setup &gt; createCommandTemplates &gt; should include correct MCP tool references" time="0.0001265">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.test.ts" name="Claude Code Integration Setup &gt; createCommandTemplates &gt; should provide usage examples for each command" time="0.000229792">
+        </testcase>
+        <testcase classname="src/scripts/claude-code/setup.test.ts" name="Claude Code Integration Setup &gt; createCommandTemplates &gt; should include cross-references between related commands" time="0.000164708">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/scripts/shared/externalMcpDetector.test.ts" timestamp="2025-08-06T22:56:15.376Z" hostname="brians.macbook.pro.wifi.lan" tests="8" failures="0" errors="0" skipped="0" time="0.003897166">
+        <testcase classname="src/scripts/shared/externalMcpDetector.test.ts" name="externalMcpDetector &gt; detectExternalMCPs &gt; should detect MCPs from Claude Code global config" time="0.002087875">
+        </testcase>
+        <testcase classname="src/scripts/shared/externalMcpDetector.test.ts" name="externalMcpDetector &gt; detectExternalMCPs &gt; should skip hypertool MCP servers" time="0.000311333">
+        </testcase>
+        <testcase classname="src/scripts/shared/externalMcpDetector.test.ts" name="externalMcpDetector &gt; detectExternalMCPs &gt; should detect MCPs from multiple sources" time="0.000268166">
+        </testcase>
+        <testcase classname="src/scripts/shared/externalMcpDetector.test.ts" name="externalMcpDetector &gt; detectExternalMCPs &gt; should handle missing config files gracefully" time="0.000141875">
+        </testcase>
+        <testcase classname="src/scripts/shared/externalMcpDetector.test.ts" name="externalMcpDetector &gt; detectExternalMCPs &gt; should handle read errors gracefully" time="0.00020325">
+        </testcase>
+        <testcase classname="src/scripts/shared/externalMcpDetector.test.ts" name="externalMcpDetector &gt; formatExternalMCPsMessage &gt; should return empty string for no MCPs" time="0.000118125">
+        </testcase>
+        <testcase classname="src/scripts/shared/externalMcpDetector.test.ts" name="externalMcpDetector &gt; formatExternalMCPsMessage &gt; should format single source correctly" time="0.000164292">
+        </testcase>
+        <testcase classname="src/scripts/shared/externalMcpDetector.test.ts" name="externalMcpDetector &gt; formatExternalMCPsMessage &gt; should format multiple sources correctly" time="0.000095292">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/utils/logger/logging.integration.test.ts" timestamp="2025-08-06T22:56:15.377Z" hostname="brians.macbook.pro.wifi.lan" tests="14" failures="0" errors="0" skipped="0" time="0.316017916">
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Feature Flag Integration &gt; should use Pino implementation by default" time="0.004361292">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Feature Flag Integration &gt; should switch to mcp-logger when feature flag is enabled" time="0.001350708">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Feature Flag Integration &gt; should respect environment variable" time="0.00114575">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Feature Flag Integration &gt; should handle falsy environment variable values" time="0.001581">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Memory Leak Prevention &gt; should prevent EventEmitter warnings with many child loggers" time="0.006579833">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Memory Leak Prevention &gt; should reuse cached child loggers for identical bindings" time="0.005737042">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Backward Compatibility &gt; should maintain Logger class API" time="0.00118375">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Backward Compatibility &gt; should handle Error objects in context" time="0.012190167">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Backward Compatibility &gt; should handle various context types" time="0.003319042">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Configuration &gt; should support different log levels" time="0.003583459">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Configuration &gt; should handle LOG_FORMAT environment variable" time="0.00352025">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Diagnostics &gt; should provide diagnostic information" time="0.007448375">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Diagnostics &gt; should provide cache statistics for Pino implementation" time="0.003015292">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.integration.test.ts" name="Enhanced Logging System - Integration Tests &gt; Implementation Switching &gt; should not leak memory when switching between implementations" time="0.257933209">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/utils/logger/logging.test.ts" timestamp="2025-08-06T22:56:15.379Z" hostname="brians.macbook.pro.wifi.lan" tests="27" failures="0" errors="0" skipped="0" time="2.51973325">
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Feature Flag Integration &gt; should use PinoLogger by default" time="0.003077917">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Feature Flag Integration &gt; should use PinoLogger when feature flag is explicitly disabled" time="0.00100775">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Feature Flag Integration &gt; should use McpLoggerWrapper when feature flag is enabled" time="0.000590291">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Feature Flag Integration &gt; should respect environment variable for feature flag" time="0.000903375">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Feature Flag Integration &gt; should handle various truthy values for environment variable" time="0.01412175">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Feature Flag Integration &gt; should handle falsy values for environment variable" time="0.001694375">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Memory Leak Prevention &gt; should cache child loggers to prevent EventEmitter warnings" time="0.016002459">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Memory Leak Prevention &gt; should limit cache size to prevent unbounded growth" time="0.005167375">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Memory Leak Prevention &gt; should reuse cached child loggers for same bindings" time="0.006879167">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Backward Compatibility &gt; should maintain Logger class API" time="0.003147417">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Backward Compatibility &gt; should support legacy pino property access" time="0.003865458">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Backward Compatibility &gt; should support legacy mcp property access" time="0.001576958">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Backward Compatibility &gt; should handle child logger creation with various bindings" time="0.001933166">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Error Handling &gt; should handle Error objects in context properly" time="0.009067667">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Error Handling &gt; should handle various context types" time="0.00153675">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Error Handling &gt; should gracefully handle logger initialization failures" time="2.399010417">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Configuration &gt; should support different log levels" time="0.002455834">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Configuration &gt; should support configuration updates" time="0.005374084">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Configuration &gt; should handle LOG_FORMAT environment variable" time="0.002879416">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Runtime Options &gt; should support stdio transport mode" time="0.00120525">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Runtime Options &gt; should support http transport mode" time="0.008267">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Runtime Options &gt; should override log level from runtime options" time="0.008576">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Global Logger Management &gt; should maintain single global logger instance" time="0.002049708">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Global Logger Management &gt; should create new global logger when config changes" time="0.004838791">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Global Logger Management &gt; should reset global logger state" time="0.003461959">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Diagnostics &gt; should provide diagnostic information" time="0.003743917">
+        </testcase>
+        <testcase classname="src/utils/logger/logging.test.ts" name="Enhanced Logging System &gt; Diagnostics &gt; should provide cache statistics for Pino implementation" time="0.002555583">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/utils/logger/memoryLeak.perf.test.ts" timestamp="2025-08-06T22:56:15.382Z" hostname="brians.macbook.pro.wifi.lan" tests="10" failures="0" errors="0" skipped="0" time="2.213944917">
+        <testcase classname="src/utils/logger/memoryLeak.perf.test.ts" name="Memory Leak Prevention &gt; Child Logger Caching &gt; should prevent EventEmitter memory leaks with many child loggers (Pino)" time="0.005720459">
+        </testcase>
+        <testcase classname="src/utils/logger/memoryLeak.perf.test.ts" name="Memory Leak Prevention &gt; Child Logger Caching &gt; should prevent EventEmitter memory leaks with many child loggers (mcp-logger)" time="0.0201065">
+        </testcase>
+        <testcase classname="src/utils/logger/memoryLeak.perf.test.ts" name="Memory Leak Prevention &gt; Child Logger Caching &gt; should reuse cached child loggers for identical bindings" time="0.005014458">
+        </testcase>
+        <testcase classname="src/utils/logger/memoryLeak.perf.test.ts" name="Memory Leak Prevention &gt; Child Logger Caching &gt; should create different cached instances for different bindings" time="0.006950583">
+        </testcase>
+        <testcase classname="src/utils/logger/memoryLeak.perf.test.ts" name="Memory Leak Prevention &gt; Child Logger Caching &gt; should handle cache size limits gracefully" time="0.023094625">
+        </testcase>
+        <testcase classname="src/utils/logger/memoryLeak.perf.test.ts" name="Memory Leak Prevention &gt; Transport Management &gt; should reuse shared transports to prevent resource leaks" time="0.010392625">
+        </testcase>
+        <testcase classname="src/utils/logger/memoryLeak.perf.test.ts" name="Memory Leak Prevention &gt; Transport Management &gt; should handle stdio vs http transport modes without leaks" time="0.0289195">
+        </testcase>
+        <testcase classname="src/utils/logger/memoryLeak.perf.test.ts" name="Memory Leak Prevention &gt; Memory Usage Pattern Testing &gt; should maintain stable memory usage with repeated child logger creation" time="0.016004708">
+        </testcase>
+        <testcase classname="src/utils/logger/memoryLeak.perf.test.ts" name="Memory Leak Prevention &gt; Memory Usage Pattern Testing &gt; should handle rapid child logger creation and destruction" time="0.010189584">
+        </testcase>
+        <testcase classname="src/utils/logger/memoryLeak.perf.test.ts" name="Memory Leak Prevention &gt; Feature Flag Switching &gt; should not leak memory when switching between implementations" time="0.705308375">
+        </testcase>
+    </testsuite>
+</testsuites>

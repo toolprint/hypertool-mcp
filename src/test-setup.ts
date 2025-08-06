@@ -45,7 +45,9 @@ vi.mock("./utils/logging.js", () => {
     getLogger: vi.fn(() => mockLogger),
     getLoggerAsync: vi.fn(async () => mockLogger),
     createChildLogger: vi.fn((bindings) => mockLogger.child(bindings)),
-    createChildLoggerAsync: vi.fn(async (bindings) => mockLogger.child(bindings)),
+    createChildLoggerAsync: vi.fn(async (bindings) =>
+      mockLogger.child(bindings)
+    ),
     DEFAULT_LOGGING_CONFIG: {
       level: "info",
       enableConsole: true,
@@ -66,8 +68,8 @@ vi.mock("./utils/logging.js", () => {
       cacheStats: {
         childLoggerCount: 0,
         cacheSize: 0,
-        cacheKeys: []
-      }
+        cacheKeys: [],
+      },
     })),
     resetGlobalLogger: vi.fn(),
     forceSetMcpLoggerEnabled: vi.fn(),

@@ -147,7 +147,7 @@ export class McpHttpServer {
             `Streamable HTTP session initialized with ID: ${sessionId}`
           );
           this.transports[sessionId] = transport;
-          
+
           // Set up session keep-alive (reset timer on each request)
           this.resetSessionTimer(sessionId);
         },
@@ -249,12 +249,15 @@ export class McpHttpServer {
   private resetSessionTimer(sessionId: string): void {
     // Clear existing timer
     this.clearSessionTimer(sessionId);
-    
+
     // Set new timer (30 minutes session timeout)
-    this.sessionTimers[sessionId] = setTimeout(() => {
-      logger.info(`Session ${sessionId} timed out, cleaning up`);
-      this.cleanupSession(sessionId);
-    }, 30 * 60 * 1000); // 30 minutes
+    this.sessionTimers[sessionId] = setTimeout(
+      () => {
+        logger.info(`Session ${sessionId} timed out, cleaning up`);
+        this.cleanupSession(sessionId);
+      },
+      30 * 60 * 1000
+    ); // 30 minutes
   }
 
   /**

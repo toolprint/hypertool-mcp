@@ -4,12 +4,17 @@
  */
 
 import { RuntimeOptions } from "../types/runtime.js";
-import { LoggerInterface, LoggingConfig, LogContext, LogLevel } from "./logger/interfaces.js";
+import {
+  LoggerInterface,
+  LoggingConfig,
+  LogContext,
+  LogLevel,
+} from "./logger/interfaces.js";
 import { DEFAULT_PINO_LOGGING_CONFIG } from "./logger/pinoLogger.js";
-import { 
-  getLoggerFactory, 
-  createLoggerWithFeatureFlag, 
-  createLoggerSyncWithFeatureFlag 
+import {
+  getLoggerFactory,
+  createLoggerWithFeatureFlag,
+  createLoggerSyncWithFeatureFlag,
 } from "./logger/factory.js";
 
 // Re-export types for backward compatibility
@@ -21,15 +26,20 @@ export const DEFAULT_LOGGING_CONFIG = DEFAULT_PINO_LOGGING_CONFIG;
 /**
  * Create logging configuration based on runtime options and environment
  */
-export function createLoggingConfig(runtimeOptions?: RuntimeOptions): LoggingConfig {
+export function createLoggingConfig(
+  runtimeOptions?: RuntimeOptions
+): LoggingConfig {
   // Determine format from environment variable or default to pretty
-  const format = (process.env.LOG_FORMAT === "json" ? "json" : "pretty") as "json" | "pretty";
-  
+  const format = (process.env.LOG_FORMAT === "json" ? "json" : "pretty") as
+    | "json"
+    | "pretty";
+
   return {
     ...DEFAULT_LOGGING_CONFIG,
     format,
     // Override level if provided in runtime options
-    level: (runtimeOptions?.logLevel as LogLevel) || DEFAULT_LOGGING_CONFIG.level,
+    level:
+      (runtimeOptions?.logLevel as LogLevel) || DEFAULT_LOGGING_CONFIG.level,
   };
 }
 
@@ -41,9 +51,15 @@ export class Logger implements LoggerInterface {
   private implementation: LoggerInterface;
   private childLoggerCache = new Map<string, Logger>();
 
-  constructor(config: Partial<LoggingConfig> = {}, runtimeOptions?: RuntimeOptions) {
+  constructor(
+    config: Partial<LoggingConfig> = {},
+    runtimeOptions?: RuntimeOptions
+  ) {
     // Use synchronous factory method for immediate availability
-    this.implementation = createLoggerSyncWithFeatureFlag(config, runtimeOptions);
+    this.implementation = createLoggerSyncWithFeatureFlag(
+      config,
+      runtimeOptions
+    );
   }
 
   // Delegate all methods to the underlying implementation
@@ -74,20 +90,20 @@ export class Logger implements LoggerInterface {
   child(bindings: { module?: string; [key: string]: unknown }): Logger {
     // Create cache key from bindings
     const cacheKey = JSON.stringify(bindings);
-    
+
     // Check cache first
     if (this.childLoggerCache.has(cacheKey)) {
       return this.childLoggerCache.get(cacheKey)!;
     }
-    
+
     // Create new child logger
     const childImplementation = this.implementation.child(bindings);
     const childLogger = new Logger();
     (childLogger as any).implementation = childImplementation;
-    
+
     // Cache the child logger
     this.childLoggerCache.set(cacheKey, childLogger);
-    
+
     // Implement cache size limit to prevent unbounded growth
     if (this.childLoggerCache.size > 100) {
       const firstKey = this.childLoggerCache.keys().next().value;
@@ -95,7 +111,7 @@ export class Logger implements LoggerInterface {
         this.childLoggerCache.delete(firstKey);
       }
     }
-    
+
     return childLogger;
   }
 
@@ -123,7 +139,7 @@ export class Logger implements LoggerInterface {
     return {
       childLoggerCount: this.childLoggerCache.size,
       cacheSize: this.childLoggerCache.size,
-      cacheKeys: Array.from(this.childLoggerCache.keys())
+      cacheKeys: Array.from(this.childLoggerCache.keys()),
     };
   }
 }
@@ -136,14 +152,17 @@ let globalRuntimeOptions: RuntimeOptions | undefined = undefined;
 /**
  * Check if two logging configurations are equivalent
  */
-function areConfigsEquivalent(config1: Partial<LoggingConfig> | null, config2: Partial<LoggingConfig> | null): boolean {
+function areConfigsEquivalent(
+  config1: Partial<LoggingConfig> | null,
+  config2: Partial<LoggingConfig> | null
+): boolean {
   if (config1 === config2) return true;
   if (!config1 || !config2) return false;
-  
+
   // Compare relevant config properties
   const finalConfig1 = { ...DEFAULT_LOGGING_CONFIG, ...config1 };
   const finalConfig2 = { ...DEFAULT_LOGGING_CONFIG, ...config2 };
-  
+
   return (
     finalConfig1.level === finalConfig2.level &&
     finalConfig1.enableConsole === finalConfig2.enableConsole &&
@@ -156,10 +175,13 @@ function areConfigsEquivalent(config1: Partial<LoggingConfig> | null, config2: P
 /**
  * Check if runtime options are equivalent for logging purposes
  */
-function areRuntimeOptionsEquivalent(opt1?: RuntimeOptions, opt2?: RuntimeOptions): boolean {
+function areRuntimeOptionsEquivalent(
+  opt1?: RuntimeOptions,
+  opt2?: RuntimeOptions
+): boolean {
   if (opt1 === opt2) return true;
   if (!opt1 || !opt2) return !opt1 && !opt2;
-  
+
   return (
     opt1.transport === opt2.transport &&
     opt1.logLevel === opt2.logLevel &&
@@ -170,13 +192,18 @@ function areRuntimeOptionsEquivalent(opt1?: RuntimeOptions, opt2?: RuntimeOption
 /**
  * Get or create the global logger instance
  */
-export function getLogger(config?: Partial<LoggingConfig>, runtimeOptions?: RuntimeOptions): Logger {
+export function getLogger(
+  config?: Partial<LoggingConfig>,
+  runtimeOptions?: RuntimeOptions
+): Logger {
   const finalConfig = config || createLoggingConfig(runtimeOptions);
-  
+
   // Check if we can reuse the existing global logger
-  if (globalLogger && 
-      areConfigsEquivalent(selectedLoggingConfig, finalConfig) &&
-      areRuntimeOptionsEquivalent(globalRuntimeOptions, runtimeOptions)) {
+  if (
+    globalLogger &&
+    areConfigsEquivalent(selectedLoggingConfig, finalConfig) &&
+    areRuntimeOptionsEquivalent(globalRuntimeOptions, runtimeOptions)
+  ) {
     return globalLogger;
   }
 
@@ -184,25 +211,31 @@ export function getLogger(config?: Partial<LoggingConfig>, runtimeOptions?: Runt
   globalLogger = new Logger(finalConfig, runtimeOptions);
   selectedLoggingConfig = finalConfig;
   globalRuntimeOptions = runtimeOptions;
-  
+
   return globalLogger;
 }
 
 /**
  * Async version of getLogger that properly initializes feature flags
  */
-export async function getLoggerAsync(config?: Partial<LoggingConfig>, runtimeOptions?: RuntimeOptions): Promise<Logger> {
+export async function getLoggerAsync(
+  config?: Partial<LoggingConfig>,
+  runtimeOptions?: RuntimeOptions
+): Promise<Logger> {
   const finalConfig = config || createLoggingConfig(runtimeOptions);
-  const implementation = await createLoggerWithFeatureFlag(finalConfig, runtimeOptions);
-  
+  const implementation = await createLoggerWithFeatureFlag(
+    finalConfig,
+    runtimeOptions
+  );
+
   const logger = new Logger();
   (logger as any).implementation = implementation;
-  
+
   if (config || runtimeOptions) {
     globalLogger = logger;
     selectedLoggingConfig = finalConfig;
   }
-  
+
   return logger;
 }
 
@@ -222,10 +255,10 @@ export function createChildLogger(bindings: { module: string }): Logger {
   if (!globalLogger) {
     const config = createLoggingConfig();
     // For early initialization, assume stdio transport (most common case)
-    const runtimeOptions: RuntimeOptions = { 
-      transport: 'stdio', 
-      debug: false, 
-      insecure: false 
+    const runtimeOptions: RuntimeOptions = {
+      transport: "stdio",
+      debug: false,
+      insecure: false,
     };
     globalLogger = new Logger(config, runtimeOptions);
     selectedLoggingConfig = config;
@@ -236,13 +269,15 @@ export function createChildLogger(bindings: { module: string }): Logger {
 /**
  * Async version of createChildLogger that properly initializes feature flags
  */
-export async function createChildLoggerAsync(bindings: { module: string }): Promise<Logger> {
+export async function createChildLoggerAsync(bindings: {
+  module: string;
+}): Promise<Logger> {
   if (!globalLogger) {
     const config = createLoggingConfig();
-    const runtimeOptions: RuntimeOptions = { 
-      transport: 'stdio', 
-      debug: false, 
-      insecure: false 
+    const runtimeOptions: RuntimeOptions = {
+      transport: "stdio",
+      debug: false,
+      insecure: false,
     };
     globalLogger = await getLoggerAsync(config, runtimeOptions);
     selectedLoggingConfig = config;
@@ -261,25 +296,25 @@ export function getLoggerDiagnostics(): {
 } {
   const result: any = {
     hasGlobalLogger: globalLogger !== null,
-    implementationType: 'unknown'
+    implementationType: "unknown",
   };
-  
+
   if (globalLogger) {
     const impl = (globalLogger as any).implementation;
-    
+
     // Detect implementation type
-    if (impl.constructor.name === 'PinoLogger') {
-      result.implementationType = 'pino';
-    } else if (impl.constructor.name === 'McpLoggerWrapper') {
-      result.implementationType = 'mcp-logger';
+    if (impl.constructor.name === "PinoLogger") {
+      result.implementationType = "pino";
+    } else if (impl.constructor.name === "McpLoggerWrapper") {
+      result.implementationType = "mcp-logger";
     }
-    
+
     // Get cache stats from the Logger wrapper itself
-    if (typeof globalLogger.getCacheStats === 'function') {
+    if (typeof globalLogger.getCacheStats === "function") {
       result.cacheStats = globalLogger.getCacheStats();
     }
   }
-  
+
   return result;
 }
 
@@ -290,18 +325,20 @@ export function resetGlobalLogger(): void {
   globalLogger = null;
   selectedLoggingConfig = null;
   globalRuntimeOptions = undefined;
-  
+
   // Reset factory cache
   const factory = getLoggerFactory();
   factory.resetCache();
-  
+
   // Clear Pino instance cache
   // Dynamic import to avoid circular dependency
-  import('./logger/pinoLogger.js').then(({ PinoLogger }) => {
-    PinoLogger.clearInstanceCache();
-  }).catch(() => {
-    // Ignore errors during cache clearing
-  });
+  import("./logger/pinoLogger.js")
+    .then(({ PinoLogger }) => {
+      PinoLogger.clearInstanceCache();
+    })
+    .catch(() => {
+      // Ignore errors during cache clearing
+    });
 }
 
 /**

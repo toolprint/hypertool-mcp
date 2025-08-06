@@ -30,20 +30,29 @@ export class AppDetectionStep implements WizardStep {
       output.info("  • Claude Code");
       output.displaySpaceBuffer(1);
 
-      // Ask if they want to continue anyway
-      if (!state.nonInteractive) {
-        const { shouldContinue } = await inquirer.prompt([
-          {
-            type: "confirm",
-            name: "shouldContinue",
-            message: "Continue with manual setup?",
-            default: false,
-          },
-        ]);
-
-        if (!shouldContinue) {
+      // In non-interactive mode, check if specific apps were requested
+      if (state.nonInteractive) {
+        const requestedApps = (state as any).apps;
+        if (requestedApps && requestedApps.length > 0) {
+          output.error("None of the requested applications were detected");
           return { ...state, cancelled: true };
         }
+        // If no specific apps requested, continue with empty list
+        return { ...state, detectedApps: [] };
+      }
+
+      // Ask if they want to continue anyway (interactive mode)
+      const { shouldContinue } = await inquirer.prompt([
+        {
+          type: "confirm",
+          name: "shouldContinue",
+          message: "Continue with manual setup?",
+          default: false,
+        },
+      ]);
+
+      if (!shouldContinue) {
+        return { ...state, cancelled: true };
       }
 
       return { ...state, detectedApps: [] };

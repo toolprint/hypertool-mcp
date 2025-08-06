@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import * as path from "path";
 import * as fs from "fs/promises";
-import { discoverMcpConfigFile, loadMcpConfigFile } from "./mcpConfigFileLoader.js";
+import {
+  discoverMcpConfigFile,
+  loadMcpConfigFile,
+} from "./mcpConfigFileLoader.js";
 import { loadUserPreferences, saveUserPreferences } from "./preferenceStore.js";
 import { MCPConfigParser } from "./mcpConfigParser.js";
 
@@ -22,14 +25,14 @@ describe("mcpConfigFileLoader", () => {
     mockUserPreferences = { mcpConfigPath: undefined };
 
     vi.clearAllMocks();
-    
+
     // Default mock implementations
     mockLoadUserPreferences.mockResolvedValue(mockUserPreferences);
     mockSaveUserPreferences.mockResolvedValue(undefined);
-    
+
     // Mock MCPConfigParser
     const mockParserInstance = {
-      parseFile: vi.fn()
+      parseFile: vi.fn(),
     };
     mockMCPConfigParser.mockImplementation(() => mockParserInstance as any);
   });
@@ -143,7 +146,7 @@ describe("mcpConfigFileLoader", () => {
       expect(mockLoadUserPreferences).toHaveBeenCalled();
       expect(mockSaveUserPreferences).toHaveBeenCalledWith(
         expect.objectContaining({
-          mcpConfigPath: expectedAbsolutePath
+          mcpConfigPath: expectedAbsolutePath,
         })
       );
     });
@@ -169,12 +172,14 @@ describe("mcpConfigFileLoader", () => {
   describe("loadMcpConfigFile", () => {
     it("should load config file successfully", async () => {
       const configPath = "/path/to/config.json";
-      const mockConfig = { mcpServers: { test: { type: "stdio", command: "test" } } };
-      
+      const mockConfig = {
+        mcpServers: { test: { type: "stdio", command: "test" } },
+      };
+
       const mockParserInstance = new MCPConfigParser();
       vi.mocked(mockParserInstance.parseFile).mockResolvedValue({
         success: true,
-        config: mockConfig
+        config: mockConfig,
       });
 
       const result = await loadMcpConfigFile(configPath);
@@ -183,32 +188,34 @@ describe("mcpConfigFileLoader", () => {
         ...mockConfig,
         _metadata: expect.objectContaining({
           path: configPath,
-          loadedAt: expect.any(String)
-        })
+          loadedAt: expect.any(String),
+        }),
       });
     });
 
     it("should handle parser errors", async () => {
       const configPath = "/path/to/config.json";
-      
+
       const mockParserInstance = new MCPConfigParser();
       vi.mocked(mockParserInstance.parseFile).mockResolvedValue({
         success: false,
-        error: "Parse error"
+        error: "Parse error",
       });
 
-      await expect(loadMcpConfigFile(configPath)).rejects.toThrow("Failed to parse MCP config: Parse error");
+      await expect(loadMcpConfigFile(configPath)).rejects.toThrow(
+        "Failed to parse MCP config: Parse error"
+      );
     });
   });
 
   describe("Edge cases", () => {
     it("should handle test environment config override", async () => {
       const testConfigPath = "/test/config.json";
-      
+
       // Set environment variables
       const originalNodeEnv = process.env.NODE_ENV;
       const originalTestConfig = process.env.HYPERTOOL_TEST_CONFIG;
-      
+
       try {
         process.env.NODE_ENV = "test";
         process.env.HYPERTOOL_TEST_CONFIG = testConfigPath;

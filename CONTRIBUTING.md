@@ -96,7 +96,7 @@ npm run test:coverage
    ```
 
 6. **Add a changeset** to describe your changes (see changeset guidelines below)
-7. Commit your changes (see commit message guidelines below)  
+7. Commit your changes (see commit message guidelines below)
 8. Push to your fork and submit a pull request
 
 ## Coding Standards
@@ -175,7 +175,7 @@ We use [Changesets](https://github.com/changesets/changesets) for version manage
 
 **Always add a changeset when your PR includes:**
 - 🐛 Bug fixes → **patch**
-- ✨ New features → **minor** 
+- ✨ New features → **minor**
 - 💥 Breaking changes → **major**
 - 🔧 Internal improvements that affect users
 
@@ -203,12 +203,12 @@ We use [Changesets](https://github.com/changesets/changesets) for version manage
    ```bash
    # Good examples:
    "Add support for custom toolset configurations"
-   "Fix connection timeout handling in MCP clients"  
+   "Fix connection timeout handling in MCP clients"
    "Breaking: Rename 'server' config key to 'mcpServer'"
-   
+
    # Less helpful:
    "Fix bug"
-   "Update code" 
+   "Update code"
    "Changes"
    ```
 
@@ -224,7 +224,7 @@ We use [Changesets](https://github.com/changesets/changesets) for version manage
 # Create new changeset (interactive)
 just changeset
 
-# Check current status  
+# Check current status
 just changeset-status
 
 # Preview version changes

@@ -32,7 +32,8 @@ export class FileServerConfigRecordRepository
   private parser: MCPConfigParser;
 
   constructor(basePath?: string) {
-    this.basePath = basePath || path.join(getHomeDir(), ".toolprint/hypertool-mcp");
+    this.basePath =
+      basePath || path.join(getHomeDir(), ".toolprint/hypertool-mcp");
     this.globalConfigPath = path.join(this.basePath, "mcp.json");
     this.perAppConfigDir = path.join(this.basePath, "mcp");
     this.parser = new MCPConfigParser({ validatePaths: false });
@@ -114,7 +115,9 @@ export class FileServerConfigRecordRepository
           try {
             const appConfig = await this.loadConfigFile(configPath);
             if (appConfig?.mcpServers) {
-              for (const [name, config] of Object.entries(appConfig.mcpServers)) {
+              for (const [name, config] of Object.entries(
+                appConfig.mcpServers
+              )) {
                 const serverConfig = config as ServerConfig;
                 servers.push({
                   id: this.generateServerId(`app:${appId}`, name),

@@ -86,7 +86,7 @@
   tools: [github, npm-tools, filesystem, template-generator]
   count: 6-8 tools
   use: "Initialize new projects with best practices"
-  
+
 "requirements-gathering":
   tools: [notion, miro, slack, calendar]
   count: 5-6 tools

@@ -16,7 +16,9 @@ import { isNedbEnabledAsync } from "../../../config/environment.js";
 /**
  * Calculate summary statistics from configuration data
  */
-export async function calculateSummaryStats(data: ConfigurationData): Promise<SummaryStats> {
+export async function calculateSummaryStats(
+  data: ConfigurationData
+): Promise<SummaryStats> {
   // Server statistics
   const serverStats = {
     total: data.servers.length,
@@ -205,7 +207,8 @@ export async function showMainMenu(
     {
       type: "list",
       name: "selection",
-      message: "What would you like to explore? (Use [Back] to navigate up, Ctrl+C to exit)",
+      message:
+        "What would you like to explore? (Use [Back] to navigate up, Ctrl+C to exit)",
       choices,
       pageSize: 15, // Increased page size for main menu
     },

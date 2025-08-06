@@ -17,7 +17,7 @@
       "type": "stdio",
       "command": "npx",
       "args": [
-        "-y", 
+        "-y",
         "@modelcontextprotocol/server-filesystem",
         "/tmp"
       ],
@@ -26,7 +26,7 @@
       }
     },
     "memory": {
-      "type": "stdio", 
+      "type": "stdio",
       "command": "npx",
       "args": [
         "-y",

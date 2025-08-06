@@ -52,7 +52,7 @@ function cleanupTimers() {
 beforeEach(() => {
   // Reset memfs quickly
   vol.reset();
-  
+
   // Clear vitest timers if fake
   if (vi.isFakeTimers && vi.isFakeTimers()) {
     vi.clearAllTimers();
@@ -63,15 +63,15 @@ beforeEach(() => {
 afterEach(() => {
   // Reset filesystem
   vol.reset();
-  
+
   // Clean timers
   cleanupTimers();
-  
+
   // Reset environment if it was used
   if (EnvironmentManager.hasInstance?.()) {
     EnvironmentManager.getInstance().reset();
   }
-  
+
   // Clear test-specific globals
   const globals = global as any;
   if (globals.__TEST_PLATFORM__) {
@@ -88,11 +88,11 @@ afterEach(() => {
 // Performance monitoring for slow tests
 if (process.env.TEST_PERF_MONITOR) {
   let testStartTime: number;
-  
+
   beforeEach(() => {
     testStartTime = Date.now();
   });
-  
+
   afterEach((context) => {
     const duration = Date.now() - testStartTime;
     if (duration > 1000) {

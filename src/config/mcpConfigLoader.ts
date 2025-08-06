@@ -89,7 +89,7 @@ export async function discoverMcpConfig(
   // Check if NeDB is enabled using the feature flag service
   const featureFlagService = getFeatureFlagService();
   await featureFlagService.initialize();
-  
+
   if (!featureFlagService.isNedbEnabled()) {
     logger.debug("NeDB disabled - using file-based configuration");
     return discoverMcpConfigFile(
@@ -203,7 +203,7 @@ export async function loadMcpConfig(
   // Check if NeDB is enabled using the feature flag service
   const featureFlagService = getFeatureFlagService();
   await featureFlagService.initialize();
-  
+
   if (!featureFlagService.isNedbEnabled()) {
     logger.debug("NeDB disabled - loading from file");
     return loadMcpConfigFile(configPath, configSource);

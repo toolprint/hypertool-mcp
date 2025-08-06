@@ -6,7 +6,7 @@ Based on Smithery's popular list and real usage data, here are major categories 
 
 ### 1. COMMUNICATION & COLLABORATION (Top Usage)
 - **Slack** - Team communication, most popular business tool
-- **Discord** - Developer communities, gaming, open source projects  
+- **Discord** - Developer communities, gaming, open source projects
 - **Microsoft Teams** - Enterprise collaboration
 - **Notion** - Documentation, wikis, knowledge management
 - **Zoom** - Video conferencing, meeting automation

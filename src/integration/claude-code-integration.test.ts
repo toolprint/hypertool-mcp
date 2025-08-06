@@ -316,7 +316,7 @@ describe("Claude Code Integration", () => {
 
       // Should match the original config exactly
       expect(restoredConfig).toEqual(realWorldClaudeConfig);
-      
+
       // Specific checks
       expect(restoredConfig.mcpServers).toHaveProperty("github-mcp");
       expect(restoredConfig.mcpServers).toHaveProperty("filesystem-mcp");
@@ -411,9 +411,7 @@ describe("Claude Code Integration", () => {
       expect(importResult.imported).not.toContain("claude-code");
 
       // Should not create any Claude Code config
-      await expect(
-        vol.promises.access(claudeConfigPath)
-      ).rejects.toThrow();
+      await expect(vol.promises.access(claudeConfigPath)).rejects.toThrow();
     });
 
     it("should handle permission errors gracefully", async () => {

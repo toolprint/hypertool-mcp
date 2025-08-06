@@ -72,10 +72,14 @@ export async function discoverMcpConfigFile(
   if (cliConfigPath) {
     // Resolve relative paths to absolute paths based on current working directory
     const resolvedPath = path.resolve(cliConfigPath);
-    logger.debug(`Checking CLI-provided config path: ${cliConfigPath} (resolved to: ${resolvedPath})`);
+    logger.debug(
+      `Checking CLI-provided config path: ${cliConfigPath} (resolved to: ${resolvedPath})`
+    );
 
     if (await fileExists(resolvedPath)) {
-      logger.info(`Using config from CLI: ${cliConfigPath} (resolved: ${resolvedPath})`);
+      logger.info(
+        `Using config from CLI: ${cliConfigPath} (resolved: ${resolvedPath})`
+      );
 
       // Update user preference if requested - store the resolved absolute path
       if (updatePreference) {

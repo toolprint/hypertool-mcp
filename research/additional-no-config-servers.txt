@@ -7,7 +7,7 @@
 - Features: Basic arithmetic operations
 - No configuration needed
 
-### 2. simonberner/mcp-server-calculator  
+### 2. simonberner/mcp-server-calculator
 - Basic math operations demo server
 - Simple add/subtract/multiply/divide
 - Local development friendly
@@ -39,7 +39,7 @@
 Total confirmed no-config servers: 7+
 1. everything (reference/test)
 2. fetch (web content)
-3. time (timezone utilities)  
+3. time (timezone utilities)
 4. dice (dice rolling)
 5. calculator (arithmetic - multiple implementations)
 6. filesystem (file operations)

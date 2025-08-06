@@ -57,12 +57,12 @@ function cleanupTimers() {
 beforeEach(() => {
   // Fast memfs reset
   vol.reset();
-  
+
   // Clear any lingering timers
   if (typeof vi !== 'undefined' && vi.isFakeTimers && vi.isFakeTimers()) {
     vi.clearAllTimers();
   }
-  
+
   // Clean up any real timers
   cleanupTimers();
 });
@@ -71,25 +71,25 @@ beforeEach(() => {
 afterEach(async () => {
   // Fast cleanup
   vol.reset();
-  
+
   // Reset any global test state
   if ((global as any).__TEST_PLATFORM__) {
     delete (global as any).__TEST_PLATFORM__;
   }
-  
+
   // Clear any test timers
   if (typeof vi !== 'undefined' && vi.isFakeTimers && vi.isFakeTimers()) {
     vi.clearAllTimers();
   }
-  
+
   // Clean up any real timers
   cleanupTimers();
-  
+
   // Force garbage collection if available (for cleanup)
   if (global.gc) {
     global.gc();
   }
-  
+
   // Add a small delay to ensure cleanup completes
   await new Promise(resolve => originalSetTimeout(resolve, 10));
 });

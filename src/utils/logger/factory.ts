@@ -37,7 +37,10 @@ export class HypertoolLoggerFactory implements LoggerFactory {
         this.mcpLoggerEnabled = await isMcpLoggerEnabledViaService();
       } catch (error) {
         // If feature flag service fails, default to Pino (false)
-        console.error("Failed to check MCP Logger feature flag, defaulting to Pino:", error);
+        console.error(
+          "Failed to check MCP Logger feature flag, defaulting to Pino:",
+          error
+        );
         this.mcpLoggerEnabled = false;
       }
     }
@@ -47,9 +50,12 @@ export class HypertoolLoggerFactory implements LoggerFactory {
   /**
    * Create logger instance based on feature flag
    */
-  async createLogger(config?: Partial<LoggingConfig>, runtimeOptions?: RuntimeOptions): Promise<LoggerInterface> {
+  async createLogger(
+    config?: Partial<LoggingConfig>,
+    runtimeOptions?: RuntimeOptions
+  ): Promise<LoggerInterface> {
     const useMcpLogger = await this.checkMcpLoggerEnabled();
-    
+
     if (useMcpLogger) {
       return new McpLoggerWrapper(config, runtimeOptions);
     } else {
@@ -63,25 +69,32 @@ export class HypertoolLoggerFactory implements LoggerFactory {
   createChildLogger(bindings: { module: string }): LoggerInterface {
     // This method will be implemented by the main logging module
     // since it needs access to the global logger instance
-    throw new Error("createChildLogger should be called on the main logging module, not the factory directly");
+    throw new Error(
+      "createChildLogger should be called on the main logging module, not the factory directly"
+    );
   }
 
   /**
    * Synchronous logger creation for cases where async is not possible
    * Uses forced value first, then environment variable as fallback
    */
-  createLoggerSync(config?: Partial<LoggingConfig>, runtimeOptions?: RuntimeOptions): LoggerInterface {
+  createLoggerSync(
+    config?: Partial<LoggingConfig>,
+    runtimeOptions?: RuntimeOptions
+  ): LoggerInterface {
     let useMcpLogger = false;
-    
+
     // First check if value was forced (for testing)
     if (this.mcpLoggerEnabled !== null) {
       useMcpLogger = this.mcpLoggerEnabled;
     } else {
       // Check environment variable as fallback
       const envMcpLogger = process.env.HYPERTOOL_MCP_LOGGER_ENABLED;
-      useMcpLogger = envMcpLogger ? ["true", "1", "yes", "on"].includes(envMcpLogger.toLowerCase()) : false;
+      useMcpLogger = envMcpLogger
+        ? ["true", "1", "yes", "on"].includes(envMcpLogger.toLowerCase())
+        : false;
     }
-    
+
     if (useMcpLogger) {
       return new McpLoggerWrapper(config, runtimeOptions);
     } else {
@@ -115,7 +128,7 @@ export function getLoggerFactory(): HypertoolLoggerFactory {
  * Convenience function to create a logger with feature flag selection
  */
 export async function createLoggerWithFeatureFlag(
-  config?: Partial<LoggingConfig>, 
+  config?: Partial<LoggingConfig>,
   runtimeOptions?: RuntimeOptions
 ): Promise<LoggerInterface> {
   const factory = getLoggerFactory();
@@ -126,7 +139,7 @@ export async function createLoggerWithFeatureFlag(
  * Synchronous convenience function for cases where async is not possible
  */
 export function createLoggerSyncWithFeatureFlag(
-  config?: Partial<LoggingConfig>, 
+  config?: Partial<LoggingConfig>,
   runtimeOptions?: RuntimeOptions
 ): LoggerInterface {
   const factory = getLoggerFactory();

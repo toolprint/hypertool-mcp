@@ -1,7 +1,7 @@
 # Claude Code Installation Improvements
 
-**Created**: 2025-07-23  
-**Reference Commit**: 0c683824b5736993ab134616d30b528166148997  
+**Created**: 2025-07-23
+**Reference Commit**: 0c683824b5736993ab134616d30b528166148997
 **Branch**: cleanup-prod
 
 ## Problem Statement
@@ -25,7 +25,7 @@ Currently, the install command doesn't ask users about installation scope:
 ### Issue 2: Configuration Visibility
 The `--help` command output doesn't include:
 - Where Claude Desktop configs are stored
-- Where Claude Code configs are stored  
+- Where Claude Code configs are stored
 - Where Cursor configs are stored
 - How to manually edit these configs
 
@@ -69,7 +69,7 @@ On server startup:
 ⚠️  Other MCP servers detected in your Claude Code configuration:
    - example-mcp
    - another-mcp
-   
+
    These servers won't be managed by hypertool.
    Run 'hypertool --install' to import them into your hypertool configuration.
 ```
@@ -95,14 +95,14 @@ On server startup:
    // Pseudo-code
    async function installClaudeCode() {
      const inProject = await isValidProject();
-     
+
      if (inProject) {
        const choice = await prompt(
          'Install hypertool-mcp:\n' +
          '1. Globally (all projects)\n' +
          '2. This project only: ' + process.cwd()
        );
-       
+
        if (choice === 'project') {
          await installToProject();
        } else {
@@ -139,13 +139,13 @@ On server startup:
    async function detectExternalMCPs() {
      const configs = await readClientConfigs();
      const externalMCPs = [];
-     
+
      for (const [name, config] of Object.entries(configs.mcpServers)) {
        if (name !== 'hypertool-mcp') {
          externalMCPs.push({ name, config });
        }
      }
-     
+
      return externalMCPs;
    }
    ```
@@ -181,7 +181,7 @@ $ hypertool
 
 ⚠️  External MCP servers detected:
    - example-mcp (not managed by hypertool)
-   
+
    Run 'hypertool install --import' to add to hypertool config.
 
 Starting hypertool server...

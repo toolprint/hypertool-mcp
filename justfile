@@ -38,6 +38,20 @@ setup: brew
     npm run build
     @echo "✅ Setup complete!"
 
+# Setup pre-commit hooks for development
+[group('setup')]
+setup-pre-commit:
+    @echo "🔧 Setting up pre-commit hooks..."
+    pip install pre-commit
+    pre-commit install
+    @echo "✅ Pre-commit hooks installed!"
+    @echo "💡 Run 'just pre-commit-check' to test all hooks"
+
+# Full development setup including pre-commit
+[group('setup')]
+setup-dev: setup setup-pre-commit
+    @echo "🎉 Development environment ready!"
+
 # Run development mode with optional arguments
 [group('dev')]
 dev *args='':
@@ -84,6 +98,16 @@ lint:
     @echo "Linting Markdown files..."
     @markdownlint-cli2 "**/*.md" "#node_modules" "#.git" || echo "Markdownlint not available, skipping Markdown linting"
     @echo "Linting complete!"
+
+# Run pre-commit hooks on staged files
+[group('lint')]
+pre-commit-check:
+    pre-commit run
+
+# Run pre-commit hooks on all files
+[group('lint')]
+pre-commit-check-all:
+    pre-commit run --all-files
 
 # Pre-publish checks: build, test, lint, and typecheck
 [group('publish')]
@@ -152,7 +176,7 @@ publish-beta-manual: pre-publish-checks
     @echo ""
     @echo "Continue anyway? Press Enter or Ctrl+C to cancel"
     @read
-    npm version patch --no-git-tag-version  
+    npm version patch --no-git-tag-version
     npm publish --access public --tag beta
     @echo "✅ Published to beta tag (manual override)"
 
@@ -161,18 +185,18 @@ publish-beta-manual: pre-publish-checks
 test-install: build
     #!/usr/bin/env bash
     set -euo pipefail  # Exit on error, undefined vars, pipe failures
-    
+
     echo "📦 Testing local installation with version suffix..."
-    
+
     # Ensure tmp directory exists
     mkdir -p .tmp
-    
+
     # Create timestamped backup and add local suffix
     TIMESTAMP=$(date +%s)
     LOCAL_VERSION="$(node -p "require('./package.json').version")-local-${TIMESTAMP}"
-    
+
     echo "🔄 Creating local package version: ${LOCAL_VERSION}"
-    
+
     # Function to restore package.json and package-lock.json on exit (success or failure)
     cleanup() {
         if [ -f package.json.backup ]; then
@@ -187,40 +211,40 @@ test-install: build
         rm -f .tmp/*.tgz *.tgz 2>/dev/null || true
     }
     trap cleanup EXIT
-    
+
     # Create backups and modify version
     cp package.json package.json.backup
     cp package-lock.json package-lock.json.backup
     npm version --no-git-tag-version "${LOCAL_VERSION}"
-    
-    # Create package tarball in tmp directory  
+
+    # Create package tarball in tmp directory
     npm pack --pack-destination .tmp
-    
+
     # Install globally
     PACKAGE_FILE=$(ls .tmp/toolprint-hypertool-mcp-*.tgz | head -1)
     npm install -g "${PACKAGE_FILE}"
-    
+
     # Test installation
     echo "🧪 Testing global command..."
     LOCAL_INSTALLED_VERSION=$(hypertool-mcp --version)
     echo "   Installed version: ${LOCAL_INSTALLED_VERSION}"
-    
+
     echo "🧪 Testing npx execution..."
     npx @toolprint/hypertool-mcp --version
-    
+
     echo "🧪 Testing CLI functionality..."
     node -e "console.log(require('child_process').execSync('hypertool-mcp --help 2>&1', {encoding: 'utf8'}).includes('Usage:') ? '✅ CLI commands working' : '❌ CLI commands failed')"
-    
+
     # Verify local version suffix is present
     if [[ "${LOCAL_INSTALLED_VERSION}" == *"-local-"* ]]; then
         echo "✅ Local version suffix confirmed: ${LOCAL_INSTALLED_VERSION}"
     else
         echo "⚠️  Warning: Local version suffix not detected in installed version"
     fi
-    
+
     # Verify package files will be restored (they're restored in cleanup trap)
     echo "ℹ️  Note: package.json and package-lock.json will be restored automatically"
-    
+
     echo "✅ Local installation completed!"
     echo ""
     echo "📚 Usage Instructions:"

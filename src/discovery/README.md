@@ -145,11 +145,11 @@ The Router uses the Discovery Module to route tool calls to the correct MCP serv
 ```typescript
 // In src/router/router.ts
 export class RequestRouter implements IRequestRouter {
-  
+
   async routeToolCall(request: ToolCallRequest): Promise<any> {
     // 1. Look up tool in discovery registry
     const tool = await this.discoveryEngine.getToolByName(toolName);
-    
+
     if (!tool) {
       throw new Error(`Tool '${toolName}' not found`);
     }
@@ -279,6 +279,6 @@ The module includes comprehensive test coverage:
 ## Related Modules
 
 - **Connection Module**: Provides server connectivity
-- **Router Module**: Uses discovery data for request routing  
+- **Router Module**: Uses discovery data for request routing
 - **Toolset Module**: Uses discovery for tool validation and filtering
 - **Server Module**: Orchestrates discovery initialization and lifecycle
