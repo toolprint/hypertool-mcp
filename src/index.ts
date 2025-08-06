@@ -528,6 +528,10 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   const setupModule = await import("./commands/setup/index.js");
   program.addCommand(setupModule.createSetupCommand());
 
+  // Add service management commands
+  const { createServiceCommand } = await import("./commands/service/index.js");
+  program.addCommand(createServiceCommand());
+
   // Toolset management is available via MCP tools when server is running
   // No top-level CLI commands needed per docs/NAVIGATION.md
 
@@ -619,6 +623,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     "config", 
     "mcp", 
     "setup", 
+    "service",
     "help"
   ];
   const knownMcpSubcommands = ["run", "list", "get", "add", "remove"];
@@ -765,6 +770,19 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 }
+
+// Export main server components for programmatic use
+export { MetaMCPServer } from "./server/base.js";
+export { EnhancedMetaMCPServer } from "./server/enhanced.js"; 
+export { MetaMCPServerFactory } from "./server/factory.js";
+export type { 
+  MetaMCPServerConfig, 
+  TransportConfig, 
+  ServerInitOptions 
+} from "./server/types.js";
+export type { RuntimeOptions, RuntimeTransportType } from "./types/runtime.js";
+export { discoverMcpConfig } from "./config/mcpConfigLoader.js";
+export { startServer, SmitheryConfig } from "./server.js";
 
 // This file is now used as a library - binary entry point is in bin.ts
 

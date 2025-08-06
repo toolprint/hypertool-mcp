@@ -32,6 +32,7 @@
       "env": {}
     },
     "everything": {
+      "type": "stdio",
       "command": "npx",
       "args": [
         "-y",
@@ -47,6 +48,7 @@
       ]
     },
     "sequential-thinking": {
+      "type": "stdio",
       "command": "npx",
       "args": [
         "-y",
@@ -54,6 +56,7 @@
       ]
     },
     "playwright": {
+      "type": "stdio",
       "command": "npx",
       "args": [
         "@playwright/mcp@latest"

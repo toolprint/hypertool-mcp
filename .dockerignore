@@ -1,0 +1,66 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs (built in container)
+*.tgz
+
+# Runtime files
+*.pid
+*.log
+logs/
+
+# Development files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+CHANGELOG.md
+docs/
+
+# Test files
+test/
+*.test.ts
+*.test.js
+coverage/
+
+# Configuration files that shouldn't be in container
+.mcp.json
+mcp.test.json
+mcp.hypertool.json
+
+# CI/CD
+.github/
+.travis.yml
+.circleci/
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore

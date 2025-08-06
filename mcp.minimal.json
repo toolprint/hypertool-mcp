@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "time": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-server-time"
+      ],
+      "env": {}
+    }
+  }
+}

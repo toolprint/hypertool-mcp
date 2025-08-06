@@ -1,0 +1,121 @@
+services:
+  hypertool-mcp:
+    container_name: hypertool-mcp-production
+    image: hypertool-mcp:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      tags:
+        - hypertool-mcp:latest
+        - hypertool-mcp:v0.0.31
+      x-bake:
+        platforms:
+          - linux/amd64
+          - linux/arm64
+        cache-from:
+          - type=gha
+        cache-to:
+          - type=gha,mode=max
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount entire toolprint directory for full access to configs, logs, backups, db
+      - ~/.toolprint:/home/app/.toolprint
+      # Mount application support directories (macOS/Linux compatibility)
+      - ~/Library/Application Support:/home/app/Library/Application Support:ro
+      - ~/.local/share:/home/app/.local/share  # Writable for UV and other tools
+      - ~/.config:/home/app/.config:ro
+      # Mount cache directories to avoid permission issues
+      - ~/.cache:/home/app/.cache
+      - ~/.npm:/home/app/.npm
+      # Optional: Mount additional common config locations
+      # - ~/.hypertool-mcp:/home/app/.hypertool-mcp
+    environment:
+      # Production container configuration
+      - NODE_ENV=production
+      - HYPERTOOL_PORT=8080
+      - HYPERTOOL_HOST=0.0.0.0
+      - HYPERTOOL_LOG_LEVEL=info
+      - HYPERTOOL_DEBUG=false
+      
+      # Override home directory detection for container
+      - HOME=/home/app
+      - HYPERTOOL_HOME=/home/app
+      
+      # Docker environment flags (but not limiting functionality)
+      - RUNNING_IN_DOCKER=true
+      - UV_SYSTEM_PYTHON=1
+      
+      # Enable full NeDB support (remove container-specific limitations)
+      # - DOCKER_CONTAINER=true  # Removed to enable full functionality
+      
+      # Optional: Equip specific toolset on startup
+      # - HYPERTOOL_EQUIP_TOOLSET=development
+      
+      # Optional: Use specific server group
+      # - HYPERTOOL_GROUP=production-servers
+      
+      # Note: No need for HYPERTOOL_MCP_CONFIG - will auto-discover from mounted ~/.toolprint
+    
+    # Run as non-root user for security (maps to host user)
+    user: "501:20"  # Match host user's UID:GID for proper file permissions
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Resource limits (adjust based on your needs)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'  # Increased for production workload
+          memory: 1G   # Increased for production workload
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # Needs write access for database and logs
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    
+    # Labels for organization
+    labels:
+      - "com.toolprint.service=hypertool-mcp"
+      - "com.toolprint.version=0.0.31"
+      - "com.toolprint.description=HyperTool MCP proxy server - Production"
+      - "com.toolprint.environment=production"
+
+# Optional: Add a monitoring service for production
+# monitoring:
+#   image: prom/prometheus:latest
+#   container_name: hypertool-monitoring
+#   ports:
+#     - "9090:9090"
+#   volumes:
+#     - ~/.toolprint/hypertool-mcp/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+#   command:
+#     - '--config.file=/etc/prometheus/prometheus.yml'
+#     - '--storage.tsdb.path=/prometheus'
+#   depends_on:
+#     - hypertool-mcp
+
+# Optional: Create named volumes for additional data persistence
+volumes:
+  hypertool_cache:
+    driver: local
+
+# Production network configuration
+networks:
+  hypertool_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
