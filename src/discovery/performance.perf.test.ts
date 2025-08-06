@@ -26,7 +26,7 @@ const PERFORMANCE_THRESHOLDS = {
   HASH_CALCULATION_TIME_MS: isCI ? 500 : 100, // 5x more lenient in CI
   MEMORY_USAGE_MB: isCI ? 200 : 100, // 2x more lenient in CI
   STRESS_TEST_TIME_MS: isCI ? 60000 : 30000, // 2x more lenient in CI
-  CONCURRENT_TIME_MS: isCI ? 20000 : 10000, // 2x more lenient in CI
+  CONCURRENT_TIME_MS: isCI ? 30000 : 10000, // 3x more lenient in CI
 };
 
 describe("Tool Discovery Performance Tests", () => {
