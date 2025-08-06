@@ -70,30 +70,32 @@ export async function discoverMcpConfigFile(
 
   // 1. Check for CLI-provided path (highest priority)
   if (cliConfigPath) {
-    logger.debug(`Checking CLI-provided config path: ${cliConfigPath}`);
+    // Resolve relative paths to absolute paths based on current working directory
+    const resolvedPath = path.resolve(cliConfigPath);
+    logger.debug(`Checking CLI-provided config path: ${cliConfigPath} (resolved to: ${resolvedPath})`);
 
-    if (await fileExists(cliConfigPath)) {
-      logger.info(`Using config from CLI: ${cliConfigPath}`);
+    if (await fileExists(resolvedPath)) {
+      logger.info(`Using config from CLI: ${cliConfigPath} (resolved: ${resolvedPath})`);
 
-      // Update user preference if requested
+      // Update user preference if requested - store the resolved absolute path
       if (updatePreference) {
         try {
           const preferences = await loadUserPreferences();
-          preferences.mcpConfigPath = cliConfigPath;
+          preferences.mcpConfigPath = resolvedPath;
           await saveUserPreferences(preferences);
-          logger.debug("Updated user preference with CLI path");
+          logger.debug("Updated user preference with resolved CLI path");
         } catch (error) {
           logger.warn("Failed to update user preference:", error);
         }
       }
 
       return {
-        configPath: cliConfigPath,
+        configPath: resolvedPath,
         source: "cli",
         configSource: {
           id: "cli",
           type: "global",
-          path: cliConfigPath,
+          path: resolvedPath,
           priority: 100,
           lastSynced: Date.now(),
         },
@@ -102,7 +104,7 @@ export async function discoverMcpConfigFile(
       return {
         configPath: null,
         source: "none",
-        errorMessage: `Configuration file not found: ${cliConfigPath}`,
+        errorMessage: `Configuration file not found: ${cliConfigPath} (resolved to: ${resolvedPath})`,
       };
     }
   }
