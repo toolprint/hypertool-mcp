@@ -1,5 +1,9 @@
 /**
  * Integration test for CLI --mcp-config flag with relative paths
+ * 
+ * Note: These tests work without process.chdir() since it's not supported in Vitest workers.
+ * Instead, we create files at specific absolute paths and test relative path resolution
+ * by simulating what would happen from different working directory contexts.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import * as path from "path";
@@ -9,13 +13,10 @@ import { discoverMcpConfig } from "../config/mcpConfigLoader.js";
 
 describe("CLI --mcp-config flag integration", () => {
   let tempDir: string;
-  let originalCwd: string;
   let testConfigPath: string;
   let testConfigContent: any;
 
   beforeEach(async () => {
-    originalCwd = process.cwd();
-    
     // Create a temporary directory for the test
     tempDir = await fs.mkdtemp(path.join(tmpdir(), "hypertool-test-"));
     
@@ -32,15 +33,9 @@ describe("CLI --mcp-config flag integration", () => {
 
     testConfigPath = path.join(tempDir, "test-mcp.json");
     await fs.writeFile(testConfigPath, JSON.stringify(testConfigContent, null, 2));
-    
-    // Change working directory to the temp dir
-    process.chdir(tempDir);
   });
 
   afterEach(async () => {
-    // Restore original working directory
-    process.chdir(originalCwd);
-    
     // Clean up temporary directory
     try {
       await fs.rm(tempDir, { recursive: true, force: true });
@@ -50,30 +45,52 @@ describe("CLI --mcp-config flag integration", () => {
   });
 
   it("should work with relative paths", async () => {
-    // Use a relative path from the current working directory
-    const relativePath = "./test-mcp.json";
+    // Create a config file in the current working directory context
+    const currentDirConfigPath = path.join(process.cwd(), "test-mcp.json");
+    await fs.writeFile(currentDirConfigPath, JSON.stringify(testConfigContent, null, 2));
     
-    const result = await discoverMcpConfig(relativePath);
-    
-    expect(result.configPath).toBe(path.resolve(relativePath));
-    expect(result.source).toBe("cli");
-    expect(result.errorMessage).toBeUndefined();
+    try {
+      const relativePath = "./test-mcp.json";
+      const result = await discoverMcpConfig(relativePath);
+      
+      expect(result.configPath).toBe(path.resolve(relativePath));
+      expect(result.source).toBe("cli");
+      expect(result.errorMessage).toBeUndefined();
+    } finally {
+      // Clean up the test file in the current directory
+      try {
+        await fs.unlink(currentDirConfigPath);
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    }
   });
 
   it("should work with relative paths using parent directories", async () => {
-    // Create a subdirectory and config in parent
-    const subDir = path.join(tempDir, "subdir");
-    await fs.mkdir(subDir);
-    process.chdir(subDir);
+    // Create a config file in the parent directory of the current working directory
+    // This simulates the scenario where a user runs the command from a subdirectory
+    // and wants to reference a config file in the parent directory
+    const parentDir = path.dirname(process.cwd());
+    const parentConfigPath = path.join(parentDir, "parent-config.json");
     
-    // Reference the config file from the subdirectory
-    const relativePath = "../test-mcp.json";
+    await fs.writeFile(parentConfigPath, JSON.stringify(testConfigContent, null, 2));
     
-    const result = await discoverMcpConfig(relativePath);
-    
-    expect(result.configPath).toBe(testConfigPath);
-    expect(result.source).toBe("cli");
-    expect(result.errorMessage).toBeUndefined();
+    try {
+      const relativePath = "../parent-config.json";
+      const result = await discoverMcpConfig(relativePath);
+      
+      // The path should be resolved relative to the current working directory  
+      expect(result.configPath).toBe(path.resolve(relativePath));
+      expect(result.source).toBe("cli");
+      expect(result.errorMessage).toBeUndefined();
+    } finally {
+      // Clean up the parent config file
+      try {
+        await fs.unlink(parentConfigPath);
+      } catch (error) {
+        // Ignore cleanup errors - the parent directory might not be writable
+      }
+    }
   });
 
   it("should work with absolute paths", async () => {
@@ -95,40 +112,53 @@ describe("CLI --mcp-config flag integration", () => {
     expect(result.errorMessage).toContain(path.resolve(relativePath));
   });
 
-  it("should resolve paths correctly even when working directory changes", async () => {
-    const relativePath = "./test-mcp.json";
+  it("should resolve relative paths consistently", async () => {
+    // Test that relative paths are resolved consistently based on process.cwd()
+    // Create a config file at the expected resolved location
+    const relativePath = "./consistent-test.json";
     const expectedAbsolutePath = path.resolve(relativePath);
     
-    // Change to a different directory after setting up the relative path
-    const anotherDir = path.join(tempDir, "another");
-    await fs.mkdir(anotherDir);
-    process.chdir(anotherDir);
+    await fs.writeFile(expectedAbsolutePath, JSON.stringify(testConfigContent, null, 2));
     
-    // The path should still resolve to the original location when discoverMcpConfig was called
-    // Note: This test assumes path resolution happens at call time, not at file access time
-    process.chdir(tempDir); // Go back to where the file exists
-    
-    const result = await discoverMcpConfig(relativePath);
-    
-    expect(result.configPath).toBe(expectedAbsolutePath);
-    expect(result.source).toBe("cli");
-    expect(result.errorMessage).toBeUndefined();
+    try {
+      const result = await discoverMcpConfig(relativePath);
+      
+      expect(result.configPath).toBe(expectedAbsolutePath);
+      expect(result.source).toBe("cli");
+      expect(result.errorMessage).toBeUndefined();
+    } finally {
+      // Clean up
+      try {
+        await fs.unlink(expectedAbsolutePath);
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    }
   });
 
   it("should handle nested relative paths", async () => {
-    // Create nested directory structure
-    const nestedDir = path.join(tempDir, "configs", "nested");
+    // Create the nested config file in the current working directory context
+    const configsDir = path.join(process.cwd(), "configs");
+    const nestedDir = path.join(configsDir, "nested");
     await fs.mkdir(nestedDir, { recursive: true });
     
     const nestedConfigPath = path.join(nestedDir, "nested-config.json");
     await fs.writeFile(nestedConfigPath, JSON.stringify(testConfigContent, null, 2));
     
-    const relativePath = "./configs/nested/nested-config.json";
-    
-    const result = await discoverMcpConfig(relativePath);
-    
-    expect(result.configPath).toBe(path.resolve(relativePath));
-    expect(result.source).toBe("cli");
-    expect(result.errorMessage).toBeUndefined();
+    try {
+      const relativePath = "./configs/nested/nested-config.json";
+      const result = await discoverMcpConfig(relativePath);
+      
+      expect(result.configPath).toBe(path.resolve(relativePath));
+      expect(result.source).toBe("cli");
+      expect(result.errorMessage).toBeUndefined();
+    } finally {
+      // Clean up the nested directory structure
+      try {
+        await fs.rm(configsDir, { recursive: true, force: true });
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    }
   });
 });
