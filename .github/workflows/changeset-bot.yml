@@ -57,7 +57,19 @@ jobs:
             # Show what changesets were found
             echo ""
             echo "📋 Changeset summary:"
-            npm run changeset:status
+            if npm run changeset:status 2>/dev/null; then
+              echo "✅ Changeset status retrieved successfully"
+            else
+              echo "⚠️ Could not get changeset status (git divergence issue in CI)"
+              echo "📄 Found changeset files:"
+              for file in .changeset/*.md; do
+                if [ "$file" != ".changeset/README.md" ] && [ -f "$file" ]; then
+                  echo "  - $(basename "$file")"
+                  echo "    Content preview:"
+                  head -10 "$file" | sed 's/^/    /'
+                fi
+              done
+            fi
           fi
       
       - name: Comment on PR (no changesets)
@@ -127,22 +139,46 @@ jobs:
             const { owner, repo } = context.repo;
             const pr_number = context.payload.pull_request.number;
             
-            // Get changeset status
+            // Get changeset status (with fallback for git issues)
             const { execSync } = require('child_process');
-            const changesetOutput = execSync('npm run changeset:status', { encoding: 'utf8' });
+            const fs = require('fs');
+            let changesetDetails = '';
             
-            const comment = `## 🤖 Changeset Status
-            
-            ✅ **Changeset detected** - Version bumps will be handled properly!
-            
-            <details>
+            try {
+              const changesetOutput = execSync('npm run changeset:status', { encoding: 'utf8' });
+              changesetDetails = `<details>
             <summary>📋 Changeset Details</summary>
             
             \`\`\`
             ${changesetOutput}
             \`\`\`
             
-            </details>
+            </details>`;
+            } catch (error) {
+              // Fallback: show changeset files directly
+              try {
+                const changesetFiles = fs.readdirSync('.changeset').filter(f => f.endsWith('.md') && f !== 'README.md');
+                let fileDetails = '';
+                for (const file of changesetFiles) {
+                  const content = fs.readFileSync(\`.changeset/\${file}\`, 'utf8');
+                  fileDetails += \`**\${file}**:\n\`\`\`\n\${content.split('\\n').slice(0, 10).join('\\n')}\n\`\`\`\n\n\`;
+                }
+                changesetDetails = `<details>
+            <summary>📋 Changeset Files (git status unavailable)</summary>
+            
+            ${fileDetails}
+            
+            </details>`;
+              } catch (fallbackError) {
+                changesetDetails = '_Could not retrieve changeset details due to CI environment limitations_';
+              }
+            }
+            
+            const comment = `## 🤖 Changeset Status
+            
+            ✅ **Changeset detected** - Version bumps will be handled properly!
+            
+            ${changesetDetails}
             
             🎉 **Ready to merge** - This PR includes proper changeset files for semantic versioning.
             
