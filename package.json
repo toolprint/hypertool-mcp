@@ -55,6 +55,10 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish",
+    "changeset:status": "changeset status",
     "prepublishOnly": "npm run format && npm run build && npm run test",
     "restore": "npm run build && node dist/scripts/restore/restore-all.js",
     "restore:dry-run": "npm run build && node dist/scripts/restore/restore-all.js --dry-run",
@@ -126,9 +130,11 @@
     "assets/toolprint.png"
   ],
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "tag": "beta"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.5",
     "@types/node": "^24.0.12",
     "@types/ora": "^3.1.0",
     "@types/pino": "^7.0.4",
