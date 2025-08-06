@@ -1,16 +1,19 @@
 import { defineConfig } from 'vitest/config';
 
+// Environment detection for CI-aware configuration
+const isCI = !!(process.env.CI || process.env.GITHUB_ACTIONS || process.env.CONTINUOUS_INTEGRATION);
+
 export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
     
-    // Optimized timeouts
-    testTimeout: 10000,      // 10s for most tests
-    hookTimeout: 5000,       // 5s for setup/teardown
-    teardownTimeout: 3000,   // 3s for cleanup
+    // CI-aware timeouts (more lenient in CI environment)
+    testTimeout: isCI ? 30000 : 10000,     // 30s in CI, 10s local
+    hookTimeout: isCI ? 15000 : 5000,      // 15s in CI, 5s local
+    teardownTimeout: isCI ? 10000 : 3000,  // 10s in CI, 3s local
     
-    // Better parallelization settings
+    // Better parallelization settings (reduced in CI)
     isolate: true,
     pool: 'threads',         // Use threads for better performance
     poolOptions: {
@@ -18,12 +21,12 @@ export default defineConfig({
         singleThread: false, // Allow parallel execution
         isolate: true,
         minThreads: 1,
-        maxThreads: 4        // Limit to prevent resource exhaustion
+        maxThreads: isCI ? 2 : 4        // Reduced concurrency in CI to prevent resource exhaustion
       }
     },
     
-    // Enable parallel file execution for unit tests
-    maxConcurrency: 4,       // Run up to 4 tests concurrently
+    // Enable parallel file execution for unit tests (reduced in CI)
+    maxConcurrency: isCI ? 2 : 4,       // Reduced concurrency in CI
     fileParallelism: true,   // Run test files in parallel
     
     include: [

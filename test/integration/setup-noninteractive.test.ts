@@ -60,6 +60,18 @@ vi.mock('../../src/config-manager/index.js', async () => {
   };
 });
 
+// Mock fs module to ensure no applications are detected
+vi.mock('fs', async () => {
+  const actual = await vi.importActual('fs');
+  return {
+    ...actual,
+    promises: {
+      ...actual.promises,
+      access: vi.fn().mockRejectedValue(new Error('Path does not exist'))
+    }
+  };
+});
+
 describe('Setup Command - Non-Interactive Mode', () => {
   const mockHomeDir = '/home/user';
   const mockConfigPath = join(mockHomeDir, '.toolprint', 'hypertool-mcp');
