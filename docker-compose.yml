@@ -1,0 +1,97 @@
+services:
+  hypertool-mcp:
+    container_name: hypertool-mcp-service
+    image: hypertool-mcp:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      tags:
+        - hypertool-mcp:latest
+        - hypertool-mcp:v0.0.31
+      x-bake:
+        platforms:
+          - linux/amd64
+          - linux/arm64
+        cache-from:
+          - type=gha
+        cache-to:
+          - type=gha,mode=max
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount logs directory for persistence
+      - ./logs:/app/logs
+      # Mount container-optimized config with git, filesystem, and memory servers
+      - ./mcp.container.json:/app/config/mcp.json:ro
+      # Optional: Mount other MCP configs
+      # - ./mcp.minimal.json:/app/config/mcp.json:ro
+      # - ./mcp.production.json:/app/config/mcp.json:ro
+    environment:
+      # Service configuration
+      - NODE_ENV=production
+      - HYPERTOOL_PORT=8080
+      - HYPERTOOL_HOST=0.0.0.0
+      - HYPERTOOL_LOG_LEVEL=info
+      - HYPERTOOL_DEBUG=false
+      
+      # Docker-specific settings
+      - DOCKER_CONTAINER=true
+      - RUNNING_IN_DOCKER=true
+      - UV_SYSTEM_PYTHON=1
+      
+      # Optional: Equip specific toolset on startup
+      # - HYPERTOOL_EQUIP_TOOLSET=development
+      
+      # Optional: Use specific server group
+      # - HYPERTOOL_GROUP=production-servers
+      
+      # Optional: Custom MCP config path
+      # - HYPERTOOL_MCP_CONFIG=/app/config/mcp.json
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Resource limits (adjust based on your needs)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    
+    # Labels for organization
+    labels:
+      - "com.toolprint.service=hypertool-mcp"
+      - "com.toolprint.version=0.0.31"
+      - "com.toolprint.description=HyperTool MCP proxy server"
+
+  # Optional: Add a monitoring service
+  # monitoring:
+  #   image: prom/prometheus:latest
+  #   container_name: hypertool-monitoring
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #   depends_on:
+  #     - hypertool-mcp
+
+# Optional: Create named volumes for data persistence
+volumes:
+  hypertool_logs:
+    driver: local
+
+# Optional: Create custom network
+networks:
+  hypertool_network:
+    driver: bridge

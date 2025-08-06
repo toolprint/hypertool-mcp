@@ -1,0 +1,40 @@
+{
+  "mcpServers": {
+    "git": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-server-git",
+        "--repository",
+        "/app"
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "UV_SYSTEM_PYTHON": "1"
+      }
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y", 
+        "@modelcontextprotocol/server-filesystem",
+        "/tmp"
+      ],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    },
+    "memory": {
+      "type": "stdio", 
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}

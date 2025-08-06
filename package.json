@@ -52,7 +52,21 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "prepublishOnly": "npm run format && npm run build && npm run test",
     "restore": "npm run build && node dist/scripts/restore/restore-all.js",
-    "restore:dry-run": "npm run build && node dist/scripts/restore/restore-all.js --dry-run"
+    "restore:dry-run": "npm run build && node dist/scripts/restore/restore-all.js --dry-run",
+    "docker:setup": "docker buildx create --name multiarch --use --bootstrap 2>/dev/null || docker buildx use multiarch",
+    "docker:build": "npm run docker:setup && docker buildx bake hypertool-mcp",
+    "docker:build:local": "npm run docker:setup && docker buildx bake hypertool-mcp-local",
+    "docker:build:dev": "npm run docker:setup && docker buildx bake hypertool-mcp-dev",
+    "docker:build:push": "npm run docker:setup && docker buildx bake --set '*.output=type=registry' hypertool-mcp",
+    "docker:inspect": "docker buildx imagetools inspect hypertool-mcp:latest",
+    "docker:test": "npm run docker:build:local && docker run --rm -p 8080:8080 -d --name hypertool-test hypertool-mcp:latest && sleep 10 && curl -f http://localhost:8080/health && docker stop hypertool-test",
+    "docker:clean": "docker buildx prune -f && docker system prune -f",
+    "docker:compose:up": "docker-compose up -d",
+    "docker:compose:down": "docker-compose down",
+    "docker:compose:build": "docker-compose build",
+    "docker:compose:logs": "docker-compose logs -f",
+    "docker:compose:bake": "docker buildx bake -f docker-compose.yml",
+    "dev:docker": "npm run build && npm run docker:build:local && npm run docker:compose:up"
   },
   "keywords": [
     "mcp",

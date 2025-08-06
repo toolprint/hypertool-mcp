@@ -29,6 +29,7 @@ export interface SmitheryConfig {
   equipToolset?: string;
   transport?: RuntimeTransportType;
   port?: number;
+  host?: string;
 }
 
 /**
@@ -39,6 +40,7 @@ async function startServer(config: SmitheryConfig = {}): Promise<void> {
   const runtimeOptions: RuntimeOptions = {
     transport: config.transport || "stdio" as RuntimeTransportType,
     port: config.port,
+    host: config.host,
     debug: config.debug || false,
     insecure: false, // Always secure for Smithery installs
     equipToolset: config.equipToolset,
@@ -82,7 +84,7 @@ async function startServer(config: SmitheryConfig = {}): Promise<void> {
       type: runtimeOptions.transport,
       ...(runtimeOptions.transport === "http" && {
         port: runtimeOptions.port || 3000,
-        host: "localhost",
+        host: runtimeOptions.host || "localhost",
       }),
     };
 
@@ -204,6 +206,12 @@ function parseCliArgs(args: string[]): Partial<SmitheryConfig> {
       case '--port':
         if (nextArg && !nextArg.startsWith('--')) {
           config.port = parseInt(nextArg, 10);
+          i++; // skip next arg since we consumed it
+        }
+        break;
+      case '--host':
+        if (nextArg && !nextArg.startsWith('--')) {
+          config.host = nextArg;
           i++; // skip next arg since we consumed it
         }
         break;
