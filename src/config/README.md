@@ -45,5 +45,5 @@ The parser expects JSON files in the following format:
 ## Parser Options
 
 - `validatePaths`: Validate command paths exist (default: true)
-- `allowRelativePaths`: Allow relative paths in commands (default: true)  
+- `allowRelativePaths`: Allow relative paths in commands (default: true)
 - `strict`: Fail completely on any validation error (default: false)

@@ -12,10 +12,10 @@
 - No environment variables needed
 - Works out of the box
 
-### 2. fetch - @modelcontextprotocol/server-fetch  
+### 2. fetch - @modelcontextprotocol/server-fetch
 ```json
 {
-  "command": "uvx", 
+  "command": "uvx",
   "args": ["mcp-server-fetch"]
 }
 ```
@@ -60,7 +60,7 @@ Advanced MAS version (REQUIRES CONFIG):
 ## SUMMARY
 Total NO-CONFIG servers identified: 4
 - everything (reference/test server)
-- fetch (web content fetching) 
+- fetch (web content fetching)
 - time (timezone utilities)
 - dice (dice rolling)
 

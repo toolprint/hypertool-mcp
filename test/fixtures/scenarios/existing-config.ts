@@ -3,10 +3,10 @@
  */
 
 import { TestScenario, TestEnvironment } from '../base.js';
-import { 
-  ClaudeDesktopFixture, 
-  CursorFixture, 
-  ClaudeCodeFixture 
+import {
+  ClaudeDesktopFixture,
+  CursorFixture,
+  ClaudeCodeFixture
 } from '../applications/index.js';
 
 export class ExistingConfigScenario implements TestScenario {

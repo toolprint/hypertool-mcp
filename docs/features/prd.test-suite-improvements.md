@@ -14,17 +14,17 @@ This document provides a detailed, actionable implementation plan for improving 
 // src/test-utils/lightweight-test-env.ts
 export class LightweightTestEnv {
   private cleanup: Array<() => Promise<void>> = [];
-  
+
   async setup(): Promise<void> {
     // Minimal setup - no heavy initialization
   }
-  
+
   async teardown(): Promise<void> {
     // Execute all cleanup functions
     await Promise.all(this.cleanup.map(fn => fn()));
     this.cleanup = [];
   }
-  
+
   registerCleanup(fn: () => Promise<void>): void {
     this.cleanup.push(fn);
   }
@@ -36,34 +36,34 @@ import { LightweightTestEnv } from '../test-utils/lightweight-test-env';
 describe('AppRegistry', () => {
   let env: LightweightTestEnv;
   let registry: AppRegistry;
-  
+
   beforeEach(async () => {
     env = new LightweightTestEnv();
     await env.setup();
-    
+
     // Direct initialization without TestEnvironment
     const db = new NeDBDatabaseService({
       configDir: '/tmp/test-' + Date.now(),
       inMemory: true
     });
-    
+
     registry = new AppRegistry(db);
-    
+
     // Register cleanup
     env.registerCleanup(async () => {
       await db.close();
     });
   });
-  
+
   afterEach(async () => {
     await env.teardown();
   });
-  
+
   // Add explicit timeouts to async operations
   it('should handle operations with timeout', async () => {
     const result = await Promise.race([
       registry.someOperation(),
-      new Promise((_, reject) => 
+      new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Operation timeout')), 5000)
       )
     ]);
@@ -85,7 +85,7 @@ describe('AppRegistry', () => {
 // src/test-utils/test-factory.ts
 export class TestFactory {
   private static instances = new Map<string, any>();
-  
+
   static createDatabase(options: Partial<DatabaseOptions> = {}): NeDBDatabaseService {
     const id = `db-${Date.now()}-${Math.random()}`;
     const db = new NeDBDatabaseService({
@@ -93,11 +93,11 @@ export class TestFactory {
       inMemory: true,
       ...options
     });
-    
+
     this.instances.set(id, db);
     return db;
   }
-  
+
   static async cleanupAll(): Promise<void> {
     const cleanupPromises = Array.from(this.instances.values()).map(
       instance => instance.close?.() || Promise.resolve()
@@ -138,7 +138,7 @@ export async function withTimeout<T>(
       reject(new Error(errorMessage || `Operation timed out after ${timeoutMs}ms`));
     }, timeoutMs);
   });
-  
+
   return Promise.race([promise, timeout]);
 }
 
@@ -152,14 +152,14 @@ export async function waitForCondition(
 ): Promise<void> {
   const { timeout = 5000, interval = 100, errorMessage } = options;
   const start = Date.now();
-  
+
   while (Date.now() - start < timeout) {
     if (await condition()) {
       return;
     }
     await new Promise(resolve => setTimeout(resolve, interval));
   }
-  
+
   throw new Error(errorMessage || 'Condition not met within timeout');
 }
 
@@ -204,7 +204,7 @@ export default defineConfig({
       'coverage',
       'test/integration/**' // Separate integration tests
     ],
-    
+
     // Parallel execution settings
     pool: 'threads',
     poolOptions: {
@@ -215,26 +215,26 @@ export default defineConfig({
         maxThreads: 4
       }
     },
-    
+
     // Timeout configuration
     testTimeout: 10000, // 10 seconds default
     hookTimeout: 10000,
     teardownTimeout: 5000,
-    
+
     // Reporter configuration
     reporters: ['default', 'junit', 'json'],
     outputFile: {
       junit: './test-results/junit.xml',
       json: './test-results/results.json'
     },
-    
+
     // Performance monitoring
     benchmark: {
       include: ['**/*.bench.ts'],
       reporters: ['default', 'json'],
       outputFile: './test-results/benchmark.json'
     },
-    
+
     // Coverage settings
     coverage: {
       provider: 'v8',
@@ -256,22 +256,22 @@ export default defineConfig({
         }
       }
     },
-    
+
     // Global setup/teardown
     globalSetup: './test/setup/global-setup.ts',
     globalTeardown: './test/setup/global-teardown.ts',
-    
+
     // Environment
     environment: 'node',
-    
+
     // Retry configuration
     retry: process.env.CI ? 2 : 0,
-    
+
     // Resource limits
     maxConcurrency: 20,
     dangerouslyIgnoreDynamicImports: false
   },
-  
+
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -308,16 +308,16 @@ export function describeTest(
   fn: () => void
 ): void {
   const { category, timeout, retries } = metadata;
-  
+
   describe(`[${category}] ${name}`, () => {
     if (timeout) {
       vi.setConfig({ testTimeout: timeout });
     }
-    
+
     if (retries && process.env.CI) {
       vi.setConfig({ retry: retries });
     }
-    
+
     fn();
   });
 }
@@ -372,12 +372,12 @@ import { Tool, ServerConfig, Toolset, ConnectionOptions } from '@/types';
 
 export class TestObjectFactory {
   private static idCounter = 0;
-  
+
   static reset(): void {
     this.idCounter = 0;
     faker.seed(12345); // Consistent seed for reproducible tests
   }
-  
+
   static createTool(overrides: Partial<Tool> = {}): Tool {
     const id = `tool-${++this.idCounter}`;
     return {
@@ -394,7 +394,7 @@ export class TestObjectFactory {
       ...overrides
     };
   }
-  
+
   static createServerConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
     const id = `server-${++this.idCounter}`;
     return {
@@ -410,11 +410,11 @@ export class TestObjectFactory {
       ...overrides
     };
   }
-  
+
   static createToolset(overrides: Partial<Toolset> = {}): Toolset {
     const id = `toolset-${++this.idCounter}`;
     const toolCount = faker.number.int({ min: 2, max: 5 });
-    
+
     return {
       id,
       name: faker.hacker.adjective() + ' Toolset',
@@ -425,7 +425,7 @@ export class TestObjectFactory {
       ...overrides
     };
   }
-  
+
   static createBulk<T>(
     factory: () => T,
     count: number,
@@ -452,19 +452,19 @@ const tools = TestObjectFactory.createBulk(
 #### Implementation:
 ```typescript
 import { EventEmitter } from 'events';
-import { 
-  Connection, 
-  Message, 
-  Request, 
+import {
+  Connection,
+  Message,
+  Request,
   Response,
-  ConnectionTransport 
+  ConnectionTransport
 } from '@/types';
 
 export class MockConnection extends EventEmitter implements Connection {
   private isOpen = true;
   private messageQueue: Message[] = [];
   private responseHandlers = new Map<string, (response: Response) => void>();
-  
+
   constructor(
     private readonly options: {
       autoRespond?: boolean;
@@ -474,46 +474,46 @@ export class MockConnection extends EventEmitter implements Connection {
   ) {
     super();
   }
-  
+
   async send(message: Message): Promise<void> {
     if (!this.isOpen) {
       throw new Error('Connection is closed');
     }
-    
+
     // Simulate network latency
     if (this.options.latency) {
       await new Promise(resolve => setTimeout(resolve, this.options.latency));
     }
-    
+
     // Simulate errors
     if (this.options.errorRate && Math.random() < this.options.errorRate) {
       throw new Error('Mock connection error');
     }
-    
+
     this.messageQueue.push(message);
     this.emit('message', message);
-    
+
     // Auto-respond to requests
     if (this.options.autoRespond && message.type === 'request') {
       this.simulateResponse(message as Request);
     }
   }
-  
+
   async request(request: Request): Promise<Response> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('Request timeout'));
       }, 5000);
-      
+
       this.responseHandlers.set(request.id, (response) => {
         clearTimeout(timeout);
         resolve(response);
       });
-      
+
       this.send(request).catch(reject);
     });
   }
-  
+
   private simulateResponse(request: Request): void {
     setTimeout(() => {
       const response: Response = {
@@ -521,30 +521,30 @@ export class MockConnection extends EventEmitter implements Connection {
         type: 'response',
         result: { success: true, data: 'Mock response' }
       };
-      
+
       const handler = this.responseHandlers.get(request.id);
       if (handler) {
         handler(response);
         this.responseHandlers.delete(request.id);
       }
-      
+
       this.emit('response', response);
     }, 50);
   }
-  
+
   close(): void {
     this.isOpen = false;
     this.emit('close');
   }
-  
+
   isConnected(): boolean {
     return this.isOpen;
   }
-  
+
   getMessages(): Message[] {
     return [...this.messageQueue];
   }
-  
+
   clearMessages(): void {
     this.messageQueue = [];
   }
@@ -554,15 +554,15 @@ export class MockConnectionFactory {
   static createConnection(options?: any): MockConnection {
     return new MockConnection(options);
   }
-  
+
   static createFailingConnection(): MockConnection {
     return new MockConnection({ errorRate: 1 });
   }
-  
+
   static createSlowConnection(latency: number): MockConnection {
     return new MockConnection({ latency });
   }
-  
+
   static createMultipleConnections(count: number): MockConnection[] {
     return Array.from({ length: count }, () => this.createConnection());
   }
@@ -581,29 +581,29 @@ import path from 'path';
 export class DatabaseTestHelper {
   private static databases: Map<string, NeDBDatabaseService> = new Map();
   private static baseTestDir = '/tmp/hypertool-test';
-  
+
   static async createTestDatabase(
     name: string = `test-${Date.now()}`,
     options: Partial<DatabaseOptions> = {}
   ): Promise<NeDBDatabaseService> {
     const configDir = path.join(this.baseTestDir, name);
-    
+
     // Ensure clean directory
     await fs.ensureDir(configDir);
     await fs.emptyDir(configDir);
-    
+
     const db = new NeDBDatabaseService({
       configDir,
       inMemory: true,
       ...options
     });
-    
+
     await db.initialize();
     this.databases.set(name, db);
-    
+
     return db;
   }
-  
+
   static async seedDatabase(
     db: NeDBDatabaseService,
     data: {
@@ -617,58 +617,58 @@ export class DatabaseTestHelper {
         await db.getServerRepository().create(server);
       }
     }
-    
+
     if (data.tools) {
       for (const tool of data.tools) {
         await db.getToolRepository().create(tool);
       }
     }
-    
+
     if (data.toolsets) {
       for (const toolset of data.toolsets) {
         await db.getToolsetRepository().create(toolset);
       }
     }
   }
-  
+
   static async cleanupDatabase(name: string): Promise<void> {
     const db = this.databases.get(name);
     if (db) {
       await db.close();
       this.databases.delete(name);
     }
-    
+
     const configDir = path.join(this.baseTestDir, name);
     await fs.remove(configDir);
   }
-  
+
   static async cleanupAllDatabases(): Promise<void> {
     const cleanupPromises = Array.from(this.databases.keys()).map(
       name => this.cleanupDatabase(name)
     );
     await Promise.all(cleanupPromises);
-    
+
     // Clean base directory
     await fs.remove(this.baseTestDir);
   }
-  
+
   static async snapshotDatabase(db: NeDBDatabaseService): Promise<DatabaseSnapshot> {
     const [servers, tools, toolsets] = await Promise.all([
       db.getServerRepository().findAll(),
       db.getToolRepository().findAll(),
       db.getToolsetRepository().findAll()
     ]);
-    
+
     return { servers, tools, toolsets, timestamp: new Date() };
   }
-  
+
   static async restoreSnapshot(
     db: NeDBDatabaseService,
     snapshot: DatabaseSnapshot
   ): Promise<void> {
     // Clear existing data
     await db.clear();
-    
+
     // Restore snapshot
     await this.seedDatabase(db, snapshot);
   }
@@ -702,38 +702,38 @@ export class ResourceTracker {
   private startMemory: NodeJS.MemoryUsage | null = null;
   private intervals: Map<string, NodeJS.Timer> = new Map();
   private metrics: ResourceMetrics[] = [];
-  
+
   start(): void {
     this.startTime = performance.now();
     this.startCpuUsage = process.cpuUsage();
     this.startMemory = process.memoryUsage();
   }
-  
+
   stop(): ResourceMetrics {
     const duration = performance.now() - this.startTime;
     const currentCpuUsage = process.cpuUsage(this.startCpuUsage!);
     const currentMemory = process.memoryUsage();
-    
+
     const metrics: ResourceMetrics = {
       memoryUsage: currentMemory,
       cpuUsage: currentCpuUsage,
       duration,
       timestamp: new Date()
     };
-    
+
     this.metrics.push(metrics);
     return metrics;
   }
-  
+
   startMonitoring(name: string, intervalMs: number = 100): void {
     const interval = setInterval(() => {
       const metrics = this.captureMetrics();
       this.metrics.push(metrics);
     }, intervalMs);
-    
+
     this.intervals.set(name, interval);
   }
-  
+
   stopMonitoring(name: string): void {
     const interval = this.intervals.get(name);
     if (interval) {
@@ -741,7 +741,7 @@ export class ResourceTracker {
       this.intervals.delete(name);
     }
   }
-  
+
   private captureMetrics(): ResourceMetrics {
     return {
       memoryUsage: process.memoryUsage(),
@@ -750,14 +750,14 @@ export class ResourceTracker {
       timestamp: new Date()
     };
   }
-  
+
   getReport(): ResourceReport {
     const avgMemory = this.calculateAverageMemory();
     const peakMemory = this.findPeakMemory();
-    const totalDuration = this.metrics.length > 0 
-      ? this.metrics[this.metrics.length - 1].duration 
+    const totalDuration = this.metrics.length > 0
+      ? this.metrics[this.metrics.length - 1].duration
       : 0;
-    
+
     return {
       averageMemory: avgMemory,
       peakMemory: peakMemory,
@@ -766,12 +766,12 @@ export class ResourceTracker {
       metrics: this.metrics
     };
   }
-  
+
   private calculateAverageMemory(): NodeJS.MemoryUsage {
     if (this.metrics.length === 0) {
       return process.memoryUsage();
     }
-    
+
     const sum = this.metrics.reduce((acc, metric) => ({
       rss: acc.rss + metric.memoryUsage.rss,
       heapTotal: acc.heapTotal + metric.memoryUsage.heapTotal,
@@ -785,7 +785,7 @@ export class ResourceTracker {
       external: 0,
       arrayBuffers: 0
     });
-    
+
     const count = this.metrics.length;
     return {
       rss: sum.rss / count,
@@ -795,12 +795,12 @@ export class ResourceTracker {
       arrayBuffers: sum.arrayBuffers / count
     };
   }
-  
+
   private findPeakMemory(): NodeJS.MemoryUsage {
     if (this.metrics.length === 0) {
       return process.memoryUsage();
     }
-    
+
     return this.metrics.reduce((peak, metric) => ({
       rss: Math.max(peak.rss, metric.memoryUsage.rss),
       heapTotal: Math.max(peak.heapTotal, metric.memoryUsage.heapTotal),
@@ -809,12 +809,12 @@ export class ResourceTracker {
       arrayBuffers: Math.max(peak.arrayBuffers, metric.memoryUsage.arrayBuffers)
     }), this.metrics[0].memoryUsage);
   }
-  
+
   static formatMemory(bytes: number): string {
     const mb = bytes / 1024 / 1024;
     return `${mb.toFixed(2)} MB`;
   }
-  
+
   static assertMemoryUsage(
     metrics: ResourceMetrics,
     maxHeapMB: number
@@ -871,7 +871,7 @@ export class CleanupManager {
     priority: number;
     fn: () => Promise<void>;
   }> = [];
-  
+
   register(
     name: string,
     fn: () => Promise<void>,
@@ -879,20 +879,20 @@ export class CleanupManager {
   ): void {
     this.cleanupTasks.push({ name, fn, priority });
   }
-  
+
   async executeAll(): Promise<CleanupReport> {
     // Sort by priority (higher priority first)
     const sortedTasks = [...this.cleanupTasks].sort(
       (a, b) => b.priority - a.priority
     );
-    
+
     const report: CleanupReport = {
       total: sortedTasks.length,
       successful: 0,
       failed: 0,
       errors: []
     };
-    
+
     for (const task of sortedTasks) {
       try {
         await task.fn();
@@ -905,7 +905,7 @@ export class CleanupManager {
         });
       }
     }
-    
+
     this.cleanupTasks = [];
     return report;
   }
@@ -951,7 +951,7 @@ export class ResourceCleanup {
       }
     }
   }
-  
+
   static async cleanupDirectory(dir: string): Promise<void> {
     try {
       await fs.emptyDir(dir);
@@ -960,21 +960,21 @@ export class ResourceCleanup {
       console.warn(`Failed to cleanup directory ${dir}:`, error);
     }
   }
-  
+
   static async cleanupProcess(proc: ChildProcess): Promise<void> {
     if (!proc.killed) {
       proc.kill('SIGTERM');
-      
+
       // Give process time to cleanup
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       // Force kill if still running
       if (!proc.killed) {
         proc.kill('SIGKILL');
       }
     }
   }
-  
+
   static async cleanupPort(port: number): Promise<void> {
     // Find and kill process using port
     try {
@@ -1014,31 +1014,31 @@ export async function withRetry<T>(
     onRetry,
     shouldRetry = () => true
   } = options;
-  
+
   let lastError: Error;
-  
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error as Error;
-      
+
       if (attempt === retries || !shouldRetry(lastError)) {
         throw lastError;
       }
-      
+
       if (onRetry) {
         onRetry(lastError, attempt + 1);
       }
-      
+
       const waitTime = backoff === 'exponential'
         ? delay * Math.pow(2, attempt)
         : delay * (attempt + 1);
-      
+
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
   }
-  
+
   throw lastError!;
 }
 
@@ -1109,14 +1109,14 @@ export class TestMonitor {
     startMemory: NodeJS.MemoryUsage;
     retries: number;
   } | null = null;
-  
+
   static getInstance(): TestMonitor {
     if (!this.instance) {
       this.instance = new TestMonitor();
     }
     return this.instance;
   }
-  
+
   startTest(name: string): void {
     this.currentTest = {
       name,
@@ -1125,13 +1125,13 @@ export class TestMonitor {
       retries: 0
     };
   }
-  
+
   endTest(status: 'passed' | 'failed' | 'skipped', error?: Error): void {
     if (!this.currentTest) return;
-    
+
     const duration = performance.now() - this.currentTest.startTime;
     const memory = process.memoryUsage();
-    
+
     this.metrics.push({
       name: this.currentTest.name,
       duration,
@@ -1140,38 +1140,38 @@ export class TestMonitor {
       retries: this.currentTest.retries,
       error: error?.message
     });
-    
+
     this.currentTest = null;
   }
-  
+
   recordRetry(): void {
     if (this.currentTest) {
       this.currentTest.retries++;
     }
   }
-  
+
   generateReport(): TestReport {
     const totalTests = this.metrics.length;
     const passed = this.metrics.filter(m => m.status === 'passed').length;
     const failed = this.metrics.filter(m => m.status === 'failed').length;
     const skipped = this.metrics.filter(m => m.status === 'skipped').length;
-    
+
     const totalDuration = this.metrics.reduce((sum, m) => sum + m.duration, 0);
     const avgDuration = totalDuration / totalTests;
-    
+
     const slowTests = this.metrics
       .filter(m => m.duration > 5000)
       .sort((a, b) => b.duration - a.duration)
       .slice(0, 10);
-    
+
     const memoryIntensiveTests = this.metrics
       .sort((a, b) => b.memory.heapUsed - a.memory.heapUsed)
       .slice(0, 10);
-    
+
     const flakyTests = this.metrics
       .filter(m => m.retries > 0)
       .sort((a, b) => b.retries - a.retries);
-    
+
     return {
       summary: {
         total: totalTests,
@@ -1187,12 +1187,12 @@ export class TestMonitor {
       failures: this.metrics.filter(m => m.status === 'failed')
     };
   }
-  
+
   saveReport(filePath: string): void {
     const report = this.generateReport();
     fs.writeFileSync(filePath, JSON.stringify(report, null, 2));
   }
-  
+
   printSummary(): void {
     const report = this.generateReport();
     console.log('\n=== Test Summary ===');
@@ -1200,14 +1200,14 @@ export class TestMonitor {
     console.log(`Passed: ${report.summary.passed}`);
     console.log(`Failed: ${report.summary.failed}`);
     console.log(`Duration: ${(report.summary.duration / 1000).toFixed(2)}s`);
-    
+
     if (report.slowTests.length > 0) {
       console.log('\n=== Slow Tests ===');
       report.slowTests.forEach(test => {
         console.log(`- ${test.name}: ${(test.duration / 1000).toFixed(2)}s`);
       });
     }
-    
+
     if (report.flakyTests.length > 0) {
       console.log('\n=== Flaky Tests ===');
       report.flakyTests.forEach(test => {
@@ -1235,25 +1235,25 @@ interface TestReport {
 // Vitest plugin integration
 export const testMonitorPlugin = {
   name: 'test-monitor',
-  
+
   setup(ctx: any) {
     const monitor = TestMonitor.getInstance();
-    
+
     ctx.onTestStart((test: any) => {
       monitor.startTest(test.name);
     });
-    
+
     ctx.onTestFinished((test: any) => {
       monitor.endTest(
         test.result?.state || 'skipped',
         test.result?.error
       );
     });
-    
+
     ctx.onTestRetry(() => {
       monitor.recordRetry();
     });
-    
+
     ctx.onFinished(() => {
       monitor.printSummary();
       monitor.saveReport('./test-results/monitor-report.json');
@@ -1281,24 +1281,24 @@ import { TestObjectFactory } from '@/test-utils/TestObjectFactory';
 
 export default async function globalSetup() {
   console.log('🚀 Starting global test setup...');
-  
+
   // Reset test factories
   TestObjectFactory.reset();
-  
+
   // Initialize test monitor
   const monitor = TestMonitor.getInstance();
-  
+
   // Register global cleanup
   globalCleanup.register(
     'databases',
     () => DatabaseTestHelper.cleanupAllDatabases(),
     100 // High priority
   );
-  
+
   // Set test environment variables
   process.env.NODE_ENV = 'test';
   process.env.TEST_TIMEOUT = '10000';
-  
+
   console.log('✅ Global test setup complete');
 }
 ```
@@ -1312,19 +1312,19 @@ import { TestMonitor } from '@/test-utils/test-monitor';
 
 export default async function globalTeardown() {
   console.log('🧹 Starting global test teardown...');
-  
+
   try {
     // Execute all registered cleanup tasks
     const report = await globalCleanup.executeAll();
-    
+
     if (report.failed > 0) {
       console.error('⚠️ Some cleanup tasks failed:', report.errors);
     }
-    
+
     // Generate final test report
     const monitor = TestMonitor.getInstance();
     monitor.saveReport('./test-results/final-report.json');
-    
+
     console.log('✅ Global test teardown complete');
   } catch (error) {
     console.error('❌ Global teardown failed:', error);

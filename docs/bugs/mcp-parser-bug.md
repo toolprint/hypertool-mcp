@@ -1,7 +1,7 @@
 # MCP Parser Bug - Missing Type Field Handling
 
-**Created**: 2025-07-23  
-**Reference Commit**: 0c683824b5736993ab134616d30b528166148997  
+**Created**: 2025-07-23
+**Reference Commit**: 0c683824b5736993ab134616d30b528166148997
 **Branch**: cleanup-prod
 
 ## Problem Statement
@@ -92,7 +92,7 @@ for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
     if (!serverConfig.type) {
       serverConfig.type = 'stdio';
     }
-    
+
     // Validate and process server
     const validatedConfig = validateServerConfig(serverConfig);
     validServers[serverName] = validatedConfig;

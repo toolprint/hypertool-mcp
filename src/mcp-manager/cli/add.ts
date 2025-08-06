@@ -157,13 +157,13 @@ Examples:
   # Add a stdio server
   $ hypertool mcp add my-server /path/to/server arg1 arg2
   $ hypertool mcp add calculator npx -y @modelcontextprotocol/server-calculator
-  
+
   # Add with environment variables
   $ hypertool mcp add my-api /usr/local/bin/api-server --env API_KEY=secret PORT=3000
-  
+
   # Add an HTTP server
   $ hypertool mcp add --transport http api-server https://example.com/mcp
-  
+
   # Add an SSE server with headers
   $ hypertool mcp add --transport sse stream-server https://example.com/sse --header Authorization="Bearer token"
 `

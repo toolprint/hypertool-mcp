@@ -11,12 +11,12 @@ export class FreshInstallScenario implements TestScenario {
   async apply(env: TestEnvironment): Promise<void> {
     // The base environment already provides a clean state
     // We just need to ensure no application configs exist
-    
+
     // This scenario represents a user who has:
     // - Never used HyperTool before
     // - Has the applications installed but no MCP configurations
     // - Ready for first-time setup
-    
+
     // We don't need to do anything here as the base environment
     // already provides this state
   }

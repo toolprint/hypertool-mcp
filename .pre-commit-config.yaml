@@ -58,7 +58,7 @@ repos:
       #   pass_filenames: false
 
 # Optional: Configure default hooks behavior
-default_stages: [commit]
+default_stages: [pre-commit]
 
 # Optional: Configure which hooks to run on which stages
 # stages: [commit, push, manual]

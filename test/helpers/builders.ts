@@ -91,11 +91,11 @@ export class ConfigBuilder {
   addStdioServer(name: string, command: string, args?: string[]): this {
     const server = ServerBuilder.stdio()
       .withCommand(command);
-    
+
     if (args) {
       server.withArgs(...args);
     }
-    
+
     this.servers[name] = server.build();
     return this;
   }
@@ -103,11 +103,11 @@ export class ConfigBuilder {
   addHttpServer(name: string, url: string, headers?: Record<string, string>): this {
     const server = ServerBuilder.http()
       .withUrl(url);
-    
+
     if (headers) {
       server.withHeaders(headers);
     }
-    
+
     this.servers[name] = server.build();
     return this;
   }
@@ -218,10 +218,10 @@ export function randomServer(index: number = 0): MCPServerConfig {
  */
 export function randomServers(count: number): Record<string, MCPServerConfig> {
   const servers: Record<string, MCPServerConfig> = {};
-  
+
   for (let i = 0; i < count; i++) {
     servers[`server-${i}`] = randomServer(i);
   }
-  
+
   return servers;
 }

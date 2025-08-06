@@ -146,12 +146,12 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     if (removedServers.length > 0) {
       logger.warn(`
 ⚠️  WARNING: Self-referencing servers removed from configuration
-   
+
    Removed servers: ${removedServers.join(", ")}
-   
+
    These servers appear to be HyperTool MCP itself, which would cause
    infinite recursion. HyperTool cannot connect to itself as a downstream server.
-   
+
    If you intended to connect to a different MCP server, please check your
    configuration and ensure the command/URL points to the correct server.
    `);
@@ -504,15 +504,15 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       if (!activeToolsetInfo && !hasToolsets) {
         logger.warn(`
 ⚠️  WARNING: No toolsets configured
-   
+
    Meta-MCP is running but no toolsets have been created yet.
    This means no underlying MCP server tools will be exposed.
-   
+
    💡 Next steps:
    1. Use 'list-available-tools' to see what tools are available
    2. Use 'build-toolset' to create a toolset with specific tools
    3. Use the '--equip-toolset' flag or 'equip-toolset' tool to activate a toolset
-   
+
    Example: Create a dev toolset with git and docker tools
    `);
       } else if (!activeToolsetInfo && hasToolsets) {
@@ -521,10 +521,10 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           : [];
         logger.warn(`
 ⚠️  WARNING: No toolset equipped
-   
+
    You have ${toolsetNames.length} saved toolset(s) but none are currently equipped.
    Available toolsets: ${toolsetNames.join(", ")}
-   
+
    💡 Use the '--equip-toolset' flag or 'equip-toolset' tool to activate a toolset and expose its tools.
    `);
       } else if (debug && activeToolsetInfo) {

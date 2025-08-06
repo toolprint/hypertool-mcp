@@ -14,28 +14,28 @@ jobs:
   changeset-check:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Check for changesets
         id: changeset-check
         run: |
           # Check if there are any changeset files (excluding README.md)
           changeset_files=$(find .changeset -name '*.md' -not -name 'README.md' | wc -l)
-          
+
           if [ "$changeset_files" -eq 0 ]; then
             echo "has_changesets=false" >> $GITHUB_OUTPUT
             echo "❌ No changeset files found in this PR"
@@ -53,7 +53,7 @@ jobs:
           else
             echo "has_changesets=true" >> $GITHUB_OUTPUT
             echo "✅ Found $changeset_files changeset file(s) in this PR"
-            
+
             # Show what changesets were found
             echo ""
             echo "📋 Changeset summary:"
@@ -71,7 +71,7 @@ jobs:
               done
             fi
           fi
-      
+
       - name: Comment on PR (no changesets)
         if: steps.changeset-check.outputs.has_changesets == 'false' && !contains(github.event.pull_request.title, '[skip-ci]')
         uses: actions/github-script@v7
@@ -79,42 +79,42 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const pr_number = context.payload.pull_request.number;
-            
+
             const comment = `## 🤖 Changeset Status
-            
+
             ⚠️ **No changeset found** - This PR will default to **patch version** when merged.
-            
+
             ### Is this the right version bump?
-            
+
             - 🐛 **Bug fixes, small improvements** → Automatic patch is perfect! ✅
             - ✨ **New features, API additions** → Consider adding a **minor** changeset
             - 💥 **Breaking changes** → Please add a **major** changeset
-            
+
             ### How to add a changeset:
-            
+
             1. Run \`npx changeset\` in your terminal
-            2. Select the appropriate version bump (patch/minor/major)  
+            2. Select the appropriate version bump (patch/minor/major)
             3. Write a short description of your changes
             4. Commit the generated \`.changeset/*.md\` file
-            
+
             ### Skip release entirely:
             Add \`[skip-ci]\` to your PR title if this shouldn't trigger any release.
-            
+
             ---
             *This comment will update automatically when you push changes.*`;
-            
+
             // Check if we already commented
             const comments = await github.rest.issues.listComments({
               owner,
               repo,
               issue_number: pr_number,
             });
-            
-            const existingComment = comments.data.find(comment => 
-              comment.user.login === 'github-actions[bot]' && 
+
+            const existingComment = comments.data.find(comment =>
+              comment.user.login === 'github-actions[bot]' &&
               comment.body.includes('🤖 Changeset Status')
             );
-            
+
             if (existingComment) {
               await github.rest.issues.updateComment({
                 owner,
@@ -130,7 +130,7 @@ jobs:
                 body: comment
               });
             }
-      
+
       - name: Comment on PR (with changesets)
         if: steps.changeset-check.outputs.has_changesets == 'true'
         uses: actions/github-script@v7
@@ -138,21 +138,21 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const pr_number = context.payload.pull_request.number;
-            
+
             // Get changeset status (with fallback for git issues)
             const { execSync } = require('child_process');
             const fs = require('fs');
             let changesetDetails = '';
-            
+
             try {
               const changesetOutput = execSync('npm run changeset:status', { encoding: 'utf8' });
               changesetDetails = `<details>
             <summary>📋 Changeset Details</summary>
-            
+
             \`\`\`
             ${changesetOutput}
             \`\`\`
-            
+
             </details>`;
             } catch (error) {
               // Fallback: show changeset files directly
@@ -169,30 +169,30 @@ jobs:
                 changesetDetails = '_Could not retrieve changeset details due to CI environment limitations_';
               }
             }
-            
+
             const comment = `## 🤖 Changeset Status
-            
+
             ✅ **Changeset detected** - Version bumps will be handled properly!
-            
+
             ${changesetDetails}
-            
+
             🎉 **Ready to merge** - This PR includes proper changeset files for semantic versioning.
-            
+
             ---
             *This comment will update automatically when you push changes.*`;
-            
+
             // Check if we already commented
             const comments = await github.rest.issues.listComments({
               owner,
               repo,
               issue_number: pr_number,
             });
-            
-            const existingComment = comments.data.find(comment => 
-              comment.user.login === 'github-actions[bot]' && 
+
+            const existingComment = comments.data.find(comment =>
+              comment.user.login === 'github-actions[bot]' &&
               comment.body.includes('🤖 Changeset Status')
             );
-            
+
             if (existingComment) {
               await github.rest.issues.updateComment({
                 owner,
@@ -212,7 +212,7 @@ jobs:
   changeset-command:
     runs-on: ubuntu-latest
     if: github.event_name == 'issue_comment' && contains(github.event.comment.body, '/changeset')
-    
+
     steps:
       - name: React to comment
         uses: actions/github-script@v7
@@ -224,41 +224,41 @@ jobs:
               comment_id: context.payload.comment.id,
               content: 'eyes'
             });
-      
+
       - name: Add changeset instructions
         uses: actions/github-script@v7
         with:
           script: |
             const comment = `## 📝 How to Add a Changeset
-            
+
             1. **In your local development environment:**
                \`\`\`bash
                npx changeset
                \`\`\`
-            
+
             2. **Follow the interactive prompts:**
                - Select packages to bump (usually just hit Enter for @toolprint/hypertool-mcp)
                - Choose version bump type:
                  - **patch** (1.0.0 → 1.0.1) - Bug fixes, small improvements
-                 - **minor** (1.0.0 → 1.1.0) - New features, API additions  
+                 - **minor** (1.0.0 → 1.1.0) - New features, API additions
                  - **major** (1.0.0 → 2.0.0) - Breaking changes
                - Write a short summary of your changes
-            
+
             3. **Commit the generated changeset file:**
                \`\`\`bash
                git add .changeset/*.md
                git commit -m "add changeset for [your changes]"
                git push
                \`\`\`
-            
+
             That's it! The changeset file will be included in your PR and used for proper semantic versioning.
-            
+
             ### Quick Commands:
-            - \`npm run changeset\` - Create new changeset  
+            - \`npm run changeset\` - Create new changeset
             - \`npm run changeset:status\` - Check current status
             - \`npm run changeset:version\` - Preview version bumps
             `;
-            
+
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,

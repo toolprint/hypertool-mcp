@@ -1,11 +1,11 @@
 # [Title] - [Brief Description]
 
-**Created**: [YYYY-MM-DD]  
-**Author**: [Author Name or Session ID]  
-**Reference Commit**: [Git commit hash from when PRD was created]  
-**Branch**: [Current branch name]  
-**Related Tasks**: [Task IDs if applicable]  
-**Status**: Draft | In Review | Approved | Implemented  
+**Created**: [YYYY-MM-DD]
+**Author**: [Author Name or Session ID]
+**Reference Commit**: [Git commit hash from when PRD was created]
+**Branch**: [Current branch name]
+**Related Tasks**: [Task IDs if applicable]
+**Status**: Draft | In Review | Approved | Implemented
 **Priority**: P0 (Critical) | P1 (High) | P2 (Medium) | P3 (Low)
 
 ## Executive Summary

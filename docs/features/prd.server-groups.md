@@ -90,9 +90,9 @@
   These TypeScript interfaces define the contract for our data access layer, independent of NeDB.
 
     1 // src/db/interfaces.ts
-    2 
+    2
     3 import { ServerConfig } from '../types/config.js'; // Assuming this is your existing type
-    4 
+    4
     5 /**
     6  * Represents a canonical, internally managed MCP server configuration record.
     7  * Stored in the 'servers' collection.
@@ -105,7 +105,7 @@
    14   lastModified: number; // Unix timestamp
    15   checksum: string; // Checksum of the config for change detection
    16 }
-   17 
+   17
    18 /**
    19  * Represents a named, user-defined collection of ServerConfigRecord IDs.
    20  * Stored in the 'groups' collection.
@@ -116,7 +116,7 @@
    25   description?: string; // Optional description
    26   serverIds: string[]; // Array of ServerConfigRecord.id strings
    27 }
-   28 
+   28
    29 /**
    30  * Interface for interacting with ServerConfigRecord data.
    31  */
@@ -129,7 +129,7 @@
    38   findAll(): Promise<ServerConfigRecord[]>;
    39   // Additional query methods can be added as needed (e.g., findByType)
    40 }
-   41 
+   41
    42 /**
    43  * Interface for interacting with ServerConfigGroup data.
    44  */
@@ -146,7 +146,7 @@
    55   findServersInGroup(groupId: string): Promise<ServerConfigRecord[]>;
    56   // Additional query methods can be added as needed
    57 }
-   58 
+   58
    59 /**
    60  * Central service interface for managing the database and providing access to repositories.
    61  */

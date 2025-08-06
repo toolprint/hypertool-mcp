@@ -21,45 +21,45 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     name: Pre-publish checks
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Create test results directory
         run: mkdir -p test-results
-      
+
       - name: Cache pre-commit
         uses: actions/cache@v3
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
-      
+
       - name: Set up pre-commit
         run: |
           pip install pre-commit
           pre-commit --version
-      
+
       # Run pre-commit hooks on all files
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
-      
+
       # Parallel execution of main validation tasks
       - name: Run parallel validation tasks
         run: |
@@ -68,22 +68,22 @@ jobs:
           npm run test:ci &
           npx tsc --noEmit &
           npm run lint &
-          
+
           # Wait for all background jobs to complete
           wait
-          
+
           echo "✅ All parallel validation tasks completed successfully"
-      
+
       - name: Format check
         run: |
           echo "Checking code formatting..."
           npm run format:check || (echo "❌ Code formatting issues found. Run 'npm run format' to fix." && exit 1)
-      
+
       - name: Lint markdown files
         run: |
           echo "Linting Markdown files..."
           markdownlint-cli2 "**/*.md" "#node_modules" "#.git" || echo "Markdownlint not available, skipping Markdown linting"
-      
+
       # Upload test results
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -92,7 +92,7 @@ jobs:
           name: test-results
           path: test-results/
           retention-days: 30
-      
+
       # Display test results in PR
       - name: Publish test results
         uses: dorny/test-reporter@v1
@@ -102,6 +102,6 @@ jobs:
           path: test-results/junit.xml
           reporter: java-junit
           fail-on-error: true
-      
+
       - name: Validation complete
         run: echo "✅ All pre-publish checks passed! PR is ready for review."

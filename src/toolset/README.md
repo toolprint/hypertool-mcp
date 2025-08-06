@@ -78,7 +78,7 @@ interface ToolsetConfig {
 ```typescript
 // Store both ways to identify a tool
 interface DynamicToolReference {
-  namespacedName?: string;  // e.g., "git.status" 
+  namespacedName?: string;  // e.g., "git.status"
   refId?: string;          // e.g., "abc123def456..." (tool hash)
 }
 ```
@@ -127,13 +127,13 @@ class ToolsetManager {
   // Load/save toolset configurations
   async loadConfig(filePath: string): Promise<ValidationResult>
   async saveConfig(filePath?: string): Promise<{success: boolean}>
-  
+
   // Set configuration directly (in-memory)
   setConfig(config: ToolsetConfig): ValidationResult
-  
+
   // Apply toolset to filter available tools
   async applyConfig(
-    discoveredTools: DiscoveredTool[], 
+    discoveredTools: DiscoveredTool[],
     discoveryEngine?: IToolDiscoveryEngine
   ): Promise<ToolsetResolution>
 }
@@ -144,7 +144,7 @@ class ToolsetManager {
 Implements the actual MCP tools for toolset management:
 
 - `build-toolset`: Create new toolsets from selected tools
-- `list-saved-toolsets`: View all saved toolset configurations  
+- `list-saved-toolsets`: View all saved toolset configurations
 - `equip-toolset`: Activate a toolset to filter available tools
 - `unequip-toolset`: Remove toolset filter, show all tools
 - `delete-toolset`: Remove a saved toolset configuration
@@ -173,7 +173,7 @@ const toolsetConfig = {
 
 // 3. Later, when loading toolset
 const resolution = await toolsetManager.applyConfig(
-  discoveredTools, 
+  discoveredTools,
   discoveryEngine
 );
 
@@ -208,7 +208,7 @@ for (const toolRef of toolset.tools) {
   const resolution = discoveryEngine.resolveToolReference(toolRef, {
     allowStaleRefs: false // Default: secure mode
   });
-  
+
   if (!resolution.exists) {
     if (resolution.errors.length > 0) {
       // Security rejection - tool identifiers don't match
@@ -219,7 +219,7 @@ for (const toolRef of toolset.tools) {
     }
     continue; // Skip rejected/missing tool, continue with others
   }
-  
+
   // Tool passed security validation
   resolvedTools.push(convertToResolvedTool(resolution.tool));
 }
@@ -229,7 +229,7 @@ for (const toolRef of toolset.tools) {
 
 1. **Secure Mode (Default)**: `allowStaleRefs: false`
    - Rejects tools where `namespacedName` and `refId` point to different tools
-   - Rejects tools where either identifier changed unexpectedly  
+   - Rejects tools where either identifier changed unexpectedly
    - Only allows tools where both identifiers consistently point to the same tool
    - Recommended for production environments
 
@@ -271,12 +271,12 @@ interface IToolDiscoveryEngine {
 if (this.activeToolset) {
   this.toolsetManager.setConfig(this.activeToolset);
   const resolution = await this.toolsetManager.applyConfig(
-    discoveredTools, 
+    discoveredTools,
     this.discoveryEngine
   );
-  
+
   // Only expose tools from the active toolset
-  toolsToExpose = resolution.tools.map(resolvedTool => 
+  toolsToExpose = resolution.tools.map(resolvedTool =>
     findOriginalDiscoveredTool(resolvedTool)
   );
 }
@@ -299,7 +299,7 @@ Toolsets are stored in `~/.toolprint/hypertool-mcp/toolsets.json`:
         "refId": "sha256:abc123..."
       },
       {
-        "namespacedName": "docker.ps", 
+        "namespacedName": "docker.ps",
         "refId": "sha256:def456..."
       }
     ]

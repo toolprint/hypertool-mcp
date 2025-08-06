@@ -33,7 +33,7 @@ AI: *Creates issue in Frontend team* ✅
 // For Docker tools
 "Always use --no-cache flag when building production images"
 
-// For Git tools  
+// For Git tools
 "Commit messages must follow conventional commits format"
 
 // For Database tools

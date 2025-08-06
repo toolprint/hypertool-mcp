@@ -50,25 +50,25 @@ export class ClaudeCodeFixture {
       globalCommands?: boolean;
     } = {}
   ): Promise<void> {
-    const { 
-      withServers = true, 
+    const {
+      withServers = true,
       customServers,
       withBackup = false,
       withSlashCommands = false,
       globalCommands = false
     } = options;
 
-    const servers = withServers 
+    const servers = withServers
       ? (customServers || this.getDefaultServers())
       : {};
-    
+
     const config = this.createConfig(servers);
-    
+
     // Convert project path to be relative to base dir if needed
-    const relativeProjectPath = projectPath.startsWith('/') 
+    const relativeProjectPath = projectPath.startsWith('/')
       ? projectPath.substring(env.getBaseDir().length + 1)
       : projectPath;
-    
+
     const files: Record<string, string> = {
       [join(relativeProjectPath, '.mcp.json')]: config
     };
@@ -83,16 +83,16 @@ export class ClaudeCodeFixture {
       const hypertoolConfig = {
         mcpServers: servers
       };
-      files[join(relativeProjectPath, 'mcp.hypertool.json')] = 
+      files[join(relativeProjectPath, 'mcp.hypertool.json')] =
         JSON.stringify(hypertoolConfig, null, 2);
     }
 
     // Add slash commands if requested
     if (withSlashCommands) {
-      const commandsPath = globalCommands 
+      const commandsPath = globalCommands
         ? '.claude/commands/ht'
         : join(relativeProjectPath, '.claude/commands/ht');
-      
+
       files[join(commandsPath, 'list-all-tools.md')] = '# List all tools\nLists all available MCP tools';
       files[join(commandsPath, 'use-toolset.md')] = '# Use toolset\nActivates a specific toolset';
     }
@@ -111,10 +111,10 @@ export class ClaudeCodeFixture {
    * Create a corrupted configuration
    */
   static async installCorrupted(env: TestEnvironment, projectPath: string): Promise<void> {
-    const relativeProjectPath = projectPath.startsWith('/') 
+    const relativeProjectPath = projectPath.startsWith('/')
       ? projectPath.substring(env.getBaseDir().length + 1)
       : projectPath;
-    
+
     await env.createAppStructure('claude-code', {
       [join(relativeProjectPath, '.mcp.json')]: 'not valid json at all',
       [join(relativeProjectPath, 'package.json')]: JSON.stringify({
@@ -131,13 +131,13 @@ export class ClaudeCodeFixture {
     projectPath: string,
     originalServers: Record<string, MCPServerConfig> = {}
   ): Promise<void> {
-    const relativeProjectPath = projectPath.startsWith('/') 
+    const relativeProjectPath = projectPath.startsWith('/')
       ? projectPath.substring(env.getBaseDir().length + 1)
       : projectPath;
-    
+
     const configPath = join(relativeProjectPath, '.mcp.json');
     const hypertoolPath = join(relativeProjectPath, 'mcp.hypertool.json');
-    
+
     // Main config only has hypertool
     const mainConfig = {
       mcpServers: {
@@ -151,8 +151,8 @@ export class ClaudeCodeFixture {
 
     // Hypertool config has the original servers
     const hypertoolConfig = {
-      mcpServers: Object.keys(originalServers).length > 0 
-        ? originalServers 
+      mcpServers: Object.keys(originalServers).length > 0
+        ? originalServers
         : this.getDefaultServers()
     };
 
@@ -174,10 +174,10 @@ export class ClaudeCodeFixture {
    * Check if Claude Code is configured in a project
    */
   static async isInstalled(env: TestEnvironment, projectPath: string): Promise<boolean> {
-    const relativeProjectPath = projectPath.startsWith('/') 
+    const relativeProjectPath = projectPath.startsWith('/')
       ? projectPath.substring(env.getBaseDir().length + 1)
       : projectPath;
-    
+
     return await env.fileExists(join(relativeProjectPath, '.mcp.json'));
   }
 
@@ -185,10 +185,10 @@ export class ClaudeCodeFixture {
    * Create project without MCP configuration
    */
   static async createEmptyProject(env: TestEnvironment, projectPath: string): Promise<void> {
-    const relativeProjectPath = projectPath.startsWith('/') 
+    const relativeProjectPath = projectPath.startsWith('/')
       ? projectPath.substring(env.getBaseDir().length + 1)
       : projectPath;
-    
+
     await env.createAppStructure('claude-code', {
       [join(relativeProjectPath, 'package.json')]: JSON.stringify({
         name: 'empty-project',
@@ -211,10 +211,10 @@ export class ClaudeCodeFixture {
    * Check if project has local slash commands
    */
   static async hasLocalCommands(env: TestEnvironment, projectPath: string): Promise<boolean> {
-    const relativeProjectPath = projectPath.startsWith('/') 
+    const relativeProjectPath = projectPath.startsWith('/')
       ? projectPath.substring(env.getBaseDir().length + 1)
       : projectPath;
-    
+
     return await env.fileExists(join(relativeProjectPath, '.claude/commands/ht/list-all-tools.md'));
   }
 }

@@ -3,7 +3,7 @@ FROM node:22-alpine AS builder
 
 # Use buildx automatic platform variables for cross-compilation
 ARG TARGETPLATFORM
-ARG BUILDPLATFORM  
+ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 
@@ -44,7 +44,7 @@ FROM node:22-alpine AS production
 # Use buildx automatic platform variables
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
-ARG TARGETOS  
+ARG TARGETOS
 ARG TARGETARCH
 
 # Install runtime dependencies including Python/UV, timezone data, and system utilities

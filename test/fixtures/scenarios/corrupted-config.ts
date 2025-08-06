@@ -3,10 +3,10 @@
  */
 
 import { TestScenario, TestEnvironment } from '../base.js';
-import { 
-  ClaudeDesktopFixture, 
-  CursorFixture, 
-  ClaudeCodeFixture 
+import {
+  ClaudeDesktopFixture,
+  CursorFixture,
+  ClaudeCodeFixture
 } from '../applications/index.js';
 
 export class CorruptedConfigScenario implements TestScenario {
@@ -84,7 +84,7 @@ export class EdgeCasesScenario implements TestScenario {
     // Claude Code with hypertool config but missing main config
     const project = await env.createProjectDir('edge-case-project');
     const relativeProject = project.substring(env.getBaseDir().length + 1);
-    
+
     await env.createAppStructure('claude-code', {
       [`${relativeProject}/mcp.hypertool.json`]: JSON.stringify({
         mcpServers: {
@@ -102,7 +102,7 @@ export class EdgeCasesScenario implements TestScenario {
     // Create a project with very large config
     const largeProject = await env.createProjectDir('large-config-project');
     const largeRelativeProject = largeProject.substring(env.getBaseDir().length + 1);
-    
+
     const largeServers: Record<string, any> = {};
     for (let i = 0; i < 50; i++) {
       largeServers[`server-${i}`] = {
@@ -111,7 +111,7 @@ export class EdgeCasesScenario implements TestScenario {
         args: [`--id=${i}`]
       };
     }
-    
+
     await env.createAppStructure('claude-code', {
       [`${largeRelativeProject}/.mcp.json`]: JSON.stringify({
         mcpServers: largeServers

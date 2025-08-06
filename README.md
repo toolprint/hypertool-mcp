@@ -19,7 +19,7 @@
 ### 🔓 **Break Free from Tool Limits**
 Connect unlimited MCP servers. Use 10, 50, or 500+ tools total - your AI only sees what it needs.
 
-### 🎯 **Task-Specific Toolsets** 
+### 🎯 **Task-Specific Toolsets**
 Build "git-essentials" with 5 tools instead of drowning in 47 Git commands. Switch contexts instantly.
 
 ### 🧠 **Smart Tool Descriptions**
@@ -126,7 +126,7 @@ ALL YOUR TOOLS (64 total)              YOUR TOOLSETS
                                        │  • docker.logs   │
 AI sees ALL 64 tools = confused 😵     │  • traces.view   │
                                        └──────────────────┘
-                                       
+
                                        AI sees 3-5 tools = focused 🎯
 ```
 
@@ -201,32 +201,32 @@ AI: "Switching to writing toolset"
 
 ### General Questions
 
-**Q: How is this different from just using MCP servers directly?**  
+**Q: How is this different from just using MCP servers directly?**
 A: HyperTool lets you use unlimited MCP servers without hitting the 100-tool limit, and dynamically switches between focused toolsets for better AI performance.
 
-**Q: Can I use multiple toolsets at once?**  
+**Q: Can I use multiple toolsets at once?**
 A: In stdio mode (default), use `--equip-toolset <name>` when launching. HTTP mode supports one active toolset but you can switch anytime.
 
-**Q: Where are my toolsets stored?**  
+**Q: Where are my toolsets stored?**
 A: Locally in `~/.toolprint/hypertool-mcp/`. Explore the directory to see your configurations.
 
 ### Setup & Compatibility
 
-**Q: Does this work with Claude Desktop / Cursor / Claude Code?**  
+**Q: Does this work with Claude Desktop / Cursor / Claude Code?**
 A: Yes! Cursor has full hot-swapping support. Claude Desktop works with restart. Claude Code [hot-swap coming soon](https://github.com/anthropics/claude-code/issues/411).
 
-**Q: What if an MCP server goes down?**  
+**Q: What if an MCP server goes down?**
 A: HyperTool monitors health and automatically reconnects when servers come back. Your toolsets stay intact.
 
-**Q: Can I share toolsets with my team?**  
+**Q: Can I share toolsets with my team?**
 A: Import/export is coming soon! For now, you can copy and share toolset files - they'll work if your team has the same MCP servers configured.
 
 ### Technical Questions
 
-**Q: How do I add tools from a new MCP server?**  
+**Q: How do I add tools from a new MCP server?**
 A: Just add the server to your `.mcp.hypertool.json` config. It's automatically available for toolsets.
 
-**Q: Can I use this in production?**  
+**Q: Can I use this in production?**
 A: Yes! For enterprise support, [contact us](mailto:support@onegrep.dev?subject=HyperTool%20Production%20Use&body=Hi%20team%2C%0A%0AI'm%20interested%20in%20using%20HyperTool%20in%20production.%0A%0ACompany%3A%20%0AUse%20case%3A%20%0AScale%3A%20%0A%0AThanks!).
 
 
@@ -282,7 +282,7 @@ SKIP=eslint,typescript git commit -m "emergency fix"
 ### Available Commands
 ```bash
 just build          # Build the project
-just test           # Run tests  
+just test           # Run tests
 just lint           # Run linting
 just format         # Format code
 just typecheck      # Check types

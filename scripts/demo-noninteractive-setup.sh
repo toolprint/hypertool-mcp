@@ -11,7 +11,7 @@ echo ""
 run_demo() {
     local title="$1"
     local cmd="$2"
-    
+
     echo "----------------------------------------"
     echo "📦 $title"
     echo "Command: $cmd"

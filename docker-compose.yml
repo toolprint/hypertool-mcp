@@ -38,36 +38,36 @@ services:
       - HYPERTOOL_HOST=0.0.0.0
       - HYPERTOOL_LOG_LEVEL=info
       - HYPERTOOL_DEBUG=false
-      
+
       # Override home directory detection for container
       - HOME=/home/app
       - HYPERTOOL_HOME=/home/app
-      
+
       # Docker environment flags (but not limiting functionality)
       - RUNNING_IN_DOCKER=true
       - UV_SYSTEM_PYTHON=1
-      
+
       # Enable full NeDB support (remove container-specific limitations)
       # - DOCKER_CONTAINER=true  # Removed to enable full functionality
-      
+
       # Optional: Equip specific toolset on startup
       # - HYPERTOOL_EQUIP_TOOLSET=development
-      
+
       # Optional: Use specific server group
       # - HYPERTOOL_GROUP=production-servers
-      
+
       # Note: No need for HYPERTOOL_MCP_CONFIG - will auto-discover from mounted ~/.toolprint
-    
+
     # Run as non-root user for security (maps to host user)
     user: "501:20"  # Match host user's UID:GID for proper file permissions
-    
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
-    
+
     # Resource limits (adjust based on your needs)
     deploy:
       resources:
@@ -77,14 +77,14 @@ services:
         reservations:
           cpus: '0.2'
           memory: 256M
-    
+
     # Security settings
     security_opt:
       - no-new-privileges:true
     read_only: false  # Needs write access for database and logs
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
-    
+
     # Labels for organization
     labels:
       - "com.toolprint.service=hypertool-mcp"

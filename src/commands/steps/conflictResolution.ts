@@ -24,10 +24,10 @@ export class ConflictResolutionStep implements WizardStep {
 
     /* DISABLED - KEEP FOR FUTURE USE
     // Original conflict resolution logic:
-    
+
     // Find naming conflicts among selected servers
     const conflicts = this.findConflicts(state);
-    
+
     // Skip if no conflicts
     if (conflicts.length === 0) {
       return state;
@@ -36,14 +36,14 @@ export class ConflictResolutionStep implements WizardStep {
     // In non-interactive mode, auto-resolve by adding app suffix
     if (state.nonInteractive) {
       const serverNameMapping: Record<string, string> = {};
-      
+
       for (const conflict of conflicts) {
         for (const server of conflict.servers) {
           const newName = `${server.name}-${server.fromApp}`;
           serverNameMapping[`${server.fromApp}:${server.name}`] = newName;
         }
       }
-      
+
       return {
         ...state,
         serverNameMapping
@@ -59,12 +59,12 @@ export class ConflictResolutionStep implements WizardStep {
     // Handle each conflict
     for (const conflict of conflicts) {
       output.info(`Conflict: "${theme.label(conflict.name)}" exists in multiple apps:`);
-      
+
       for (const server of conflict.servers) {
         const app = state.detectedApps.find(a => a.id === server.fromApp);
         output.info(`  • ${app?.displayName}: ${server.description || 'No description'}`);
       }
-      
+
       output.displaySpaceBuffer(1);
 
       // Ask resolution strategy
@@ -123,11 +123,11 @@ export class ConflictResolutionStep implements WizardStep {
               return true;
             }
           }]);
-          
+
           serverNameMapping[`${server.fromApp}:${server.name}`] = customName;
         }
       }
-      
+
       output.displaySpaceBuffer(1);
     }
 
@@ -145,22 +145,22 @@ export class ConflictResolutionStep implements WizardStep {
     servers: SelectedServer[];
   }> {
     const serverGroups = new Map<string, SelectedServer[]>();
-    
+
     // Note: This would need to be updated to work with perAppSelections
     // when conflict resolution is re-enabled
-    
+
     // Group selected servers by name
     for (const [appId, servers] of Object.entries(state.perAppSelections)) {
       for (const server of servers) {
         if (!server.selected) continue;
-        
+
         if (!serverGroups.has(server.name)) {
           serverGroups.set(server.name, []);
         }
         serverGroups.get(server.name)!.push(server);
       }
     }
-    
+
     // Find conflicts (multiple servers with same name)
     const conflicts = [];
     for (const [name, servers] of serverGroups.entries()) {
@@ -168,7 +168,7 @@ export class ConflictResolutionStep implements WizardStep {
         conflicts.push({ name, servers });
       }
     }
-    
+
     return conflicts;
   }
   */

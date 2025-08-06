@@ -126,10 +126,10 @@ In `src/index.ts`:
    ```bash
    # Test stdio mode
    hypertool-mcp --transport stdio 2>stderr.log
-   
+
    # Verify stdout contains only JSON-RPC
    hypertool-mcp | jq .
-   
+
    # Verify stderr contains diagnostic output
    cat stderr.log
    ```
