@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { MCPConfigParser } from "./mcpConfigParser.js";
 import { MCPConfig } from "../types/config.js";
 import * as fs from "fs/promises";
+import * as path from "path";
 
 // Mock fs module
 vi.mock("fs/promises");
@@ -427,6 +428,53 @@ describe("MCPConfigParser", () => {
       );
     });
 
+    it("should resolve relative paths to absolute paths", async () => {
+      const relativePath = "./test-config.json";
+      const expectedAbsolutePath = path.resolve(relativePath);
+      const content = JSON.stringify({
+        mcpServers: {
+          git: {
+            type: "stdio",
+            command: "uvx",
+            args: ["mcp-server-git"],
+          },
+        },
+      });
+
+      mockFs.access.mockResolvedValue(undefined);
+      mockFs.readFile.mockResolvedValue(content);
+
+      const result = await parser.parseFile(relativePath);
+
+      expect(result.success).toBe(true);
+      expect(result.config).toBeDefined();
+      expect(mockFs.access).toHaveBeenCalledWith(expectedAbsolutePath);
+      expect(mockFs.readFile).toHaveBeenCalledWith(expectedAbsolutePath, "utf-8");
+    });
+
+    it("should handle relative paths with parent directories", async () => {
+      const relativePath = "../configs/mcp.json";
+      const expectedAbsolutePath = path.resolve(relativePath);
+      const content = JSON.stringify({
+        mcpServers: {
+          test: {
+            type: "sse",
+            url: "https://example.com/sse",
+          },
+        },
+      });
+
+      mockFs.access.mockResolvedValue(undefined);
+      mockFs.readFile.mockResolvedValue(content);
+
+      const result = await parser.parseFile(relativePath);
+
+      expect(result.success).toBe(true);
+      expect(result.config).toBeDefined();
+      expect(mockFs.access).toHaveBeenCalledWith(expectedAbsolutePath);
+      expect(mockFs.readFile).toHaveBeenCalledWith(expectedAbsolutePath, "utf-8");
+    });
+
     it("should handle file not found error", async () => {
       const error = new Error("ENOENT") as NodeJS.ErrnoException;
       error.code = "ENOENT";
@@ -436,6 +484,21 @@ describe("MCPConfigParser", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Configuration file not found");
+    });
+
+    it("should handle file not found error with relative paths", async () => {
+      const relativePath = "./missing-config.json";
+      const expectedAbsolutePath = path.resolve(relativePath);
+      const error = new Error("ENOENT") as NodeJS.ErrnoException;
+      error.code = "ENOENT";
+      mockFs.access.mockRejectedValue(error);
+
+      const result = await parser.parseFile(relativePath);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Configuration file not found");
+      expect(result.error).toContain(relativePath);
+      expect(result.error).toContain(expectedAbsolutePath);
     });
 
     it("should handle file read error", async () => {

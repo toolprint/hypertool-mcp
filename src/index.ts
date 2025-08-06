@@ -172,6 +172,17 @@ const mcpServerRunOptions = [
     defaultValue: "info",
   },
   {
+    flags: "--linked-app <app-id>",
+    description: theme.info("Link to specific application configuration") +
+      "\n" +
+      theme.label("Options: claude-desktop, cursor, claude-code"),
+  },
+  {
+    flags: "--profile <profile-id>",
+    description: theme.info("Use specific profile for workspace/project") +
+      theme.muted(" (basic support - full profile management TODO)"),
+  },
+  {
     flags: "--group <name>",
     description: theme.info("Server group name to load servers from"),
   },
@@ -415,40 +426,6 @@ async function runMcpServer(options: any): Promise<void> {
   }
 }
 
-async function getMcpCommand(): Promise<Command> {
-  const mcpCommand = new Command("mcp").description(
-    "MCP server operations and management"
-  );
-
-  // Add 'run' subcommand for running the MCP server
-  const runCommand = new Command("run").description(
-    "Run the MCP server (default if no subcommand specified)"
-  );
-
-  // Add all MCP server options to the run command
-  addMcpServerOptions(runCommand);
-
-  runCommand.action(async (options) => {
-    // Run the MCP server with the given options
-    await runMcpServer(options);
-  });
-
-  mcpCommand.addCommand(runCommand);
-
-  // Add MCP server management commands directly
-  const {
-    createListCommand,
-    createGetCommand,
-    createAddCommand,
-    createRemoveCommand,
-  } = await import("./mcp-manager/cli/index.js");
-  mcpCommand.addCommand(createListCommand());
-  mcpCommand.addCommand(createGetCommand());
-  mcpCommand.addCommand(createAddCommand());
-  mcpCommand.addCommand(createRemoveCommand());
-
-  return mcpCommand;
-}
 
 /**
  * Parse CLI arguments and set up the program structure
@@ -460,42 +437,6 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .name(APP_TECHNICAL_NAME)
     .description(theme.info(APP_DESCRIPTION))
     .version(APP_VERSION)
-    .option(
-      "--debug",
-      theme.info("Enable debug mode with verbose logging"),
-      false
-    )
-    .option(
-      "--insecure",
-      theme.warning("Allow tools with changed reference hashes") +
-        semantic.messageError(" (insecure mode)"),
-      false
-    )
-    .option(
-      "--equip-toolset <name>",
-      theme.info("Toolset name to equip on startup")
-    )
-    .option(
-      "--mcp-config <path>",
-      theme.info("Path to MCP configuration file") +
-        theme.muted(" (overrides all other config sources)")
-    )
-    .option(
-      "--linked-app <app-id>",
-      theme.info("Link to specific application configuration") +
-        "\n" +
-        theme.label("Options: claude-desktop, cursor, claude-code")
-    )
-    .option(
-      "--profile <profile-id>",
-      theme.info("Use specific profile for workspace/project") +
-        theme.muted(" (basic support - full profile management TODO)")
-    )
-    .option(
-      "--log-level <level>",
-      theme.info("Log level") + " (trace, debug, info, warn, error, fatal)",
-      "info"
-    )
     .option(
       "--dry-run",
       theme.info("Show what would be done without making changes") +
@@ -542,57 +483,15 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
 
   // Add 'run' subcommand for running the MCP server
   const runCommand = new Command("run")
-    .description("Run the MCP server (default if no subcommand specified)")
-    .option(
-      "--transport <type>",
-      theme.info("Transport protocol to use") + " (http, stdio)",
-      "stdio"
-    )
-    .option(
-      "--port <number>",
-      theme.info("Port number for HTTP transport") +
-        " (only valid with --transport http)"
-    )
-    .option(
-      "--debug",
-      theme.info("Enable debug mode with verbose logging"),
-      false
-    )
-    .option(
-      "--insecure",
-      theme.warning("Allow tools with changed reference hashes") +
-        semantic.messageError(" (insecure mode)"),
-      false
-    )
-    .option(
-      "--equip-toolset <name>",
-      theme.info("Toolset name to equip on startup")
-    )
-    .option(
-      "--mcp-config <path>",
-      theme.info("Path to MCP configuration file") +
-        theme.muted(" (overrides all other config sources)")
-    )
-    .option(
-      "--linked-app <app-id>",
-      theme.info("Link to specific application configuration") +
-        "\n" +
-        theme.label("Options: claude-desktop, cursor, claude-code")
-    )
-    .option(
-      "--profile <profile-id>",
-      theme.info("Use specific profile for workspace/project") +
-        theme.muted(" (basic support - full profile management TODO)")
-    )
-    .option(
-      "--log-level <level>",
-      theme.info("Log level") + " (trace, debug, info, warn, error, fatal)",
-      "info"
-    )
-    .action(async (options) => {
-      // Run the MCP server with the given options
-      await runMcpServer(options);
-    });
+    .description("Run the MCP server (default if no subcommand specified)");
+
+  // Add all MCP server options to the run command
+  addMcpServerOptions(runCommand);
+
+  runCommand.action(async (options) => {
+    // Run the MCP server with the given options
+    await runMcpServer(options);
+  });
 
   mcpCommand.addCommand(runCommand);
 

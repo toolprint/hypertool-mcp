@@ -32,17 +32,20 @@ export class MCPConfigParser {
    */
   async parseFile(filePath: string): Promise<ParseResult> {
     try {
+      // Resolve relative paths to absolute paths based on current working directory
+      const resolvedPath = path.resolve(filePath);
+      
       // Check if file exists
-      await fs.access(filePath);
+      await fs.access(resolvedPath);
 
       // Read and parse the file
-      const content = await fs.readFile(filePath, "utf-8");
-      return this.parseContent(content, path.dirname(filePath));
+      const content = await fs.readFile(resolvedPath, "utf-8");
+      return this.parseContent(content, path.dirname(resolvedPath));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         return {
           success: false,
-          error: `Configuration file not found: ${filePath}`,
+          error: `Configuration file not found: ${filePath} (resolved to: ${path.resolve(filePath)})`,
         };
       }
       return {
