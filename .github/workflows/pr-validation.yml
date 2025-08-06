@@ -34,11 +34,31 @@ jobs:
           node-version: '20'
           cache: 'npm'
       
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
       - name: Install dependencies
         run: npm ci
       
       - name: Create test results directory
         run: mkdir -p test-results
+      
+      - name: Cache pre-commit
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+      
+      - name: Set up pre-commit
+        run: |
+          pip install pre-commit
+          pre-commit --version
+      
+      # Run pre-commit hooks on all files
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
       
       # Parallel execution of main validation tasks
       - name: Run parallel validation tasks

@@ -38,6 +38,20 @@ setup: brew
     npm run build
     @echo "✅ Setup complete!"
 
+# Setup pre-commit hooks for development
+[group('setup')]
+setup-pre-commit:
+    @echo "🔧 Setting up pre-commit hooks..."
+    pip install pre-commit
+    pre-commit install
+    @echo "✅ Pre-commit hooks installed!"
+    @echo "💡 Run 'just pre-commit-check' to test all hooks"
+
+# Full development setup including pre-commit
+[group('setup')]
+setup-dev: setup setup-pre-commit
+    @echo "🎉 Development environment ready!"
+
 # Run development mode with optional arguments
 [group('dev')]
 dev *args='':
@@ -84,6 +98,16 @@ lint:
     @echo "Linting Markdown files..."
     @markdownlint-cli2 "**/*.md" "#node_modules" "#.git" || echo "Markdownlint not available, skipping Markdown linting"
     @echo "Linting complete!"
+
+# Run pre-commit hooks on staged files
+[group('lint')]
+pre-commit-check:
+    pre-commit run
+
+# Run pre-commit hooks on all files
+[group('lint')]
+pre-commit-check-all:
+    pre-commit run --all-files
 
 # Pre-publish checks: build, test, lint, and typecheck
 [group('publish')]

@@ -250,6 +250,45 @@ A: Yes! For enterprise support, [contact us](mailto:support@onegrep.dev?subject=
 - 🔧 [Troubleshooting](guides/TROUBLESHOOTING.md) - Common issues and solutions
 - 📖 [Examples & Recipes](guides/EXAMPLES.md) - Toolset patterns for every workflow
 
+## 🛠️ Development Setup
+
+### Prerequisites
+- Node.js 18+
+- Python 3.8+ (for pre-commit hooks)
+
+### Quick Setup
+```bash
+# Clone and install
+git clone https://github.com/toolprint/hypertool-mcp.git
+cd hypertool-mcp
+just setup-dev  # Installs dependencies and pre-commit hooks
+```
+
+### Pre-commit Hooks
+This project uses pre-commit hooks to ensure code quality:
+
+```bash
+# Install pre-commit hooks (included in setup-dev)
+just setup-pre-commit
+
+# Run hooks manually
+just pre-commit-check        # On staged files
+just pre-commit-check-all    # On all files
+
+# Skip hooks for emergency commits (use sparingly)
+SKIP=eslint,typescript git commit -m "emergency fix"
+```
+
+### Available Commands
+```bash
+just build          # Build the project
+just test           # Run tests  
+just lint           # Run linting
+just format         # Format code
+just typecheck      # Check types
+just pre-publish-checks  # Run all quality checks
+```
+
 ## 🤝 Contributing
 
 Found a bug? Have an idea? We'd love your help!

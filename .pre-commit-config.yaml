@@ -1,0 +1,64 @@
+repos:
+  # Basic file hygiene and validation
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+        description: Trim trailing whitespace
+      - id: end-of-file-fixer
+        description: Ensure files end with newline
+      - id: check-json
+        description: Check JSON syntax
+      - id: check-yaml
+        description: Check YAML syntax
+      - id: check-merge-conflict
+        description: Check for merge conflicts
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+        description: Prevent large files from being committed
+
+  # Local hooks using existing npm scripts
+  - repo: local
+    hooks:
+      # Prettier formatting (auto-fix)
+      - id: prettier
+        name: Prettier Format
+        description: Format code with Prettier
+        entry: npm run format
+        language: system
+        files: \.(ts|js|json|md)$
+        pass_filenames: false
+
+      # ESLint linting
+      - id: eslint
+        name: ESLint
+        description: Lint TypeScript files with ESLint
+        entry: npm run lint
+        language: system
+        files: \.ts$
+        pass_filenames: false
+
+      # TypeScript compilation check
+      - id: typescript
+        name: TypeScript Check
+        description: Check TypeScript types
+        entry: npx tsc --noEmit
+        language: system
+        files: \.ts$
+        pass_filenames: false
+
+      # Optional: Run tests on changed files
+      # Uncomment if you want to run tests before commit
+      # - id: vitest
+      #   name: Vitest Tests
+      #   description: Run tests on affected files
+      #   entry: npm run test
+      #   language: system
+      #   files: \.(ts|js)$
+      #   pass_filenames: false
+
+# Optional: Configure default hooks behavior
+default_stages: [commit]
+
+# Optional: Configure which hooks to run on which stages
+# stages: [commit, push, manual]
