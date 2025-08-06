@@ -19,6 +19,16 @@ import { RuntimeOptions, RuntimeTransportType } from "./types/runtime.js";
 import type { TransportConfig, ServerInitOptions } from "./server/types.js";
 import { discoverMcpConfig } from "./config/mcpConfigLoader.js";
 import { getLogger } from "./utils/logging.js";
+import { 
+  parseEnvDotNotation, 
+  hasSmitheryConfig, 
+  getConfigSourceDescription,
+  validateParsedConfig,
+  type ParsedEnvConfig 
+} from "./utils/envConfigParser.js";
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
 
 // Configuration interface for Smithery
 export interface SmitheryConfig {
@@ -53,6 +63,10 @@ async function startServer(config: SmitheryConfig = {}): Promise<void> {
   // Initialize logger with transport-aware configuration
   const logger = getLogger(undefined, runtimeOptions);
   
+  // Parse environment variables for Smithery configuration
+  const envConfig = parseEnvDotNotation();
+  const hasEnvConfig = hasSmitheryConfig();
+  
   // Log all available configuration sources for experimentation
   logger.info("=== SMITHERY CONFIGURATION EXPERIMENT ===");
   logger.info("CLI Arguments:", process.argv.slice(2));
@@ -61,14 +75,34 @@ async function startServer(config: SmitheryConfig = {}): Promise<void> {
   ).reduce((acc, key) => ({ ...acc, [key]: process.env[key] }), {}));
   logger.info("Passed Config Object:", config);
   
+  if (hasEnvConfig) {
+    logger.info("Parsed Environment Config:", envConfig);
+    logger.info("Environment Config Sources:", getConfigSourceDescription(envConfig));
+    
+    // Validate environment configuration
+    const validation = validateParsedConfig(envConfig);
+    if (!validation.valid) {
+      logger.warn("Environment configuration validation issues:", validation.errors);
+    }
+    
+    // Merge environment config (but CLI args and passed config take precedence)
+    config = {
+      ...envConfig,
+      ...config
+    };
+  }
+  
   // Check for JSON configuration in environment
   const jsonConfigEnv = process.env.SMITHERY_CONFIG || process.env.MCP_CONFIG || process.env.CONFIG_JSON;
   if (jsonConfigEnv) {
     try {
       const parsedJsonConfig = JSON.parse(jsonConfigEnv);
       logger.info("Parsed JSON Config from Environment:", parsedJsonConfig);
-      // Merge JSON config if found
-      Object.assign(config, parsedJsonConfig);
+      // Merge JSON config if found (but other config takes precedence)
+      config = {
+        ...parsedJsonConfig,
+        ...config
+      };
     } catch (error) {
       logger.warn("Failed to parse JSON config from environment:", error);
     }
@@ -85,36 +119,48 @@ async function startServer(config: SmitheryConfig = {}): Promise<void> {
 
   try {
     // Handle MCP server configuration from Smithery
-    let configResult;
+    let configPath: string | null = null;
+    let configSource = "unknown";
+    let temporaryConfigFile: string | null = null;
+    
     if (config.mcpServers && Object.keys(config.mcpServers).length > 0) {
       logger.info("Using MCP configuration from Smithery:", config.mcpServers);
-      // Create a temporary MCP config from Smithery configuration
-      const smitheryMcpConfig = {
-        mcpServers: config.mcpServers
-      };
-      configResult = {
-        config: smitheryMcpConfig,
-        configPath: "smithery-provided",
-        configSource: "smithery"
-      };
+      // Create a temporary file with Smithery configuration
+      try {
+        const tempDir = os.tmpdir();
+        temporaryConfigFile = path.join(tempDir, `smithery-mcp-config-${Date.now()}.json`);
+        const mcpConfig = { mcpServers: config.mcpServers };
+        
+        await fs.promises.writeFile(temporaryConfigFile, JSON.stringify(mcpConfig, null, 2));
+        configPath = temporaryConfigFile;
+        configSource = "smithery";
+        
+        logger.info(`Created temporary config file: ${temporaryConfigFile}`);
+      } catch (error) {
+        logger.error("Failed to create temporary configuration file:", error);
+        process.exit(1);
+      }
     } else {
       // Fallback to file-based configuration discovery
       logger.info("No MCP configuration from Smithery, using file-based discovery");
-      configResult = await discoverMcpConfig(
+      const configResult = await discoverMcpConfig(
         runtimeOptions.configPath,
         false, // Don't update preference for Smithery installs
         runtimeOptions.linkedApp,
         runtimeOptions.profile
       );
-    }
-
-    // Handle configuration discovery results
-    if (!configResult.configPath) {
-      logger.error("No MCP configuration found");
-      if (configResult.errorMessage) {
-        logger.error(configResult.errorMessage);
+      
+      configPath = configResult.configPath;
+      configSource = configResult.configSource?.type || "file";
+      
+      // Handle configuration discovery results
+      if (!configPath) {
+        logger.error("No MCP configuration found");
+        if (configResult.errorMessage) {
+          logger.error(configResult.errorMessage);
+        }
+        process.exit(1);
       }
-      process.exit(1);
     }
 
     // Create transport config based on runtime options
@@ -139,6 +185,16 @@ async function startServer(config: SmitheryConfig = {}): Promise<void> {
 
       if (runtimeOptions.debug) {
         logger.debug(`Shutting down HyperTool server... (${signal || "manual"})`);
+      }
+
+      // Clean up temporary config file if created
+      if (temporaryConfigFile) {
+        try {
+          await fs.promises.unlink(temporaryConfigFile);
+          logger.debug(`Cleaned up temporary config file: ${temporaryConfigFile}`);
+        } catch (error) {
+          logger.warn(`Failed to clean up temporary config file: ${error}`);
+        }
       }
 
       // Set a hard timeout for graceful shutdown
@@ -181,8 +237,8 @@ async function startServer(config: SmitheryConfig = {}): Promise<void> {
     const initOptions: ServerInitOptions = MetaMCPServerFactory.createInitOptions({
       transport: transportConfig,
       debug: runtimeOptions.debug,
-      configPath: configResult.configPath,
-      configSource: configResult.configSource,
+      configPath: configPath!,
+      configSource: configSource,
     });
 
     // Start the server
@@ -273,24 +329,23 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     equipToolset: process.env.EQUIP_TOOLSET,
   };
   
-  // Check for Smithery-style configuration in environment variables
-  const configEnvVars = Object.keys(process.env).filter(key => 
-    key.startsWith('mcpServers.') || key.startsWith('CONFIG_')
-  );
+  // Parse Smithery-style configuration from environment variables
+  const parsedEnvConfig = parseEnvDotNotation();
+  const hasSmitheryEnvConfig = hasSmitheryConfig();
   
-  if (configEnvVars.length > 0) {
-    console.log("Found potential Smithery config in environment:", configEnvVars);
+  if (hasSmitheryEnvConfig) {
+    console.log("Found Smithery configuration in environment:");
+    console.log("Parsed config:", JSON.stringify(parsedEnvConfig, null, 2));
+    console.log("Config sources:", getConfigSourceDescription(parsedEnvConfig));
     
-    // Try to parse dot-notation environment variables into nested object
-    const mcpServersFromEnv: any = {};
-    for (const envKey of configEnvVars) {
-      if (envKey.startsWith('mcpServers.')) {
-        const path = envKey.replace('mcpServers.', '');
-        const value = process.env[envKey];
-        console.log(`Environment config: ${path} = ${value}`);
-        // For now, just log - we'd need a proper dot-notation parser here
-      }
+    // Validate the parsed configuration
+    const validation = validateParsedConfig(parsedEnvConfig);
+    if (!validation.valid) {
+      console.warn("Configuration validation warnings:", validation.errors);
     }
+    
+    // Merge environment configuration (CLI args take precedence)
+    Object.assign(envConfig, parsedEnvConfig);
   }
   
   // Merge configurations - CLI args take precedence over env vars
