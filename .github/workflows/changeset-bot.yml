@@ -160,15 +160,11 @@ jobs:
                 const changesetFiles = fs.readdirSync('.changeset').filter(f => f.endsWith('.md') && f !== 'README.md');
                 let fileDetails = '';
                 for (const file of changesetFiles) {
-                  const content = fs.readFileSync(\`.changeset/\${file}\`, 'utf8');
-                  fileDetails += \`**\${file}**:\n\`\`\`\n\${content.split('\\n').slice(0, 10).join('\\n')}\n\`\`\`\n\n\`;
+                  const content = fs.readFileSync('.changeset/' + file, 'utf8');
+                  const preview = content.split('\n').slice(0, 10).join('\n');
+                  fileDetails += '**' + file + '**:\n```\n' + preview + '\n```\n\n';
                 }
-                changesetDetails = `<details>
-            <summary>📋 Changeset Files (git status unavailable)</summary>
-            
-            ${fileDetails}
-            
-            </details>`;
+                changesetDetails = '<details>\n<summary>📋 Changeset Files (git status unavailable)</summary>\n\n' + fileDetails + '\n</details>';
               } catch (fallbackError) {
                 changesetDetails = '_Could not retrieve changeset details due to CI environment limitations_';
               }
