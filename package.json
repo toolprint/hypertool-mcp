@@ -152,7 +152,8 @@
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "markdownlint-cli2": "^0.13.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.15.1",
