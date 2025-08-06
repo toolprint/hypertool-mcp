@@ -124,7 +124,9 @@ export class ConnectionManager
     try {
       await connection.connect();
     } catch (error) {
-      this._logger.error(`Failed to connect to server "${serverName}"`, { error });
+      this._logger.error(`Failed to connect to server "${serverName}"`, {
+        error,
+      });
       throw error;
     }
   }
@@ -143,7 +145,9 @@ export class ConnectionManager
     try {
       await connection.disconnect();
     } catch (error) {
-      this._logger.error(`Failed to disconnect from server "${serverName}"`, { error });
+      this._logger.error(`Failed to disconnect from server "${serverName}"`, {
+        error,
+      });
       throw error;
     }
   }
@@ -237,7 +241,10 @@ export class ConnectionManager
           `💡 Resolution: Use a unique server name or remove the existing server first.\n` +
           `📋 Existing servers: ${Object.keys(this.servers).join(", ")}`
       );
-      this._logger.error("Server name conflict detected", { serverName, existingServers: Object.keys(this.servers) });
+      this._logger.error("Server name conflict detected", {
+        serverName,
+        existingServers: Object.keys(this.servers),
+      });
       throw error;
     }
 
@@ -255,7 +262,10 @@ export class ConnectionManager
       try {
         await this.connect(serverName);
       } catch (error) {
-        this._logger.warn(`Failed to auto-connect to new server "${serverName}"`, { error });
+        this._logger.warn(
+          `Failed to auto-connect to new server "${serverName}"`,
+          { error }
+        );
       }
     }
 

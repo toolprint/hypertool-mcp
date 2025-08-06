@@ -116,10 +116,14 @@ export class ConfigurationManager {
     // Check if migration is needed first
     const migration = new ConfigMigration(this.basePath);
     if (await migration.needsMigration()) {
-      logger.info("Migrating from global mcp.json to per-app configurations...");
+      logger.info(
+        "Migrating from global mcp.json to per-app configurations..."
+      );
       const migrationResult = await migration.migrate();
       if (!migrationResult.success) {
-        logger.warn("Migration completed with errors", { errors: migrationResult.errors });
+        logger.warn("Migration completed with errors", {
+          errors: migrationResult.errors,
+        });
       } else {
         logger.info("Migration completed successfully");
       }
@@ -246,7 +250,10 @@ export class ConfigurationManager {
     // Validate configuration
     const validation = transformer.validate(appConfig);
     if (!validation.valid) {
-      logger.warn(`Invalid configuration for ${appId}`, { appId, errors: validation.errors });
+      logger.warn(`Invalid configuration for ${appId}`, {
+        appId,
+        errors: validation.errors,
+      });
       return null;
     }
 
@@ -304,7 +311,10 @@ export class ConfigurationManager {
     // Validate configuration
     const validation = transformer.validate(appConfig);
     if (!validation.valid) {
-      logger.warn(`Invalid configuration for ${appId}`, { appId, errors: validation.errors });
+      logger.warn(`Invalid configuration for ${appId}`, {
+        appId,
+        errors: validation.errors,
+      });
       return null;
     }
 
@@ -722,7 +732,9 @@ export class ConfigurationManager {
             };
           }
         } catch (error) {
-          logger.warn("Failed to copy global config, using empty config instead");
+          logger.warn(
+            "Failed to copy global config, using empty config instead"
+          );
         }
         break;
 
@@ -757,7 +769,10 @@ export class ConfigurationManager {
 
               config._metadata.importedFrom = configPath;
             } catch (error) {
-              logger.warn(`Failed to import from ${appId} config, using empty config instead`, { appId });
+              logger.warn(
+                `Failed to import from ${appId} config, using empty config instead`,
+                { appId }
+              );
             }
           }
         }

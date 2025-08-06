@@ -8,14 +8,19 @@ import { ToolDiscoveryEngine } from "../../discovery/index.js";
 import { ConnectionManager } from "../../connection/manager.js";
 import { theme, semantic } from "../../utils/theme.js";
 import { createChildLogger } from "../../utils/logging.js";
-import type { DynamicToolReference, ToolsetToolNote } from "../../toolset/types.js";
+import type {
+  DynamicToolReference,
+  ToolsetToolNote,
+} from "../../toolset/types.js";
 
 const logger = createChildLogger({ module: "toolset-cli" });
 
 /**
  * Initialize toolset manager with discovery engine
  */
-async function initializeToolsetManager(options: { requireConnections?: boolean } = {}): Promise<{
+async function initializeToolsetManager(
+  options: { requireConnections?: boolean } = {}
+): Promise<{
   toolsetManager: ToolsetManager;
   discoveryEngine?: ToolDiscoveryEngine;
   connectionManager?: ConnectionManager;
@@ -42,7 +47,8 @@ async function initializeToolsetManager(options: { requireConnections?: boolean 
 
   if (!configResult.configPath) {
     throw new Error(
-      configResult.errorMessage || "No MCP configuration found. Run 'hypertool-mcp setup' first."
+      configResult.errorMessage ||
+        "No MCP configuration found. Run 'hypertool-mcp setup' first."
     );
   }
 
@@ -90,41 +96,65 @@ export function createListAvailableToolsCommand(): Command {
         console.log(theme.info("🔍 Discovering available tools..."));
         console.log();
 
-        const { toolsetManager } = await initializeToolsetManager({ requireConnections: true });
+        const { toolsetManager } = await initializeToolsetManager({
+          requireConnections: true,
+        });
         const result = toolsetManager.formatAvailableTools();
 
         if (result.summary.totalTools === 0) {
           console.log(theme.warning("⚠️  No tools found"));
-          console.log(theme.muted("   Make sure MCP servers are configured and running"));
+          console.log(
+            theme.muted("   Make sure MCP servers are configured and running")
+          );
           return;
         }
 
         // Display summary
         console.log(theme.success("📊 Tool Discovery Summary"));
-        console.log(`   ${theme.label("Total Tools:")} ${result.summary.totalTools}`);
-        console.log(`   ${theme.label("Total Servers:")} ${result.summary.totalServers}`);
+        console.log(
+          `   ${theme.label("Total Tools:")} ${result.summary.totalTools}`
+        );
+        console.log(
+          `   ${theme.label("Total Servers:")} ${result.summary.totalServers}`
+        );
         console.log();
 
         // Display tools by server
         for (const serverGroup of result.toolsByServer) {
-          console.log(theme.info(`📦 ${serverGroup.serverName} (${serverGroup.toolCount} tools)`));
-          
+          console.log(
+            theme.info(
+              `📦 ${serverGroup.serverName} (${serverGroup.toolCount} tools)`
+            )
+          );
+
           for (const tool of serverGroup.tools) {
             const refId = tool.refId.substring(0, 8);
             const namespacedName = theme.success(tool.namespacedName);
-            const description = tool.description 
-              ? ` - ${theme.muted(tool.description.split('\n')[0])}`
-              : '';
-            
-            console.log(`   • ${namespacedName} ${theme.muted(`[${refId}]`)}${description}`);
+            const description = tool.description
+              ? ` - ${theme.muted(tool.description.split("\n")[0])}`
+              : "";
+
+            console.log(
+              `   • ${namespacedName} ${theme.muted(`[${refId}]`)}${description}`
+            );
           }
           console.log();
         }
 
-        console.log(theme.info("💡 Use these references with 'build-toolset' to create custom toolsets"));
+        console.log(
+          theme.info(
+            "💡 Use these references with 'build-toolset' to create custom toolsets"
+          )
+        );
       } catch (error) {
-        console.error(semantic.messageError("❌ Failed to list available tools:"));
-        console.error(theme.error(`   ${error instanceof Error ? error.message : String(error)}`));
+        console.error(
+          semantic.messageError("❌ Failed to list available tools:")
+        );
+        console.error(
+          theme.error(
+            `   ${error instanceof Error ? error.message : String(error)}`
+          )
+        );
         process.exit(1);
       }
     });
@@ -138,7 +168,9 @@ export function createListSavedToolsetsCommand(): Command {
     .description("List all saved toolset configurations")
     .action(async () => {
       try {
-        const { toolsetManager } = await initializeToolsetManager({ requireConnections: false });
+        const { toolsetManager } = await initializeToolsetManager({
+          requireConnections: false,
+        });
         const result = await toolsetManager.listSavedToolsets();
 
         if (!result.success) {
@@ -155,35 +187,47 @@ export function createListSavedToolsetsCommand(): Command {
           return;
         }
 
-        console.log(theme.success(`📦 Found ${result.toolsets.length} saved toolsets`));
+        console.log(
+          theme.success(`📦 Found ${result.toolsets.length} saved toolsets`)
+        );
         console.log();
 
         for (const toolset of result.toolsets) {
-          const activeStatus = toolset.active 
+          const activeStatus = toolset.active
             ? ` ${theme.success("(ACTIVE)")}`
             : "";
-          
+
           console.log(theme.info(`${toolset.name}${activeStatus}`));
-          
+
           if (toolset.description) {
             console.log(`   ${theme.muted(toolset.description)}`);
           }
-          
+
           console.log(`   ${theme.label("Tools:")} ${toolset.toolCount}`);
           console.log(`   ${theme.label("Servers:")} ${toolset.totalServers}`);
-          console.log(`   ${theme.label("Created:")} ${theme.muted(toolset.createdAt)}`);
-          
+          console.log(
+            `   ${theme.label("Created:")} ${theme.muted(toolset.createdAt)}`
+          );
+
           if (toolset.version) {
             console.log(`   ${theme.label("Version:")} ${toolset.version}`);
           }
-          
+
           console.log();
         }
 
-        console.log(theme.info("💡 Use 'equip-toolset <name>' to activate a toolset"));
+        console.log(
+          theme.info("💡 Use 'equip-toolset <name>' to activate a toolset")
+        );
       } catch (error) {
-        console.error(semantic.messageError("❌ Failed to list saved toolsets:"));
-        console.error(theme.error(`   ${error instanceof Error ? error.message : String(error)}`));
+        console.error(
+          semantic.messageError("❌ Failed to list saved toolsets:")
+        );
+        console.error(
+          theme.error(
+            `   ${error instanceof Error ? error.message : String(error)}`
+          )
+        );
         process.exit(1);
       }
     });
@@ -195,20 +239,37 @@ export function createListSavedToolsetsCommand(): Command {
 export function createBuildToolsetCommand(): Command {
   return new Command("build-toolset")
     .description("Build and save a custom toolset by selecting specific tools")
-    .requiredOption("--name <name>", "Name for the new toolset (lowercase with hyphens)")
-    .option("--description <description>", "Optional description of the toolset")
-    .option("--auto-equip", "Automatically equip this toolset after creation", false)
-    .option("--tools <tools>", "Comma-separated list of tool references (namespacedName or refId)")
+    .requiredOption(
+      "--name <name>",
+      "Name for the new toolset (lowercase with hyphens)"
+    )
+    .option(
+      "--description <description>",
+      "Optional description of the toolset"
+    )
+    .option(
+      "--auto-equip",
+      "Automatically equip this toolset after creation",
+      false
+    )
+    .option(
+      "--tools <tools>",
+      "Comma-separated list of tool references (namespacedName or refId)"
+    )
     .action(async (options) => {
       try {
-        const { toolsetManager } = await initializeToolsetManager({ requireConnections: true });
+        const { toolsetManager } = await initializeToolsetManager({
+          requireConnections: true,
+        });
 
         // Parse tool references from command line
         let tools: DynamicToolReference[] = [];
-        
+
         if (options.tools) {
-          const toolRefs = options.tools.split(",").map((ref: string) => ref.trim());
-          
+          const toolRefs = options.tools
+            .split(",")
+            .map((ref: string) => ref.trim());
+
           for (const ref of toolRefs) {
             // Check if it looks like a refId (hex string) or namespacedName
             if (/^[a-f0-9]{8,}$/i.test(ref)) {
@@ -221,24 +282,26 @@ export function createBuildToolsetCommand(): Command {
 
         if (tools.length === 0) {
           console.error(semantic.messageError("❌ No tools specified"));
-          console.error(theme.warning("   Use --tools to specify tool references"));
-          console.error(theme.info("   Example: --tools git.status,docker.ps,abc12345"));
+          console.error(
+            theme.warning("   Use --tools to specify tool references")
+          );
+          console.error(
+            theme.info("   Example: --tools git.status,docker.ps,abc12345")
+          );
           console.error();
-          console.error(theme.info("💡 Use 'list-available-tools' to see available tools"));
+          console.error(
+            theme.info("💡 Use 'list-available-tools' to see available tools")
+          );
           process.exit(1);
         }
 
         console.log(theme.info(`🔨 Building toolset "${options.name}"...`));
         console.log();
 
-        const result = await toolsetManager.buildToolset(
-          options.name,
-          tools,
-          {
-            description: options.description,
-            autoEquip: options.autoEquip,
-          }
-        );
+        const result = await toolsetManager.buildToolset(options.name, tools, {
+          description: options.description,
+          autoEquip: options.autoEquip,
+        });
 
         if (!result.meta.success) {
           console.error(semantic.messageError("❌ Failed to build toolset:"));
@@ -246,26 +309,40 @@ export function createBuildToolsetCommand(): Command {
           process.exit(1);
         }
 
-        console.log(theme.success(`✅ Successfully created toolset "${options.name}"`));
-        
+        console.log(
+          theme.success(`✅ Successfully created toolset "${options.name}"`)
+        );
+
         if (result.toolset) {
           console.log();
           console.log(theme.info("📊 Toolset Details:"));
           console.log(`   ${theme.label("Name:")} ${result.toolset.name}`);
-          
+
           if (result.toolset.description) {
-            console.log(`   ${theme.label("Description:")} ${result.toolset.description}`);
+            console.log(
+              `   ${theme.label("Description:")} ${result.toolset.description}`
+            );
           }
-          
-          console.log(`   ${theme.label("Tools:")} ${result.toolset.toolCount}`);
-          console.log(`   ${theme.label("Servers:")} ${result.toolset.totalServers}`);
-          
+
+          console.log(
+            `   ${theme.label("Tools:")} ${result.toolset.toolCount}`
+          );
+          console.log(
+            `   ${theme.label("Servers:")} ${result.toolset.totalServers}`
+          );
+
           if (result.meta.autoEquipped) {
             console.log();
-            console.log(theme.success("🎯 Toolset automatically equipped and ready to use"));
+            console.log(
+              theme.success(
+                "🎯 Toolset automatically equipped and ready to use"
+              )
+            );
           } else {
             console.log();
-            console.log(theme.info("💡 Use 'equip-toolset' to activate this toolset"));
+            console.log(
+              theme.info("💡 Use 'equip-toolset' to activate this toolset")
+            );
           }
 
           // Show tool details if available
@@ -279,7 +356,11 @@ export function createBuildToolsetCommand(): Command {
         }
       } catch (error) {
         console.error(semantic.messageError("❌ Failed to build toolset:"));
-        console.error(theme.error(`   ${error instanceof Error ? error.message : String(error)}`));
+        console.error(
+          theme.error(
+            `   ${error instanceof Error ? error.message : String(error)}`
+          )
+        );
         process.exit(1);
       }
     });
@@ -290,13 +371,17 @@ export function createBuildToolsetCommand(): Command {
  */
 export function createEquipToolsetCommand(): Command {
   return new Command("equip-toolset")
-    .description("Equip a saved toolset configuration to filter available tools")
+    .description(
+      "Equip a saved toolset configuration to filter available tools"
+    )
     .argument("<name>", "Name of the toolset to equip")
     .action(async (name: string) => {
       try {
         console.log(theme.info(`🎯 Equipping toolset "${name}"...`));
 
-        const { toolsetManager } = await initializeToolsetManager({ requireConnections: false });
+        const { toolsetManager } = await initializeToolsetManager({
+          requireConnections: false,
+        });
         const result = await toolsetManager.equipToolset(name);
 
         if (!result.success) {
@@ -305,20 +390,28 @@ export function createEquipToolsetCommand(): Command {
           process.exit(1);
         }
 
-        console.log(theme.success(`✅ Successfully equipped toolset "${name}"`));
-        
+        console.log(
+          theme.success(`✅ Successfully equipped toolset "${name}"`)
+        );
+
         if (result.toolset) {
           console.log();
           console.log(theme.info("📊 Active Toolset:"));
           console.log(`   ${theme.label("Name:")} ${result.toolset.name}`);
-          
+
           if (result.toolset.description) {
-            console.log(`   ${theme.label("Description:")} ${result.toolset.description}`);
+            console.log(
+              `   ${theme.label("Description:")} ${result.toolset.description}`
+            );
           }
-          
-          console.log(`   ${theme.label("Tools:")} ${result.toolset.toolCount}`);
-          console.log(`   ${theme.label("Servers:")} ${result.toolset.totalServers}`);
-          
+
+          console.log(
+            `   ${theme.label("Tools:")} ${result.toolset.toolCount}`
+          );
+          console.log(
+            `   ${theme.label("Servers:")} ${result.toolset.totalServers}`
+          );
+
           // Show tool details
           if (result.toolset.tools && result.toolset.tools.length > 0) {
             console.log();
@@ -330,10 +423,16 @@ export function createEquipToolsetCommand(): Command {
         }
 
         console.log();
-        console.log(theme.info("💡 This toolset will be used when the MCP server starts"));
+        console.log(
+          theme.info("💡 This toolset will be used when the MCP server starts")
+        );
       } catch (error) {
         console.error(semantic.messageError("❌ Failed to equip toolset:"));
-        console.error(theme.error(`   ${error instanceof Error ? error.message : String(error)}`));
+        console.error(
+          theme.error(
+            `   ${error instanceof Error ? error.message : String(error)}`
+          )
+        );
         process.exit(1);
       }
     });
@@ -346,22 +445,34 @@ export function createDeleteToolsetCommand(): Command {
   return new Command("delete-toolset")
     .description("Delete a saved toolset configuration")
     .argument("<name>", "Name of the toolset to delete")
-    .option("--confirm", "Confirm deletion (required to actually delete)", false)
+    .option(
+      "--confirm",
+      "Confirm deletion (required to actually delete)",
+      false
+    )
     .action(async (name: string, options) => {
       try {
-        const { toolsetManager } = await initializeToolsetManager({ requireConnections: false });
+        const { toolsetManager } = await initializeToolsetManager({
+          requireConnections: false,
+        });
 
         if (!options.confirm) {
-          console.log(theme.warning(`⚠️  This will permanently delete toolset "${name}"`));
+          console.log(
+            theme.warning(`⚠️  This will permanently delete toolset "${name}"`)
+          );
           console.log();
           console.log(theme.info("To confirm deletion, run:"));
-          console.log(theme.muted(`   hypertool-mcp delete-toolset ${name} --confirm`));
+          console.log(
+            theme.muted(`   hypertool-mcp delete-toolset ${name} --confirm`)
+          );
           return;
         }
 
         console.log(theme.info(`🗑️  Deleting toolset "${name}"...`));
 
-        const result = await toolsetManager.deleteToolset(name, { confirm: true });
+        const result = await toolsetManager.deleteToolset(name, {
+          confirm: true,
+        });
 
         if (!result.success) {
           console.error(semantic.messageError("❌ Failed to delete toolset:"));
@@ -372,7 +483,11 @@ export function createDeleteToolsetCommand(): Command {
         console.log(theme.success(`✅ ${result.message}`));
       } catch (error) {
         console.error(semantic.messageError("❌ Failed to delete toolset:"));
-        console.error(theme.error(`   ${error instanceof Error ? error.message : String(error)}`));
+        console.error(
+          theme.error(
+            `   ${error instanceof Error ? error.message : String(error)}`
+          )
+        );
         process.exit(1);
       }
     });
@@ -383,13 +498,17 @@ export function createDeleteToolsetCommand(): Command {
  */
 export function createUnequipToolsetCommand(): Command {
   return new Command("unequip-toolset")
-    .description("Unequip the currently equipped toolset and show all available tools")
+    .description(
+      "Unequip the currently equipped toolset and show all available tools"
+    )
     .action(async () => {
       try {
         console.log(theme.info("🔄 Unequipping current toolset..."));
 
-        const { toolsetManager } = await initializeToolsetManager({ requireConnections: false });
-        
+        const { toolsetManager } = await initializeToolsetManager({
+          requireConnections: false,
+        });
+
         // Check if there's an active toolset
         const activeToolset = toolsetManager.getActiveToolset();
         if (!activeToolset) {
@@ -399,12 +518,24 @@ export function createUnequipToolsetCommand(): Command {
 
         await toolsetManager.unequipToolset();
 
-        console.log(theme.success(`✅ Successfully unequipped toolset "${activeToolset.name}"`));
+        console.log(
+          theme.success(
+            `✅ Successfully unequipped toolset "${activeToolset.name}"`
+          )
+        );
         console.log();
-        console.log(theme.info("💡 All available tools will now be exposed when the MCP server runs"));
+        console.log(
+          theme.info(
+            "💡 All available tools will now be exposed when the MCP server runs"
+          )
+        );
       } catch (error) {
         console.error(semantic.messageError("❌ Failed to unequip toolset:"));
-        console.error(theme.error(`   ${error instanceof Error ? error.message : String(error)}`));
+        console.error(
+          theme.error(
+            `   ${error instanceof Error ? error.message : String(error)}`
+          )
+        );
         process.exit(1);
       }
     });
@@ -415,35 +546,52 @@ export function createUnequipToolsetCommand(): Command {
  */
 export function createGetActiveToolsetCommand(): Command {
   return new Command("get-active-toolset")
-    .description("Get detailed information about the currently equipped toolset")
+    .description(
+      "Get detailed information about the currently equipped toolset"
+    )
     .action(async () => {
       try {
-        const { toolsetManager } = await initializeToolsetManager({ requireConnections: false });
-        
+        const { toolsetManager } = await initializeToolsetManager({
+          requireConnections: false,
+        });
+
         const activeToolset = toolsetManager.getActiveToolset();
         if (!activeToolset) {
           console.log(theme.warning("⚠️  No toolset is currently equipped"));
           console.log();
-          console.log(theme.info("💡 Use 'equip-toolset <name>' to activate a toolset"));
-          console.log(theme.info("💡 Use 'list-saved-toolsets' to see available toolsets"));
+          console.log(
+            theme.info("💡 Use 'equip-toolset <name>' to activate a toolset")
+          );
+          console.log(
+            theme.info("💡 Use 'list-saved-toolsets' to see available toolsets")
+          );
           return;
         }
 
         // Generate detailed toolset info
-        const toolsetInfo = await toolsetManager.generateToolsetInfo(activeToolset);
+        const toolsetInfo =
+          await toolsetManager.generateToolsetInfo(activeToolset);
 
         console.log(theme.success("🎯 Active Toolset Information"));
         console.log();
         console.log(`   ${theme.label("Name:")} ${toolsetInfo.name}`);
-        
+
         if (toolsetInfo.description) {
-          console.log(`   ${theme.label("Description:")} ${toolsetInfo.description}`);
+          console.log(
+            `   ${theme.label("Description:")} ${toolsetInfo.description}`
+          );
         }
-        
-        console.log(`   ${theme.label("Version:")} ${toolsetInfo.version || "1.0.0"}`);
-        console.log(`   ${theme.label("Created:")} ${theme.muted(toolsetInfo.createdAt)}`);
+
+        console.log(
+          `   ${theme.label("Version:")} ${toolsetInfo.version || "1.0.0"}`
+        );
+        console.log(
+          `   ${theme.label("Created:")} ${theme.muted(toolsetInfo.createdAt)}`
+        );
         console.log(`   ${theme.label("Tools:")} ${toolsetInfo.toolCount}`);
-        console.log(`   ${theme.label("Servers:")} ${toolsetInfo.totalServers}`);
+        console.log(
+          `   ${theme.label("Servers:")} ${toolsetInfo.totalServers}`
+        );
         console.log(`   ${theme.label("Location:")} ${toolsetInfo.location}`);
 
         // Show server breakdown
@@ -451,8 +599,12 @@ export function createGetActiveToolsetCommand(): Command {
           console.log();
           console.log(theme.info("📦 Server Breakdown:"));
           for (const server of toolsetInfo.servers) {
-            const status = server.enabled ? theme.success("✓") : theme.error("✗");
-            console.log(`   ${status} ${server.name} (${server.toolCount} tools)`);
+            const status = server.enabled
+              ? theme.success("✓")
+              : theme.error("✗");
+            console.log(
+              `   ${status} ${server.name} (${server.toolCount} tools)`
+            );
           }
         }
 
@@ -465,8 +617,14 @@ export function createGetActiveToolsetCommand(): Command {
           }
         }
       } catch (error) {
-        console.error(semantic.messageError("❌ Failed to get active toolset:"));
-        console.error(theme.error(`   ${error instanceof Error ? error.message : String(error)}`));
+        console.error(
+          semantic.messageError("❌ Failed to get active toolset:")
+        );
+        console.error(
+          theme.error(
+            `   ${error instanceof Error ? error.message : String(error)}`
+          )
+        );
         process.exit(1);
       }
     });
@@ -478,83 +636,122 @@ export function createGetActiveToolsetCommand(): Command {
 export function createAddToolAnnotationCommand(): Command {
   return new Command("add-tool-annotation")
     .description("Add contextual annotations to a tool in the current toolset")
-    .option("--tool-name <name>", "Tool reference by namespaced name (e.g., git.status)")
+    .option(
+      "--tool-name <name>",
+      "Tool reference by namespaced name (e.g., git.status)"
+    )
     .option("--tool-ref <refId>", "Tool reference by unique hash identifier")
-    .option("--note-name <name>", "Identifier for the annotation (e.g., usage-tips)")
-    .option("--note-content <content>", "The annotation content to help guide LLM usage")
+    .option(
+      "--note-name <name>",
+      "Identifier for the annotation (e.g., usage-tips)"
+    )
+    .option(
+      "--note-content <content>",
+      "The annotation content to help guide LLM usage"
+    )
     .action(async (options) => {
       try {
         // Validate required options
         if (!options.toolName && !options.toolRef) {
           console.error(semantic.messageError("❌ Tool reference required"));
-          console.error(theme.warning("   Use either --tool-name or --tool-ref to specify the tool"));
+          console.error(
+            theme.warning(
+              "   Use either --tool-name or --tool-ref to specify the tool"
+            )
+          );
           console.error(theme.info("   Example: --tool-name git.status"));
           process.exit(1);
         }
 
         if (!options.noteName || !options.noteContent) {
           console.error(semantic.messageError("❌ Note details required"));
-          console.error(theme.warning("   Both --note-name and --note-content are required"));
-          console.error(theme.info("   Example: --note-name usage-tips --note-content \"Always confirm with user first\""));
+          console.error(
+            theme.warning("   Both --note-name and --note-content are required")
+          );
+          console.error(
+            theme.info(
+              '   Example: --note-name usage-tips --note-content "Always confirm with user first"'
+            )
+          );
           process.exit(1);
         }
 
-        const { toolsetManager } = await initializeToolsetManager({ requireConnections: false });
+        const { toolsetManager } = await initializeToolsetManager({
+          requireConnections: false,
+        });
 
         // Check if there's an active toolset
         const activeToolset = toolsetManager.getActiveToolset();
         if (!activeToolset) {
-          console.error(semantic.messageError("❌ No toolset is currently equipped"));
-          console.error(theme.info("   Use 'equip-toolset <name>' to activate a toolset first"));
+          console.error(
+            semantic.messageError("❌ No toolset is currently equipped")
+          );
+          console.error(
+            theme.info(
+              "   Use 'equip-toolset <name>' to activate a toolset first"
+            )
+          );
           process.exit(1);
         }
 
         // Build tool reference
-        const toolRef: DynamicToolReference = options.toolName 
+        const toolRef: DynamicToolReference = options.toolName
           ? { namespacedName: options.toolName }
           : { refId: options.toolRef };
 
         // Build annotation
-        const notes: ToolsetToolNote[] = [{
-          name: options.noteName,
-          note: options.noteContent,
-        }];
+        const notes: ToolsetToolNote[] = [
+          {
+            name: options.noteName,
+            note: options.noteContent,
+          },
+        ];
 
         console.log(theme.info(`📝 Adding annotation to tool...`));
 
         // Update the toolset configuration
         const updatedToolset = { ...activeToolset };
-        
+
         // Initialize toolNotes array if it doesn't exist
         if (!updatedToolset.toolNotes) {
           updatedToolset.toolNotes = [];
         }
 
         // Find existing annotation entry for this tool
-        const existingEntryIndex = updatedToolset.toolNotes.findIndex(entry => {
-          if (toolRef.namespacedName && entry.toolRef.namespacedName) {
-            return entry.toolRef.namespacedName === toolRef.namespacedName;
+        const existingEntryIndex = updatedToolset.toolNotes.findIndex(
+          (entry) => {
+            if (toolRef.namespacedName && entry.toolRef.namespacedName) {
+              return entry.toolRef.namespacedName === toolRef.namespacedName;
+            }
+            if (toolRef.refId && entry.toolRef.refId) {
+              return entry.toolRef.refId === toolRef.refId;
+            }
+            return false;
           }
-          if (toolRef.refId && entry.toolRef.refId) {
-            return entry.toolRef.refId === toolRef.refId;
-          }
-          return false;
-        });
+        );
 
         if (existingEntryIndex >= 0) {
           // Add to existing entry
-          const existingNoteIndex = updatedToolset.toolNotes[existingEntryIndex].notes.findIndex(
-            note => note.name === options.noteName
-          );
-          
+          const existingNoteIndex = updatedToolset.toolNotes[
+            existingEntryIndex
+          ].notes.findIndex((note) => note.name === options.noteName);
+
           if (existingNoteIndex >= 0) {
             // Update existing note
-            updatedToolset.toolNotes[existingEntryIndex].notes[existingNoteIndex] = notes[0];
-            console.log(theme.success(`✅ Updated existing annotation "${options.noteName}"`));
+            updatedToolset.toolNotes[existingEntryIndex].notes[
+              existingNoteIndex
+            ] = notes[0];
+            console.log(
+              theme.success(
+                `✅ Updated existing annotation "${options.noteName}"`
+              )
+            );
           } else {
             // Add new note to existing entry
             updatedToolset.toolNotes[existingEntryIndex].notes.push(notes[0]);
-            console.log(theme.success(`✅ Added new annotation "${options.noteName}"`));
+            console.log(
+              theme.success(`✅ Added new annotation "${options.noteName}"`)
+            );
           }
         } else {
           // Create new entry
@@ -562,7 +759,9 @@ export function createAddToolAnnotationCommand(): Command {
             toolRef,
             notes,
           });
-          console.log(theme.success(`✅ Created new annotation entry for tool`));
+          console.log(
+            theme.success(`✅ Created new annotation entry for tool`)
+          );
         }
 
         // Update the toolset
@@ -582,14 +781,26 @@ export function createAddToolAnnotationCommand(): Command {
 
         console.log();
         console.log(theme.info("📊 Annotation Details:"));
-        console.log(`   ${theme.label("Tool:")} ${options.toolName || options.toolRef}`);
+        console.log(
+          `   ${theme.label("Tool:")} ${options.toolName || options.toolRef}`
+        );
         console.log(`   ${theme.label("Note Name:")} ${options.noteName}`);
         console.log(`   ${theme.label("Content:")} ${options.noteContent}`);
         console.log();
-        console.log(theme.info("💡 This annotation will be displayed with the tool's description"));
+        console.log(
+          theme.info(
+            "💡 This annotation will be displayed with the tool's description"
+          )
+        );
       } catch (error) {
-        console.error(semantic.messageError("❌ Failed to add tool annotation:"));
-        console.error(theme.error(`   ${error instanceof Error ? error.message : String(error)}`));
+        console.error(
+          semantic.messageError("❌ Failed to add tool annotation:")
+        );
+        console.error(
+          theme.error(
+            `   ${error instanceof Error ? error.message : String(error)}`
+          )
+        );
         process.exit(1);
       }
     });
@@ -599,8 +810,9 @@ export function createAddToolAnnotationCommand(): Command {
  * Create main toolset command with all subcommands
  */
 export function createToolsetCommands(): Command {
-  const toolsetCommand = new Command("toolset")
-    .description("Toolset management commands");
+  const toolsetCommand = new Command("toolset").description(
+    "Toolset management commands"
+  );
 
   // Add all subcommands
   toolsetCommand.addCommand(createListAvailableToolsCommand());

@@ -3,18 +3,21 @@
  * Since forever doesn't have official TypeScript types
  */
 
-declare module 'forever' {
+declare module "forever" {
   const forever: {
     start(script: string, options?: ForeverOptions): ForeverChild;
     stop(uid: string): void;
     stopbypid(pid: number): void;
     stopAll(): void;
     restart(uid: string): void;
-    list(format: boolean, callback: (err: Error | null, processes?: ForeverProcess[]) => void): void;
+    list(
+      format: boolean,
+      callback: (err: Error | null, processes?: ForeverProcess[]) => void
+    ): void;
     cleanUp(): void;
     config: any;
   };
-  
+
   export default forever;
   export interface ForeverOptions {
     uid?: string;
@@ -56,5 +59,4 @@ declare module 'forever' {
     stop(): void;
     restart(): void;
   }
-
 }

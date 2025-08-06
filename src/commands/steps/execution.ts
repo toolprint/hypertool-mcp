@@ -308,7 +308,7 @@ export class ExecutionStep implements WizardStep {
 
     const fs = (await import("fs")).promises;
     const path = await import("path");
-    
+
     // Update main config.json to enable all experimental features
     const mainConfigPath = path.join(
       getHomeDir(),
@@ -332,7 +332,7 @@ export class ExecutionStep implements WizardStep {
 
     // Enable NeDB and any future experimental features
     mainConfig.featureFlags.nedbEnabled = true;
-    
+
     // Add a marker that experimental mode was enabled
     mainConfig.experimentalMode = {
       enabled: true,
@@ -346,11 +346,11 @@ export class ExecutionStep implements WizardStep {
       "utf-8"
     );
 
+    output.info(theme.muted("  → Enabled all experimental features"));
     output.info(
-      theme.muted("  → Enabled all experimental features")
-    );
-    output.info(
-      theme.warning("  ⚠️  Experimental features may be unstable or change in future versions")
+      theme.warning(
+        "  ⚠️  Experimental features may be unstable or change in future versions"
+      )
     );
   }
 }

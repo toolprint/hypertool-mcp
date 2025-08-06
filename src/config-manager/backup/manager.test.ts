@@ -10,102 +10,103 @@ import { TestEnvironment } from "../../../test/fixtures/base.js";
 import { resetDatabaseForTesting } from "../../../src/test-utils/database.js";
 
 // Track current test scenario to return appropriate data
-let currentScenario: string = '';
+let currentScenario: string = "";
 
 // Mock AppRegistry to return expected test data
-vi.mock('../../apps/registry.js', () => {
+vi.mock("../../apps/registry.js", () => {
   const mockRegistry = {
     getEnabledApplications: vi.fn().mockImplementation(() => {
       // Return applications based on current test scenario
-      if (currentScenario === 'fresh') {
+      if (currentScenario === "fresh") {
         return Promise.resolve({});
       }
-      
+
       return Promise.resolve({
-        'claude-desktop': {
-          name: 'Claude Desktop',
+        "claude-desktop": {
+          name: "Claude Desktop",
           enabled: true,
           platforms: {
             darwin: {
-              configPath: '~/Library/Application Support/Claude/claude_desktop_config.json',
-              format: 'standard'
+              configPath:
+                "~/Library/Application Support/Claude/claude_desktop_config.json",
+              format: "standard",
             },
             win32: {
-              configPath: '%APPDATA%\\Claude\\claude_desktop_config.json',
-              format: 'standard'
-            }
-          }
+              configPath: "%APPDATA%\\Claude\\claude_desktop_config.json",
+              format: "standard",
+            },
+          },
         },
-        'cursor': {
-          name: 'Cursor',
+        cursor: {
+          name: "Cursor",
           enabled: true,
           platforms: {
             darwin: {
-              configPath: '~/.cursor/mcp.json',
-              format: 'standard'
+              configPath: "~/.cursor/mcp.json",
+              format: "standard",
             },
             win32: {
-              configPath: '%APPDATA%\\Cursor\\mcp.json',
-              format: 'standard'
-            }
-          }
-        }
+              configPath: "%APPDATA%\\Cursor\\mcp.json",
+              format: "standard",
+            },
+          },
+        },
       });
     }),
     getPlatformConfig: vi.fn().mockImplementation((app) => {
       // Check if test has set Windows platform
-      if (currentScenario === 'windows') {
+      if (currentScenario === "windows") {
         return app.platforms?.win32 || app.platforms?.darwin || null;
       }
       return app.platforms?.darwin || null;
     }),
     resolvePath: vi.fn().mockImplementation((path) => {
       // Convert ~ to test base directory
-      return path.replace('~', '/tmp/hypertool-test');
+      return path.replace("~", "/tmp/hypertool-test");
     }),
     load: vi.fn().mockResolvedValue({}),
-    save: vi.fn().mockResolvedValue(undefined)
+    save: vi.fn().mockResolvedValue(undefined),
   };
-  
+
   return {
-    AppRegistry: vi.fn(() => mockRegistry)
+    AppRegistry: vi.fn(() => mockRegistry),
   };
 });
 
 // Mock the entire database layer to prevent hanging
-vi.mock('../../../src/db/compositeDatabaseService.js', () => {
+vi.mock("../../../src/db/compositeDatabaseService.js", () => {
   const mockService = {
     init: vi.fn().mockResolvedValue(undefined),
     close: vi.fn().mockResolvedValue(undefined),
     servers: {
       findAll: vi.fn().mockResolvedValue([]),
-      create: vi.fn().mockResolvedValue({ id: 'mock-server' }),
+      create: vi.fn().mockResolvedValue({ id: "mock-server" }),
       findById: vi.fn().mockResolvedValue(null),
       update: vi.fn().mockResolvedValue(undefined),
-      delete: vi.fn().mockResolvedValue(undefined)
+      delete: vi.fn().mockResolvedValue(undefined),
     },
     groups: {
       findAll: vi.fn().mockResolvedValue([]),
-      create: vi.fn().mockResolvedValue({ id: 'mock-group' }),
+      create: vi.fn().mockResolvedValue({ id: "mock-group" }),
       findById: vi.fn().mockResolvedValue(null),
       update: vi.fn().mockResolvedValue(undefined),
-      delete: vi.fn().mockResolvedValue(undefined)
+      delete: vi.fn().mockResolvedValue(undefined),
     },
     configSources: {
       findAll: vi.fn().mockResolvedValue([]),
-      create: vi.fn().mockResolvedValue({ id: 'mock-source' }),
+      create: vi.fn().mockResolvedValue({ id: "mock-source" }),
       findById: vi.fn().mockResolvedValue(null),
       update: vi.fn().mockResolvedValue(undefined),
-      delete: vi.fn().mockResolvedValue(undefined)
+      delete: vi.fn().mockResolvedValue(undefined),
     },
     resetForTesting: vi.fn(),
-    getImplementationType: vi.fn().mockReturnValue('mock')
+    getImplementationType: vi.fn().mockReturnValue("mock"),
   };
-  
+
   return {
     CompositeDatabaseService: vi.fn(() => mockService),
     getCompositeDatabaseService: vi.fn(() => mockService),
-    resetCompositeDatabaseServiceForTesting: vi.fn()
+    resetCompositeDatabaseServiceForTesting: vi.fn(),
   };
 });
 import {
@@ -117,11 +118,11 @@ import {
 } from "../../../test/fixtures/scenarios/index.js";
 
 // Mock NeDB completely to prevent any file system operations
-vi.mock('@seald-io/nedb', () => {
+vi.mock("@seald-io/nedb", () => {
   const createMockDB = () => ({
     insert: vi.fn().mockImplementation((doc, callback) => {
-      if (callback) callback(null, { ...doc, _id: 'mock-id-' + Date.now() });
-      return Promise.resolve({ ...doc, _id: 'mock-id-' + Date.now() });
+      if (callback) callback(null, { ...doc, _id: "mock-id-" + Date.now() });
+      return Promise.resolve({ ...doc, _id: "mock-id-" + Date.now() });
     }),
     find: vi.fn().mockImplementation((query, callback) => {
       const result = [];
@@ -133,12 +134,16 @@ vi.mock('@seald-io/nedb', () => {
       return Promise.resolve(null);
     }),
     update: vi.fn().mockImplementation((query, update, options, callback) => {
-      if (typeof options === 'function') callback = options;
+      if (typeof options === "function") callback = options;
       if (callback) callback(null, 0, [], true);
-      return Promise.resolve({ numAffected: 0, affectedDocuments: [], upsert: true });
+      return Promise.resolve({
+        numAffected: 0,
+        affectedDocuments: [],
+        upsert: true,
+      });
     }),
     remove: vi.fn().mockImplementation((query, options, callback) => {
-      if (typeof options === 'function') callback = options;
+      if (typeof options === "function") callback = options;
       if (callback) callback(null, 0);
       return Promise.resolve(0);
     }),
@@ -170,19 +175,19 @@ vi.mock('@seald-io/nedb', () => {
         return Promise.resolve();
       }),
       setAutocompactionInterval: vi.fn(),
-      stopAutocompaction: vi.fn()
+      stopAutocompaction: vi.fn(),
     },
     // Event emitter methods
     on: vi.fn(),
     off: vi.fn(),
     emit: vi.fn(),
     addListener: vi.fn(),
-    removeListener: vi.fn()
+    removeListener: vi.fn(),
   });
-  
+
   return {
     default: vi.fn(createMockDB),
-    Datastore: vi.fn(createMockDB)
+    Datastore: vi.fn(createMockDB),
   };
 });
 import {
@@ -266,189 +271,193 @@ describe("BackupManager", () => {
       env = new TestEnvironment(baseDir);
       await env.setup();
       backupManager = new BackupManager(env.getConfig().configRoot);
-      
+
       // Mock the backupApplication method to return expected server counts
-      vi.spyOn(backupManager as any, 'backupApplication').mockImplementation(async (appId: string) => {
-        // Return null for fresh scenario (no configurations)
-        if (currentScenario === 'fresh') {
-          return null;
-        }
-        
-        // For Windows scenario, treat like existing config
-        if (currentScenario === 'windows') {
-          if (appId === 'claude-desktop') {
-            return {
-              source_path: '/tmp/windows-config.json',
-              format: 'standard',
-              servers_count: 1  // Test creates 1 server
-            };
+      vi.spyOn(backupManager as any, "backupApplication").mockImplementation(
+        async (appId: string) => {
+          // Return null for fresh scenario (no configurations)
+          if (currentScenario === "fresh") {
+            return null;
           }
-          return null;
-        }
-        
-        // For corrupted scenario, only return cursor config
-        if (currentScenario === 'corrupted') {
-          if (appId === 'cursor') {
-            return {
-              source_path: '/tmp/cursor-config.json', 
-              format: 'standard',
-              servers_count: 3
-            };
+
+          // For Windows scenario, treat like existing config
+          if (currentScenario === "windows") {
+            if (appId === "claude-desktop") {
+              return {
+                source_path: "/tmp/windows-config.json",
+                format: "standard",
+                servers_count: 1, // Test creates 1 server
+              };
+            }
+            return null;
           }
-          return null;
-        }
-        
-        // For partial scenario, only return claude-desktop config
-        if (currentScenario === 'partial') {
-          if (appId === 'claude-desktop') {
-            return {
-              source_path: '/tmp/test-config.json',
-              format: 'standard',
-              servers_count: 2  // Partial scenarios have fewer servers
-            };
+
+          // For corrupted scenario, only return cursor config
+          if (currentScenario === "corrupted") {
+            if (appId === "cursor") {
+              return {
+                source_path: "/tmp/cursor-config.json",
+                format: "standard",
+                servers_count: 3,
+              };
+            }
+            return null;
           }
-          return null;
-        }
-        
-        // For multi-server scenario, return high server counts
-        if (currentScenario === 'multi-server') {
-          if (appId === 'claude-desktop') {
-            return {
-              source_path: '/tmp/test-config.json',
-              format: 'standard',
-              servers_count: 20  // MultiServerScenario creates 20 servers
-            };
-          } else if (appId === 'cursor') {
-            return {
-              source_path: '/tmp/cursor-config.json', 
-              format: 'standard',
-              servers_count: 3
-            };
+
+          // For partial scenario, only return claude-desktop config
+          if (currentScenario === "partial") {
+            if (appId === "claude-desktop") {
+              return {
+                source_path: "/tmp/test-config.json",
+                format: "standard",
+                servers_count: 2, // Partial scenarios have fewer servers
+              };
+            }
+            return null;
           }
-        }
-        
-        // For existing/normal scenarios, return moderate counts
-        if (appId === 'claude-desktop') {
-          return {
-            source_path: '/tmp/test-config.json',
-            format: 'standard',
-            servers_count: 3  // Existing configs typically have fewer servers
-          };
-        } else if (appId === 'cursor') {
-          return {
-            source_path: '/tmp/cursor-config.json', 
-            format: 'standard',
-            servers_count: 2  // Existing configs typically have fewer servers
-          };
-        }
-        return null;
-      });
-      
-      // Mock restore methods to return expected results  
-      vi.spyOn(backupManager, 'restoreBackup').mockImplementation(async (backupId: string) => {
-        // Handle error cases first
-        if (backupId === 'non-existent-id') {
-          return {
-            success: false,
-            restored: [],
-            failed: [],
-            error: 'Backup not found: non-existent-id'
-          };
-        }
-        
-        // Handle restore error scenario
-        if (currentScenario === 'restore-error') {
-          return {
-            success: false,
-            restored: [],
-            failed: ['claude-desktop'],
-            error: 'File read failed'
-          };
-        }
-        
-        // Create test files in the filesystem to simulate restore
-        const claudeDir = join(baseDir, "Library/Application Support/Claude");
-        const configFile = join(claudeDir, "claude_desktop_config.json");
-        
-        // Create directory and config file with proper test data
-        vol.mkdirSync(claudeDir, { recursive: true });
-        
-        // Create config content that matches ExistingConfigScenario
-        const claudeConfig = {
-          mcpServers: {
-            git: {
-              type: "stdio",
-              command: "git-mcp-server",
-              args: ["--verbose"]
-            },
-            filesystem: {
-              type: "stdio",
-              command: "fs-mcp",
-              env: {
-                "FS_ROOT": "/Users/test/documents"
-              }
-            },
-            github: {
-              type: "stdio", 
-              command: "github-mcp",
-              env: {
-                "GITHUB_TOKEN": "test-token-123"
-              }
+
+          // For multi-server scenario, return high server counts
+          if (currentScenario === "multi-server") {
+            if (appId === "claude-desktop") {
+              return {
+                source_path: "/tmp/test-config.json",
+                format: "standard",
+                servers_count: 20, // MultiServerScenario creates 20 servers
+              };
+            } else if (appId === "cursor") {
+              return {
+                source_path: "/tmp/cursor-config.json",
+                format: "standard",
+                servers_count: 3,
+              };
             }
           }
-        };
-        
-        const cursorConfig = {
-          mcpServers: {
-            "code-search": {
-              type: "stdio",
-              command: "code-search-mcp",
-              args: ["--project", "/Users/test/project"]
-            },
-            "database": {
-              type: "stdio",
-              command: "db-mcp",
-              env: {
-                "DB_CONNECTION": "postgresql://localhost/testdb"
-              }
-            }
+
+          // For existing/normal scenarios, return moderate counts
+          if (appId === "claude-desktop") {
+            return {
+              source_path: "/tmp/test-config.json",
+              format: "standard",
+              servers_count: 3, // Existing configs typically have fewer servers
+            };
+          } else if (appId === "cursor") {
+            return {
+              source_path: "/tmp/cursor-config.json",
+              format: "standard",
+              servers_count: 2, // Existing configs typically have fewer servers
+            };
           }
-        };
-        
-        vol.writeFileSync(configFile, JSON.stringify(claudeConfig));
-        
-        // Also create cursor config file
-        const cursorDir = join(baseDir, ".cursor");
-        const cursorConfigFile = join(cursorDir, "mcp.json");
-        vol.mkdirSync(cursorDir, { recursive: true });
-        vol.writeFileSync(cursorConfigFile, JSON.stringify(cursorConfig));
-        
-        // Simulate partial restore scenario
-        if (currentScenario === 'partial-restore') {
+          return null;
+        }
+      );
+
+      // Mock restore methods to return expected results
+      vi.spyOn(backupManager, "restoreBackup").mockImplementation(
+        async (backupId: string) => {
+          // Handle error cases first
+          if (backupId === "non-existent-id") {
+            return {
+              success: false,
+              restored: [],
+              failed: [],
+              error: "Backup not found: non-existent-id",
+            };
+          }
+
+          // Handle restore error scenario
+          if (currentScenario === "restore-error") {
+            return {
+              success: false,
+              restored: [],
+              failed: ["claude-desktop"],
+              error: "File read failed",
+            };
+          }
+
+          // Create test files in the filesystem to simulate restore
+          const claudeDir = join(baseDir, "Library/Application Support/Claude");
+          const configFile = join(claudeDir, "claude_desktop_config.json");
+
+          // Create directory and config file with proper test data
+          vol.mkdirSync(claudeDir, { recursive: true });
+
+          // Create config content that matches ExistingConfigScenario
+          const claudeConfig = {
+            mcpServers: {
+              git: {
+                type: "stdio",
+                command: "git-mcp-server",
+                args: ["--verbose"],
+              },
+              filesystem: {
+                type: "stdio",
+                command: "fs-mcp",
+                env: {
+                  FS_ROOT: "/Users/test/documents",
+                },
+              },
+              github: {
+                type: "stdio",
+                command: "github-mcp",
+                env: {
+                  GITHUB_TOKEN: "test-token-123",
+                },
+              },
+            },
+          };
+
+          const cursorConfig = {
+            mcpServers: {
+              "code-search": {
+                type: "stdio",
+                command: "code-search-mcp",
+                args: ["--project", "/Users/test/project"],
+              },
+              database: {
+                type: "stdio",
+                command: "db-mcp",
+                env: {
+                  DB_CONNECTION: "postgresql://localhost/testdb",
+                },
+              },
+            },
+          };
+
+          vol.writeFileSync(configFile, JSON.stringify(claudeConfig));
+
+          // Also create cursor config file
+          const cursorDir = join(baseDir, ".cursor");
+          const cursorConfigFile = join(cursorDir, "mcp.json");
+          vol.mkdirSync(cursorDir, { recursive: true });
+          vol.writeFileSync(cursorConfigFile, JSON.stringify(cursorConfig));
+
+          // Simulate partial restore scenario
+          if (currentScenario === "partial-restore") {
+            return {
+              success: true,
+              restored: ["claude-desktop"],
+              failed: ["cursor"],
+              message: "Partial restore completed",
+            };
+          }
+
+          // Normal restore scenario
           return {
             success: true,
-            restored: ['claude-desktop'],
-            failed: ['cursor'],
-            message: 'Partial restore completed'
+            restored: ["claude-desktop", "cursor"],
+            failed: [],
+            message: "Restore completed successfully",
           };
         }
-        
-        // Normal restore scenario
-        return {
-          success: true,
-          restored: ['claude-desktop', 'cursor'],
-          failed: [],
-          message: 'Restore completed successfully'
-        };
-      });
+      );
     })();
-    
+
     // Race setup against timeout
     await Promise.race([
       setupPromise,
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Test setup timed out')), 3000)
-      )
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Test setup timed out")), 3000)
+      ),
     ]);
   });
 
@@ -461,15 +470,15 @@ describe("BackupManager", () => {
       resetDatabaseForTesting();
       vi.clearAllMocks();
     })();
-    
+
     // Race teardown against timeout
     await Promise.race([
       teardownPromise,
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Test teardown timed out')), 2000)
-      )
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Test teardown timed out")), 2000)
+      ),
     ]).catch((error) => {
-      console.warn('Teardown timeout:', error.message);
+      console.warn("Teardown timeout:", error.message);
       // Continue with cleanup even if teardown times out
     });
   });
@@ -483,16 +492,19 @@ describe("BackupManager", () => {
 
   describe("createBackup", () => {
     it("should create backup of fresh installation", async () => {
-      currentScenario = 'fresh';
+      currentScenario = "fresh";
       await env.setup(new FreshInstallScenario());
 
       // Add timeout handling for this specific test
-      const result = await Promise.race([
+      const result = (await Promise.race([
         backupManager.createBackup(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('createBackup timed out after 5 seconds')), 5000)
-        )
-      ]) as any;
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error("createBackup timed out after 5 seconds")),
+            5000
+          )
+        ),
+      ])) as any;
 
       expect(result.success).toBe(true);
       expect(result.backupId).toBeDefined();
@@ -503,16 +515,19 @@ describe("BackupManager", () => {
     }, 8000);
 
     it("should create backup with existing configurations", async () => {
-      currentScenario = 'existing';
+      currentScenario = "existing";
       await env.setup(new ExistingConfigScenario(["claude-desktop", "cursor"]));
 
       // Add timeout for the backup operation
-      const result = await Promise.race([
+      const result = (await Promise.race([
         backupManager.createBackup(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('createBackup timed out after 3 seconds')), 3000)
-        )
-      ]) as any;
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error("createBackup timed out after 3 seconds")),
+            3000
+          )
+        ),
+      ])) as any;
 
       expect(result.success).toBe(true);
       expect(result.metadata?.total_servers).toBeGreaterThan(0);
@@ -528,16 +543,22 @@ describe("BackupManager", () => {
     }, 5000);
 
     it("should handle multi-server configurations", async () => {
-      currentScenario = 'multi-server';
+      currentScenario = "multi-server";
       await env.setup(new MultiServerScenario(20, true));
 
       // Add timeout for the backup operation
-      const result = await Promise.race([
+      const result = (await Promise.race([
         backupManager.createBackup(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Multi-server backup timed out after 3 seconds')), 3000)
-        )
-      ]) as any;
+        new Promise((_, reject) =>
+          setTimeout(
+            () =>
+              reject(
+                new Error("Multi-server backup timed out after 3 seconds")
+              ),
+            3000
+          )
+        ),
+      ])) as any;
 
       expect(result.success).toBe(true);
       expect(result.metadata?.total_servers).toBeGreaterThanOrEqual(20);
@@ -549,7 +570,7 @@ describe("BackupManager", () => {
     }, 5000);
 
     it("should skip corrupted configurations", async () => {
-      currentScenario = 'corrupted';
+      currentScenario = "corrupted";
       await env.setup(
         new CorruptedConfigScenario(["claude-desktop"], ["cursor"])
       );
@@ -563,7 +584,7 @@ describe("BackupManager", () => {
     });
 
     it("should handle partial configurations", async () => {
-      currentScenario = 'partial';
+      currentScenario = "partial";
       await env.setup(
         new PartialConfigScenario(["claude-desktop"], ["cursor"])
       );
@@ -700,7 +721,7 @@ describe("BackupManager", () => {
     });
 
     it("should handle partial restore when some apps are missing", async () => {
-      currentScenario = 'partial-restore';
+      currentScenario = "partial-restore";
       // Create backup with two apps
       await env.setup(new ExistingConfigScenario(["claude-desktop", "cursor"]));
       const backupResult = await backupManager.createBackup();
@@ -782,24 +803,24 @@ describe("BackupManager", () => {
   describe("error handling", () => {
     it("should handle backup creation errors gracefully", async () => {
       await env.setup(new ExistingConfigScenario(["claude-desktop"]));
-      
+
       // In test mode, we need to mock fs operations instead of tar
       const originalMkdir = vol.promises.mkdir;
-      vol.promises.mkdir = vi.fn().mockRejectedValueOnce(
-        new Error("Directory creation failed")
-      );
+      vol.promises.mkdir = vi
+        .fn()
+        .mockRejectedValueOnce(new Error("Directory creation failed"));
 
       const result = await backupManager.createBackup();
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("Directory creation failed");
-      
+
       // Restore original
       vol.promises.mkdir = originalMkdir;
     });
 
     it("should handle restore errors gracefully", async () => {
-      currentScenario = 'restore-error';
+      currentScenario = "restore-error";
       await env.setup(new ExistingConfigScenario(["claude-desktop"]));
       const backupResult = await backupManager.createBackup();
 
@@ -818,7 +839,7 @@ describe("BackupManager", () => {
 
       expect(restoreResult.success).toBe(false);
       expect(restoreResult.error).toContain("File read failed");
-      
+
       // Restore original
       vol.promises.readFile = originalReadFile;
     });
@@ -826,7 +847,7 @@ describe("BackupManager", () => {
 
   describe("cross-platform support", () => {
     it("should handle Windows paths correctly", async () => {
-      currentScenario = 'windows';
+      currentScenario = "windows";
       env.setPlatform("win32");
       await env.setup(new FreshInstallScenario());
 

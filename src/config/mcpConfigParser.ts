@@ -34,7 +34,7 @@ export class MCPConfigParser {
     try {
       // Resolve relative paths to absolute paths based on current working directory
       const resolvedPath = path.resolve(filePath);
-      
+
       // Check if file exists
       await fs.access(resolvedPath);
 

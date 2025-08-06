@@ -7,8 +7,8 @@
 // This can be configured via HYPERTOOL_MAX_LISTENERS environment variable
 // Default is 10, but you may need to increase it if you have many MCP servers connected
 // Example: HYPERTOOL_MAX_LISTENERS=30 hypertool-mcp
-const maxListeners = process.env.HYPERTOOL_MAX_LISTENERS 
-  ? parseInt(process.env.HYPERTOOL_MAX_LISTENERS, 10) 
+const maxListeners = process.env.HYPERTOOL_MAX_LISTENERS
+  ? parseInt(process.env.HYPERTOOL_MAX_LISTENERS, 10)
   : 10;
 if (!isNaN(maxListeners) && maxListeners > 0) {
   process.setMaxListeners(maxListeners);
@@ -173,13 +173,15 @@ const mcpServerRunOptions = [
   },
   {
     flags: "--linked-app <app-id>",
-    description: theme.info("Link to specific application configuration") +
+    description:
+      theme.info("Link to specific application configuration") +
       "\n" +
       theme.label("Options: claude-desktop, cursor, claude-code"),
   },
   {
     flags: "--profile <profile-id>",
-    description: theme.info("Use specific profile for workspace/project") +
+    description:
+      theme.info("Use specific profile for workspace/project") +
       theme.muted(" (basic support - full profile management TODO)"),
   },
   {
@@ -266,11 +268,11 @@ async function runMcpServer(options: any): Promise<void> {
   const logger = getLogger(undefined, runtimeOptions);
 
   // Set up process warning listener to capture Node.js warnings in logs
-  process.on('warning', (warning) => {
-    logger.warn('Node.js warning', {
+  process.on("warning", (warning) => {
+    logger.warn("Node.js warning", {
       name: warning.name,
       message: warning.message,
-      stack: warning.stack
+      stack: warning.stack,
     });
   });
 
@@ -346,7 +348,9 @@ async function runMcpServer(options: any): Promise<void> {
 
     // Set a hard timeout to force exit if graceful shutdown fails
     const forceExitTimeout = setTimeout(() => {
-      logger.error("Forcefully exiting after timeout - graceful shutdown failed");
+      logger.error(
+        "Forcefully exiting after timeout - graceful shutdown failed"
+      );
       process.exit(1);
     }, 5000); // 5 second timeout
 
@@ -426,7 +430,6 @@ async function runMcpServer(options: any): Promise<void> {
   }
 }
 
-
 /**
  * Parse CLI arguments and set up the program structure
  */
@@ -482,8 +485,9 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   );
 
   // Add 'run' subcommand for running the MCP server
-  const runCommand = new Command("run")
-    .description("Run the MCP server (default if no subcommand specified)");
+  const runCommand = new Command("run").description(
+    "Run the MCP server (default if no subcommand specified)"
+  );
 
   // Add all MCP server options to the run command
   addMcpServerOptions(runCommand);
@@ -518,13 +522,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   // If no command is specified, default to 'mcp run' or 'setup'
   // But only if the first argument isn't already a known command
   const cliArgs = process.argv.slice(2);
-  const knownCommands = [
-    "config", 
-    "mcp", 
-    "setup", 
-    "service",
-    "help"
-  ];
+  const knownCommands = ["config", "mcp", "setup", "service", "help"];
   const knownMcpSubcommands = ["run", "list", "get", "add", "remove"];
 
   // Check if any argument is a known command
@@ -672,12 +670,12 @@ async function main(): Promise<void> {
 
 // Export main server components for programmatic use
 export { MetaMCPServer } from "./server/base.js";
-export { EnhancedMetaMCPServer } from "./server/enhanced.js"; 
+export { EnhancedMetaMCPServer } from "./server/enhanced.js";
 export { MetaMCPServerFactory } from "./server/factory.js";
-export type { 
-  MetaMCPServerConfig, 
-  TransportConfig, 
-  ServerInitOptions 
+export type {
+  MetaMCPServerConfig,
+  TransportConfig,
+  ServerInitOptions,
 } from "./server/types.js";
 export type { RuntimeOptions, RuntimeTransportType } from "./types/runtime.js";
 export { discoverMcpConfig } from "./config/mcpConfigLoader.js";

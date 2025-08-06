@@ -33,11 +33,13 @@ async function handleStopCommand(): Promise<void> {
   try {
     // Check current status
     const status = await ForeverServiceManager.status();
-    
+
     if (!status.running) {
       spinner.succeed();
       console.log("");
-      console.log(semantic.messageSuccess("✅ No service is currently running"));
+      console.log(
+        semantic.messageSuccess("✅ No service is currently running")
+      );
       return;
     }
 
@@ -46,7 +48,7 @@ async function handleStopCommand(): Promise<void> {
 
     // Stop the service
     await ForeverServiceManager.stop();
-    
+
     spinner.succeed();
     console.log("");
     console.log(semantic.messageSuccess("✅ Service stopped successfully"));
@@ -55,18 +57,23 @@ async function handleStopCommand(): Promise<void> {
     console.log(theme.info(`  Profile: ${status.profile}`));
     console.log(theme.info(`  PID: ${status.pid} (terminated)`));
     console.log(theme.info("  Method: Forever managed shutdown"));
-
   } catch (error) {
     spinner.fail();
     console.error("");
     console.error(semantic.messageError("❌ Failed to stop service"));
     console.error(theme.warning(`   Error: ${(error as Error).message}`));
-    
+
     console.error("");
     console.error(theme.info("💡 Troubleshooting:"));
-    console.error(theme.muted("   • Check if service is running: hypertool-mcp service status"));
-    console.error(theme.muted("   • View logs for errors: hypertool-mcp service logs"));
-    
+    console.error(
+      theme.muted(
+        "   • Check if service is running: hypertool-mcp service status"
+      )
+    );
+    console.error(
+      theme.muted("   • View logs for errors: hypertool-mcp service logs")
+    );
+
     process.exit(1);
   }
 }

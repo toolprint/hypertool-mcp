@@ -5,14 +5,14 @@
 import { RuntimeOptions } from "../../types/runtime.js";
 
 // Type for log context - can be any serializable object, Error, or unknown value
-export type LogContext = 
-  | Record<string, unknown> 
-  | string 
-  | number 
-  | boolean 
-  | null 
-  | undefined 
-  | Error 
+export type LogContext =
+  | Record<string, unknown>
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | Error
   | unknown;
 
 export type LogLevel = "fatal" | "error" | "warn" | "info" | "debug" | "trace";
@@ -52,13 +52,19 @@ export interface LoggerInterface {
  * Constructor interface for logger implementations
  */
 export interface LoggerConstructor {
-  new (config?: Partial<LoggingConfig>, runtimeOptions?: RuntimeOptions): LoggerInterface;
+  new (
+    config?: Partial<LoggingConfig>,
+    runtimeOptions?: RuntimeOptions
+  ): LoggerInterface;
 }
 
 /**
  * Logger factory interface
  */
 export interface LoggerFactory {
-  createLogger(config?: Partial<LoggingConfig>, runtimeOptions?: RuntimeOptions): Promise<LoggerInterface>;
+  createLogger(
+    config?: Partial<LoggingConfig>,
+    runtimeOptions?: RuntimeOptions
+  ): Promise<LoggerInterface>;
   createChildLogger(bindings: { module: string }): LoggerInterface;
 }

@@ -37,7 +37,8 @@ export class FileServerConfigGroupRepository
     serverRepository: IServerConfigRecordRepository,
     basePath?: string
   ) {
-    const baseDir = basePath || path.join(getHomeDir(), ".toolprint/hypertool-mcp");
+    const baseDir =
+      basePath || path.join(getHomeDir(), ".toolprint/hypertool-mcp");
     this.groupsFilePath = path.join(baseDir, "groups.json");
     this.serverRepository = serverRepository;
   }
@@ -92,9 +93,7 @@ export class FileServerConfigGroupRepository
   /**
    * Add a new group
    */
-  async add(
-    group: Omit<ServerConfigGroup, "id">
-  ): Promise<ServerConfigGroup> {
+  async add(group: Omit<ServerConfigGroup, "id">): Promise<ServerConfigGroup> {
     const groups = await this.loadGroups();
 
     // Check if name already exists

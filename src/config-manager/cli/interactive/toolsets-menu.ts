@@ -174,7 +174,12 @@ function copyToClipboard(text: string): boolean {
 export async function showToolsetDetail(
   toolset: ToolsetInfo,
   _allToolsets: ToolsetInfo[]
-): Promise<{ action: string; nextView?: ViewType; data?: unknown; itemName?: string }> {
+): Promise<{
+  action: string;
+  nextView?: ViewType;
+  data?: unknown;
+  itemName?: string;
+}> {
   // Clear screen and show header
   console.clear();
   output.displayHeader(`Toolset: ${toolset.name}`);
@@ -205,20 +210,22 @@ export async function showToolsetDetail(
       const isLastServer = serverIndex === serverEntries.length - 1;
       const serverPrefix = isLastServer ? "└──" : "├──";
       const toolPrefix = isLastServer ? "    " : "│   ";
-      
-      output.info(`${serverPrefix} ${theme.primary(serverName.charAt(0).toUpperCase() + serverName.slice(1))} Operations (${tools.length} tool${tools.length !== 1 ? 's' : ''}) - from '${theme.warning(serverName)}' server`);
-      
+
+      output.info(
+        `${serverPrefix} ${theme.primary(serverName.charAt(0).toUpperCase() + serverName.slice(1))} Operations (${tools.length} tool${tools.length !== 1 ? "s" : ""}) - from '${theme.warning(serverName)}' server`
+      );
+
       tools.forEach((tool, toolIndex) => {
         const isLastTool = toolIndex === tools.length - 1;
         const currentToolPrefix = isLastTool ? "└──" : "├──";
-        
+
         let toolDisplay = `${toolPrefix}${currentToolPrefix} ${theme.value(tool.toolName)}`;
         if (tool.description) {
           toolDisplay += ` - ${theme.muted(tool.description)}`;
         }
         output.info(toolDisplay);
       });
-      
+
       if (!isLastServer) {
         output.info("│");
       }
@@ -227,11 +234,11 @@ export async function showToolsetDetail(
     // Fallback display if serverGroups not available
     output.displaySubHeader("🔧 Tools:");
     output.displaySpaceBuffer(1);
-    
+
     toolset.toolDetails.forEach((tool, index) => {
       const isLast = index === toolset.toolDetails!.length - 1;
       const prefix = isLast ? "└──" : "├──";
-      
+
       let toolDisplay = `${prefix} ${theme.value(tool.toolName)} (${theme.warning(tool.serverName)})`;
       if (tool.description) {
         toolDisplay += ` - ${theme.muted(tool.description)}`;
@@ -299,9 +306,9 @@ export async function showToolsetDetail(
   if (selection.action === "copy_tools") {
     if (toolset.toolDetails && toolset.toolDetails.length > 0) {
       const toolList = toolset.toolDetails
-        .map(tool => tool.namespacedName)
+        .map((tool) => tool.namespacedName)
         .join("\n");
-      
+
       if (copyToClipboard(toolList)) {
         output.success("✅ Tool list copied to clipboard!");
       } else {
@@ -310,7 +317,7 @@ export async function showToolsetDetail(
     } else {
       output.warn("No tools to copy");
     }
-    
+
     await new Promise((resolve) => setTimeout(resolve, 1500));
     return { action: "stay" };
   } else if (selection.action === "view_tools") {
@@ -332,7 +339,12 @@ export async function showToolsetDetail(
 export async function showToolDetail(
   toolset: ToolsetInfo,
   _allToolsets: ToolsetInfo[]
-): Promise<{ action: string; nextView?: ViewType; data?: unknown; itemName?: string }> {
+): Promise<{
+  action: string;
+  nextView?: ViewType;
+  data?: unknown;
+  itemName?: string;
+}> {
   // Clear screen and show header
   console.clear();
   output.displayHeader(`Tools in ${toolset.name}`);
@@ -366,15 +378,18 @@ export async function showToolDetail(
   // Add tools grouped by server
   Object.entries(serverGroups).forEach(([serverName, tools]) => {
     choices.push(
-      new inquirer.Separator(`── ${serverName.toUpperCase()} Server (${tools.length} tools) ──`) as any
+      new inquirer.Separator(
+        `── ${serverName.toUpperCase()} Server (${tools.length} tools) ──`
+      ) as any
     );
 
     tools.forEach((tool) => {
       let name = `🔧 ${theme.primary(tool.toolName)}`;
       if (tool.description) {
-        const shortDesc = tool.description.length > 50 
-          ? tool.description.substring(0, 50) + "..."
-          : tool.description;
+        const shortDesc =
+          tool.description.length > 50
+            ? tool.description.substring(0, 50) + "..."
+            : tool.description;
         name += `\n     ${theme.muted(shortDesc)}`;
       }
       name += `\n     ${theme.warning(`Server: ${tool.serverName} | ID: ${tool.namespacedName}`)}`;
@@ -390,12 +405,10 @@ export async function showToolDetail(
   });
 
   // Add navigation options
-  choices.push(
-    {
-      name: "[Back to Toolset]",
-      value: { action: "back" },
-    }
-  );
+  choices.push({
+    name: "[Back to Toolset]",
+    value: { action: "back" },
+  });
 
   // Show tool selection menu
   const { selection } = await inquirer.prompt([
@@ -423,7 +436,12 @@ export async function showToolDetail(
 async function showIndividualToolDetail(
   tool: ToolDetail,
   _toolset: ToolsetInfo
-): Promise<{ action: string; nextView?: ViewType; data?: unknown; itemName?: string }> {
+): Promise<{
+  action: string;
+  nextView?: ViewType;
+  data?: unknown;
+  itemName?: string;
+}> {
   // Clear screen and show header
   console.clear();
   output.displayHeader(`Tool: ${tool.toolName}`);
@@ -432,7 +450,7 @@ async function showIndividualToolDetail(
   // Display tool details
   output.info(`Server: ${theme.primary(tool.serverName)} (stdio)`);
   output.info(`Full Name: ${theme.value(tool.namespacedName)}`);
-  
+
   if (tool.description) {
     output.info(`Description: ${theme.muted(tool.description)}`);
   }
@@ -445,8 +463,12 @@ async function showIndividualToolDetail(
 
   // Show usage examples
   output.displaySubHeader("📝 Usage Information:");
-  output.info(`• This tool is provided by the '${theme.warning(tool.serverName)}' MCP server`);
-  output.info(`• It can be called using the namespaced name: ${theme.value(tool.namespacedName)}`);
+  output.info(
+    `• This tool is provided by the '${theme.warning(tool.serverName)}' MCP server`
+  );
+  output.info(
+    `• It can be called using the namespaced name: ${theme.value(tool.namespacedName)}`
+  );
   if (tool.description) {
     output.info(`• Purpose: ${theme.muted(tool.description)}`);
   }
@@ -488,13 +510,15 @@ async function showIndividualToolDetail(
     } else {
       output.error("❌ Failed to copy to clipboard");
     }
-    
+
     await new Promise((resolve) => setTimeout(resolve, 1500));
     return { action: "stay" };
   } else if (selection.action === "view_server") {
     // Navigate to server details - this would need to be implemented
     // For now, just show a message
-    output.info(`Navigate to server '${tool.serverName}' details would go here.`);
+    output.info(
+      `Navigate to server '${tool.serverName}' details would go here.`
+    );
     await new Promise((resolve) => setTimeout(resolve, 2000));
     return { action: "stay" };
   }

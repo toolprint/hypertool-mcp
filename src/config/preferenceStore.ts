@@ -9,7 +9,10 @@ import { APP_TECHNICAL_NAME, BRAND_NAME } from "./appConfig.js";
 import { getHomeDir } from "../utils/paths.js";
 
 // Configuration directory structure
-const BRAND_CONFIG_DIR = path.join(getHomeDir(), `.${BRAND_NAME.toLowerCase()}`);
+const BRAND_CONFIG_DIR = path.join(
+  getHomeDir(),
+  `.${BRAND_NAME.toLowerCase()}`
+);
 const APP_CONFIG_DIR = path.join(BRAND_CONFIG_DIR, APP_TECHNICAL_NAME);
 const CONFIG_FILE = path.join(APP_CONFIG_DIR, "config.json");
 
@@ -196,12 +199,14 @@ export async function saveLastEquippedToolset(
 /**
  * Get a specific feature flag value
  */
-export async function getFeatureFlag(flagName: string): Promise<boolean | undefined> {
+export async function getFeatureFlag(
+  flagName: string
+): Promise<boolean | undefined> {
   try {
     await ensureConfigDir();
     const content = await fs.readFile(CONFIG_FILE, "utf-8");
     const config = JSON.parse(content) as CompleteConfig;
-    
+
     return config.featureFlags?.[flagName as keyof typeof config.featureFlags];
   } catch (error) {
     // If config doesn't exist or is invalid, return undefined
@@ -212,7 +217,10 @@ export async function getFeatureFlag(flagName: string): Promise<boolean | undefi
 /**
  * Set a specific feature flag value
  */
-export async function setFeatureFlag(flagName: string, value: boolean): Promise<void> {
+export async function setFeatureFlag(
+  flagName: string,
+  value: boolean
+): Promise<void> {
   await ensureConfigDir();
 
   // Load existing config to preserve all fields
@@ -243,12 +251,14 @@ export async function setFeatureFlag(flagName: string, value: boolean): Promise<
 /**
  * Get all feature flags
  */
-export async function getFeatureFlags(): Promise<Record<string, boolean> | undefined> {
+export async function getFeatureFlags(): Promise<
+  Record<string, boolean> | undefined
+> {
   try {
     await ensureConfigDir();
     const content = await fs.readFile(CONFIG_FILE, "utf-8");
     const config = JSON.parse(content) as CompleteConfig;
-    
+
     return config.featureFlags as Record<string, boolean> | undefined;
   } catch (error) {
     // If config doesn't exist or is invalid, return undefined

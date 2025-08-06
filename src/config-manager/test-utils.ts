@@ -42,9 +42,7 @@ export function createMockClaudeCodeConfig(overrides?: Partial<any>) {
 /**
  * Create a standard MCP configuration for testing
  */
-export function createMockMCPConfig(
-  servers?: Record<string, any>
-): MCPConfig {
+export function createMockMCPConfig(servers?: Record<string, any>): MCPConfig {
   return {
     mcpServers: servers || {
       "test-server": {

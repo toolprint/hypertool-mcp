@@ -123,7 +123,9 @@ describe("ClaudeCodeTransformer", () => {
       expect(result.shiftEnterKeyBindingInstalled).toBe(true);
       expect(result.hasCompletedOnboarding).toBe(true);
       expect(result.lastOnboardingVersion).toBe("1.0.61");
-      expect(result.cachedChangelog).toBe("# Changelog\n\n## Latest version...");
+      expect(result.cachedChangelog).toBe(
+        "# Changelog\n\n## Latest version..."
+      );
       expect(result.changelogLastFetched).toBe(1234567890);
       expect(result.fallbackAvailableWarningThreshold).toBe(0.5);
       expect(result.subscriptionNoticeCount).toBe(0);

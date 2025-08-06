@@ -9,7 +9,12 @@ import { homedir } from "os";
 import { createHash } from "crypto";
 import { APP_TECHNICAL_NAME, BRAND_NAME } from "../../config/appConfig.js";
 import { RuntimeOptions } from "../../types/runtime.js";
-import { LoggerInterface, LoggingConfig, LogContext, LogLevel } from "./interfaces.js";
+import {
+  LoggerInterface,
+  LoggingConfig,
+  LogContext,
+  LogLevel,
+} from "./interfaces.js";
 
 export const DEFAULT_PINO_LOGGING_CONFIG: LoggingConfig = {
   level: process.env.NODE_ENV === "development" ? "debug" : "info",
@@ -37,10 +42,13 @@ export class PinoLogger implements LoggerInterface {
   private childLoggerCache = new Map<string, PinoLogger>();
   private configHash: string;
 
-  constructor(config: Partial<LoggingConfig> = {}, runtimeOptions?: RuntimeOptions) {
+  constructor(
+    config: Partial<LoggingConfig> = {},
+    runtimeOptions?: RuntimeOptions
+  ) {
     this.config = { ...DEFAULT_PINO_LOGGING_CONFIG, ...config };
     this.runtimeOptions = runtimeOptions;
-    
+
     // Determine format from environment variable or config
     if (process.env.LOG_FORMAT === "json") {
       this.config.format = "json";
@@ -53,7 +61,7 @@ export class PinoLogger implements LoggerInterface {
 
     // Calculate configuration hash for caching
     this.configHash = this.calculateConfigHash();
-    
+
     // Get or create Pino instance
     this.pinoLogger = this.getOrCreatePinoInstance();
   }
@@ -69,11 +77,14 @@ export class PinoLogger implements LoggerInterface {
       enableFile: this.config.enableFile,
       serverName: this.config.serverName,
       format: this.config.format,
-      transport: this.runtimeOptions?.transport || 'stdio',
+      transport: this.runtimeOptions?.transport || "stdio",
     };
-    
-    const configString = JSON.stringify(normalizedConfig, Object.keys(normalizedConfig).sort());
-    return createHash('sha256').update(configString).digest('hex');
+
+    const configString = JSON.stringify(
+      normalizedConfig,
+      Object.keys(normalizedConfig).sort()
+    );
+    return createHash("sha256").update(configString).digest("hex");
   }
 
   /**
@@ -98,23 +109,26 @@ export class PinoLogger implements LoggerInterface {
     }
 
     const newInstance = pino(options);
-    
+
     // Cache the instance
     pinoInstanceCache.set(this.configHash, newInstance);
-    
+
     return newInstance;
   }
 
   /**
    * Get transport configuration with shared instances
    */
-  private getTransportConfig(): pino.TransportMultiOptions | pino.TransportSingleOptions | undefined {
+  private getTransportConfig():
+    | pino.TransportMultiOptions
+    | pino.TransportSingleOptions
+    | undefined {
     const transports: pino.TransportSingleOptions[] = [];
 
     // Console/stderr transport based on mode
     if (this.config.enableConsole) {
-      const useStderr = this.runtimeOptions?.transport === 'stdio';
-      
+      const useStderr = this.runtimeOptions?.transport === "stdio";
+
       if (useStderr) {
         // Use stderr for stdio mode to avoid protocol corruption
         if (!sharedStderrTransport) {
@@ -147,30 +161,32 @@ export class PinoLogger implements LoggerInterface {
     }
 
     return {
-      targets: transports
+      targets: transports,
     };
   }
 
   /**
    * Create pretty transport configuration
    */
-  private createPrettyTransport(destination: number): pino.TransportSingleOptions {
+  private createPrettyTransport(
+    destination: number
+  ): pino.TransportSingleOptions {
     const options: any = {
       destination,
       colorize: this.config.format === "pretty",
-      translateTime: 'HH:MM:ss',
-      ignore: 'pid,hostname',
+      translateTime: "HH:MM:ss",
+      ignore: "pid,hostname",
     };
 
     if (this.config.format === "json") {
       return {
-        target: 'pino/file',
-        options
+        target: "pino/file",
+        options,
       };
     } else {
       return {
-        target: 'pino-pretty',
-        options
+        target: "pino-pretty",
+        options,
       };
     }
   }
@@ -180,14 +196,14 @@ export class PinoLogger implements LoggerInterface {
    */
   private createFileTransport(): pino.TransportSingleOptions {
     const logFilePath = this.getLogFilePath();
-    
+
     return {
-      target: 'pino/file',
+      target: "pino/file",
       options: {
         destination: logFilePath,
         mkdir: true,
-        append: true
-      }
+        append: true,
+      },
     };
   }
 
@@ -199,7 +215,7 @@ export class PinoLogger implements LoggerInterface {
     if (process.env.HYPERTOOL_LOG_FILE) {
       return process.env.HYPERTOOL_LOG_FILE;
     }
-    
+
     // Fall back to default path
     const logDir = join(
       homedir(),
@@ -213,25 +229,27 @@ export class PinoLogger implements LoggerInterface {
   /**
    * Format context for log messages with Error handling
    */
-  private formatContext(context?: LogContext): Record<string, unknown> | undefined {
+  private formatContext(
+    context?: LogContext
+  ): Record<string, unknown> | undefined {
     if (context === undefined || context === null) {
       return undefined;
     }
-    
+
     if (context instanceof Error) {
       return {
         error: {
           name: context.name,
           message: context.message,
-          stack: context.stack
-        }
+          stack: context.stack,
+        },
       };
     }
-    
-    if (typeof context === 'object') {
+
+    if (typeof context === "object") {
       return context as Record<string, unknown>;
     }
-    
+
     // For primitive types, wrap in a context object
     return { context };
   }
@@ -294,10 +312,13 @@ export class PinoLogger implements LoggerInterface {
   /**
    * Create child logger with caching to prevent EventEmitter memory leaks
    */
-  child(bindings: { module?: string; [key: string]: unknown }): LoggerInterface {
+  child(bindings: {
+    module?: string;
+    [key: string]: unknown;
+  }): LoggerInterface {
     // Create cache key from bindings
     const cacheKey = JSON.stringify(bindings);
-    
+
     // Check cache first
     if (this.childLoggerCache.has(cacheKey)) {
       return this.childLoggerCache.get(cacheKey)!;
@@ -306,7 +327,7 @@ export class PinoLogger implements LoggerInterface {
     // Create new child logger using Pino's native child functionality
     // This avoids creating new transports and exit listeners
     const childPinoLogger = this.pinoLogger.child(bindings);
-    
+
     // Create a wrapper that shares the parent's config but uses the child Pino instance
     // Importantly, we DON'T call the constructor which would create new transports
     const childLogger = Object.create(PinoLogger.prototype) as PinoLogger;
@@ -314,10 +335,10 @@ export class PinoLogger implements LoggerInterface {
     childLogger.config = this.config;
     childLogger.runtimeOptions = this.runtimeOptions;
     childLogger.childLoggerCache = new Map<string, PinoLogger>();
-    
+
     // Cache the child logger
     this.childLoggerCache.set(cacheKey, childLogger);
-    
+
     // Implement cache size limit to prevent unbounded growth
     if (this.childLoggerCache.size > 100) {
       const firstKey = this.childLoggerCache.keys().next().value;
@@ -325,7 +346,7 @@ export class PinoLogger implements LoggerInterface {
         this.childLoggerCache.delete(firstKey);
       }
     }
-    
+
     return childLogger;
   }
 
@@ -335,10 +356,10 @@ export class PinoLogger implements LoggerInterface {
   updateConfig(config: Partial<LoggingConfig>): void {
     const oldConfigHash = this.configHash;
     this.config = { ...this.config, ...config };
-    
+
     // Recalculate config hash
     this.configHash = this.calculateConfigHash();
-    
+
     // Only create new instance if config actually changed
     if (oldConfigHash !== this.configHash) {
       this.pinoLogger = this.getOrCreatePinoInstance();
@@ -372,7 +393,7 @@ export class PinoLogger implements LoggerInterface {
     return {
       childLoggerCount: this.childLoggerCache.size,
       cacheSize: this.childLoggerCache.size,
-      cacheKeys: Array.from(this.childLoggerCache.keys())
+      cacheKeys: Array.from(this.childLoggerCache.keys()),
     };
   }
 
@@ -392,7 +413,7 @@ export class PinoLogger implements LoggerInterface {
   } {
     return {
       instanceCount: pinoInstanceCache.size,
-      configHashes: Array.from(pinoInstanceCache.keys())
+      configHashes: Array.from(pinoInstanceCache.keys()),
     };
   }
 }

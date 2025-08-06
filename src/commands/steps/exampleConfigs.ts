@@ -44,7 +44,7 @@ function getExamplesPath(): string {
     // Found package root, use absolute path from there
     return join(packageRoot, "dist", "examples", "mcp");
   }
-  
+
   // Fallback to original relative path approach
   if (__dirname.includes("/dist/")) {
     // In production, examples are bundled in dist/examples/mcp/

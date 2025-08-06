@@ -73,22 +73,22 @@ export function createSetupCommand(): Command {
 
         const wizard = new SetupWizard(setupOptions);
         await wizard.run();
-        
+
         // Setup completed successfully - exit cleanly only if not in test
-        if (!process.env.NODE_ENV?.includes('test')) {
+        if (!process.env.NODE_ENV?.includes("test")) {
           process.exit(0);
         }
       } catch (error) {
         if (error instanceof SetupCancelledException) {
           // User cancelled - exit cleanly only if not in test
-          if (!process.env.NODE_ENV?.includes('test')) {
+          if (!process.env.NODE_ENV?.includes("test")) {
             process.exit(0);
           }
           return;
         }
-        
+
         console.error(theme.error("Setup failed:"), error);
-        if (!process.env.NODE_ENV?.includes('test')) {
+        if (!process.env.NODE_ENV?.includes("test")) {
           process.exit(1);
         }
         throw error; // Re-throw for tests

@@ -14,8 +14,9 @@ import { createHealthCommand } from "./health.js";
  * Create the service command with all subcommands
  */
 export function createServiceCommand(): Command {
-  const serviceCommand = new Command("service")
-    .description("Manage hypertool-mcp background service");
+  const serviceCommand = new Command("service").description(
+    "Manage hypertool-mcp background service"
+  );
 
   // Add subcommands
   serviceCommand.addCommand(createStartCommand());

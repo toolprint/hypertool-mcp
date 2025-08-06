@@ -30,7 +30,14 @@ import {
   showToolsetDetail,
   showToolDetail,
 } from "./interactive/toolsets-menu.js";
-import { getMcpServers, getApplicationStatus, getToolsets, ServerInfo, ApplicationStatus, ToolsetInfo } from "./show.js";
+import {
+  getMcpServers,
+  getApplicationStatus,
+  getToolsets,
+  ServerInfo,
+  ApplicationStatus,
+  ToolsetInfo,
+} from "./show.js";
 import { isNedbEnabledAsync } from "../../config/environment.js";
 import { getCompositeDatabaseService } from "../../db/compositeDatabaseService.js";
 import { ServerConfigGroup } from "../../db/interfaces.js";
@@ -82,7 +89,7 @@ export class InteractiveNavigator {
         console.log("\n👋 Goodbye!");
         process.exit(0);
       }
-      
+
       output.error("❌ Failed to start interactive mode:");
       output.error(error instanceof Error ? error.message : String(error));
       process.exit(1);
@@ -195,16 +202,27 @@ export class InteractiveNavigator {
         return showMainMenu(this.configData);
 
       case ViewType.SERVERS_LIST:
-        return showServersList(this.configData.servers, this.options, this.serverFilters, this.serverPage);
+        return showServersList(
+          this.configData.servers,
+          this.options,
+          this.serverFilters,
+          this.serverPage
+        );
 
       case ViewType.SERVER_DETAIL:
-        return showServerDetail(state.data as ServerInfo, this.configData.servers);
+        return showServerDetail(
+          state.data as ServerInfo,
+          this.configData.servers
+        );
 
       case ViewType.APPLICATIONS_LIST:
         return showApplicationsList(this.configData.applications, this.options);
 
       case ViewType.APPLICATION_DETAIL:
-        return showApplicationDetail(state.data as ApplicationStatus, this.configData.applications);
+        return showApplicationDetail(
+          state.data as ApplicationStatus,
+          this.configData.applications
+        );
 
       case ViewType.GROUPS_LIST:
         return showGroupsList(this.configData.groups || [], this.options);
@@ -220,10 +238,16 @@ export class InteractiveNavigator {
         return showToolsetsList(this.configData.toolsets, this.options);
 
       case ViewType.TOOLSET_DETAIL:
-        return showToolsetDetail(state.data as ToolsetInfo, this.configData.toolsets);
+        return showToolsetDetail(
+          state.data as ToolsetInfo,
+          this.configData.toolsets
+        );
 
       case ViewType.TOOL_DETAIL:
-        return showToolDetail(state.data as ToolsetInfo, this.configData.toolsets);
+        return showToolDetail(
+          state.data as ToolsetInfo,
+          this.configData.toolsets
+        );
 
       default:
         throw new Error(`Unknown view type: ${state.viewType}`);

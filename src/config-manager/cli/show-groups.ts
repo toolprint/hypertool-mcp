@@ -21,12 +21,8 @@ export function createShowGroupsCommand(): Command {
         // Check if NeDB is enabled (via environment variable or config.json)
         const nedbEnabled = await isNedbEnabledAsync();
         if (!nedbEnabled) {
-          output.error(
-            "❌ Database features are not enabled"
-          );
-          output.info(
-            "To enable database features, either:"
-          );
+          output.error("❌ Database features are not enabled");
+          output.info("To enable database features, either:");
           output.info(
             "  • Set environment variable: export HYPERTOOL_NEDB_ENABLED=true"
           );
