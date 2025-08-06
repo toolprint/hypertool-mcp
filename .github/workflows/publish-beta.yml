@@ -1,0 +1,111 @@
+name: Publish to Beta
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'guides/**'
+      - 'research/**'
+      - '.github/**'
+  workflow_dispatch:
+
+jobs:
+  publish-beta:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip-ci]')"
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run pre-publish checks
+        run: |
+          npm run build
+          npm run test:fast
+          npm run lint
+          npx tsc --noEmit
+      
+      - name: Configure git for version bump
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+      
+      - name: Check for changesets
+        id: changesets
+        run: |
+          # Check if there are any pending changesets
+          if [ -n "$(find .changeset -name '*.md' -not -name 'README.md' | head -1)" ]; then
+            echo "has_changesets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changesets=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No changesets found. Creating automatic patch changeset."
+            echo "---" > .changeset/auto-patch.md
+            echo '"@toolprint/hypertool-mcp": patch' >> .changeset/auto-patch.md
+            echo "---" >> .changeset/auto-patch.md
+            echo "" >> .changeset/auto-patch.md
+            echo "Automated patch release from CI" >> .changeset/auto-patch.md
+          fi
+      
+      - name: Apply changesets version bump
+        run: npm run changeset:version
+      
+      - name: Get new version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      
+      - name: Publish to beta tag
+        run: npm publish --access public --tag beta
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Create and push git tag
+        run: |
+          git tag v${{ steps.version.outputs.version }}
+          git push origin v${{ steps.version.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Commit version bump and changelog
+        run: |
+          git add package.json package-lock.json CHANGELOG.md .changeset
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: release version ${{ steps.version.outputs.version }} [skip-ci]"
+            git push origin main
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Summary
+        run: |
+          echo "🧪 Successfully published version ${{ steps.version.outputs.version }} to beta!"
+          echo ""
+          echo "📋 Summary:"
+          echo "- ✅ Version ${{ steps.version.outputs.version }} is now on the beta channel"
+          echo "- 📝 Version determined by changesets (automatic patch if no changesets found)"
+          echo "- 📰 CHANGELOG.md updated automatically"
+          echo "- 🔬 Available for internal testing and development"
+          echo "- 💡 Beta channel is not advertised to end users"
+          echo ""
+          echo "🚀 Next steps:"
+          echo "- Test the beta version internally"
+          echo "- When ready, promote to stable via 'Promote to Stable' workflow"
+          echo ""
+          echo "💡 Pro tip: Add changesets for semantic versioning:"
+          echo "   - npx changeset (interactive)"
+          echo "   - Commit changeset files in your PR for proper version bumping"

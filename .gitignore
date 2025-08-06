@@ -106,10 +106,15 @@ CLAUDE.local.md
 .temp/
 tmp-test-data/
 
+# NPM pack artifacts
+*.tgz
+
 # Backup files
 *.bak
 *.backup
 *~
+package.json.backup
+package-lock.json.backup
 
 logs
 dev-debug.log

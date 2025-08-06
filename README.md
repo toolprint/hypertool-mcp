@@ -40,7 +40,7 @@ Replace your `.mcp.json` with:
   "mcpServers": {
     "hypertool": {
       "command": "npx",
-      "args": ["-y", "@toolprint/hypertool-mcp@latest", "--mcp-config", ".mcp.hypertool.json"]
+      "args": ["-y", "@toolprint/hypertool-mcp", "--mcp-config", ".mcp.hypertool.json"]
     }
   }
 }

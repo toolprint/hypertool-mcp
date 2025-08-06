@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.32
+
+### Patch Changes
+
+- Add semantic versioning with changesets for better release management
+  - Install and configure @changesets/cli for proper version management
+  - Update GitHub Actions to use changesets for version bumps instead of always patch
+  - Add changeset automation bot for PR guidance and validation
+  - Update justfile and documentation with changeset workflow
+  - Maintain backward compatibility with existing beta/stable release strategy
+  - Automatic patch fallback when no changesets are provided for merges
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

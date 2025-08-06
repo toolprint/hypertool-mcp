@@ -95,8 +95,9 @@ npm run test:coverage
    npm run format
    ```
 
-6. Commit your changes (see commit message guidelines below)
-7. Push to your fork and submit a pull request
+6. **Add a changeset** to describe your changes (see changeset guidelines below)
+7. Commit your changes (see commit message guidelines below)  
+8. Push to your fork and submit a pull request
 
 ## Coding Standards
 
@@ -166,6 +167,123 @@ For application integrations:
 4. **Test error scenarios**: Handle corrupted configs, missing files, permissions
 5. **Use the test utilities** from `src/config-manager/test-utils.ts`
 
+## Changeset Guidelines
+
+We use [Changesets](https://github.com/changesets/changesets) for version management and automatic changelog generation. Every PR that changes functionality should include a changeset.
+
+### When to Add a Changeset
+
+**Always add a changeset when your PR includes:**
+- 🐛 Bug fixes → **patch**
+- ✨ New features → **minor** 
+- 💥 Breaking changes → **major**
+- 🔧 Internal improvements that affect users
+
+**Skip changeset when your PR is:**
+- 📖 Documentation only
+- 🧪 Test improvements only
+- 🔧 Internal tooling that doesn't affect users
+- 🎨 Code formatting/style only
+
+### How to Add a Changeset
+
+1. **Run the changeset command:**
+   ```bash
+   npx changeset
+   # or
+   just changeset
+   ```
+
+2. **Select version bump type:**
+   - **patch** (1.0.0 → 1.0.1) - Bug fixes, small improvements
+   - **minor** (1.0.0 → 1.1.0) - New features, API additions
+   - **major** (1.0.0 → 2.0.0) - Breaking changes
+
+3. **Write a clear description:**
+   ```bash
+   # Good examples:
+   "Add support for custom toolset configurations"
+   "Fix connection timeout handling in MCP clients"  
+   "Breaking: Rename 'server' config key to 'mcpServer'"
+   
+   # Less helpful:
+   "Fix bug"
+   "Update code" 
+   "Changes"
+   ```
+
+4. **Commit the changeset file:**
+   ```bash
+   git add .changeset/*.md
+   git commit -m "add changeset for [your feature]"
+   ```
+
+### Changeset Commands
+
+```bash
+# Create new changeset (interactive)
+just changeset
+
+# Check current status  
+just changeset-status
+
+# Preview version changes
+just changeset-preview
+
+# Apply version bumps (maintainers only)
+just changeset-version
+```
+
+### PR Automation
+
+Our GitHub Actions bot will:
+- ✅ Check if your PR includes a changeset
+- 💬 Comment with helpful guidance if missing
+- 📝 Show changeset details in PR comments
+- ⚠️ Warn if automatic patch release will be triggered
+
+**Pro tip:** Add changeset early in your development process, not as an afterthought!
+
+## Release Strategy
+
+Understanding our release process helps you contribute effectively:
+
+### 🚀 What Happens After Your PR Merges
+
+1. **Automatic Beta Release**:
+   - Every merge to `main` triggers GitHub Actions
+   - Version determined by changesets (or defaults to patch)
+   - Published to NPM with `beta` tag: `npm install @toolprint/hypertool-mcp@beta`
+   - Git tag created: `v0.0.32`, `v0.1.0`, etc. (clean semver, no `-beta` suffix)
+   - **No GitHub release created** (tags only)
+
+2. **Manual Stable Promotion**:
+   - Maintainers manually promote specific versions to stable
+   - Updates both `stable` AND `latest` NPM tags simultaneously
+   - Creates GitHub release with changelog and installation instructions
+   - Users installing normally get stable versions: `npm install @toolprint/hypertool-mcp`
+
+### 📋 Release Channels
+
+| Channel | Purpose | How to Install | When Updated |
+|---------|---------|----------------|--------------|
+| `latest` = `stable` | Production use | `npm install @toolprint/hypertool-mcp` | Manual promotion only |
+| `beta` | Internal testing | `npm install @toolprint/hypertool-mcp@beta` | Every merge to main |
+
+### 🏷️ Git Tags vs GitHub Releases
+
+- **Git Tags**: Created for every successful NPM publish (automatic)
+- **GitHub Releases**: Created only when promoting to stable (manual)
+- **Result**: Clean release page showing only stable versions to users
+
+### 🔍 For Contributors
+
+- **Your changes** → Beta channel immediately after merge
+- **Stable promotion** → Happens separately, when maintainers are confident
+- **GitHub releases** → Only stable versions get full release notes
+
+This strategy ensures users get stable versions by default while allowing rapid iteration through the beta channel.
+
 ## Commit Message Guidelines
 
 We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
@@ -190,7 +308,7 @@ docs: update installation instructions
 
 1. Ensure all tests pass
 2. Update documentation if needed
-3. Add your changes to the CHANGELOG if applicable
+3. Add a changeset if your changes affect functionality (CHANGELOG is generated automatically)
 4. Fill out the pull request template completely
 5. Request review from maintainers
 
