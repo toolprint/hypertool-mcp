@@ -37,7 +37,7 @@ target "hypertool-mcp" {
 target "hypertool-mcp-local" {
   inherits = ["hypertool-mcp"]
   output = ["type=docker"]
-  platforms = ["linux/arm64", "linux/amd64"]
+  platforms = ["linux/arm64"]  # Single platform for fast local builds
   tags = [
     "hypertool-mcp:latest",
     "hypertool-mcp:${VERSION}",
