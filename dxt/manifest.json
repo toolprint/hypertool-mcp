@@ -1,0 +1,141 @@
+{
+  "dxt_version": "0.1",
+  "name": "hypertool-mcp",
+  "display_name": "HyperTool MCP - Dynamic Toolset Manager",
+  "version": "0.0.32",
+  "description": "Give your AI the best tools from all your MCPs. Create task-specific toolsets and switch contexts instantly.",
+  "long_description": "HyperTool MCP is a powerful proxy server that routes requests between clients and multiple underlying MCP servers. It enables you to:\n\n- **Connect unlimited MCP servers** - Use 10, 50, or 500+ tools total\n- **Build task-specific toolsets** - Create \"git-essentials\" with 5 tools instead of drowning in 47 Git commands\n- **Switch contexts instantly** - Equip different toolsets for coding, writing, or analysis\n- **Enhance tools with context** - Add examples and guidance to help your AI pick the right tool\n\n## Key Features\n\n### 🔓 Break Free from Tool Limits\nConnect unlimited MCP servers. Your AI only sees the focused toolset it needs.\n\n### 🎯 Task-Specific Toolsets  \nBuild custom toolsets like \"coding\" with just git and docker tools, or \"writing\" with grammar and style tools.\n\n### 🧠 Smart Tool Descriptions\nEnhance tools with examples and context. Watch your AI pick the right tool more accurately.\n\n### 🚀 Dynamic Tool Discovery\nAutomatically discovers available tools from connected servers and caches them for fast access.\n\n## Usage\n\nAfter installation, HyperTool provides these management tools:\n- `list-available-tools` - See all tools from connected servers\n- `build-toolset` - Create custom toolsets\n- `equip-toolset` - Switch to a specific toolset\n- `list-saved-toolsets` - View your saved configurations\n\nSimply ask your AI to \"create a coding toolset\" or \"switch to writing mode\" and it will handle the rest!",
+  "author": {
+    "name": "OneGrep, Inc.",
+    "email": "hello@toolprint.com",
+    "url": "https://toolprint.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "tools",
+    "toolset",
+    "proxy",
+    "ai",
+    "claude",
+    "cursor",
+    "productivity"
+  ],
+  "icon": "icon.png",
+  "screenshots": ["screenshot-toolsets.png", "screenshot-discovery.png"],
+  "compatibility": {
+    "dxt_version": "^0.1.0",
+    "platforms": ["darwin", "win32", "linux"]
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "dist/bin.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["dist/bin.js", "mcp", "run", "--transport", "stdio"]
+    },
+    "env": {
+      "NODE_ENV": "production",
+      "HYPERTOOL_MAX_LISTENERS": "30",
+      "MCP_CONFIG_PATH": "${DXT_CONFIG_mcpConfigPath}",
+      "DEBUG": "${DXT_CONFIG_debug}",
+      "LOG_LEVEL": "${DXT_CONFIG_logLevel}",
+      "EQUIP_TOOLSET": "${DXT_CONFIG_equipToolset}",
+      "HYPERTOOL_DATA_DIR": "${DXT_CONFIG_dataDir}"
+    }
+  },
+  "config": [
+    {
+      "name": "mcpConfigPath",
+      "type": "file",
+      "label": "MCP Configuration File",
+      "description": "Path to your .mcp.json file containing MCP server configurations. If not specified, the extension will run in toolset-management-only mode.",
+      "required": false,
+      "placeholder": "path/to/.mcp.json"
+    },
+    {
+      "name": "debug",
+      "type": "boolean",
+      "label": "Debug Mode",
+      "description": "Enable debug logging for troubleshooting",
+      "required": false,
+      "default": false
+    },
+    {
+      "name": "logLevel",
+      "type": "string",
+      "label": "Log Level",
+      "description": "Set the logging verbosity",
+      "required": false,
+      "default": "info",
+      "choices": ["error", "warn", "info", "debug", "trace"]
+    },
+    {
+      "name": "equipToolset",
+      "type": "string",
+      "label": "Default Toolset",
+      "description": "Name of toolset to equip on startup",
+      "required": false,
+      "placeholder": "coding"
+    },
+    {
+      "name": "dataDir",
+      "type": "directory",
+      "label": "Data Directory",
+      "description": "Directory for storing toolsets and cache data",
+      "required": false,
+      "default": "~/.hypertool"
+    }
+  ],
+  "tools": [
+    {
+      "name": "list-available-tools",
+      "description": "Discover all tools available from connected MCP servers"
+    },
+    {
+      "name": "build-toolset",
+      "description": "Build and save a custom toolset by selecting specific tools"
+    },
+    {
+      "name": "equip-toolset",
+      "description": "Equip a saved toolset configuration to filter available tools"
+    },
+    {
+      "name": "unequip-toolset",
+      "description": "Unequip the current toolset and show all available tools"
+    },
+    {
+      "name": "list-saved-toolsets",
+      "description": "List all saved toolset configurations"
+    },
+    {
+      "name": "delete-toolset",
+      "description": "Delete a saved toolset configuration"
+    },
+    {
+      "name": "get-active-toolset",
+      "description": "Get information about the currently equipped toolset"
+    },
+    {
+      "name": "add-tool-annotation",
+      "description": "Add contextual annotations to guide tool usage"
+    }
+  ],
+  "prompts": [
+    {
+      "name": "create-coding-toolset",
+      "description": "Create a focused toolset for software development",
+      "text": "Create a toolset called 'coding' with essential git, docker, and file management tools"
+    },
+    {
+      "name": "create-writing-toolset",
+      "description": "Create a toolset for content creation and writing",
+      "text": "Create a toolset called 'writing' with grammar, style, and document tools"
+    },
+    {
+      "name": "optimize-toolset",
+      "description": "Optimize the current toolset for the task at hand",
+      "text": "Look at what I'm working on and create an optimized toolset with just the tools I need"
+    }
+  ]
+}
