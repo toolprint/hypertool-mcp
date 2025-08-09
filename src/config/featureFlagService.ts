@@ -21,6 +21,7 @@ const logger = {
 export interface FeatureFlags {
   nedbEnabled?: boolean;
   mcpLoggerEnabled?: boolean;
+  setupWizardEnabled?: boolean;
   // Future feature flags can be added here
 }
 
@@ -74,10 +75,21 @@ export class FeatureFlagService {
       );
     }
 
+    const envSetupWizard = process.env.HYPERTOOL_SETUP_WIZARD_ENABLED;
+    if (envSetupWizard !== undefined) {
+      this.cache.setupWizardEnabled = ["true", "1", "yes", "on"].includes(
+        envSetupWizard.toLowerCase()
+      );
+      logger.debug(
+        `Setup Wizard enabled from environment: ${this.cache.setupWizardEnabled}`
+      );
+    }
+
     // 2. Check config.json if not set by environment
     if (
       this.cache.nedbEnabled === undefined ||
-      this.cache.mcpLoggerEnabled === undefined
+      this.cache.mcpLoggerEnabled === undefined ||
+      this.cache.setupWizardEnabled === undefined
     ) {
       try {
         const configFlags = await getFeatureFlags();
@@ -99,6 +111,16 @@ export class FeatureFlagService {
             `MCP Logger enabled from config.json: ${this.cache.mcpLoggerEnabled}`
           );
         }
+        if (
+          this.cache.setupWizardEnabled === undefined &&
+          configFlags?.setupWizardEnabled !== undefined
+        ) {
+          this.cache.setupWizardEnabled =
+            configFlags.setupWizardEnabled === true;
+          logger.debug(
+            `Setup Wizard enabled from config.json: ${this.cache.setupWizardEnabled}`
+          );
+        }
       } catch (error) {
         logger.debug("Could not load feature flags from config.json:", error);
       }
@@ -113,6 +135,11 @@ export class FeatureFlagService {
     if (this.cache.mcpLoggerEnabled === undefined) {
       this.cache.mcpLoggerEnabled = false; // Default to Pino implementation
       logger.debug("MCP Logger enabled set to default: false");
+    }
+
+    if (this.cache.setupWizardEnabled === undefined) {
+      this.cache.setupWizardEnabled = false; // Default disabled - use --mcp-config workflow
+      logger.debug("Setup Wizard enabled set to default: false");
     }
 
     this.initialized = true;
@@ -143,6 +170,19 @@ export class FeatureFlagService {
       );
     }
     return this.cache.mcpLoggerEnabled ?? false;
+  }
+
+  /**
+   * Check if Setup Wizard is enabled
+   * @throws Error if service not initialized
+   */
+  isSetupWizardEnabled(): boolean {
+    if (!this.initialized) {
+      throw new Error(
+        "FeatureFlagService not initialized. Call initialize() first."
+      );
+    }
+    return this.cache.setupWizardEnabled ?? false;
   }
 
   /**
@@ -201,4 +241,14 @@ export async function isMcpLoggerEnabledViaService(): Promise<boolean> {
   const service = getFeatureFlagService();
   await service.initialize();
   return service.isMcpLoggerEnabled();
+}
+
+/**
+ * Convenience function to check if Setup Wizard is enabled
+ * Ensures the service is initialized before checking
+ */
+export async function isSetupWizardEnabledViaService(): Promise<boolean> {
+  const service = getFeatureFlagService();
+  await service.initialize();
+  return service.isSetupWizardEnabled();
 }

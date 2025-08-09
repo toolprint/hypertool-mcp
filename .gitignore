@@ -136,3 +136,9 @@ dev-debug.log
 lint-*.txt
 tmp*/**
 tmp
+
+# Claude
+.mcp.local.json
+
+# Serena
+.serena/

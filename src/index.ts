@@ -24,6 +24,7 @@ import {
 } from "./config/appConfig.js";
 import type { TransportConfig } from "./server/types.js";
 import { theme, semantic } from "./utils/theme.js";
+import { getFeatureFlagService } from "./config/featureFlagService.js";
 // Logger will be initialized later with proper runtime options
 
 async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
@@ -566,12 +567,28 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   // If no arguments at all, default to 'setup' for first run or 'mcp run'
   else if (cliArgs.length === 0) {
     if (isFirstRun) {
-      console.log(theme.success("🎯 Welcome to Hypertool MCP!"));
-      console.log(
-        theme.info("   No configuration detected. Let's get you set up!\n")
-      );
-      console.log(theme.muted("   Running: hypertool-mcp setup\n"));
-      process.argv.push("setup");
+      // Check feature flag to determine whether to show setup wizard
+      const featureFlagService = getFeatureFlagService();
+      await featureFlagService.initialize();
+
+      if (featureFlagService.isSetupWizardEnabled()) {
+        // Show setup wizard (existing behavior)
+        console.log(theme.success("🎯 Welcome to Hypertool MCP!"));
+        console.log(
+          theme.info("   No configuration detected. Let's get you set up!\n")
+        );
+        console.log(theme.muted("   Running: hypertool-mcp setup\n"));
+        process.argv.push("setup");
+      } else {
+        // Primary onboarding path: --mcp-config focused messaging
+        console.log(theme.success("🚀 Hypertool MCP is ready!"));
+        console.log(theme.info("   To get started, use: --mcp-config <path>"));
+        console.log(
+          theme.muted("   Or run: hypertool-mcp setup (interactive)")
+        );
+        console.log("");
+        process.argv.push("mcp", "run", "--help");
+      }
     } else {
       process.argv.push("mcp", "run");
     }

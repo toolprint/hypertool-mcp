@@ -7,6 +7,7 @@ import {
   getFeatureFlags,
   setFeatureFlag,
 } from "../../config/preferenceStore.js";
+import { getFeatureFlagService } from "../../config/featureFlagService.js";
 
 // Hardcoded flag definitions for simplicity
 const KNOWN_FLAGS = {
@@ -18,6 +19,11 @@ const KNOWN_FLAGS = {
   mcpLoggerEnabled: {
     name: "mcpLoggerEnabled",
     description: "Use experimental mcp-logger instead of default Pino logging",
+  },
+  setupWizardEnabled: {
+    name: "setupWizardEnabled",
+    description:
+      "Enable interactive setup wizard on first run (default: disabled)",
   },
 } as const;
 
@@ -35,7 +41,10 @@ function validateFlagName(flagName: string): flagName is FlagName {
  */
 async function listFlags(): Promise<void> {
   try {
-    const flags = await getFeatureFlags();
+    // Use the full feature flag service for complete resolution
+    const featureFlagService = getFeatureFlagService();
+    await featureFlagService.initialize();
+    const resolvedFlags = featureFlagService.getAllFlags();
 
     console.log("\nFeature Flags:");
     console.log("─".repeat(70));
@@ -43,7 +52,8 @@ async function listFlags(): Promise<void> {
     console.log("─".repeat(70));
 
     for (const [flagName, flagInfo] of Object.entries(KNOWN_FLAGS)) {
-      const isEnabled = flags?.[flagName] === true;
+      const isEnabled =
+        resolvedFlags[flagName as keyof typeof resolvedFlags] === true;
       const status = isEnabled ? "✓ ON" : "✗ OFF";
       console.log(
         flagName.padEnd(20) + status.padEnd(10) + flagInfo.description
