@@ -109,6 +109,11 @@ pre-commit-check:
 pre-commit-check-all:
     pre-commit run --all-files
 
+# Shorthand for pre-commit hooks on all files
+[group('lint')]
+pre-commit:
+    pre-commit run --all-files
+
 # Pre-publish checks: build, test, lint, and typecheck
 [group('publish')]
 pre-publish-checks: build test lint typecheck

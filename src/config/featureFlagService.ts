@@ -115,7 +115,8 @@ export class FeatureFlagService {
           this.cache.setupWizardEnabled === undefined &&
           configFlags?.setupWizardEnabled !== undefined
         ) {
-          this.cache.setupWizardEnabled = configFlags.setupWizardEnabled === true;
+          this.cache.setupWizardEnabled =
+            configFlags.setupWizardEnabled === true;
           logger.debug(
             `Setup Wizard enabled from config.json: ${this.cache.setupWizardEnabled}`
           );

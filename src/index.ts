@@ -570,7 +570,7 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
       // Check feature flag to determine whether to show setup wizard
       const featureFlagService = getFeatureFlagService();
       await featureFlagService.initialize();
-      
+
       if (featureFlagService.isSetupWizardEnabled()) {
         // Show setup wizard (existing behavior)
         console.log(theme.success("🎯 Welcome to Hypertool MCP!"));
@@ -583,7 +583,9 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
         // Primary onboarding path: --mcp-config focused messaging
         console.log(theme.success("🚀 Hypertool MCP is ready!"));
         console.log(theme.info("   To get started, use: --mcp-config <path>"));
-        console.log(theme.muted("   Or run: hypertool-mcp setup (interactive)"));
+        console.log(
+          theme.muted("   Or run: hypertool-mcp setup (interactive)")
+        );
         console.log("");
         process.argv.push("mcp", "run", "--help");
       }
