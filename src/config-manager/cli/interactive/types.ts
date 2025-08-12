@@ -74,7 +74,7 @@ export interface MenuChoice {
  * Filter options for server list
  */
 export interface ServerFilterOptions {
-  transportType?: "all" | "stdio" | "http" | "sse" | "websocket";
+  transportType?: "all" | "stdio" | "http" | "sse" | "websocket" | "dxt";
   healthStatus?: "all" | "healthy" | "unhealthy";
   source?: string;
 }

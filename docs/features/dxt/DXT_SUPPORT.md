@@ -340,7 +340,7 @@ class DxtConnectionClient extends BaseClient {
 interface DxtPermissions {
   filesystem?: {
     read?: string[]     // Allowed read paths (glob patterns)
-    write?: string[]    // Allowed write paths  
+    write?: string[]    // Allowed write paths
   }
   network?: {
     outbound?: string[] // Allowed outbound hosts/IPs
@@ -496,7 +496,7 @@ await server.connect(transport)
   "mcpServers": {
     "hello-world": {
       "type": "dxt",
-      "source": "local", 
+      "source": "local",
       "path": "./extensions/hello-world.dxt",
       "templates": {
         "GREETING": "Hi there"
@@ -555,7 +555,7 @@ export class DxtRuntimeManager {
 
     const handle = await this.processManager.spawn(processConfig)
     this.processes.set(runtime.manifest.name, handle)
-    
+
     // Monitor process health
     handle.on('exit', (code) => {
       this.emit('processExit', { name: runtime.manifest.name, code })
@@ -582,7 +582,7 @@ export class DxtRuntimeManager {
     templates: Record<string, string>
   ): Record<string, string> {
     const resolved: Record<string, string> = {}
-    
+
     for (const [key, value] of Object.entries(environment)) {
       resolved[key] = this.expandTemplate(value, templates)
     }
@@ -623,7 +623,7 @@ export class DxtRuntimeManager {
 
 ### 1. Unit Tests
 - **Package Loading**: Test DXT ZIP extraction and validation
-- **Manifest Parsing**: Test manifest.json parsing and validation  
+- **Manifest Parsing**: Test manifest.json parsing and validation
 - **Template Resolution**: Test variable expansion and substitution
 - **Process Management**: Test process spawning and lifecycle
 - **Security Validation**: Test permission checking and enforcement
@@ -647,7 +647,7 @@ Create test packages covering:
 
 ### 1. Unified Configuration Approach
 **Decision**: Extend existing JSON configuration rather than separate systems
-**Reasoning**: 
+**Reasoning**:
 - Maintains familiar user experience
 - Reduces learning curve for adoption
 - Simplifies mental model (one config system)
@@ -711,7 +711,7 @@ Create test packages covering:
 
 ### 4. Developer Experience
 - **DXT Development Kit**: Tools for creating and testing extensions
-- **Local Registry**: Private registry for organization-specific extensions  
+- **Local Registry**: Private registry for organization-specific extensions
 - **Debug Support**: Enhanced debugging capabilities for DXT development
 - **IDE Integration**: Extensions for popular development environments
 

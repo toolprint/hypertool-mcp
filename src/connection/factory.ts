@@ -7,6 +7,7 @@ import {
   StdioServerConfig,
   HttpServerConfig,
   SSEServerConfig,
+  DxtServerConfig,
 } from "../types/config.js";
 import {
   Connection,
@@ -16,6 +17,7 @@ import {
 import { StdioConnection } from "./clients/stdio.js";
 import { HttpConnection } from "./clients/http.js";
 import { SSEConnection } from "./clients/sse.js";
+import { DxtConnection } from "./clients/dxt.js";
 
 /**
  * Factory for creating connections based on server configuration
@@ -48,6 +50,13 @@ export class ConnectionFactory implements IConnectionFactory {
         return new SSEConnection(
           serverName,
           config as SSEServerConfig,
+          options
+        );
+
+      case "dxt":
+        return new DxtConnection(
+          serverName,
+          config as DxtServerConfig,
           options
         );
 
@@ -90,11 +99,25 @@ export class ConnectionFactory implements IConnectionFactory {
   }
 
   /**
+   * Create a DXT connection
+   */
+  createDxtConnection(
+    serverName: string,
+    config: DxtServerConfig,
+    options: ConnectionOptions = {}
+  ): DxtConnection {
+    return new DxtConnection(serverName, config, options);
+  }
+
+  /**
    * Validate if a server configuration is supported
    */
   isConfigSupported(config: ServerConfig): boolean {
     return (
-      config.type === "stdio" || config.type === "http" || config.type === "sse"
+      config.type === "stdio" ||
+      config.type === "http" ||
+      config.type === "sse" ||
+      config.type === "dxt"
     );
   }
 
@@ -102,6 +125,6 @@ export class ConnectionFactory implements IConnectionFactory {
    * Get supported transport types
    */
   getSupportedTransports(): string[] {
-    return ["stdio", "http", "sse"];
+    return ["stdio", "http", "sse", "dxt"];
   }
 }

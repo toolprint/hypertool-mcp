@@ -381,7 +381,7 @@ export class ConfigurationManager {
       if (!existingServer) {
         await dbService.servers.add({
           name: serverName,
-          type: serverConfig.type as "stdio" | "http" | "sse",
+          type: serverConfig.type as "stdio" | "http" | "sse" | "dxt",
           config: serverConfig as ServerConfig,
           lastModified: Date.now(),
           checksum: this.calculateChecksum(serverConfig as ServerConfig),
@@ -389,10 +389,9 @@ export class ConfigurationManager {
         });
       } else if (existingServer?.id && existingServer?.name) {
         await dbService.servers.update({
-          id: existingServer!.id,
-          name: existingServer!.name,
-          type: serverConfig.type as "stdio" | "http" | "sse",
+          ...existingServer,
           config: serverConfig as ServerConfig,
+          type: serverConfig.type as "stdio" | "http" | "sse" | "dxt",
           lastModified: Date.now(),
           checksum: this.calculateChecksum(serverConfig as ServerConfig),
           sourceId: globalSource!.id,
@@ -494,7 +493,7 @@ export class ConfigurationManager {
       if (!existingServer) {
         await dbService.servers.add({
           name: serverName,
-          type: serverConfig.type as "stdio" | "http" | "sse",
+          type: serverConfig.type as "stdio" | "http" | "sse" | "dxt",
           config: serverConfig as ServerConfig,
           lastModified: Date.now(),
           checksum: this.calculateChecksum(serverConfig as ServerConfig),
@@ -513,7 +512,7 @@ export class ConfigurationManager {
           await dbService.servers.update({
             ...existingServer!,
             config: serverConfig as ServerConfig,
-            type: serverConfig.type as "stdio" | "http" | "sse",
+            type: serverConfig.type as "stdio" | "http" | "sse" | "dxt",
             lastModified: Date.now(),
             checksum: this.calculateChecksum(serverConfig as ServerConfig),
             sourceId: appSource!.id,

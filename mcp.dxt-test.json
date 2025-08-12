@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "hello-dxt": {
+      "type": "dxt",
+      "path": "./examples/hello-dxt.dxt"
+    }
+  }
+}
