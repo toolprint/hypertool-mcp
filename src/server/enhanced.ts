@@ -12,6 +12,8 @@ import {
   ToolDiscoveryEngine,
 } from "../discovery/index.js";
 import { IConnectionManager, ConnectionManager } from "../connection/index.js";
+import { ExtensionAwareConnectionFactory } from "../connection/extensionFactory.js";
+import { ExtensionManager } from "../extensions/manager.js";
 import { APP_NAME, APP_TECHNICAL_NAME, ServerConfig } from "../config/index.js";
 import ora from "ora";
 
@@ -53,6 +55,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   private requestRouter?: IRequestRouter;
   private discoveryEngine?: IToolDiscoveryEngine;
   private connectionManager?: IConnectionManager;
+  private extensionManager?: ExtensionManager;
   private toolsetManager: ToolsetManager;
   private runtimeOptions?: RuntimeOptions;
   private toolModules: ToolModule[] = [];
@@ -194,9 +197,13 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         args.length > 0
       ) {
         for (const arg of args) {
+          // Check for actual HyperTool MCP executable files, not just paths containing the name
           if (
-            arg.includes("hypertool-mcp") ||
-            arg.includes("@toolprint/hypertool-mcp")
+            arg.includes("@toolprint/hypertool-mcp") ||
+            (arg.includes("hypertool-mcp") &&
+              (arg.endsWith("/bin.js") ||
+                arg.endsWith("/index.js") ||
+                (arg.endsWith("/server.js") && !arg.includes("/extensions/")))) // Exclude extension servers
           ) {
             return true;
           }
@@ -219,10 +226,19 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     const { loadServerSettings } = await import("../config/serverSettings.js");
     const serverSettings = await loadServerSettings();
 
-    // Create connection manager with configured pool settings
-    this.connectionManager = new ConnectionManager({
-      maxConcurrentConnections: serverSettings.maxConcurrentConnections,
-    });
+    // Create extension-aware connection factory
+    const connectionFactory = new ExtensionAwareConnectionFactory();
+    if (this.extensionManager) {
+      connectionFactory.setExtensionManager(this.extensionManager);
+    }
+
+    // Create connection manager with configured pool settings and extension-aware factory
+    this.connectionManager = new ConnectionManager(
+      {
+        maxConcurrentConnections: serverSettings.maxConcurrentConnections,
+      },
+      connectionFactory
+    );
 
     const isStdio = options.transport.type === "stdio";
 
@@ -298,6 +314,11 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       await dbService.init();
       logger.debug("Database initialized successfully");
 
+      // Initialize extension manager
+      this.extensionManager = new ExtensionManager();
+      await this.extensionManager.initialize();
+      logger.debug("Extension manager initialized successfully");
+
       // Load server configs from MCP config.
       let serverConfigs: Record<string, ServerConfig> =
         await this.loadMcpConfigOrExit(options);
@@ -341,6 +362,17 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         }
       }
 
+      // Load extension configs and merge with regular configs
+      const extensionConfigs =
+        this.extensionManager!.getEnabledExtensionsAsServerConfigs();
+      const mergedConfigs = { ...serverConfigs, ...extensionConfigs };
+      const extensionCount = Object.keys(extensionConfigs).length;
+      if (extensionCount > 0) {
+        logger.debug(
+          `Loaded ${extensionCount} extension servers: ${Object.keys(extensionConfigs).join(", ")}`
+        );
+      }
+
       // Detect external MCPs
       const externalMCPs = await detectExternalMCPs();
       if (externalMCPs.length > 0) {
@@ -350,8 +382,8 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         output.displaySpaceBuffer();
       }
 
-      // Initialize connection manager
-      await this.connectToDownstreamServers(serverConfigs, options);
+      // Initialize connection manager with merged configs (including extensions)
+      await this.connectToDownstreamServers(mergedConfigs, options);
 
       // Initialize discovery engine with progress
       const isStdio = options.transport.type === "stdio";

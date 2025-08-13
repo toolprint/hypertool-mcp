@@ -335,8 +335,7 @@ export class ConnectionManager
         !config.type ||
         (config.type !== "stdio" &&
           config.type !== "http" &&
-          config.type !== "sse" &&
-          config.type !== "dxt")
+          config.type !== "sse")
       ) {
         throw new Error(
           `Invalid transport type for server "${serverName}": ${(config as any).type}`

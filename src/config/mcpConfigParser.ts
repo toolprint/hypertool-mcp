@@ -205,7 +205,6 @@ export class MCPConfigParser {
     } else {
       return this.parseDxtConfig(name, normalizedConfig, basePath);
     }
-    }
   }
 
   /**
@@ -356,43 +355,6 @@ export class MCPConfigParser {
     };
 
     return { config: sseConfig, errors };
-  }
-
-  /**
-   * Parse and validate DXT server configuration
-   */
-  private parseDxtConfig(
-    name: string,
-    config: any,
-    basePath: string
-  ): { config?: DxtServerConfig; errors: string[] } {
-    const errors: string[] = [];
-
-    if (!config.path || typeof config.path !== "string") {
-      errors.push(`DXT server "${name}" must have a "path" string`);
-      return { errors };
-    }
-
-    // Resolve relative paths
-    const dxtPath = path.isAbsolute(config.path)
-      ? config.path
-      : path.resolve(basePath, config.path);
-
-    if (
-      config.env &&
-      (typeof config.env !== "object" || Array.isArray(config.env))
-    ) {
-      errors.push(`DXT server "${name}" env must be an object`);
-      return { errors };
-    }
-
-    const dxtConfig: DxtServerConfig = {
-      type: "dxt",
-      path: dxtPath,
-      env: config.env || {},
-    };
-
-    return { config: dxtConfig, errors };
   }
 
   /**

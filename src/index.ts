@@ -494,6 +494,12 @@ ${theme.label("Examples:")}
   const { createServiceCommand } = await import("./commands/service/index.js");
   program.addCommand(createServiceCommand());
 
+  // Add extension management commands
+  const { createExtensionsCommand } = await import(
+    "./commands/extensions/index.js"
+  );
+  program.addCommand(createExtensionsCommand());
+
   // Toolset management is available via MCP tools when server is running
   // No top-level CLI commands needed per docs/NAVIGATION.md
 
@@ -540,7 +546,14 @@ ${theme.label("Examples:")}
   // If no command is specified, default to 'mcp run' or 'setup'
   // But only if the first argument isn't already a known command
   const cliArgs = process.argv.slice(2);
-  const knownCommands = ["config", "mcp", "setup", "service", "help"];
+  const knownCommands = [
+    "config",
+    "mcp",
+    "setup",
+    "service",
+    "extensions",
+    "help",
+  ];
   const knownMcpSubcommands = ["run", "list", "get", "add", "remove"];
 
   // Check if any argument is a known command

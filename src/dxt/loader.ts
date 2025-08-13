@@ -13,12 +13,19 @@ import { DxtManifest } from "../config/dxt-config.js";
 import { parseManifest } from "./manifest.js";
 
 /**
- * Extract DXT ZIP file to temp directory
+ * Extract DXT ZIP file to specified directory (or temp if not specified)
  */
-export async function extractDxt(dxtPath: string): Promise<string> {
-  // Create unique temp directory
-  const randomId = randomBytes(8).toString("hex");
-  const extractDir = join(tmpdir(), `hypertool-dxt-${randomId}`);
+export async function extractDxt(
+  dxtPath: string,
+  targetDir?: string
+): Promise<string> {
+  const extractDir =
+    targetDir ||
+    (() => {
+      // Create unique temp directory as fallback
+      const randomId = randomBytes(8).toString("hex");
+      return join(tmpdir(), `hypertool-dxt-${randomId}`);
+    })();
 
   await mkdir(extractDir, { recursive: true });
 

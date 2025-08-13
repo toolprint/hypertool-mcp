@@ -1,5 +1,26 @@
 {
+  "dxt_version": "0.1",
   "name": "hello-dxt",
   "version": "1.0.0",
-  "main": "server.js"
+  "display_name": "Hello DXT Extension",
+  "description": "A simple hello world DXT extension demonstrating MCP tool integration",
+  "author": {
+    "name": "Toolprint Team",
+    "email": "team@toolprint.com"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "server.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["server.js"],
+      "env": {}
+    }
+  },
+  "tools": [
+    {
+      "name": "hello",
+      "description": "Returns a friendly greeting with customizable name"
+    }
+  ]
 }

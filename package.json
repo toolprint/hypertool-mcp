@@ -50,6 +50,7 @@
     "test:stdio:debug": "DEBUG=* vitest run src/integration/stdio-transport.test.ts --reporter=verbose --testTimeout=60000",
     "build": "rm -rf dist && tsc && npm run copy-examples && chmod +x dist/bin.js",
     "copy-examples": "mkdir -p dist/examples && cp -r examples/mcp dist/examples/",
+    "pack:hello-dxt": "cd examples/hello-dxt && npm install && cd ../.. && dxt pack examples/hello-dxt examples/hello-dxt.dxt",
     "build:watch": "tsc --watch",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
