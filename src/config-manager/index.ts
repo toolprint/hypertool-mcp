@@ -389,7 +389,8 @@ export class ConfigurationManager {
         });
       } else if (existingServer?.id && existingServer?.name) {
         await dbService.servers.update({
-          ...existingServer,
+          id: existingServer!.id,
+          name: existingServer!.name,
           config: serverConfig as ServerConfig,
           type: serverConfig.type as "stdio" | "http" | "sse" | "dxt",
           lastModified: Date.now(),
