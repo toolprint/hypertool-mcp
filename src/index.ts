@@ -439,29 +439,46 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
 
   program
     .name(APP_TECHNICAL_NAME)
-    .description(theme.info(APP_DESCRIPTION))
-    .version(APP_VERSION)
-    .option(
-      "--dry-run",
-      theme.info("Show what would be done without making changes") +
-        theme.warning(" (only valid with --install)"),
-      false
+    .description(
+      theme.info(APP_DESCRIPTION) +
+        "\n" +
+        theme.label("Use MCP options directly for quick start (default mode)")
     )
-    .option(
-      "--install [app]",
-      theme.warning("⚠️  DEPRECATED: Use 'hypertool-mcp setup' instead\n") +
-        theme.info("Install and configure integrations (legacy support)\n") +
-        theme.label(
-          "Options: all (default), claude-desktop (cd), cursor, claude-code (cc)\n"
-        ) +
-        theme.muted("Examples:\n") +
-        theme.muted(
-          "  hypertool-mcp setup               # Modern setup (recommended)\n"
-        ) +
-        theme.muted(
-          "  hypertool-mcp --install           # Legacy install (deprecated)\n"
-        )
-    );
+    .version(APP_VERSION);
+
+  // Add deprecated options as hidden options (they work but don't show in help)
+  program
+    .option("--dry-run", "", false)
+    .option("--install [app]", "", undefined);
+
+  // Hide the deprecated options from help
+  const dryRunOption = program.options.find((opt) =>
+    opt.flags.includes("--dry-run")
+  );
+  const installOption = program.options.find((opt) =>
+    opt.flags.includes("--install")
+  );
+  if (dryRunOption) dryRunOption.hidden = true;
+  if (installOption) installOption.hidden = true;
+
+  // Add helpful examples section explaining MCP options can be used directly
+  program.addHelpText(
+    "after",
+    `
+${theme.label("MCP Server Options (can be used directly):")}
+  ${theme.info("--mcp-config <path>     Path to MCP configuration file (.mcp.json)")}
+  ${theme.info("--transport <type>      Transport protocol (http, stdio) (default: stdio)")}
+  ${theme.info("--port <number>         Port for HTTP transport")}
+  ${theme.info("--debug                 Enable debug mode")}
+  ${theme.info("--linked-app <app-id>   Link to application config (claude-desktop, cursor, claude-code)")}
+  ${theme.muted("... and other MCP options (see 'mcp run --help' for full list)")}
+
+${theme.label("Examples:")}
+  ${theme.muted("hypertool-mcp --mcp-config ./config.json")}
+  ${theme.muted("hypertool-mcp --mcp-config ./config.json --transport http --port 3000")}
+  ${theme.muted("hypertool-mcp --mcp-config ~/.config/mcp.json --debug")}
+  ${theme.muted("hypertool-mcp --linked-app claude-desktop")}`
+  );
 
   // Add config subcommands
   const { createConfigCommands } = await import(
