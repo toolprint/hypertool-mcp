@@ -7,7 +7,6 @@ import { theme } from "../../utils/theme.js";
 import { output } from "../../utils/output.js";
 import { getCompositeDatabaseService } from "../../db/compositeDatabaseService.js";
 import { ServerConfigRecord } from "../../db/interfaces.js";
-import { isNedbEnabledAsync } from "../../config/environment.js";
 
 export function createShowConflictsCommand(): Command {
   const conflicts = new Command("conflicts");
@@ -18,7 +17,7 @@ export function createShowConflictsCommand(): Command {
     .action(async (options) => {
       try {
         // Check if NeDB is enabled
-        if (!(await isNedbEnabledAsync())) {
+        if (!false) {
           output.error(
             "❌ Database features are not available when HYPERTOOL_NEDB_ENABLED is not set"
           );

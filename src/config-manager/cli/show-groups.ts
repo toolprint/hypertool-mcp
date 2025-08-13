@@ -6,7 +6,6 @@ import { Command } from "commander";
 import { theme } from "../../utils/theme.js";
 import { output } from "../../utils/output.js";
 import { getCompositeDatabaseService } from "../../db/compositeDatabaseService.js";
-import { isNedbEnabledAsync } from "../../config/environment.js";
 
 export function createShowGroupsCommand(): Command {
   const groups = new Command("groups");
@@ -19,7 +18,7 @@ export function createShowGroupsCommand(): Command {
     .action(async (options) => {
       try {
         // Check if NeDB is enabled (via environment variable or config.json)
-        const nedbEnabled = await isNedbEnabledAsync();
+        const nedbEnabled = false;
         if (!nedbEnabled) {
           output.error("❌ Database features are not enabled");
           output.info("To enable database features, either:");

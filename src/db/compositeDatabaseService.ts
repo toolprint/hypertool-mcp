@@ -1,6 +1,5 @@
 /**
- * Composite database service that routes to either NeDB or file-based implementation
- * based on feature flags
+ * Database service using file-based implementation
  */
 
 import {
@@ -9,25 +8,27 @@ import {
   IServerConfigGroupRepository,
   IConfigSourceRepository,
 } from "./interfaces.js";
-import { NeDBService } from "./nedbService.js";
 import { FileDatabaseService } from "./fileDatabaseService.js";
-import { getFeatureFlagService } from "../config/featureFlagService.js";
 import { createChildLogger } from "../utils/logging.js";
 
-const logger = createChildLogger({ module: "CompositeDatabaseService" });
+const logger = createChildLogger({ module: "DatabaseService" });
 
 /**
- * Composite database service that delegates to appropriate implementation
+ * Database service that uses file-based implementation
  */
 export class CompositeDatabaseService implements IDatabaseService {
-  private implementation?: IDatabaseService;
+  private implementation: FileDatabaseService;
   private isInitialized = false;
+
+  constructor() {
+    this.implementation = new FileDatabaseService();
+  }
 
   /**
    * Get the servers repository
    */
   get servers(): IServerConfigRecordRepository {
-    if (!this.implementation || !this.isInitialized) {
+    if (!this.isInitialized) {
       throw new Error("Database not initialized. Call init() first.");
     }
     return this.implementation.servers;
@@ -37,7 +38,7 @@ export class CompositeDatabaseService implements IDatabaseService {
    * Get the groups repository
    */
   get groups(): IServerConfigGroupRepository {
-    if (!this.implementation || !this.isInitialized) {
+    if (!this.isInitialized) {
       throw new Error("Database not initialized. Call init() first.");
     }
     return this.implementation.groups;
@@ -47,7 +48,7 @@ export class CompositeDatabaseService implements IDatabaseService {
    * Get the config sources repository
    */
   get configSources(): IConfigSourceRepository {
-    if (!this.implementation || !this.isInitialized) {
+    if (!this.isInitialized) {
       throw new Error("Database not initialized. Call init() first.");
     }
     return this.implementation.configSources;
@@ -62,43 +63,26 @@ export class CompositeDatabaseService implements IDatabaseService {
       return;
     }
 
-    logger.debug("Initializing composite database service");
+    logger.debug("Initializing database service");
 
-    // Initialize feature flags
-    const featureFlagService = getFeatureFlagService();
-    await featureFlagService.initialize();
-
-    // Determine which implementation to use
-    const useNedb = featureFlagService.isNedbEnabled();
-    logger.info(
-      `Using ${useNedb ? "NeDB" : "file-based"} database implementation`
-    );
-
-    // Create appropriate implementation
-    if (useNedb) {
-      this.implementation = new NeDBService();
-    } else {
-      this.implementation = new FileDatabaseService();
-    }
-
-    // Initialize the implementation
+    // Initialize the file-based implementation
     await this.implementation.init();
 
     this.isInitialized = true;
-    logger.info("Composite database service initialized successfully");
+    logger.info("Database service initialized successfully");
   }
 
   /**
    * Close the database
    */
   async close(): Promise<void> {
-    if (!this.implementation || !this.isInitialized) {
+    if (!this.isInitialized) {
       return;
     }
 
     await this.implementation.close();
     this.isInitialized = false;
-    logger.info("Composite database service closed successfully");
+    logger.info("Database service closed successfully");
   }
 
   /**
@@ -116,17 +100,14 @@ export class CompositeDatabaseService implements IDatabaseService {
     }
 
     this.isInitialized = false;
-    this.implementation = undefined;
+    this.implementation = new FileDatabaseService();
   }
 
   /**
    * Get the underlying implementation type (for debugging/testing)
    */
-  getImplementationType(): "nedb" | "file" | null {
-    if (!this.implementation) {
-      return null;
-    }
-    return this.implementation instanceof NeDBService ? "nedb" : "file";
+  getImplementationType(): "file" {
+    return "file";
   }
 }
 
@@ -134,7 +115,7 @@ export class CompositeDatabaseService implements IDatabaseService {
 let instance: CompositeDatabaseService | null = null;
 
 /**
- * Get the singleton composite database service instance
+ * Get the singleton database service instance
  */
 export function getCompositeDatabaseService(): IDatabaseService {
   if (!instance) {

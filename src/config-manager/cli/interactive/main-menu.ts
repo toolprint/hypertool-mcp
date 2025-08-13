@@ -11,7 +11,6 @@ import {
   MenuChoice,
   SummaryStats,
 } from "./types.js";
-import { isNedbEnabledAsync } from "../../../config/environment.js";
 
 /**
  * Calculate summary statistics from configuration data
@@ -47,7 +46,7 @@ export async function calculateSummaryStats(
 
   // Group statistics (if database is enabled)
   let groupStats;
-  const nedbEnabled = await isNedbEnabledAsync();
+  const nedbEnabled = false; // NeDB removed - using file-based configuration
   if (data.groups && nedbEnabled) {
     groupStats = {
       total: data.groups.length,
@@ -115,7 +114,7 @@ function formatApplicationStats(stats: SummaryStats): string {
  * Format server groups statistics section
  */
 async function formatGroupStats(stats: SummaryStats): Promise<string> {
-  const nedbEnabled = await isNedbEnabledAsync();
+  const nedbEnabled = false; // NeDB removed - using file-based configuration
   if (!stats.groups || !nedbEnabled) {
     return "";
   }
@@ -157,7 +156,7 @@ export async function showMainMenu(
   output.displaySpaceBuffer(1);
 
   // Only show groups if database is enabled
-  const nedbEnabled = await isNedbEnabledAsync();
+  const nedbEnabled = false; // NeDB removed - using file-based configuration
   if (nedbEnabled && stats.groups) {
     output.log(await formatGroupStats(stats));
     output.displaySpaceBuffer(1);

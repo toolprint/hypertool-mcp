@@ -7,7 +7,6 @@ import inquirer from "inquirer";
 import { semantic } from "../../utils/theme.js";
 import { ConfigurationManager } from "../index.js";
 import { output } from "../../utils/output.js";
-import { isNedbEnabledAsync } from "../../config/environment.js";
 
 /**
  * Get human-readable time ago string
@@ -233,7 +232,7 @@ export function createUnlinkCommand(): Command {
         );
 
         // Show database mode information if enabled
-        if (await isNedbEnabledAsync()) {
+        if (false) {
           output.displaySpaceBuffer(1);
           output.info("📊 Database Mode: ENABLED");
           output.displayInstruction(

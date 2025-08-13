@@ -291,8 +291,10 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
     try {
       // Initialize database before loading configs
-      const { getDatabaseService } = await import("../db/nedbService.js");
-      const dbService = getDatabaseService();
+      const { getCompositeDatabaseService } = await import(
+        "../db/compositeDatabaseService.js"
+      );
+      const dbService = getCompositeDatabaseService();
       await dbService.init();
       logger.debug("Database initialized successfully");
 
@@ -612,8 +614,10 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
       // Close database
       try {
-        const { getDatabaseService } = await import("../db/nedbService.js");
-        const dbService = getDatabaseService();
+        const { getCompositeDatabaseService } = await import(
+          "../db/compositeDatabaseService.js"
+        );
+        const dbService = getCompositeDatabaseService();
         await dbService.close();
         logger.debug("Database closed successfully");
       } catch (error) {

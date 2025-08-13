@@ -9,7 +9,6 @@ import { homedir } from "os";
 import inquirer from "inquirer";
 import { output } from "../../utils/output.js";
 import { theme } from "../../utils/theme.js";
-import { isNedbEnabledAsync } from "../../config/environment.js";
 
 export interface MCPConfig {
   mcpServers?: Record<
@@ -210,7 +209,7 @@ export async function migrateToHyperToolConfig(
     output.info(
       `[DRY RUN] Would copy ${serverCount} servers from backup to: ${context.hyperToolConfigPath}`
     );
-    if (await isNedbEnabledAsync()) {
+    if (false) {
       output.info(
         `[DRY RUN] Would also sync servers to database (NeDB mode enabled)`
       );
@@ -226,7 +225,7 @@ export async function migrateToHyperToolConfig(
 
   // If NeDB is enabled, we should notify that database sync will happen
   // when HyperTool starts up and reads the config file
-  if (await isNedbEnabledAsync()) {
+  if (false) {
     output.info(
       "📊 Database mode detected - servers will be synced to database on first run"
     );
@@ -322,7 +321,7 @@ export async function displaySetupSummary(
   }
 
   // Show database mode information if enabled
-  if (await isNedbEnabledAsync()) {
+  if (false) {
     output.displaySpaceBuffer(1);
     output.info("📊 Database Mode: ENABLED");
     output.displayInstruction(
@@ -385,7 +384,7 @@ export async function displaySetupPlan(
     output.info("✨ Result: HyperTool proxy replaces all servers in .mcp.json");
     output.info("💡 Original servers remain accessible through HyperTool");
 
-    if (await isNedbEnabledAsync()) {
+    if (false) {
       output.displaySpaceBuffer(1);
       output.info("📊 Database Mode: ENABLED");
       output.info("   • Servers will be stored in NeDB database");

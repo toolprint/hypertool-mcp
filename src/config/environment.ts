@@ -23,7 +23,6 @@ export interface EnvironmentConfig {
   registryPath?: string;
   backupPath?: string;
   cachePath?: string;
-  nedbEnabled?: boolean;
 }
 
 /**
@@ -61,7 +60,6 @@ export class EnvironmentManager {
       registryPath: join(configRoot, "apps/registry.json"),
       backupPath: join(configRoot, "backups"),
       cachePath: join(configRoot, "cache"),
-      // nedbEnabled is undefined by default - only set when environment variable is provided
     };
   }
 
@@ -76,7 +74,6 @@ export class EnvironmentManager {
       registryPath: join(configRoot, "apps/registry.json"),
       backupPath: join(configRoot, "backups"),
       cachePath: join(configRoot, "cache"),
-      // nedbEnabled is undefined by default - only set when environment variable is provided
     };
   }
 
@@ -131,7 +128,6 @@ export class EnvironmentManager {
   loadFromEnv(): void {
     const mode = process.env.HYPERTOOL_ENV as EnvironmentMode;
     const configRoot = process.env.HYPERTOOL_CONFIG_ROOT;
-    const nedbEnabled = process.env.HYPERTOOL_NEDB_ENABLED;
 
     if (mode === EnvironmentMode.TEST || mode === EnvironmentMode.PRODUCTION) {
       this.config.mode = mode;
@@ -143,14 +139,6 @@ export class EnvironmentManager {
       this.config.registryPath = join(configRoot, "apps/registry.json");
       this.config.backupPath = join(configRoot, "backups");
       this.config.cachePath = join(configRoot, "cache");
-    }
-
-    // Check for NeDB feature flag
-    if (nedbEnabled !== undefined) {
-      // Accept various truthy values
-      this.config.nedbEnabled = ["true", "1", "yes", "on"].includes(
-        nedbEnabled.toLowerCase()
-      );
     }
   }
 
@@ -190,32 +178,4 @@ async function loadFeatureFlagsFromConfig(): Promise<
     // If we can't load from config file, return undefined
     return undefined;
   }
-}
-
-/**
- * Async version of isNedbEnabled that checks config.json as fallback
- * Priority: Environment variable > config.json > default (false)
- *
- * @deprecated Use FeatureFlagService.isNedbEnabled() for better feature flag management
- */
-export async function isNedbEnabledAsync(): Promise<boolean> {
-  const config = EnvironmentManager.getInstance().getConfig();
-
-  // Environment variable takes highest precedence
-  if (config.nedbEnabled !== undefined) {
-    return config.nedbEnabled === true;
-  }
-
-  // Check config.json as fallback
-  try {
-    const configFlags = await loadFeatureFlagsFromConfig();
-    if (configFlags?.nedbEnabled !== undefined) {
-      return configFlags.nedbEnabled === true;
-    }
-  } catch (error) {
-    // If config.json can't be loaded, continue with default
-  }
-
-  // Default to false if neither source provides a value
-  return false;
 }
