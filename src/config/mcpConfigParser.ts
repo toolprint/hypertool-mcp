@@ -169,31 +169,37 @@ export class MCPConfigParser {
       return { errors };
     }
 
-    // Require explicit type field for clarity
-    if (!config.type) {
-      errors.push(
-        `Server "${name}" is missing required "type" field. Must be "stdio", "http", or "sse"`
-      );
-      return { errors };
+    // Default to stdio type if type field is missing, null, undefined, or empty
+    let serverType = config.type;
+    if (
+      !serverType ||
+      serverType === null ||
+      serverType === undefined ||
+      (typeof serverType === "string" && serverType.trim() === "")
+    ) {
+      serverType = "stdio";
     }
 
     if (
-      config.type !== "stdio" &&
-      config.type !== "http" &&
-      config.type !== "sse"
+      serverType !== "stdio" &&
+      serverType !== "http" &&
+      serverType !== "sse"
     ) {
       errors.push(
-        `Server "${name}" has invalid type "${config.type}". Must be "stdio", "http", or "sse"`
+        `Server "${name}" has invalid type "${serverType}". Must be "stdio", "http", or "sse"`
       );
       return { errors };
     }
 
-    if (config.type === "stdio") {
-      return this.parseStdioConfig(name, config, basePath);
-    } else if (config.type === "http") {
-      return this.parseHttpConfig(name, config);
+    // Create a normalized config object with the determined type
+    const normalizedConfig = { ...config, type: serverType };
+
+    if (serverType === "stdio") {
+      return this.parseStdioConfig(name, normalizedConfig, basePath);
+    } else if (serverType === "http") {
+      return this.parseHttpConfig(name, normalizedConfig);
     } else {
-      return this.parseSSEConfig(name, config);
+      return this.parseSSEConfig(name, normalizedConfig);
     }
   }
 

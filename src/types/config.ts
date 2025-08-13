@@ -10,7 +10,7 @@ export type ClientTransportType = "stdio" | "http" | "sse";
  * Base configuration for an MCP server
  */
 export interface BaseServerConfig {
-  type: ClientTransportType;
+  type?: ClientTransportType;
   env?: Record<string, string>;
 }
 
