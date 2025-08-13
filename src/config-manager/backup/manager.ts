@@ -25,7 +25,6 @@ import {
   ServerConfigGroup,
   IConfigSource,
 } from "../../db/interfaces.js";
-import { isNedbEnabledAsync } from "../../config/environment.js";
 import { createChildLogger } from "../../utils/logging.js";
 
 const logger = createChildLogger({ module: "BackupManager" });
@@ -141,7 +140,7 @@ export class BackupManager {
       }
 
       // Export database contents if NeDB is enabled
-      if (await isNedbEnabledAsync()) {
+      if (false) {
         const dbExportResult = await this.exportDatabase(tempDir);
         if (dbExportResult) {
           metadata.database = dbExportResult;
@@ -537,7 +536,7 @@ export class BackupManager {
         }
 
         // Restore database if present and NeDB is enabled
-        if (await isNedbEnabledAsync()) {
+        if (false) {
           const dbDir = join(extractedDir, "database");
           try {
             await this.fs.access(dbDir);

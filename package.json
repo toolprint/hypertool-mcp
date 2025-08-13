@@ -160,7 +160,6 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.15.1",
-    "@seald-io/nedb": "^4.1.2",
     "@toolprint/mcp-logger": "^0.0.7",
     "@types/chalk": "^0.4.31",
     "@types/express": "^5.0.3",

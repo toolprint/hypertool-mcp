@@ -8,7 +8,6 @@ import { ServerConfig } from "../types/config.js";
 import { IDatabaseService, IConfigSource } from "../db/interfaces.js";
 import { ServerConfigRecord } from "../db/interfaces.js";
 import { createChildLogger } from "../utils/logging.js";
-import { isNedbEnabledAsync } from "../config/environment.js";
 
 const logger = createChildLogger({ module: "serverSync" });
 
@@ -41,7 +40,7 @@ export class ServerSyncManager {
     const stats = { added: 0, updated: 0, deleted: 0 };
 
     // If NeDB is disabled, skip database synchronization
-    if (!(await isNedbEnabledAsync())) {
+    if (!false) {
       logger.debug(
         "NeDB disabled - skipping server synchronization to database"
       );
@@ -153,7 +152,7 @@ export class ServerSyncManager {
     deleted: number;
   }> {
     // If NeDB is disabled, skip database synchronization
-    if (!(await isNedbEnabledAsync())) {
+    if (!false) {
       logger.debug(
         "NeDB disabled - skipping server synchronization to database"
       );
@@ -199,7 +198,7 @@ export class ServerSyncManager {
    */
   async getServersForGroup(groupName: string): Promise<ServerConfigRecord[]> {
     // If NeDB is disabled, groups are not available
-    if (!(await isNedbEnabledAsync())) {
+    if (!false) {
       logger.warn("NeDB disabled - server groups are not available");
       throw new Error(
         "Server groups require NeDB to be enabled (set HYPERTOOL_NEDB_ENABLED=true)"
@@ -219,7 +218,7 @@ export class ServerSyncManager {
    */
   async getAllServers(): Promise<ServerConfigRecord[]> {
     // If NeDB is disabled, return empty array
-    if (!(await isNedbEnabledAsync())) {
+    if (!false) {
       logger.debug("NeDB disabled - returning empty server list");
       return [];
     }
@@ -246,7 +245,7 @@ export class ServerSyncManager {
     }> = [];
 
     // If NeDB is disabled, skip synchronization
-    if (!(await isNedbEnabledAsync())) {
+    if (!false) {
       logger.debug("NeDB disabled - skipping source synchronization");
       return { total, sources };
     }

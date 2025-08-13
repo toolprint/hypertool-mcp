@@ -54,8 +54,6 @@ export interface CompleteConfig extends UserPreferences {
 
   /** Feature flags for experimental functionality */
   featureFlags?: {
-    /** Enable NeDB database storage instead of file-based configuration */
-    nedbEnabled?: boolean;
     /** Enable interactive setup wizard on first run (default: disabled) */
     setupWizardEnabled?: boolean;
     // Future feature flags can be added here

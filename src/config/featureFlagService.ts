@@ -19,7 +19,6 @@ const logger = {
 };
 
 export interface FeatureFlags {
-  nedbEnabled?: boolean;
   mcpLoggerEnabled?: boolean;
   setupWizardEnabled?: boolean;
   // Future feature flags can be added here
@@ -57,14 +56,6 @@ export class FeatureFlagService {
     logger.debug("Initializing feature flags");
 
     // 1. Check environment variables (highest priority)
-    const envNedb = process.env.HYPERTOOL_NEDB_ENABLED;
-    if (envNedb !== undefined) {
-      this.cache.nedbEnabled = ["true", "1", "yes", "on"].includes(
-        envNedb.toLowerCase()
-      );
-      logger.debug(`NeDB enabled from environment: ${this.cache.nedbEnabled}`);
-    }
-
     const envMcpLogger = process.env.HYPERTOOL_MCP_LOGGER_ENABLED;
     if (envMcpLogger !== undefined) {
       this.cache.mcpLoggerEnabled = ["true", "1", "yes", "on"].includes(
@@ -87,21 +78,11 @@ export class FeatureFlagService {
 
     // 2. Check config.json if not set by environment
     if (
-      this.cache.nedbEnabled === undefined ||
       this.cache.mcpLoggerEnabled === undefined ||
       this.cache.setupWizardEnabled === undefined
     ) {
       try {
         const configFlags = await getFeatureFlags();
-        if (
-          this.cache.nedbEnabled === undefined &&
-          configFlags?.nedbEnabled !== undefined
-        ) {
-          this.cache.nedbEnabled = configFlags.nedbEnabled === true;
-          logger.debug(
-            `NeDB enabled from config.json: ${this.cache.nedbEnabled}`
-          );
-        }
         if (
           this.cache.mcpLoggerEnabled === undefined &&
           configFlags?.mcpLoggerEnabled !== undefined
@@ -127,11 +108,6 @@ export class FeatureFlagService {
     }
 
     // 3. Apply defaults for any unset flags
-    if (this.cache.nedbEnabled === undefined) {
-      this.cache.nedbEnabled = false;
-      logger.debug("NeDB enabled set to default: false");
-    }
-
     if (this.cache.mcpLoggerEnabled === undefined) {
       this.cache.mcpLoggerEnabled = false; // Default to Pino implementation
       logger.debug("MCP Logger enabled set to default: false");
@@ -144,19 +120,6 @@ export class FeatureFlagService {
 
     this.initialized = true;
     logger.info(`Feature flags initialized: ${JSON.stringify(this.cache)}`);
-  }
-
-  /**
-   * Check if NeDB is enabled
-   * @throws Error if service not initialized
-   */
-  isNedbEnabled(): boolean {
-    if (!this.initialized) {
-      throw new Error(
-        "FeatureFlagService not initialized. Call initialize() first."
-      );
-    }
-    return this.cache.nedbEnabled ?? false;
   }
 
   /**
@@ -221,16 +184,6 @@ export class FeatureFlagService {
  */
 export function getFeatureFlagService(): FeatureFlagService {
   return FeatureFlagService.getInstance();
-}
-
-/**
- * Convenience function to check if NeDB is enabled
- * Ensures the service is initialized before checking
- */
-export async function isNedbEnabledViaService(): Promise<boolean> {
-  const service = getFeatureFlagService();
-  await service.initialize();
-  return service.isNedbEnabled();
 }
 
 /**

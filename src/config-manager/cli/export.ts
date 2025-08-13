@@ -9,7 +9,6 @@ import { getCompositeDatabaseService } from "../../db/compositeDatabaseService.j
 import { promises as fs } from "fs";
 import { dirname } from "path";
 import { ServerConfig } from "../../types/config.js";
-import { isNedbEnabledAsync } from "../../config/environment.js";
 
 export function createExportCommand(): Command {
   const exportCmd = new Command("export");
@@ -23,7 +22,7 @@ export function createExportCommand(): Command {
     .action(async (groupName, options) => {
       try {
         // Check if NeDB is enabled
-        if (!(await isNedbEnabledAsync())) {
+        if (!false) {
           output.error(
             "❌ Database features are not available when HYPERTOOL_NEDB_ENABLED is not set"
           );

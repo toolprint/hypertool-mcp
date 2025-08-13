@@ -55,7 +55,13 @@ setup-dev: setup setup-pre-commit
 # Run development mode with optional arguments
 [group('dev')]
 dev *args='':
-    npm run dev -- {{args}}
+    #!/usr/bin/env bash
+    npm run build
+    if [ -z "{{args}}" ]; then
+        node dist/bin.js --debug
+    else
+        node dist/bin.js {{args}}
+    fi
 
 # Run tests
 [group('test')]

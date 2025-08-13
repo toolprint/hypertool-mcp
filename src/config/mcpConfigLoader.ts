@@ -86,22 +86,18 @@ export async function discoverMcpConfig(
   errorMessage?: string;
   configSource?: IConfigSource;
 }> {
-  // Check if NeDB is enabled using the feature flag service
-  const featureFlagService = getFeatureFlagService();
-  await featureFlagService.initialize();
+  // Use file-based configuration discovery
+  logger.debug("Using file-based configuration");
+  return discoverMcpConfigFile(
+    cliConfigPath,
+    updatePreference,
+    linkedApp,
+    profile
+  );
 
-  if (!featureFlagService.isNedbEnabled()) {
-    logger.debug("NeDB disabled - using file-based configuration");
-    return discoverMcpConfigFile(
-      cliConfigPath,
-      updatePreference,
-      linkedApp,
-      profile
-    );
-  }
-
-  logger.debug("NeDB enabled - using database configuration");
-  try {
+  // Database configuration discovery (legacy code - removed as unreachable)
+  // This section was unreachable after file-based return above
+  /* try {
     const dbService = getCompositeDatabaseService();
     await dbService.init();
 
@@ -110,9 +106,9 @@ export async function discoverMcpConfig(
       const source = await getConfigSource("profile", linkedApp, profile);
       if (source) {
         return {
-          configPath: source.path, // Keep for backward compatibility
+          configPath: source.path ?? "", // Keep for backward compatibility
           source: "app",
-          configSource: source,
+          configSource: source ?? undefined,
         };
       }
     }
@@ -122,9 +118,9 @@ export async function discoverMcpConfig(
       const source = await getConfigSource("app", linkedApp);
       if (source) {
         return {
-          configPath: source.path, // Keep for backward compatibility
+          configPath: source.path ?? "", // Keep for backward compatibility
           source: "app",
-          configSource: source,
+          configSource: source ?? undefined,
         };
       } else {
         return {
@@ -141,13 +137,13 @@ export async function discoverMcpConfig(
       if (preferences.mcpConfigPath) {
         // Find config source by path
         const sources = await dbService.configSources.findByPath(
-          preferences.mcpConfigPath
+          preferences.mcpConfigPath!
         );
         if (sources) {
           return {
-            configPath: sources.path,
+            configPath: sources.path ?? "",
             source: "preference",
-            configSource: sources,
+            configSource: sources ?? undefined,
           };
         }
       }
@@ -159,9 +155,9 @@ export async function discoverMcpConfig(
     const globalSource = await getConfigSource("global");
     if (globalSource) {
       return {
-        configPath: globalSource.path,
+        configPath: globalSource.path ?? "",
         source: "discovered",
-        configSource: globalSource,
+        configSource: globalSource ?? undefined,
       };
     }
 
@@ -178,7 +174,7 @@ export async function discoverMcpConfig(
       source: "none",
       errorMessage: `Failed to load configuration: ${error instanceof Error ? error.message : String(error)}`,
     };
-  }
+  } */
 }
 
 /**
@@ -200,17 +196,13 @@ export async function loadMcpConfig(
   configPath: string,
   configSource?: IConfigSource
 ): Promise<any> {
-  // Check if NeDB is enabled using the feature flag service
-  const featureFlagService = getFeatureFlagService();
-  await featureFlagService.initialize();
+  // Use file-based configuration loading
+  logger.debug("Loading from file");
+  return loadMcpConfigFile(configPath, configSource);
 
-  if (!featureFlagService.isNedbEnabled()) {
-    logger.debug("NeDB disabled - loading from file");
-    return loadMcpConfigFile(configPath, configSource);
-  }
-
-  logger.debug("NeDB enabled - loading from database");
-  try {
+  // Database configuration loading (legacy code - removed as unreachable)
+  // This section was unreachable after file-based return above
+  /* try {
     const dbService = getCompositeDatabaseService();
     await dbService.init();
 
@@ -218,7 +210,7 @@ export async function loadMcpConfig(
     if (configSource) {
       const servers = await dbService.servers.findAll();
       const sourceServers = servers.filter(
-        (s) => s.sourceId === configSource.id
+        (s) => s.sourceId === configSource!.id
       );
 
       // Convert to MCP config format
@@ -230,9 +222,9 @@ export async function loadMcpConfig(
       const config = {
         mcpServers,
         _metadata: {
-          source: configSource.type,
-          sourceId: configSource.id,
-          path: configSource.path,
+          source: configSource?.type,
+          sourceId: configSource?.id,
+          path: configSource?.path,
         },
       };
 
@@ -264,5 +256,5 @@ export async function loadMcpConfig(
   } catch (error) {
     logger.error("Failed to load MCP config from database:", error);
     throw error;
-  }
+  } */
 }

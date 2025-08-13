@@ -38,7 +38,6 @@ import {
   needsTypeMigration,
 } from "./utils/type-migration.js";
 import { createChildLogger } from "../utils/logging.js";
-import { isNedbEnabledAsync } from "../config/environment.js";
 import { MCPConfigParser } from "../config/mcpConfigParser.js";
 
 const logger = createChildLogger({ module: "ConfigurationManager" });
@@ -325,7 +324,7 @@ export class ConfigurationManager {
    * Save the merged MCP configuration to database or file based on feature flag
    */
   private async saveMergedConfig(config: MCPConfig): Promise<void> {
-    if (!(await isNedbEnabledAsync())) {
+    {
       // File-based approach
       const configPath = join(this.basePath, "mcp.json");
 
@@ -344,8 +343,10 @@ export class ConfigurationManager {
     }
 
     // Database approach
-    const { getDatabaseService } = await import("../db/nedbService.js");
-    const dbService = getDatabaseService();
+    const { getCompositeDatabaseService } = await import(
+      "../db/compositeDatabaseService.js"
+    );
+    const dbService = getCompositeDatabaseService();
     await dbService.init();
 
     // Create or update global config source
@@ -357,6 +358,10 @@ export class ConfigurationManager {
         priority: 100,
         lastSynced: Date.now(),
       });
+    }
+
+    if (!globalSource) {
+      throw new Error("Failed to create or find global config source");
     }
 
     // Save all servers to database with source reference
@@ -380,16 +385,17 @@ export class ConfigurationManager {
           config: serverConfig as ServerConfig,
           lastModified: Date.now(),
           checksum: this.calculateChecksum(serverConfig as ServerConfig),
-          sourceId: globalSource.id,
+          sourceId: globalSource!.id,
         });
-      } else {
+      } else if (existingServer?.id && existingServer?.name) {
         await dbService.servers.update({
-          ...existingServer,
-          config: serverConfig as ServerConfig,
+          id: existingServer!.id,
+          name: existingServer!.name,
           type: serverConfig.type as "stdio" | "http" | "sse",
+          config: serverConfig as ServerConfig,
           lastModified: Date.now(),
           checksum: this.calculateChecksum(serverConfig as ServerConfig),
-          sourceId: globalSource.id,
+          sourceId: globalSource!.id,
         });
       }
     }
@@ -411,7 +417,7 @@ export class ConfigurationManager {
     appId: string,
     config: MCPConfig
   ): Promise<string> {
-    if (!(await isNedbEnabledAsync())) {
+    {
       // File-based approach
       const mcpDir = join(this.basePath, "mcp");
       const configPath = join(mcpDir, `${appId}.json`);
@@ -442,8 +448,10 @@ export class ConfigurationManager {
     }
 
     // Database approach
-    const { getDatabaseService } = await import("../db/nedbService.js");
-    const dbService = getDatabaseService();
+    const { getCompositeDatabaseService } = await import(
+      "../db/compositeDatabaseService.js"
+    );
+    const dbService = getCompositeDatabaseService();
     await dbService.init();
 
     // Create or update app config source
@@ -460,9 +468,13 @@ export class ConfigurationManager {
       });
     } else {
       await dbService.configSources.update({
-        ...appSource,
+        ...appSource!,
         lastSynced: Date.now(),
       });
+    }
+
+    if (!appSource) {
+      throw new Error("Failed to create or find app config source");
     }
 
     // Save all servers to database with source reference
@@ -486,22 +498,25 @@ export class ConfigurationManager {
           config: serverConfig as ServerConfig,
           lastModified: Date.now(),
           checksum: this.calculateChecksum(serverConfig as ServerConfig),
-          sourceId: appSource.id,
+          sourceId: appSource!.id,
         });
-      } else {
+      } else if (existingServer?.sourceId && existingServer?.id) {
         // Update only if this source has higher or equal priority
-        const existingSource = existingServer.sourceId
-          ? await dbService.configSources.findById(existingServer.sourceId)
-          : null;
+        const existingSource = await dbService.configSources.findById(
+          existingServer!.sourceId!
+        );
 
-        if (!existingSource || appSource.priority >= existingSource.priority) {
+        if (
+          !existingSource ||
+          (appSource!.priority ?? 0) >= (existingSource?.priority ?? 0)
+        ) {
           await dbService.servers.update({
-            ...existingServer,
+            ...existingServer!,
             config: serverConfig as ServerConfig,
             type: serverConfig.type as "stdio" | "http" | "sse",
             lastModified: Date.now(),
             checksum: this.calculateChecksum(serverConfig as ServerConfig),
-            sourceId: appSource.id,
+            sourceId: appSource!.id,
           });
         }
       }

@@ -11,11 +11,6 @@ import { getFeatureFlagService } from "../../config/featureFlagService.js";
 
 // Hardcoded flag definitions for simplicity
 const KNOWN_FLAGS = {
-  nedbEnabled: {
-    name: "nedbEnabled",
-    description:
-      "Use NeDB database storage instead of file-based configuration",
-  },
   mcpLoggerEnabled: {
     name: "mcpLoggerEnabled",
     description: "Use experimental mcp-logger instead of default Pino logging",
