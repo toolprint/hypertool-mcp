@@ -157,7 +157,7 @@ describe("MCPConfigParser", () => {
 
       expect(result.success).toBe(false);
       expect(result.validationErrors).toContain(
-        'Server "git" has invalid type "invalid". Must be "stdio", "http", or "sse"'
+        'Server "git" has invalid type "invalid". Must be "stdio", "http", "sse", or "dxt-extension"'
       );
     });
 

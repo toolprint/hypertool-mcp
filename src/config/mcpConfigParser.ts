@@ -3,10 +3,12 @@ import * as path from "path";
 import {
   MCPConfig,
   ServerConfig,
+  ServerEntry,
   StdioServerConfig,
   HttpServerConfig,
   SSEServerConfig,
-  DxtServerConfig,
+  ExtensionConfig,
+  DxtExtensionConfig,
   ParseResult,
   ParserOptions,
 } from "../types/config.js";
@@ -162,7 +164,7 @@ export class MCPConfigParser {
     name: string,
     config: any,
     basePath: string
-  ): { config?: ServerConfig; errors: string[] } {
+  ): { config?: ServerEntry; errors: string[] } {
     const errors: string[] = [];
 
     if (!config || typeof config !== "object") {
@@ -181,14 +183,18 @@ export class MCPConfigParser {
       serverType = "stdio";
     }
 
+    // Check if this is an extension config
+    if (serverType === "dxt-extension") {
+      return this.parseExtensionConfig(name, config, basePath);
+    }
+
     if (
       serverType !== "stdio" &&
       serverType !== "http" &&
-      serverType !== "sse" &&
-      serverType !== "dxt"
+      serverType !== "sse"
     ) {
       errors.push(
-        `Server "${name}" has invalid type "${serverType}". Must be "stdio", "http", "sse", or "dxt"`
+        `Server "${name}" has invalid type "${serverType}". Must be "stdio", "http", "sse", or "dxt-extension"`
       );
       return { errors };
     }
@@ -203,7 +209,8 @@ export class MCPConfigParser {
     } else if (serverType === "sse") {
       return this.parseSSEConfig(name, normalizedConfig);
     } else {
-      return this.parseDxtConfig(name, normalizedConfig, basePath);
+      errors.push(`Server "${name}" has unsupported type "${serverType}"`);
+      return { errors };
     }
   }
 
@@ -358,17 +365,35 @@ export class MCPConfigParser {
   }
 
   /**
-   * Parse and validate DXT server configuration
+   * Parse and validate extension configuration
    */
-  private parseDxtConfig(
+  private parseExtensionConfig(
     name: string,
     config: any,
     basePath: string
-  ): { config?: DxtServerConfig; errors: string[] } {
+  ): { config?: ExtensionConfig; errors: string[] } {
+    const errors: string[] = [];
+
+    if (config.type === "dxt-extension") {
+      return this.parseDxtExtensionConfig(name, config, basePath);
+    }
+
+    errors.push(`Extension "${name}" has unsupported type "${config.type}"`);
+    return { errors };
+  }
+
+  /**
+   * Parse and validate DXT extension configuration
+   */
+  private parseDxtExtensionConfig(
+    name: string,
+    config: any,
+    basePath: string
+  ): { config?: DxtExtensionConfig; errors: string[] } {
     const errors: string[] = [];
 
     if (!config.path || typeof config.path !== "string") {
-      errors.push(`DXT server "${name}" must have a "path" string`);
+      errors.push(`DXT extension "${name}" must have a "path" string`);
       return { errors };
     }
 
@@ -381,12 +406,12 @@ export class MCPConfigParser {
       config.env &&
       (typeof config.env !== "object" || Array.isArray(config.env))
     ) {
-      errors.push(`DXT server "${name}" env must be an object`);
+      errors.push(`DXT extension "${name}" env must be an object`);
       return { errors };
     }
 
-    const dxtConfig: DxtServerConfig = {
-      type: "dxt",
+    const dxtConfig: DxtExtensionConfig = {
+      type: "dxt-extension",
       path: dxtPath,
       env: config.env || {},
     };
@@ -424,13 +449,27 @@ export class MCPConfigParser {
   }
 
   /**
-   * Get a specific server configuration
+   * Get a specific server entry (server or extension configuration)
+   */
+  static getServerEntry(
+    config: MCPConfig,
+    serverName: string
+  ): ServerEntry | undefined {
+    return config.mcpServers[serverName];
+  }
+
+  /**
+   * Get a specific server configuration (excluding extensions)
    */
   static getServerConfig(
     config: MCPConfig,
     serverName: string
   ): ServerConfig | undefined {
-    return config.mcpServers[serverName];
+    const entry = config.mcpServers[serverName];
+    if (entry && entry.type !== "dxt-extension") {
+      return entry as ServerConfig;
+    }
+    return undefined;
   }
 
   /**

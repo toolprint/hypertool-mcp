@@ -4,7 +4,7 @@
  * These define how THIS server connects to downstream MCP servers (outbound client connections)
  */
 
-export type ClientTransportType = "stdio" | "http" | "sse" | "dxt";
+export type ClientTransportType = "stdio" | "http" | "sse";
 
 /**
  * Base configuration for an MCP server
@@ -42,27 +42,43 @@ export interface SSEServerConfig extends BaseServerConfig {
 }
 
 /**
- * Configuration for DXT extension servers
- */
-export interface DxtServerConfig extends BaseServerConfig {
-  type: "dxt";
-  path: string;
-}
-
-/**
  * Union type for all server configurations
  */
 export type ServerConfig =
   | StdioServerConfig
   | HttpServerConfig
-  | SSEServerConfig
-  | DxtServerConfig;
+  | SSEServerConfig;
+
+/**
+ * Base configuration for extensions
+ */
+export interface BaseExtensionConfig {
+  env?: Record<string, string>;
+}
+
+/**
+ * Configuration for DXT extensions
+ */
+export interface DxtExtensionConfig extends BaseExtensionConfig {
+  type: "dxt-extension";
+  path: string;
+}
+
+/**
+ * Union type for all extension configurations
+ */
+export type ExtensionConfig = DxtExtensionConfig;
+
+/**
+ * Union type for all server entries (servers and extensions)
+ */
+export type ServerEntry = ServerConfig | ExtensionConfig;
 
 /**
  * Root configuration structure matching .mcp.json format
  */
 export interface MCPConfig {
-  mcpServers: Record<string, ServerConfig>;
+  mcpServers: Record<string, ServerEntry>;
 }
 
 /**

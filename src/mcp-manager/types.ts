@@ -3,11 +3,11 @@
  */
 
 export interface MCPServerConfig {
-  type: "stdio" | "http" | "sse" | "websocket" | "dxt";
+  type: "stdio" | "http" | "sse" | "websocket" | "dxt-extension";
   command?: string;
   args?: string[];
   url?: string;
-  path?: string; // For DXT type
+  path?: string; // For DXT extension type
   env?: Record<string, string>;
   headers?: Record<string, string>;
   [key: string]: any;
@@ -33,7 +33,7 @@ export interface MCPServerDetails {
 }
 
 export interface AddServerOptions {
-  transport?: "stdio" | "http" | "sse" | "dxt";
+  transport?: "stdio" | "http" | "sse" | "dxt-extension";
   env?: string[];
   header?: string[];
 }
