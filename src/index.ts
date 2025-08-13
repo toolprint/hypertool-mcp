@@ -569,17 +569,14 @@ ${theme.label("Examples:")}
     process.argv.splice(2, 0, "mcp", "run");
   }
   // If we have 'mcp' command but no subcommand, insert 'run'
-  else if (hasMcpCommand && cliArgs.length === 1) {
-    process.argv.splice(3, 0, "run");
-  }
-  // If we have 'mcp' followed by options (not a subcommand), insert 'run'
-  else if (
-    hasMcpCommand &&
-    cliArgs.length > 1 &&
-    !knownMcpSubcommands.includes(cliArgs[1]) &&
-    cliArgs[1].startsWith("--")
-  ) {
-    process.argv.splice(3, 0, "run");
+  else if (hasMcpCommand) {
+    const mcpIndex = cliArgs.indexOf("mcp");
+    const nextArg = cliArgs[mcpIndex + 1];
+    // If there's no next arg or it's an option (starts with --), add 'run'
+    if (!nextArg || nextArg.startsWith("--")) {
+      // Insert 'run' after 'mcp' command
+      process.argv.splice(2 + mcpIndex + 1, 0, "run");
+    }
   }
   // If no arguments at all, default to 'setup' for first run or 'mcp run'
   else if (cliArgs.length === 0) {
@@ -608,17 +605,6 @@ ${theme.label("Examples:")}
       }
     } else {
       process.argv.push("mcp", "run");
-    }
-  }
-
-  // Check if we have 'mcp' command but no subcommand and need to add 'run'
-  // (hasMcpCommand is already declared above)
-  if (hasMcpCommand) {
-    const mcpIndex = cliArgs.indexOf("mcp");
-    const nextArg = cliArgs[mcpIndex + 1];
-    // If there's no next arg or it's an option (starts with --), add 'run'
-    if (!nextArg || nextArg.startsWith("--")) {
-      process.argv.splice(2 + mcpIndex + 1, 0, "run");
     }
   }
 
