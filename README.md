@@ -1,3 +1,5 @@
+[![MSeeP.ai Security Assessment Badge](https://mseep.net/pr/toolprint-hypertool-mcp-badge.png)](https://mseep.ai/app/toolprint-hypertool-mcp)
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./assets/hypertool_darkmode_wordmark_horizontal.png">
   <source media="(prefers-color-scheme: light)" srcset="./assets/hypertool_lightmode_wordmark_horizontal.png">
