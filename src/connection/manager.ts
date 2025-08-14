@@ -19,7 +19,6 @@ import { ConnectionFactory } from "./factory.js";
 import { HealthMonitor } from "./healthMonitor.js";
 import { Logger, createChildLogger } from "../utils/logging.js";
 import { RecoveryCoordinator } from "../errors/recovery.js";
-import { APP_TECHNICAL_NAME } from "../config/appConfig.js";
 
 /**
  * Connection manager orchestrates connections to multiple MCP servers
@@ -69,34 +68,48 @@ export class ConnectionManager
     if (this.isInitialized) {
       throw new Error("Connection manager is already initialized");
     }
+    // Deduplicate server names (case-insensitive, trimmed) before adding to pool
+    const dedupedServers: Record<string, ServerConfig> = {};
+    const seen = new Set<string>();
+    for (const [serverName, config] of Object.entries(servers)) {
+      const normalized = serverName.trim().toLowerCase();
+      if (seen.has(normalized)) {
+        this._logger.error(
+          `Duplicate server name detected during initialization: "${serverName}"`,
+          {
+            serverName,
+          }
+        );
+        continue;
+      }
+      seen.add(normalized);
+      dedupedServers[serverName] = config;
+    }
 
-    this.servers = { ...servers };
+    this.servers = dedupedServers;
 
     // Validate all server configurations
     this.validateServerConfigurations();
 
-    // Add all servers to the pool - fail fast on any error
+    // Add all servers to the pool concurrently
     const serverEntries = Object.entries(this.servers);
-    for (const [serverName, config] of serverEntries) {
-      try {
-        await this._pool.addConnection(serverName, config);
-      } catch (error) {
+    const results = await Promise.allSettled(
+      serverEntries.map(([serverName, config]) =>
+        this._pool.addConnection(serverName, config)
+      )
+    );
+
+    // Log failures but continue initialization
+    results.forEach((result, index) => {
+      const [serverName] = serverEntries[index];
+      if (result.status === "rejected") {
         this._logger.error(
-          `\n❌ FATAL ERROR: Failed to initialize server "${serverName}"`
+          `⚠️ Failed to initialize server "${serverName}": ${(result.reason as Error).message}`
         );
-        this._logger.error(`   Error: ${(error as Error).message}`);
-        this._logger.error(
-          `\n💡 Resolution: Please check your MCP configuration and ensure all server names are unique.`
-        );
-        this._logger.error(
-          `   Configuration file: Check for duplicate server names in mcpServers section.`
-        );
-        this._logger.error(
-          `\n🚫 ${APP_TECHNICAL_NAME} server cannot start with conflicting server configurations.`
-        );
-        process.exit(1);
+        // Remove failed server from registry
+        delete this.servers[serverName];
       }
-    }
+    });
 
     this.isInitialized = true;
 

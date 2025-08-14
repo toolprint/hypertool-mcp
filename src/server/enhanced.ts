@@ -547,7 +547,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         logger.warn(`
 ⚠️  WARNING: No toolsets configured
 
-   Meta-MCP is running but no toolsets have been created yet.
+   ${APP_TECHNICAL_NAME} is running but no toolsets have been created yet.
    This means no underlying MCP server tools will be exposed.
 
    💡 Next steps:

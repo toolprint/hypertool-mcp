@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { ConnectionManager } from "./manager.js";
 import { ConnectionFactory } from "./factory.js";
 import { StdioServerConfig, HttpServerConfig } from "../types/config.js";
+import { Logger } from "../utils/logging.js";
 import {
   ConnectionState,
   ConnectionEventType,
@@ -150,6 +151,59 @@ describe("ConnectionManager", () => {
 
       expect(manager.getServerNames()).toEqual(["git-server", "docker-server"]);
       expect(manager.pool.size).toBe(2);
+    });
+
+    it("should continue initializing when a server fails", async () => {
+      const failingFactory = new MockConnectionFactory();
+      const originalCreate = failingFactory.createConnection.bind(failingFactory);
+      vi.spyOn(failingFactory, "createConnection").mockImplementation(
+        (serverName: string, config: any) => {
+          if (serverName === "bad-server") {
+            throw new Error("init failed");
+          }
+          return originalCreate(serverName, config);
+        }
+      );
+
+      manager = new ConnectionManager({}, failingFactory);
+      const errorSpy = vi
+        .spyOn((manager as any)._logger, "error")
+        .mockImplementation(() => {});
+
+      const servers = {
+        "good-server": { type: "stdio" as const, command: "good" },
+        "bad-server": { type: "stdio" as const, command: "bad" },
+      };
+
+      await expect(manager.initialize(servers)).resolves.not.toThrow();
+
+      expect(manager.getServerNames()).toEqual(["good-server"]);
+      expect(manager.pool.size).toBe(1);
+      expect(errorSpy).toHaveBeenCalled();
+      expect(errorSpy.mock.calls[0][0]).toContain("bad-server");
+
+      errorSpy.mockRestore();
+      vi.restoreAllMocks();
+    });
+
+    it("should remove duplicate server names during initialization", async () => {
+      const duplicateServers = {
+        foo: { type: "stdio" as const, command: "one" },
+        FOO: { type: "stdio" as const, command: "two" },
+        bar: { type: "stdio" as const, command: "three" },
+      };
+
+      const errorSpy = vi
+        .spyOn((manager as any)._logger, "error")
+        .mockImplementation(() => {});
+
+      await manager.initialize(duplicateServers);
+
+      expect(manager.getServerNames().sort()).toEqual(["bar", "foo"]);
+      expect(manager.pool.size).toBe(2);
+      expect(errorSpy).toHaveBeenCalled();
+
+      errorSpy.mockRestore();
     });
 
     it("should reject double initialization", async () => {
