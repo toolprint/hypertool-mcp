@@ -8,28 +8,11 @@ import {
   setFeatureFlag,
 } from "../../config/preferenceStore.js";
 import { getFeatureFlagService } from "../../config/featureFlagService.js";
-
-// Hardcoded flag definitions for simplicity
-const KNOWN_FLAGS = {
-  mcpLoggerEnabled: {
-    name: "mcpLoggerEnabled",
-    description: "Use experimental mcp-logger instead of default Pino logging",
-  },
-  setupWizardEnabled: {
-    name: "setupWizardEnabled",
-    description:
-      "Enable interactive setup wizard on first run (default: disabled)",
-  },
-} as const;
-
-type FlagName = keyof typeof KNOWN_FLAGS;
-
-/**
- * Validate that a flag name is known
- */
-function validateFlagName(flagName: string): flagName is FlagName {
-  return flagName in KNOWN_FLAGS;
-}
+import {
+  getAllFlagDefinitions,
+  FlagName,
+  isValidFlagName,
+} from "../../config/flagRegistry.js";
 
 /**
  * List all feature flags with their current status
@@ -41,12 +24,15 @@ async function listFlags(): Promise<void> {
     await featureFlagService.initialize();
     const resolvedFlags = featureFlagService.getAllFlags();
 
+    // Get all flag definitions from registry
+    const flagDefinitions = getAllFlagDefinitions();
+
     console.log("\nFeature Flags:");
     console.log("─".repeat(70));
     console.log("Flag".padEnd(20) + "Status".padEnd(10) + "Description");
     console.log("─".repeat(70));
 
-    for (const [flagName, flagInfo] of Object.entries(KNOWN_FLAGS)) {
+    for (const [flagName, flagInfo] of Object.entries(flagDefinitions)) {
       const isEnabled =
         resolvedFlags[flagName as keyof typeof resolvedFlags] === true;
       const status = isEnabled ? "✓ ON" : "✗ OFF";
@@ -56,7 +42,7 @@ async function listFlags(): Promise<void> {
     }
 
     console.log("─".repeat(70));
-    console.log(`\nTotal flags: ${Object.keys(KNOWN_FLAGS).length}`);
+    console.log(`\nTotal flags: ${Object.keys(flagDefinitions).length}`);
   } catch (error) {
     console.error(
       "Error reading feature flags:",
@@ -70,9 +56,11 @@ async function listFlags(): Promise<void> {
  * Enable a specific feature flag
  */
 async function enableFlag(flagName: string): Promise<void> {
-  if (!validateFlagName(flagName)) {
+  if (!isValidFlagName(flagName)) {
     console.error(`Error: Unknown flag '${flagName}'`);
-    console.error(`Available flags: ${Object.keys(KNOWN_FLAGS).join(", ")}`);
+    console.error(
+      `Available flags: ${Object.keys(getAllFlagDefinitions()).join(", ")}`
+    );
     process.exit(1);
   }
 
@@ -92,9 +80,11 @@ async function enableFlag(flagName: string): Promise<void> {
  * Disable a specific feature flag
  */
 async function disableFlag(flagName: string): Promise<void> {
-  if (!validateFlagName(flagName)) {
+  if (!isValidFlagName(flagName)) {
     console.error(`Error: Unknown flag '${flagName}'`);
-    console.error(`Available flags: ${Object.keys(KNOWN_FLAGS).join(", ")}`);
+    console.error(
+      `Available flags: ${Object.keys(getAllFlagDefinitions()).join(", ")}`
+    );
     process.exit(1);
   }
 

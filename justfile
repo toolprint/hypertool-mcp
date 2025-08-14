@@ -68,6 +68,13 @@ dev *args='':
 test:
     npm run test
 
+# Launch MCP inspector with custom stdio command
+[group('dev')]
+inspect *args:
+    @echo "🔍 Launching MCP inspector with: {{args}}"
+    npm run build
+    npx @modelcontextprotocol/inspector {{args}}
+
 # Build the project
 [group('build')]
 build:

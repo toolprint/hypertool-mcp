@@ -24,7 +24,10 @@ import {
 } from "./config/appConfig.js";
 import type { TransportConfig } from "./server/types.js";
 import { theme, semantic } from "./utils/theme.js";
-import { getFeatureFlagService } from "./config/featureFlagService.js";
+import {
+  getFeatureFlagService,
+  isDxtEnabledViaService,
+} from "./config/featureFlagService.js";
 // Logger will be initialized later with proper runtime options
 
 async function handleInstallOption(installArgs: string[], isDryRun: boolean) {
@@ -494,6 +497,18 @@ ${theme.label("Examples:")}
   const { createServiceCommand } = await import("./commands/service/index.js");
   program.addCommand(createServiceCommand());
 
+  // Add extension management commands (only if DXT is enabled)
+  // Initialize feature flags early to determine if extensions should be available
+  const featureFlagService = getFeatureFlagService();
+  await featureFlagService.initialize();
+
+  if (featureFlagService.isDxtEnabled()) {
+    const { createExtensionsCommand } = await import(
+      "./commands/extensions/index.js"
+    );
+    program.addCommand(createExtensionsCommand());
+  }
+
   // Toolset management is available via MCP tools when server is running
   // No top-level CLI commands needed per docs/NAVIGATION.md
 
@@ -541,6 +556,11 @@ ${theme.label("Examples:")}
   // But only if the first argument isn't already a known command
   const cliArgs = process.argv.slice(2);
   const knownCommands = ["config", "mcp", "setup", "service", "help"];
+
+  // Add extensions to known commands only if DXT is enabled
+  if (featureFlagService.isDxtEnabled()) {
+    knownCommands.push("extensions");
+  }
   const knownMcpSubcommands = ["run", "list", "get", "add", "remove"];
 
   // Check if any argument is a known command

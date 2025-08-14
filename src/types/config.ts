@@ -50,10 +50,35 @@ export type ServerConfig =
   | SSEServerConfig;
 
 /**
+ * Base configuration for extensions
+ */
+export interface BaseExtensionConfig {
+  env?: Record<string, string>;
+}
+
+/**
+ * Configuration for DXT extensions
+ */
+export interface DxtExtensionConfig extends BaseExtensionConfig {
+  type: "dxt-extension";
+  path: string;
+}
+
+/**
+ * Union type for all extension configurations
+ */
+export type ExtensionConfig = DxtExtensionConfig;
+
+/**
+ * Union type for all server entries (servers and extensions)
+ */
+export type ServerEntry = ServerConfig | ExtensionConfig;
+
+/**
  * Root configuration structure matching .mcp.json format
  */
 export interface MCPConfig {
-  mcpServers: Record<string, ServerConfig>;
+  mcpServers: Record<string, ServerEntry>;
 }
 
 /**

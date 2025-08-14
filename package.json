@@ -50,6 +50,7 @@
     "test:stdio:debug": "DEBUG=* vitest run src/integration/stdio-transport.test.ts --reporter=verbose --testTimeout=60000",
     "build": "rm -rf dist && tsc && npm run copy-examples && chmod +x dist/bin.js",
     "copy-examples": "mkdir -p dist/examples && cp -r examples/mcp dist/examples/",
+    "pack:hello-dxt": "cd examples/hello-dxt && npm install && cd ../.. && dxt pack examples/hello-dxt examples/hello-dxt.dxt",
     "build:watch": "tsc --watch",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
@@ -142,6 +143,7 @@
     "@types/ora": "^3.1.0",
     "@types/pino": "^7.0.4",
     "@types/tar": "^6.1.13",
+    "@types/unzipper": "^0.10.11",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.36.0",
     "@typescript-eslint/parser": "^8.36.0",
@@ -151,12 +153,12 @@
     "eslint": "^9.30.1",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.1",
+    "markdownlint-cli2": "^0.13.0",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.4",
-    "markdownlint-cli2": "^0.13.0"
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.15.1",
@@ -179,6 +181,7 @@
     "pino": "^9.7.0",
     "pino-pretty": "^13.1.1",
     "tar": "^7.4.3",
+    "unzipper": "^0.12.3",
     "uuid": "^11.0.2",
     "yaml": "^2.8.0",
     "zod": "^3.25.76",

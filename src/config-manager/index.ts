@@ -24,7 +24,7 @@ import {
   Toolset,
   AppMCPConfig,
 } from "./types/index.js";
-import { ServerConfig } from "../types/config.js";
+import { ServerConfig, ServerEntry, ExtensionConfig } from "../types/config.js";
 import { AppRegistry } from "./apps/registry.js";
 import { BackupManager } from "./backup/manager.js";
 import { TransformerRegistry } from "./transformers/base.js";
@@ -364,37 +364,49 @@ export class ConfigurationManager {
       throw new Error("Failed to create or find global config source");
     }
 
-    // Save all servers to database with source reference
-    for (const [serverName, serverConfig] of Object.entries(
-      config.mcpServers
-    )) {
-      // Skip websocket servers as they're not supported yet
-      if (serverConfig.type === "websocket") {
-        logger.warn(
-          `Skipping websocket server "${serverName}" - not supported`
+    // Save all servers and extensions to database with source reference
+    for (const [entryName, entryConfig] of Object.entries(config.mcpServers)) {
+      // Handle extensions separately from servers
+      if ((entryConfig as any).type === "dxt-extension") {
+        // Extensions are handled by the extension manager, not stored as servers
+        // The extension manager will discover and load tools from DXT packages
+        logger.info(
+          `DXT extension "${entryName}" found, will be handled by extension manager`
         );
         continue;
       }
 
-      const existingServer = await dbService.servers.findByName(serverName);
+      // Handle server configs
+      const serverConfig = entryConfig as ServerConfig;
+
+      // Skip websocket servers as they're not supported yet
+      if (
+        "type" in serverConfig &&
+        (serverConfig as any).type === "websocket"
+      ) {
+        logger.warn(`Skipping websocket server "${entryName}" - not supported`);
+        continue;
+      }
+
+      const existingServer = await dbService.servers.findByName(entryName);
 
       if (!existingServer) {
         await dbService.servers.add({
-          name: serverName,
+          name: entryName,
           type: serverConfig.type as "stdio" | "http" | "sse",
-          config: serverConfig as ServerConfig,
+          config: serverConfig,
           lastModified: Date.now(),
-          checksum: this.calculateChecksum(serverConfig as ServerConfig),
+          checksum: this.calculateChecksum(serverConfig),
           sourceId: globalSource!.id,
         });
       } else if (existingServer?.id && existingServer?.name) {
         await dbService.servers.update({
           id: existingServer!.id,
           name: existingServer!.name,
+          config: serverConfig,
           type: serverConfig.type as "stdio" | "http" | "sse",
-          config: serverConfig as ServerConfig,
           lastModified: Date.now(),
-          checksum: this.calculateChecksum(serverConfig as ServerConfig),
+          checksum: this.calculateChecksum(serverConfig),
           sourceId: globalSource!.id,
         });
       }
@@ -477,27 +489,38 @@ export class ConfigurationManager {
       throw new Error("Failed to create or find app config source");
     }
 
-    // Save all servers to database with source reference
-    for (const [serverName, serverConfig] of Object.entries(
-      config.mcpServers
-    )) {
-      // Skip websocket servers as they're not supported yet
-      if (serverConfig.type === "websocket") {
-        logger.warn(
-          `Skipping websocket server "${serverName}" - not supported`
+    // Save all servers and extensions to database with source reference
+    for (const [entryName, entryConfig] of Object.entries(config.mcpServers)) {
+      // Handle extensions separately from servers
+      if ((entryConfig as any).type === "dxt-extension") {
+        // Extensions are handled by the extension manager, not stored as servers
+        logger.info(
+          `DXT extension "${entryName}" found in app ${appId}, will be handled by extension manager`
         );
         continue;
       }
 
-      const existingServer = await dbService.servers.findByName(serverName);
+      // Handle server configs
+      const serverConfig = entryConfig as ServerConfig;
+
+      // Skip websocket servers as they're not supported yet
+      if (
+        "type" in serverConfig &&
+        (serverConfig as any).type === "websocket"
+      ) {
+        logger.warn(`Skipping websocket server "${entryName}" - not supported`);
+        continue;
+      }
+
+      const existingServer = await dbService.servers.findByName(entryName);
 
       if (!existingServer) {
         await dbService.servers.add({
-          name: serverName,
+          name: entryName,
           type: serverConfig.type as "stdio" | "http" | "sse",
-          config: serverConfig as ServerConfig,
+          config: serverConfig,
           lastModified: Date.now(),
-          checksum: this.calculateChecksum(serverConfig as ServerConfig),
+          checksum: this.calculateChecksum(serverConfig),
           sourceId: appSource!.id,
         });
       } else if (existingServer?.sourceId && existingServer?.id) {
@@ -511,11 +534,12 @@ export class ConfigurationManager {
           (appSource!.priority ?? 0) >= (existingSource?.priority ?? 0)
         ) {
           await dbService.servers.update({
-            ...existingServer!,
-            config: serverConfig as ServerConfig,
+            id: existingServer!.id,
+            name: existingServer!.name,
+            config: serverConfig,
             type: serverConfig.type as "stdio" | "http" | "sse",
             lastModified: Date.now(),
-            checksum: this.calculateChecksum(serverConfig as ServerConfig),
+            checksum: this.calculateChecksum(serverConfig),
             sourceId: appSource!.id,
           });
         }
