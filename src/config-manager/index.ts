@@ -365,25 +365,26 @@ export class ConfigurationManager {
     }
 
     // Save all servers and extensions to database with source reference
-    for (const [entryName, entryConfig] of Object.entries(
-      config.mcpServers
-    )) {
+    for (const [entryName, entryConfig] of Object.entries(config.mcpServers)) {
       // Handle extensions separately from servers
       if ((entryConfig as any).type === "dxt-extension") {
         // Extensions are handled by the extension manager, not stored as servers
         // The extension manager will discover and load tools from DXT packages
-        logger.info(`DXT extension "${entryName}" found, will be handled by extension manager`);
+        logger.info(
+          `DXT extension "${entryName}" found, will be handled by extension manager`
+        );
         continue;
       }
 
       // Handle server configs
       const serverConfig = entryConfig as ServerConfig;
-      
+
       // Skip websocket servers as they're not supported yet
-      if ("type" in serverConfig && (serverConfig as any).type === "websocket") {
-        logger.warn(
-          `Skipping websocket server "${entryName}" - not supported`
-        );
+      if (
+        "type" in serverConfig &&
+        (serverConfig as any).type === "websocket"
+      ) {
+        logger.warn(`Skipping websocket server "${entryName}" - not supported`);
         continue;
       }
 
@@ -489,24 +490,25 @@ export class ConfigurationManager {
     }
 
     // Save all servers and extensions to database with source reference
-    for (const [entryName, entryConfig] of Object.entries(
-      config.mcpServers
-    )) {
+    for (const [entryName, entryConfig] of Object.entries(config.mcpServers)) {
       // Handle extensions separately from servers
       if ((entryConfig as any).type === "dxt-extension") {
         // Extensions are handled by the extension manager, not stored as servers
-        logger.info(`DXT extension "${entryName}" found in app ${appId}, will be handled by extension manager`);
+        logger.info(
+          `DXT extension "${entryName}" found in app ${appId}, will be handled by extension manager`
+        );
         continue;
       }
 
       // Handle server configs
       const serverConfig = entryConfig as ServerConfig;
-      
+
       // Skip websocket servers as they're not supported yet
-      if ("type" in serverConfig && (serverConfig as any).type === "websocket") {
-        logger.warn(
-          `Skipping websocket server "${entryName}" - not supported`
-        );
+      if (
+        "type" in serverConfig &&
+        (serverConfig as any).type === "websocket"
+      ) {
+        logger.warn(`Skipping websocket server "${entryName}" - not supported`);
         continue;
       }
 

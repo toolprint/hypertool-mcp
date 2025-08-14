@@ -11,6 +11,7 @@ import { extensionsRefresh } from "./refresh.js";
 import { extensionsEnable } from "./enable.js";
 import { extensionsDisable } from "./disable.js";
 import { extensionsRemove } from "./remove.js";
+import { isDxtEnabledViaService } from "../../config/featureFlagService.js";
 
 export function createExtensionsCommand(): Command {
   const extensionsCommand = new Command("extensions")
@@ -26,7 +27,17 @@ export function createExtensionsCommand(): Command {
     hypertool-mcp extensions disable test      # Disable extension
     hypertool-mcp extensions refresh           # Refresh all extensions
     hypertool-mcp extensions remove test       # Remove extension`
-    );
+    )
+    .hook("preAction", async () => {
+      // Check if DXT is enabled before executing any extension command
+      if (!(await isDxtEnabledViaService())) {
+        console.error("❌ DXT extension features are disabled.");
+        console.error(
+          "   Set HYPERTOOL_DXT_ENABLED=true or update config.json to enable."
+        );
+        process.exit(1);
+      }
+    });
 
   // Add all subcommands
   extensionsCommand.addCommand(extensionsList());

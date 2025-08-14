@@ -12,6 +12,7 @@ import {
   ExtensionConfig,
   ExtensionUserConfig,
 } from "./dxt-config.js";
+import { isDxtEnabledViaService } from "./featureFlagService.js";
 
 /**
  * Default extension configuration
@@ -40,6 +41,14 @@ export class ExtensionConfigManager {
    * Load configuration from file
    */
   async load(): Promise<HypertoolConfig> {
+    // If DXT is disabled, return empty config and skip file operations
+    if (!(await isDxtEnabledViaService())) {
+      this.config = {
+        extensions: { directory: "", autoDiscovery: false, settings: {} },
+      };
+      return this.config;
+    }
+
     try {
       if (existsSync(this.configPath)) {
         const content = await readFile(this.configPath, "utf-8");

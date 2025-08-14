@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { ExtensionConfigManager } from "./extensionConfig.js";
+import { getFeatureFlagService } from "./featureFlagService.js";
 import { mkdtemp, rm, writeFile } from "fs/promises";
 import { join } from "path";
 import { tmpdir } from "os";
@@ -14,6 +15,10 @@ describe("ExtensionConfigManager", () => {
   let configManager: ExtensionConfigManager;
 
   beforeEach(async () => {
+    // Enable DXT feature flag for testing
+    const featureFlagService = getFeatureFlagService();
+    featureFlagService.forceSet("dxtEnabled", true);
+
     // Create temporary directory
     tempDir = await mkdtemp(join(tmpdir(), "hypertool-test-"));
     configPath = join(tempDir, "config.json");
@@ -21,6 +26,10 @@ describe("ExtensionConfigManager", () => {
   });
 
   afterEach(async () => {
+    // Reset feature flag service
+    const featureFlagService = getFeatureFlagService();
+    featureFlagService.reset();
+
     // Cleanup
     try {
       await rm(tempDir, { recursive: true, force: true });
@@ -35,6 +44,19 @@ describe("ExtensionConfigManager", () => {
 
       expect(config.extensions).toBeDefined();
       expect(config.extensions!.autoDiscovery).toBe(true);
+      expect(config.extensions!.settings).toEqual({});
+    });
+
+    it("should return disabled config when DXT feature flag is disabled", async () => {
+      // Disable DXT feature flag
+      const featureFlagService = getFeatureFlagService();
+      featureFlagService.forceSet("dxtEnabled", false);
+
+      const config = await configManager.load();
+
+      expect(config.extensions).toBeDefined();
+      expect(config.extensions!.autoDiscovery).toBe(false);
+      expect(config.extensions!.directory).toBe("");
       expect(config.extensions!.settings).toEqual({});
     });
 

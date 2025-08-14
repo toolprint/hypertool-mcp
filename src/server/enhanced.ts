@@ -15,6 +15,7 @@ import { IConnectionManager, ConnectionManager } from "../connection/index.js";
 import { ExtensionAwareConnectionFactory } from "../connection/extensionFactory.js";
 import { ExtensionManager } from "../extensions/manager.js";
 import { APP_NAME, APP_TECHNICAL_NAME, ServerConfig } from "../config/index.js";
+import { isDxtEnabledViaService } from "../config/featureFlagService.js";
 import ora from "ora";
 
 // Helper to create conditional spinners
@@ -314,10 +315,14 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       await dbService.init();
       logger.debug("Database initialized successfully");
 
-      // Initialize extension manager
-      this.extensionManager = new ExtensionManager();
-      await this.extensionManager.initialize();
-      logger.debug("Extension manager initialized successfully");
+      // Initialize extension manager (only if DXT is enabled)
+      if (await isDxtEnabledViaService()) {
+        this.extensionManager = new ExtensionManager();
+        await this.extensionManager.initialize();
+        logger.debug("Extension manager initialized successfully");
+      } else {
+        logger.debug("Extension manager disabled via feature flag");
+      }
 
       // Load server configs from MCP config.
       let serverConfigs: Record<string, ServerConfig> =
@@ -362,16 +367,19 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         }
       }
 
-      // Load extension configs and merge with regular configs
-      const extensionConfigs =
-        this.extensionManager!.getEnabledExtensionsAsServerConfigs();
-      const mergedConfigs = { ...serverConfigs, ...extensionConfigs };
-      const extensionCount = Object.keys(extensionConfigs).length;
-      if (extensionCount > 0) {
-        logger.debug(
-          `Loaded ${extensionCount} extension servers: ${Object.keys(extensionConfigs).join(", ")}`
-        );
+      // Load extension configs and merge with regular configs (only if DXT is enabled)
+      let extensionConfigs: Record<string, ServerConfig> = {};
+      if ((await isDxtEnabledViaService()) && this.extensionManager) {
+        extensionConfigs =
+          this.extensionManager.getEnabledExtensionsAsServerConfigs();
+        const extensionCount = Object.keys(extensionConfigs).length;
+        if (extensionCount > 0) {
+          logger.debug(
+            `Loaded ${extensionCount} extension servers: ${Object.keys(extensionConfigs).join(", ")}`
+          );
+        }
       }
+      const mergedConfigs = { ...serverConfigs, ...extensionConfigs };
 
       // Detect external MCPs
       const externalMCPs = await detectExternalMCPs();

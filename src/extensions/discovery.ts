@@ -18,6 +18,7 @@ import {
 } from "../config/dxt-config.js";
 import { parseManifest } from "../dxt/manifest.js";
 import { extractDxt } from "../dxt/loader.js";
+import { isDxtEnabledViaService } from "../config/featureFlagService.js";
 
 /**
  * Extension discovery and management service
@@ -39,6 +40,11 @@ export class ExtensionDiscoveryService {
    * Initialize the extensions directory structure
    */
   async initialize(): Promise<void> {
+    // Skip initialization if DXT is disabled
+    if (!(await isDxtEnabledViaService())) {
+      return;
+    }
+
     await mkdir(this.extensionsDir, { recursive: true });
     await mkdir(this.installedDir, { recursive: true });
     await this.loadMetadata();
