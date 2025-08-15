@@ -153,6 +153,14 @@ export class FeatureFlagService {
   }
 
   /**
+   * Check if Config Tools Menu is enabled
+   * @throws Error if service not initialized
+   */
+  isConfigToolsMenuEnabled(): boolean {
+    return this.isFlagEnabled("enableConfigToolsMenu");
+  }
+
+  /**
    * Get all feature flags
    * @throws Error if service not initialized
    */
@@ -218,4 +226,14 @@ export async function isDxtEnabledViaService(): Promise<boolean> {
   const service = getFeatureFlagService();
   await service.initialize();
   return service.isDxtEnabled();
+}
+
+/**
+ * Convenience function to check if Config Tools Menu is enabled
+ * Ensures the service is initialized before checking
+ */
+export async function isConfigToolsMenuEnabledViaService(): Promise<boolean> {
+  const service = getFeatureFlagService();
+  await service.initialize();
+  return service.isConfigToolsMenuEnabled();
 }

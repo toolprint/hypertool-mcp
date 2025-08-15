@@ -2,6 +2,20 @@
  * TypeScript interfaces for Hypertool MCP server implementation
  */
 
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
+
+/**
+ * Interface for components that provide MCP tools
+ * Both ToolsetManager and ConfigToolsManager implement this interface
+ */
+export interface ToolsProvider {
+  /**
+   * Get MCP tools provided by this component
+   * @returns Array of Tool definitions exposed by this provider
+   */
+  getMcpTools(): Tool[];
+}
+
 /**
  * Server transport types (inbound connections TO this server)
  */

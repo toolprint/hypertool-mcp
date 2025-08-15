@@ -11,11 +11,11 @@ import {
   IToolDiscoveryEngine,
   ToolDiscoveryEngine,
 } from "../discovery/index.js";
-import { IConnectionManager, ConnectionManager } from "../connection/index.js";
+import { IConnectionManager, ConnectionManager, ConnectionState } from "../connection/index.js";
 import { ExtensionAwareConnectionFactory } from "../connection/extensionFactory.js";
 import { ExtensionManager } from "../extensions/manager.js";
 import { APP_NAME, APP_TECHNICAL_NAME, ServerConfig } from "../config/index.js";
-import { isDxtEnabledViaService } from "../config/featureFlagService.js";
+import { isDxtEnabledViaService, isConfigToolsMenuEnabledViaService } from "../config/featureFlagService.js";
 import ora from "ora";
 
 // Helper to create conditional spinners
@@ -23,10 +23,10 @@ function createSpinner(text: string, isStdio: boolean) {
   if (isStdio) {
     // Return a mock spinner that does nothing in stdio mode
     return {
-      start: () => ({ succeed: () => {}, fail: () => {}, warn: () => {} }),
-      succeed: () => {},
-      fail: () => {},
-      warn: () => {},
+      start: () => ({ succeed: () => { }, fail: () => { }, warn: () => { } }),
+      succeed: () => { },
+      fail: () => { },
+      warn: () => { },
     };
   }
   return ora(text).start();
@@ -35,12 +35,13 @@ import { createChildLogger } from "../utils/logging.js";
 
 const logger = createChildLogger({ module: "server/enhanced" });
 // Note: All mcp-tools functionality now handled by ToolsetManager
-import { ToolsetManager, ToolsetChangeEvent } from "../toolset/manager.js";
+import { ToolsetManager, ToolsetChangeEvent } from "./tools/toolset/manager.js";
+import { ConfigToolsManager } from "./tools/config-tools/manager.js";
+import { createEnterConfigurationModeModule } from "./tools/common/enter-configuration-mode.js";
 import { DiscoveredToolsChangedEvent } from "../discovery/types.js";
 import {
   ToolDependencies,
   ToolModule,
-  TOOL_MODULE_FACTORIES,
 } from "./tools/index.js";
 import chalk from "chalk";
 import { output } from "../utils/output.js";
@@ -58,14 +59,25 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   private connectionManager?: IConnectionManager;
   private extensionManager?: ExtensionManager;
   private toolsetManager: ToolsetManager;
+  private configToolsManager?: ConfigToolsManager;
+  private configurationMode: boolean = false;
+  private enterConfigurationModeTool?: ToolModule;
   private runtimeOptions?: RuntimeOptions;
-  private toolModules: ToolModule[] = [];
-  private toolModuleMap: Map<string, ToolModule> = new Map();
+  private configToolsMenuEnabled: boolean = true;
 
   constructor(config: MetaMCPServerConfig) {
     super(config);
     this.toolsetManager = new ToolsetManager();
   }
+
+  /**
+   * Handle mode change request from ConfigToolsManager (toggle mode)
+   */
+  private handleConfigToolsModeChange = async () => {
+    this.configurationMode = !this.configurationMode;
+    logger.debug(`Mode changed via ConfigToolsManager: ${this.configurationMode ? 'configuration' : 'normal'}`);
+    await this.notifyToolsChanged();
+  };
 
   /**
    * Enhanced start method with routing initialization
@@ -259,39 +271,30 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     // Filter out any configurations that would cause HyperTool to connect to itself
     const filteredConfigs = this.filterSelfReferencingServers(serverConfigs);
 
+    if (Object.keys(filteredConfigs).length === 0) {
+      mainSpinner.succeed("No MCP servers configured");
+      return;
+    }
+
     await this.connectionManager.initialize(filteredConfigs);
     mainSpinner.succeed("🔗 Connection manager initialized");
+    await this.connectionManager.start()
 
-    // Connect to each server individually with progress
-    const serverEntries = Object.entries(filteredConfigs);
-    if (serverEntries.length > 0) {
-      for (const [serverName, config] of serverEntries) {
-        const serverSpinner = createSpinner(
-          `Connecting to [${serverName}] MCP <-> [${config.type}]...`,
-          isStdio
-        );
-
-        try {
-          await this.connectionManager.connect(serverName);
-          serverSpinner.succeed(
-            `Connected to [${serverName}] MCP <-> [${config.type}]`
-          );
-        } catch (error) {
-          serverSpinner.fail(
-            `Failed to connect to ${serverName}: ${(error as Error).message}`
-          );
-          // Don't fail the entire startup for individual server connection failures
-        }
-      }
-    } else {
-      // No servers configured - show helpful message
-      const infoSpinner = createSpinner(
-        "No MCP servers configured yet",
+    for (const [sName, _] of Object.entries(serverConfigs)) {
+      const serverSpinner = createSpinner(
+        `Checking connection to [${sName}] MCP <-> [${serverConfigs[sName].type}]...`,
         isStdio
       );
-      infoSpinner.succeed(
-        `No MCP servers configured. Use '${APP_TECHNICAL_NAME} mcp add' to add servers.`
-      );
+      try {
+        const cmStatus = this.connectionManager.status[sName];
+        if (cmStatus.state === "connected") {
+          serverSpinner.succeed(`Connected to [${sName}] MCP <-> [${serverConfigs[sName].type}]`);
+        } else {
+          serverSpinner.fail(`Failed to connect to [${sName}] MCP <-> [${serverConfigs[sName].type}]`);
+        }
+      } catch (error) {
+        serverSpinner.fail(`Failed to check connection to [${sName}] MCP <-> [${serverConfigs[sName].type}]: ${(error as Error).message}`);
+      }
     }
   }
 
@@ -468,7 +471,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             if (options.debug) {
               logger.info(
                 `Tools changed while toolset "${activeToolsetInfo.name}" is equipped. ` +
-                  `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
+                `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
               );
             }
           }
@@ -481,25 +484,8 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       );
 
       // Initialize tool modules after all dependencies are set up
-      this.initializeToolModules();
-
-      // Check for toolset configuration
-      if (this.runtimeOptions?.equipToolset) {
-        // User explicitly specified a toolset to equip
-        logger.info(`Equipping toolset: ${this.runtimeOptions!.equipToolset!}`);
-        const result = await this.toolsetManager.equipToolset(
-          this.runtimeOptions!.equipToolset!
-        );
-        if (!result.success) {
-          logger.error(`Failed to equip toolset: ${result.error}`);
-        }
-      } else {
-        // No explicit toolset specified, try to restore the last equipped one
-        const restored = await this.toolsetManager.restoreLastEquippedToolset();
-        if (!restored) {
-          logger.debug("No previously equipped toolset to restore");
-        }
-      }
+      // This also restores the last equipped toolset and sets initial mode
+      await this.initializeToolModules();
 
       await this.checkToolsetStatus(options.debug);
     } catch (error) {
@@ -511,21 +497,70 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   /**
    * Initialize tool modules with dependency injection
    */
-  private initializeToolModules(): void {
+  private async initializeToolModules(): Promise<void> {
     const dependencies: ToolDependencies = {
       toolsetManager: this.toolsetManager,
       discoveryEngine: this.discoveryEngine,
       runtimeOptions: this.runtimeOptions,
     };
 
-    // Create tool modules using factory functions
-    this.toolModules = TOOL_MODULE_FACTORIES.map((tf) => tf(dependencies));
-
-    // Create fast lookup map
-    this.toolModuleMap.clear();
-    for (const module of this.toolModules) {
-      this.toolModuleMap.set(module.toolName, module);
+    // Restore toolset BEFORE initializing configuration mode
+    // This ensures we know if a toolset is active when determining initial mode
+    if (this.runtimeOptions?.equipToolset) {
+      // User explicitly specified a toolset to equip
+      logger.info(`Equipping toolset: ${this.runtimeOptions!.equipToolset!}`);
+      const result = await this.toolsetManager.equipToolset(
+        this.runtimeOptions!.equipToolset!
+      );
+      if (!result.success) {
+        logger.error(`Failed to equip toolset: ${result.error}`);
+      }
+    } else {
+      // No explicit toolset specified, try to restore the last equipped one
+      const restored = await this.toolsetManager.restoreLastEquippedToolset();
+      if (!restored) {
+        logger.debug("No previously equipped toolset to restore");
+      }
     }
+
+    // Initialize configuration mode components
+    await this.initializeConfigurationMode(dependencies);
+  }
+
+  /**
+   * Initialize configuration mode components
+   */
+  private async initializeConfigurationMode(dependencies: ToolDependencies): Promise<void> {
+    // Check if configuration tools menu is enabled via feature flag
+    this.configToolsMenuEnabled = await isConfigToolsMenuEnabledViaService();
+    
+    if (!this.configToolsMenuEnabled) {
+      logger.info('Configuration tools menu disabled - running in legacy mode (all tools exposed together)');
+      // In legacy mode, we still create ConfigToolsManager to have access to config tools
+      this.configToolsManager = new ConfigToolsManager(dependencies);
+      // Don't set configuration mode or create mode switching tools
+      return;
+    }
+
+    // Normal configuration mode setup
+    // Create ConfigToolsManager with mode change callback
+    this.configToolsManager = new ConfigToolsManager(
+      dependencies,
+      this.handleConfigToolsModeChange
+    );
+
+    // Create enter-configuration-mode tool that server will manage
+    this.enterConfigurationModeTool = createEnterConfigurationModeModule(
+      dependencies,
+      this.handleConfigToolsModeChange
+    );
+
+    // Determine initial mode based on toolset status
+    // At this point, toolset has already been restored if one was saved
+    const hasEquippedToolset = this.toolsetManager.hasActiveToolset();
+    this.configurationMode = !hasEquippedToolset;
+
+    logger.debug(`Initial configuration mode: ${this.configurationMode ? 'configuration' : 'normal'} (toolset equipped: ${hasEquippedToolset})`);
   }
 
   /**
@@ -536,9 +571,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const listResult = await this.toolsetManager.listSavedToolsets();
       const storedToolsets = listResult.success
         ? listResult.toolsets.reduce(
-            (acc: any, t: any) => ({ ...acc, [t.name]: t }),
-            {}
-          )
+          (acc: any, t: any) => ({ ...acc, [t.name]: t }),
+          {}
+        )
         : {};
       const hasToolsets = Object.keys(storedToolsets).length > 0;
       const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();
@@ -582,56 +617,141 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   }
 
   /**
-   * Get available tools from discovery engine and built-in toolset management tools
+   * Get available tools based on current mode
    */
   protected async getAvailableTools(): Promise<Tool[]> {
     const tools: Tool[] = [];
 
-    // Add built-in toolset management tools from modules
-    tools.push(...this.toolModules.map((module) => module.definition));
+    // Legacy mode: return all tools (backward compatibility)
+    if (!this.configToolsMenuEnabled) {
+      // Add all configuration tools
+      if (this.configToolsManager) {
+        try {
+          const configTools = this.configToolsManager.getMcpTools();
+          tools.push(...configTools);
+          logger.debug(`Legacy mode: added ${configTools.length} configuration tools`);
+        } catch (error) {
+          logger.error("Failed to get configuration tools:", error);
+        }
+      }
 
-    // Add tools from toolset manager (handles filtering and formatting)
-    try {
-      const mcpTools = this.toolsetManager.getMcpTools();
-      tools.push(...mcpTools);
-    } catch (error) {
-      logger.error("Failed to get available tools:", error);
+      // Add all toolset tools
+      try {
+        const mcpTools = this.toolsetManager.getMcpTools();
+        tools.push(...mcpTools);
+        logger.debug(`Legacy mode: added ${mcpTools.length} toolset tools`);
+      } catch (error) {
+        logger.error("Failed to get toolset tools:", error);
+      }
+
+      logger.debug(`Legacy mode: returning ${tools.length} total tools`);
+      return tools;
     }
 
+    // Configuration mode logic
+    if (this.configurationMode) {
+      // Configuration mode: show only configuration tools
+      if (this.configToolsManager) {
+        try {
+          const configTools = this.configToolsManager.getMcpTools();
+          tools.push(...configTools);
+          logger.debug(`Configuration mode: returning ${configTools.length} configuration tools`);
+        } catch (error) {
+          logger.error("Failed to get configuration tools:", error);
+        }
+      }
+    } else {
+      // Normal mode: show toolset tools + enter-configuration-mode
+
+      // Add tools from toolset manager (handles filtering and formatting)
+      try {
+        const mcpTools = this.toolsetManager.getMcpTools();
+        tools.push(...mcpTools);
+        logger.debug(`Normal mode: got ${mcpTools.length} tools from toolset manager`);
+      } catch (error) {
+        logger.error("Failed to get toolset tools:", error);
+      }
+
+      // Add enter-configuration-mode tool
+      if (this.enterConfigurationModeTool) {
+        tools.push(this.enterConfigurationModeTool.definition);
+      }
+    }
+
+    logger.debug(`Total tools available: ${tools.length} (mode: ${this.configurationMode ? 'configuration' : 'normal'})`);
     return tools;
   }
 
   /**
-   * Handle tool call requests via request router
+   * Handle tool call requests with mode-based routing
    */
   protected async handleToolCall(name: string, args?: any): Promise<any> {
-    // Handle built-in toolset management tools first
     try {
-      // Check if this is a built-in toolset management tool (O(1) lookup)
-      const toolModule = this.toolModuleMap.get(name);
-      if (toolModule) {
-        return await toolModule.handler(args);
+      // Legacy mode: try config tools first, then toolset/router
+      if (!this.configToolsMenuEnabled) {
+        // Try configuration tools first
+        if (this.configToolsManager) {
+          const configTools = this.configToolsManager.getMcpTools();
+          const isConfigTool = configTools.some(tool => tool.name === name);
+          if (isConfigTool) {
+            return await this.configToolsManager.handleToolCall(name, args);
+          }
+        }
+
+        // Fall through to router for toolset/discovered tools
+        const originalToolName = this.toolsetManager.getOriginalToolName(name);
+        const toolNameForRouter = originalToolName || name;
+
+        if (!this.requestRouter) {
+          throw new Error(
+            "Request router is not available. Server may not be fully initialized."
+          );
+        }
+
+        const response = await this.requestRouter.routeToolCall({
+          name: toolNameForRouter,
+          arguments: args,
+        });
+
+        return response;
       }
 
-      // Check if this is a flattened tool name from active toolset
-      const originalToolName = this.toolsetManager.getOriginalToolName(name);
-      const toolNameForRouter = originalToolName || name;
+      // Configuration mode routing
+      if (this.configurationMode) {
+        // Configuration mode: route to ConfigToolsManager
+        if (this.configToolsManager) {
+          return await this.configToolsManager.handleToolCall(name, args);
+        } else {
+          throw new Error("Configuration tools manager not available");
+        }
+      } else {
+        // Normal mode: check enter-configuration-mode, then toolset/router
 
-      // Handle non-toolset tools via request router
-      if (!this.requestRouter) {
-        throw new Error(
-          "Request router is not available. Server may not be fully initialized."
-        );
+        // Check if this is enter-configuration-mode tool
+        if (name === "enter-configuration-mode" && this.enterConfigurationModeTool) {
+          return await this.enterConfigurationModeTool.handler(args);
+        }
+
+        // Check if this is a flattened tool name from active toolset
+        const originalToolName = this.toolsetManager.getOriginalToolName(name);
+        const toolNameForRouter = originalToolName || name;
+
+        // Handle non-toolset tools via request router
+        if (!this.requestRouter) {
+          throw new Error(
+            "Request router is not available. Server may not be fully initialized."
+          );
+        }
+
+        const response = await this.requestRouter.routeToolCall({
+          name: toolNameForRouter,
+          arguments: args,
+        });
+
+        return response;
       }
-
-      const response = await this.requestRouter.routeToolCall({
-        name: toolNameForRouter,
-        arguments: args,
-      });
-
-      return response;
     } catch (error) {
-      logger.error("Tool call failed:", error);
+      logger.error(`Tool call failed (${name}):`, error);
       throw error;
     }
   }

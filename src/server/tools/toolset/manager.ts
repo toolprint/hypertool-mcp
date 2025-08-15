@@ -33,7 +33,7 @@ import {
   DiscoveredTool,
   IToolDiscoveryEngine,
   DiscoveredToolsChangedEvent,
-} from "../discovery/types.js";
+} from "../../../discovery/types.js";
 import {
   ToolsetConfig,
   ValidationResult,
@@ -43,18 +43,19 @@ import {
 } from "./types.js";
 import { loadToolsetConfig, saveToolsetConfig } from "./loader.js";
 import { validateToolsetConfig } from "./validator.js";
-import { createChildLogger } from "../utils/logging.js";
+import { createChildLogger } from "../../../utils/logging.js";
 import {
   BuildToolsetResponse,
   ListSavedToolsetsResponse,
   EquipToolsetResponse,
   ToolsetInfo,
-} from "../server/tools/schemas.js";
+} from "../schemas.js";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
+import { ToolsProvider } from "../../types.js";
 
 const logger = createChildLogger({ module: "toolset" });
 
-export class ToolsetManager extends EventEmitter {
+export class ToolsetManager extends EventEmitter implements ToolsProvider {
   private currentToolset?: ToolsetConfig;
   private configPath?: string;
   private discoveryEngine?: IToolDiscoveryEngine;
@@ -454,7 +455,7 @@ export class ToolsetManager extends EventEmitter {
       }
 
       // Check if toolset already exists
-      const preferences = await import("../config/preferenceStore.js");
+      const preferences = await import("../../../config/preferenceStore.js");
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
       const saveToolsetsToPreferences = preferences.saveStoredToolsets;
       const stored = await loadToolsetsFromPreferences();
@@ -536,7 +537,7 @@ export class ToolsetManager extends EventEmitter {
     message?: string;
   }> {
     try {
-      const preferences = await import("../config/preferenceStore.js");
+      const preferences = await import("../../../config/preferenceStore.js");
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
       const saveToolsetsToPreferences = preferences.saveStoredToolsets;
       const stored = await loadToolsetsFromPreferences();
@@ -582,7 +583,7 @@ export class ToolsetManager extends EventEmitter {
    */
   async listSavedToolsets(): Promise<ListSavedToolsetsResponse> {
     try {
-      const preferences = await import("../config/preferenceStore.js");
+      const preferences = await import("../../../config/preferenceStore.js");
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
       const stored = await loadToolsetsFromPreferences();
 
@@ -726,7 +727,7 @@ export class ToolsetManager extends EventEmitter {
   async equipToolset(toolsetName: string): Promise<EquipToolsetResponse> {
     try {
       // Import the function here to avoid circular imports
-      const preferences = await import("../config/preferenceStore.js");
+      const preferences = await import("../../../config/preferenceStore.js");
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
       const saveLastEquippedToolset = preferences.saveLastEquippedToolset;
 
@@ -774,7 +775,7 @@ export class ToolsetManager extends EventEmitter {
 
     // Clear the last equipped toolset from preferences
     try {
-      const preferences = await import("../config/preferenceStore.js");
+      const preferences = await import("../../../config/preferenceStore.js");
       const saveLastEquippedToolset = preferences.saveLastEquippedToolset;
       await saveLastEquippedToolset(undefined);
     } catch (error) {
@@ -808,7 +809,7 @@ export class ToolsetManager extends EventEmitter {
    */
   async restoreLastEquippedToolset(): Promise<boolean> {
     try {
-      const preferences = await import("../config/preferenceStore.js");
+      const preferences = await import("../../../config/preferenceStore.js");
       const getLastEquippedToolset = preferences.getLastEquippedToolset;
 
       const lastToolsetName = await getLastEquippedToolset();

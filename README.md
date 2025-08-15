@@ -60,6 +60,8 @@ AI: "Equipped! I now have just the tools needed for development"
 
 💡 **Want automated setup?** Try our interactive `setup` command - see [Advanced Guide](guides/ADVANCED.md#setup-command) for details.
 
+📚 **Configuration Mode:** HyperTool uses a smart Configuration Mode to keep toolset management separate from your operational tools. Learn more in the [Configuration Mode Guide](guides/CONFIGURATION_MODE.md).
+
 ## 🎬 Demo
 
 ### Hotswap toolsets across 100+ tools

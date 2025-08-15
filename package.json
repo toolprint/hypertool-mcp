@@ -8,8 +8,8 @@
   },
   "scripts": {
     "start": "node dist/bin.js",
-    "start:stdio": "node dist/bin.js --mcp-config test-mcp.json --debug",
-    "start:http": "node dist/bin.js --transport http --mcp-config test-mcp.json --debug",
+    "start:stdio": "node dist/bin.js --mcp-config mcp.test.json --debug",
+    "start:http": "node dist/bin.js --transport http --port 7001 --mcp-config mcp.test.json --debug",
     "dev": "npm run build && node dist/bin.js --debug",
     "smithery:build": "tsc && npx @smithery/cli build src/server.ts --out dist/server.cjs --transport stdio",
     "smithery:build:container": "npm run docker:build && echo 'Container build completed for Smithery'",

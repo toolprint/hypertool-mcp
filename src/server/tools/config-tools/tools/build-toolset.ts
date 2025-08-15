@@ -3,8 +3,8 @@
  */
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolModuleFactory, ToolModule } from "./types.js";
-import { buildToolsetResponseSchema } from "./schemas.js";
+import { ToolModuleFactory, ToolModule } from "../../types.js";
+import { buildToolsetResponseSchema } from "../../schemas.js";
 
 export const buildToolsetDefinition: Tool = {
   name: "build-toolset",
@@ -64,7 +64,8 @@ export const buildToolsetDefinition: Tool = {
 };
 
 export const createBuildToolsetModule: ToolModuleFactory = (
-  deps
+  deps,
+  onModeChangeRequest?: () => void
 ): ToolModule => {
   return {
     toolName: "build-toolset",
@@ -79,6 +80,11 @@ export const createBuildToolsetModule: ToolModuleFactory = (
             autoEquip: args?.autoEquip,
           }
         );
+
+        // Auto-exit to normal mode if autoEquip succeeded
+        if (args?.autoEquip && result.meta?.success && onModeChangeRequest) {
+          onModeChangeRequest();
+        }
 
         return {
           content: [

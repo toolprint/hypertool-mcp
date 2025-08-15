@@ -3,7 +3,7 @@
  */
 
 import { Command } from "commander";
-import { ToolsetManager } from "../../toolset/manager.js";
+import { ToolsetManager } from "../../server/tools/toolset/manager.js";
 import { ToolDiscoveryEngine } from "../../discovery/index.js";
 import { ConnectionManager } from "../../connection/manager.js";
 import { theme, semantic } from "../../utils/theme.js";
@@ -11,7 +11,7 @@ import { createChildLogger } from "../../utils/logging.js";
 import type {
   DynamicToolReference,
   ToolsetToolNote,
-} from "../../toolset/types.js";
+} from "../../server/tools/toolset/types.js";
 
 const logger = createChildLogger({ module: "toolset-cli" });
 

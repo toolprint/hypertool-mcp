@@ -3,7 +3,7 @@
  */
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolModuleFactory, ToolModule } from "./types.js";
+import { ToolModuleFactory, ToolModule } from "../../types.js";
 
 export const equipToolsetDefinition: Tool = {
   name: "equip-toolset",
@@ -22,7 +22,8 @@ export const equipToolsetDefinition: Tool = {
 };
 
 export const createEquipToolsetModule: ToolModuleFactory = (
-  deps
+  deps,
+  onModeChangeRequest?: () => void
 ): ToolModule => {
   return {
     toolName: "equip-toolset",
@@ -34,6 +35,11 @@ export const createEquipToolsetModule: ToolModuleFactory = (
 
         const equipResult = await deps.toolsetManager.equipToolset(args?.name);
         if (equipResult.success) {
+          // Auto-exit to normal mode on successful equip
+          if (onModeChangeRequest) {
+            onModeChangeRequest();
+          }
+          
           return {
             content: [
               {
