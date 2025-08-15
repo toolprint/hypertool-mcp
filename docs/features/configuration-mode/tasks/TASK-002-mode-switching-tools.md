@@ -34,31 +34,107 @@ Create the mode switching tools (`enter-configuration-mode` and `exit-configurat
 
 ### Tool Specifications
 
-#### enter-configuration-mode
+#### Selected Names: `enter-configuration-mode` / `exit-configuration-mode`
+
+These tools should leverage proper MCP annotations for enhanced LLM understanding:
+
 ```typescript
-{
+// enter-configuration-mode tool definition
+export const enterConfigurationModeDefinition: Tool = {
   name: "enter-configuration-mode",
-  description: "Switch to configuration mode to manage toolsets and tool annotations. This will show only configuration tools and hide operational tools.",
+  description: "Switch the server to configuration mode for managing tools and toolsets. In this mode, you can access: list-available-tools (browse all discovered tools), build-toolset (create custom tool collections), list-saved-toolsets (view saved configurations), equip-toolset (activate a toolset), delete-toolset (remove configurations), get-active-toolset (check current status), and add-tool-annotation (add context to tools). Operational tools will be hidden while in configuration mode. Use this when you need to organize, create, or modify tool configurations.",
   inputSchema: {
-    type: "object",
+    type: "object" as const,
     properties: {},
     additionalProperties: false
+  },
+  // MCP annotations provide hints to LLMs about tool behavior
+  annotations: {
+    title: "Enter Configuration Mode",
+    readOnlyHint: false,  // This changes server state
+    destructiveHint: false,  // Not destructive, just changes mode
+    idempotentHint: true,  // Calling multiple times has same effect
+    openWorldHint: false,  // Does not interact with external systems
+  }
+}
+
+// exit-configuration-mode tool definition
+export const exitConfigurationModeDefinition: Tool = {
+  name: "exit-configuration-mode",
+  description: "Leave configuration mode and return to normal operational mode. This will hide configuration tools and restore access to your equipped toolset's tools (or show only navigation tools if no toolset is equipped). The server will automatically exit configuration mode when you successfully equip a toolset. Use this when you're done with configuration tasks and ready to use your tools.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {},
+    additionalProperties: false
+  },
+  // MCP annotations provide hints to LLMs about tool behavior
+  annotations: {
+    title: "Exit Configuration Mode",
+    readOnlyHint: false,  // This changes server state
+    destructiveHint: false,  // Not destructive, just changes mode
+    idempotentHint: true,  // Calling multiple times has same effect
+    openWorldHint: false,  // Does not interact with external systems
   }
 }
 ```
 
-#### exit-configuration-mode
+### Annotations for Other Configuration Tools
+
+The existing configuration tools should also have appropriate MCP annotations to help LLMs understand their behavior:
+
 ```typescript
-{
-  name: "exit-configuration-mode",
-  description: "Exit configuration mode and return to normal operation with your equipped toolset or all available tools.",
-  inputSchema: {
-    type: "object",
-    properties: {},
-    additionalProperties: false
-  }
+// list-available-tools - already has annotations (see src/server/tools/list-available-tools.ts)
+annotations: {
+  title: "List Available Tools",
+  readOnlyHint: true,  // Just reads, doesn't modify
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false,
+}
+
+// build-toolset - should have annotations like:
+annotations: {
+  title: "Build Toolset",
+  readOnlyHint: false,  // Creates new toolset
+  destructiveHint: false,  // Not destructive, creates new resource
+  idempotentHint: false,  // Each call creates a new toolset
+  openWorldHint: false,  // Works with local configuration
+}
+
+// equip-toolset - should have annotations like:
+annotations: {
+  title: "Equip Toolset",
+  readOnlyHint: false,  // Changes active toolset
+  destructiveHint: false,  // Not destructive, just switches
+  idempotentHint: true,  // Equipping same toolset multiple times is same
+  openWorldHint: false,  // Local configuration change
+}
+
+// delete-toolset - should have annotations like:
+annotations: {
+  title: "Delete Toolset",
+  readOnlyHint: false,  // Modifies saved configurations
+  destructiveHint: true,  // DESTRUCTIVE - permanently removes toolset
+  idempotentHint: true,  // Deleting already-deleted toolset fails safely
+  openWorldHint: false,  // Local configuration change
 }
 ```
+
+### MCP Annotation Guidelines
+
+The MCP annotations provide semantic hints to help LLMs understand tool behavior:
+
+- **title**: Human-readable name for the tool
+- **readOnlyHint**: `true` if the tool only reads data without making changes
+- **destructiveHint**: `true` if the tool destroys data or resources permanently
+- **idempotentHint**: `true` if calling the tool multiple times with same args has same effect as calling once
+- **openWorldHint**: `true` if the tool interacts with external systems beyond the MCP server
+
+These hints help LLMs:
+1. Understand which tools are safe to call repeatedly
+2. Be cautious with destructive operations
+3. Know which tools might have external side effects
+4. Optimize tool usage patterns
 
 ## Testing Requirements
 - Test mode switching logic

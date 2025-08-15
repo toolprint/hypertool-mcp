@@ -133,18 +133,20 @@ Implement a "Configuration Mode" that:
 
 #### 3. Mode Switching Behavior
 
-**`enter-configuration-mode`**
+**`open-toolset-menu`** (Recommended name)
 - Available only in Normal mode
-- Switches server to Configuration mode
+- Opens the toolset configuration menu
 - Does NOT unequip current toolset
 - Triggers `tools_changed` notification
 - Returns confirmation with list of available configuration tools
+- Description clearly lists all available configuration options
 
-**`exit-configuration-mode`**
+**`close-toolset-menu`** (Recommended name)
 - Available only in Configuration mode
-- Returns server to Normal mode
+- Closes the menu and returns to operational tools
 - Triggers `tools_changed` notification
 - Returns confirmation with current toolset status
+- Description explains what tools will be available after closing
 
 **Auto-Exit Triggers:**
 - When `equip-toolset` succeeds → automatically exit to Normal mode

@@ -4,6 +4,8 @@
     "allow": [
       "WebFetch(domain:docs.anthropic.com)",
       "WebFetch(domain:github.com)",
+      "WebFetch(domain:modelcontextprotocol.io)",
+      "WebFetch(domain:spec.modelcontextprotocol.io)",
       "Bash(npm run lint)",
       "Bash(npm run format:check:*)",
       "Bash(npm run format:*)",
