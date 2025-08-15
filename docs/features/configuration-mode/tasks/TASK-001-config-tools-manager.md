@@ -1,4 +1,4 @@
-# TASK-001: Create ConfigurationToolsManager
+# TASK-001: Create ConfigToolsManager
 
 ## Task Overview
 **Priority**: P0 (Blocking)
@@ -7,10 +7,10 @@
 **Status**: Not Started
 
 ## Description
-Create a new ConfigurationToolsManager class that manages all configuration-related tools, parallel to the existing ToolsetManager.
+Create a new ConfigToolsManager class that manages all configuration-related tools, parallel to the existing ToolsetManager.
 
 ## Acceptance Criteria
-- [ ] ConfigurationToolsManager class created at `src/config-tools/manager.ts`
+- [ ] ConfigToolsManager class created at `src/config-tools/manager.ts`
 - [ ] Implements `getMcpTools()` method that returns configuration tools
 - [ ] Registers all existing configuration tool modules
 - [ ] Includes type definitions for dependencies
@@ -20,7 +20,7 @@ Create a new ConfigurationToolsManager class that manages all configuration-rela
 
 ### Implementation Steps
 1. Create directory structure: `src/config-tools/`
-2. Create `manager.ts` with ConfigurationToolsManager class
+2. Create `manager.ts` with ConfigToolsManager class
 3. Create `types.ts` with necessary interfaces
 4. Import and register existing tool modules from `src/server/tools/`
 5. Implement tool filtering logic for configuration mode
@@ -41,7 +41,7 @@ Create a new ConfigurationToolsManager class that manages all configuration-rela
 - add-tool-annotation
 
 ## Testing Requirements
-- Unit tests for ConfigurationToolsManager initialization
+- Unit tests for ConfigToolsManager initialization
 - Tests for getMcpTools() method
 - Tests for tool registration
 - Tests for error handling

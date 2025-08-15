@@ -47,7 +47,7 @@ src/types/options.ts            # RuntimeOptions interface
 
 ### For Each Task
 
-#### TASK-001: ConfigurationToolsManager
+#### TASK-001: ConfigToolsManager
 **Start Here** - This is the foundation
 1. Study `src/toolset/manager.ts` for the pattern to follow
 2. Look at how tool modules are structured in `src/server/tools/`
@@ -151,12 +151,12 @@ npm test -- --coverage
 - **Discovery Engine**: Finds tools from downstream MCP servers
 
 ### Reference Implementation
-The closest reference is the ToolsetManager. Your ConfigurationToolsManager should follow a similar pattern but for configuration tools instead of discovered tools.
+The closest reference is the ToolsetManager. Your ConfigToolsManager should follow a similar pattern but for configuration tools instead of discovered tools.
 
 ### Architecture Decision
 The separation of concerns is key:
 - **ToolsetManager**: Manages discovered tools from downstream servers
-- **ConfigurationToolsManager**: Manages built-in configuration tools
+- **ConfigToolsManager**: Manages built-in configuration tools
 - **EnhancedMCPServer**: Routes between them based on mode
 
 ## Success Criteria

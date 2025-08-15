@@ -6,7 +6,7 @@ This directory contains the task breakdown for implementing the Configuration Mo
 ## Task Dependency Graph
 
 ```
-TASK-001 (ConfigurationToolsManager)
+TASK-001 (ConfigToolsManager)
     ├── TASK-002 (Mode Switching Tools)
     └── TASK-003 (Server Integration)
             ├── TASK-004 (Auto-Exit Triggers)
@@ -19,7 +19,7 @@ TASK-001 (ConfigurationToolsManager)
 
 | Task ID | Title | Priority | Effort | Dependencies | Status |
 |---------|-------|----------|--------|--------------|--------|
-| [TASK-001](./TASK-001-config-tools-manager.md) | Create ConfigurationToolsManager | P0 | 2 days | None | Not Started |
+| [TASK-001](./TASK-001-config-tools-manager.md) | Create ConfigToolsManager | P0 | 2 days | None | Not Started |
 | [TASK-002](./TASK-002-mode-switching-tools.md) | Implement Mode Switching Tools | P0 | 1 day | TASK-001 | Not Started |
 | [TASK-003](./TASK-003-server-mode-integration.md) | Server Mode Integration | P0 | 2 days | TASK-001, TASK-002 | Not Started |
 | [TASK-004](./TASK-004-auto-exit-triggers.md) | Auto-Exit Triggers | P1 | 1 day | TASK-003 | Not Started |
@@ -32,7 +32,7 @@ TASK-001 (ConfigurationToolsManager)
 ## Implementation Order
 
 ### Phase 1: Foundation (3 days)
-1. **TASK-001**: Create ConfigurationToolsManager
+1. **TASK-001**: Create ConfigToolsManager
 2. **TASK-002**: Implement Mode Switching Tools
 
 ### Phase 2: Integration (3.5 days)

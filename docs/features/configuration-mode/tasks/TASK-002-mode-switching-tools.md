@@ -12,7 +12,7 @@ Create the mode switching tools (`enter-configuration-mode` and `exit-configurat
 ## Acceptance Criteria
 - [ ] `enter-configuration-mode` tool module created
 - [ ] `exit-configuration-mode` tool module created
-- [ ] Tools properly registered in ConfigurationToolsManager
+- [ ] Tools properly registered in ConfigToolsManager
 - [ ] Tools trigger mode state changes in server
 - [ ] Tools trigger `tools_changed` notifications
 - [ ] Unit tests with >80% coverage
@@ -24,7 +24,7 @@ Create the mode switching tools (`enter-configuration-mode` and `exit-configurat
 2. Create tool module for `exit-configuration-mode`
 3. Define input/output schemas using Zod
 4. Implement tool handlers with proper error handling
-5. Add tools to ConfigurationToolsManager registration
+5. Add tools to ConfigToolsManager registration
 
 ### Files to Create
 - `src/config-tools/tools/enter-configuration-mode.ts`

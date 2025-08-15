@@ -22,7 +22,7 @@ Modify the EnhancedMCPServer to support configuration mode, including mode state
 
 ### Implementation Steps
 1. Add mode state property to EnhancedMCPServer
-2. Instantiate ConfigurationToolsManager in server initialization
+2. Instantiate ConfigToolsManager in server initialization
 3. Modify tool listing logic to check mode
 4. Modify tool calling logic to route to correct manager
 5. Add initialization logic to determine starting mode
@@ -37,7 +37,7 @@ Modify the EnhancedMCPServer to support configuration mode, including mode state
 #### Server Properties
 ```typescript
 private configurationMode: boolean = false;
-private configToolsManager: ConfigurationToolsManager;
+private configToolsManager: ConfigToolsManager;
 ```
 
 #### listTools() Method

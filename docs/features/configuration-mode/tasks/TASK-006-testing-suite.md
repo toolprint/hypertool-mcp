@@ -10,7 +10,7 @@
 Create comprehensive test coverage for the configuration mode feature, including unit tests, integration tests, and end-to-end tests.
 
 ## Acceptance Criteria
-- [ ] Unit tests for ConfigurationToolsManager
+- [ ] Unit tests for ConfigToolsManager
 - [ ] Unit tests for mode switching tools
 - [ ] Integration tests for server mode logic
 - [ ] End-to-end tests for complete workflows
@@ -22,7 +22,7 @@ Create comprehensive test coverage for the configuration mode feature, including
 ### Test Categories
 
 #### 1. Unit Tests
-- ConfigurationToolsManager
+- ConfigToolsManager
   - Initialization
   - Tool registration
   - getMcpTools() method

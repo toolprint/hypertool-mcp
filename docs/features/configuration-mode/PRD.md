@@ -44,7 +44,7 @@ Currently, HyperTool exposes all configuration tools (toolset management, annota
                  │                           │
                  ▼                           ▼
 ┌─────────────────────────────┐  ┌─────────────────────────────┐
-│  ConfigurationToolsManager  │  │      ToolsetManager         │
+│    ConfigToolsManager       │  │      ToolsetManager         │
 │                             │  │                             │
 │  Tools Exposed:             │  │  Tools Exposed:             │
 │  ✓ list-available-tools    │  │  ✓ Tools from equipped      │
@@ -162,7 +162,7 @@ Implement a "Configuration Mode" that:
 
 #### Component Architecture
 
-**ConfigurationToolsManager** (New Component)
+**ConfigToolsManager** (New Component)
 - Manages all configuration-related tools
 - Located at: `src/config-tools/manager.ts`
 - Responsibilities:
@@ -178,7 +178,7 @@ Implement a "Configuration Mode" that:
 
 **EnhancedMCPServer** (Modified)
 - Maintains `configurationMode` state
-- Instantiates both ToolsetManager and ConfigurationToolsManager
+- Instantiates both ToolsetManager and ConfigToolsManager
 - Tool exposure logic:
   ```typescript
   // Pseudocode
@@ -195,7 +195,7 @@ Implement a "Configuration Mode" that:
 - **Configuration Mode**: Server calls `configToolsManager.getMcpTools()`
 - Clean separation of concerns: 
   - ToolsetManager handles toolsets
-  - ConfigurationToolsManager handles config tools
+  - ConfigToolsManager handles config tools
   - Server handles mode switching and routing
 
 #### Notifications
@@ -205,11 +205,11 @@ Implement a "Configuration Mode" that:
 
 ## Implementation Details
 
-### ConfigurationToolsManager Class
+### ConfigToolsManager Class
 
 ```typescript
 // src/config-tools/manager.ts
-export class ConfigurationToolsManager {
+export class ConfigToolsManager {
   private toolModules: ToolModule[] = [];
   private dependencies: ToolDependencies;
   private configurationMode: boolean = false;
@@ -273,7 +273,7 @@ export class ConfigurationToolsManager {
 
 The EnhancedMCPServer will need:
 1. `configurationMode: boolean` property
-2. `configToolsManager: ConfigurationToolsManager` instance
+2. `configToolsManager: ConfigToolsManager` instance
 3. Modified `listTools()` method to check mode
 4. Modified `callTool()` method to route based on mode
 5. Initialization logic to determine starting mode
@@ -313,7 +313,7 @@ When `disableConfigurationMode: true`, server operates in legacy mode with all t
 
 ## Testing Requirements
 
-1. Unit tests for ConfigurationToolsManager
+1. Unit tests for ConfigToolsManager
 2. Integration tests for mode switching
 3. Tests for auto-exit triggers
 4. Tests for initialization logic
