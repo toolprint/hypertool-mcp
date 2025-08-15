@@ -18,31 +18,36 @@ Implement automatic exit from configuration mode when certain actions are taken 
 ## Technical Details
 
 ### Implementation Steps
-1. Modify `equip-toolset` tool handler to trigger mode exit
-2. Modify `build-toolset` tool handler to check autoEquip flag
-3. Create helper method in server for mode transitions
-4. Ensure proper event handling and notifications
+1. Add `setModeChangeCallback` method to ToolsetManager
+2. Update `equip-toolset` handler to call the callback on success
+3. Update `build-toolset` handler to call the callback when autoEquip succeeds
+4. Ensure the callback is properly wired in server initialization
 
 ### Files to Modify
-- `src/server/tools/equip-toolset.ts`
-- `src/server/tools/build-toolset.ts`
-- `src/server/enhanced.ts`
+- `src/server/tools/toolset/manager.ts` - Add callback support
+- `src/server/tools/config-tools/tools/equip-toolset.ts`
+- `src/server/tools/config-tools/tools/build-toolset.ts`
 
 ### Implementation Pattern
 
-#### In equip-toolset.ts
+#### In ToolsetManager
 ```typescript
-const result = await deps.toolsetManager.equipToolset(args.name);
-if (result.success && deps.server.isInConfigurationMode()) {
-  await deps.server.exitConfigurationMode();
-}
-```
-
-#### In build-toolset.ts
-```typescript
-const result = await deps.toolsetManager.buildToolset(config);
-if (result.success && args.autoEquip && deps.server.isInConfigurationMode()) {
-  await deps.server.exitConfigurationMode();
+export class ToolsetManager extends EventEmitter implements ToolsProvider {
+  private onModeChangeRequest?: () => void;
+  
+  setModeChangeCallback(callback: () => void): void {
+    this.onModeChangeRequest = callback;
+  }
+  
+  // In equipToolset method, after successful equip:
+  if (result.success && this.onModeChangeRequest) {
+    this.onModeChangeRequest();
+  }
+  
+  // In buildToolset method, after successful build with autoEquip:
+  if (result.success && args.autoEquip && this.onModeChangeRequest) {
+    this.onModeChangeRequest();
+  }
 }
 ```
 

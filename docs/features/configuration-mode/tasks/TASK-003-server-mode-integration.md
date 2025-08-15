@@ -41,6 +41,19 @@ Modify the EnhancedMCPServer to support configuration mode, including mode state
 ```typescript
 private configurationMode: boolean = false;
 private configToolsManager: ConfigToolsManager;
+
+// Callback handlers for mode changes
+private handleConfigToolsModeChange = () => {
+  // Toggle mode when called from ConfigToolsManager
+  this.configurationMode = !this.configurationMode;
+  this.emit('tools_changed');
+};
+
+private handleToolsetModeChange = () => {
+  // Always exit to normal mode when called from ToolsetManager
+  this.configurationMode = false;
+  this.emit('tools_changed');
+};
 ```
 
 #### listTools() Method
@@ -61,6 +74,15 @@ listTools() {
 // In server initialization
 const hasEquippedToolset = await this.toolsetManager.hasActiveToolset();
 this.configurationMode = !hasEquippedToolset;
+
+// Create managers with callbacks
+this.configToolsManager = new ConfigToolsManager(
+  dependencies,
+  this.handleConfigToolsModeChange
+);
+
+// Update ToolsetManager to accept callback (or add setter method)
+this.toolsetManager.setModeChangeCallback(this.handleToolsetModeChange);
 ```
 
 ## Testing Requirements

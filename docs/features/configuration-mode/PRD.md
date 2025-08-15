@@ -216,6 +216,25 @@ Implement a "Configuration Mode" that:
   - ConfigToolsManager handles config tools
   - Server handles mode switching and routing
 
+#### Mode Change Callback Pattern
+
+**Callback Interface**:
+```typescript
+type OnModeChangeRequest = () => void;
+```
+
+**Implementation**:
+- Both ConfigToolsManager and ToolsetManager receive an `onModeChangeRequest` callback
+- Components call this callback when they need to trigger a mode change:
+  - ConfigToolsManager: When mode switching tools are executed (toggle mode)
+  - ToolsetManager: When "equip-toolset" succeeds (exit to normal mode)
+  - ToolsetManager: When "build-toolset" with `autoEquip: true` succeeds (exit to normal mode)
+- EnhancedMCPServer handles the callback based on source:
+  1. From ConfigToolsManager → Toggle between configuration/normal modes
+  2. From ToolsetManager → Always switch to normal mode
+  3. Triggers `tools_changed` notification
+  4. Clients re-fetch tools and see the new set
+
 #### Notifications
 - Mode changes MUST trigger `tools_changed` notification
 - Clients will re-fetch tool list and see new set of exposed tools
@@ -248,10 +267,14 @@ import { Tool } from "@modelcontextprotocol/sdk/types.js";
 export class ConfigToolsManager implements ToolsProvider {
   private toolModules: ToolModule[] = [];
   private dependencies: ToolDependencies;
-  private configurationMode: boolean = false;
+  private onModeChangeRequest?: OnModeChangeRequest;
 
-  constructor(dependencies: ToolDependencies) {
+  constructor(
+    dependencies: ToolDependencies,
+    onModeChangeRequest?: OnModeChangeRequest
+  ) {
     this.dependencies = dependencies;
+    this.onModeChangeRequest = onModeChangeRequest;
     this.registerTools();
   }
 

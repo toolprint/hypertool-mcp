@@ -23,8 +23,9 @@ Create the mode switching tools (`enter-configuration-mode` and `exit-configurat
 1. Create tool module for `enter-configuration-mode`
 2. Create tool module for `exit-configuration-mode`
 3. Define input/output schemas using Zod
-4. Implement tool handlers with proper error handling
+4. Implement tool handlers that call the `onModeChangeRequest` callback
 5. Add tools to ConfigToolsManager registration
+6. Update ConfigToolsManager to use callback instead of internal state
 
 ### Files to Create
 - `src/config-tools/tools/enter-configuration-mode.ts`
@@ -76,6 +77,30 @@ export const exitConfigurationModeDefinition: Tool = {
     openWorldHint: false,  // Does not interact with external systems
   }
 }
+
+// Handler implementation example
+export const createExitConfigurationModeModule: ToolModuleFactory = (
+  deps,
+  onModeChangeRequest?: () => void
+): ToolModule => {
+  return {
+    toolName: "exit-configuration-mode",
+    definition: exitConfigurationModeDefinition,
+    handler: async () => {
+      // Call the callback to request mode change
+      if (onModeChangeRequest) {
+        onModeChangeRequest();
+        return {
+          content: [{
+            type: "text",
+            text: "Exiting configuration mode..."
+          }]
+        };
+      }
+      throw new Error("Mode change callback not configured");
+    }
+  };
+};
 ```
 
 ### Annotations for Other Configuration Tools
