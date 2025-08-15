@@ -10,6 +10,7 @@
 Modify the EnhancedMCPServer to support configuration mode, including mode state management, tool routing, and initialization logic.
 
 ## Acceptance Criteria
+- [ ] Modify ToolsetManager to implement ToolsProvider interface
 - [ ] Add `configurationMode` state property to server
 - [ ] Add `configToolsManager` instance to server
 - [ ] Modify `listTools()` to check mode and return appropriate tools
@@ -21,14 +22,16 @@ Modify the EnhancedMCPServer to support configuration mode, including mode state
 ## Technical Details
 
 ### Implementation Steps
-1. Add mode state property to EnhancedMCPServer
-2. Instantiate ConfigToolsManager in server initialization
-3. Modify tool listing logic to check mode
-4. Modify tool calling logic to route to correct manager
-5. Add initialization logic to determine starting mode
-6. Wire up mode change event handling
+1. Modify ToolsetManager to implement ToolsProvider interface
+2. Add mode state property to EnhancedMCPServer
+3. Instantiate ConfigToolsManager in server initialization
+4. Modify tool listing logic to check mode
+5. Modify tool calling logic to route to correct manager
+6. Add initialization logic to determine starting mode
+7. Wire up mode change event handling
 
 ### Files to Modify
+- `src/toolset/manager.ts` (add ToolsProvider interface)
 - `src/server/enhanced.ts`
 - `src/server/enhanced.test.ts`
 

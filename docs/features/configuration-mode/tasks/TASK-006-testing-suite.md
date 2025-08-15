@@ -22,6 +22,9 @@ Create comprehensive test coverage for the configuration mode feature, including
 ### Test Categories
 
 #### 1. Unit Tests
+- ToolsProvider interface
+  - Both managers implement the interface
+  - getMcpTools() returns correct type
 - ConfigToolsManager
   - Initialization
   - Tool registration

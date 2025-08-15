@@ -162,17 +162,35 @@ Implement a "Configuration Mode" that:
 
 #### Component Architecture
 
+**ToolsProvider Interface** (New)
+- Located at: `src/server/types.ts`
+- Provides common interface for tool providers:
+  ```typescript
+  import { Tool } from "@modelcontextprotocol/sdk/types.js";
+  
+  export interface ToolsProvider {
+    /**
+     * Get MCP tools provided by this component
+     */
+    getMcpTools(): Tool[];
+  }
+  ```
+- Both ToolsetManager and ConfigToolsManager implement this interface
+- Enables polymorphic tool provider handling in the server
+
 **ConfigToolsManager** (New Component)
 - Manages all configuration-related tools
 - Located at: `src/config-tools/manager.ts`
+- Implements `ToolsProvider` interface
 - Responsibilities:
   - Register configuration tool modules
   - Provide `getMcpTools()` method for configuration tools
   - Handle tool execution routing for config tools
   - Manage mode-switching tools (`enter-configuration-mode`, `exit-configuration-mode`)
 
-**ToolsetManager** (Existing)
+**ToolsetManager** (Existing, Modified)
 - Continues to manage toolset tools
+- Now implements `ToolsProvider` interface
 - No changes to its core responsibility
 - `getMcpTools()` returns tools based on equipped toolset
 
@@ -205,11 +223,29 @@ Implement a "Configuration Mode" that:
 
 ## Implementation Details
 
+### ToolsProvider Interface
+
+```typescript
+// src/server/types.ts
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
+
+export interface ToolsProvider {
+  /**
+   * Get MCP tools provided by this component
+   * @returns Array of Tool definitions exposed by this provider
+   */
+  getMcpTools(): Tool[];
+}
+```
+
 ### ConfigToolsManager Class
 
 ```typescript
 // src/config-tools/manager.ts
-export class ConfigToolsManager {
+import { ToolsProvider } from "../server/types.js";
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
+
+export class ConfigToolsManager implements ToolsProvider {
   private toolModules: ToolModule[] = [];
   private dependencies: ToolDependencies;
   private configurationMode: boolean = false;
@@ -231,6 +267,21 @@ export class ConfigToolsManager {
 
   async handleToolCall(name: string, args: any): Promise<any> {
     // Route tool calls to appropriate handlers
+  }
+}
+```
+
+### ToolsetManager Modifications
+
+```typescript
+// src/toolset/manager.ts
+import { ToolsProvider } from "../server/types.js";
+
+export class ToolsetManager extends EventEmitter implements ToolsProvider {
+  // Existing implementation...
+  
+  getMcpTools(): Tool[] {
+    // Existing implementation remains the same
   }
 }
 ```

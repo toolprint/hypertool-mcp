@@ -10,7 +10,9 @@
 Create a new ConfigToolsManager class that manages all configuration-related tools, parallel to the existing ToolsetManager.
 
 ## Acceptance Criteria
+- [ ] ToolsProvider interface created in `src/server/types.ts`
 - [ ] ConfigToolsManager class created at `src/config-tools/manager.ts`
+- [ ] Implements `ToolsProvider` interface
 - [ ] Implements `getMcpTools()` method that returns configuration tools
 - [ ] Registers all existing configuration tool modules
 - [ ] Includes type definitions for dependencies
@@ -19,16 +21,18 @@ Create a new ConfigToolsManager class that manages all configuration-related too
 ## Technical Details
 
 ### Implementation Steps
-1. Create directory structure: `src/config-tools/`
-2. Create `manager.ts` with ConfigToolsManager class
-3. Create `types.ts` with necessary interfaces
-4. Import and register existing tool modules from `src/server/tools/`
-5. Implement tool filtering logic for configuration mode
+1. Add `ToolsProvider` interface to `src/server/types.ts`
+2. Create directory structure: `src/config-tools/`
+3. Create `manager.ts` with ConfigToolsManager class implementing ToolsProvider
+4. Create `types.ts` with necessary interfaces
+5. Import and register existing tool modules from `src/server/tools/`
+6. Implement tool filtering logic for configuration mode
 
-### Files to Create
-- `src/config-tools/manager.ts`
-- `src/config-tools/types.ts`
-- `src/config-tools/manager.test.ts`
+### Files to Create/Modify
+- `src/server/types.ts` (add ToolsProvider interface)
+- `src/config-tools/manager.ts` (new)
+- `src/config-tools/types.ts` (new)
+- `src/config-tools/manager.test.ts` (new)
 
 ### Configuration Tools to Include
 - list-available-tools
