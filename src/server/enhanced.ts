@@ -15,7 +15,7 @@ import { IConnectionManager, ConnectionManager, ConnectionState } from "../conne
 import { ExtensionAwareConnectionFactory } from "../connection/extensionFactory.js";
 import { ExtensionManager } from "../extensions/manager.js";
 import { APP_NAME, APP_TECHNICAL_NAME, ServerConfig } from "../config/index.js";
-import { isDxtEnabledViaService } from "../config/featureFlagService.js";
+import { isDxtEnabledViaService, isConfigToolsMenuEnabledViaService } from "../config/featureFlagService.js";
 import ora from "ora";
 
 // Helper to create conditional spinners
@@ -63,6 +63,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   private configurationMode: boolean = false;
   private enterConfigurationModeTool?: ToolModule;
   private runtimeOptions?: RuntimeOptions;
+  private configToolsMenuEnabled: boolean = true;
 
   constructor(config: MetaMCPServerConfig) {
     super(config);
@@ -483,7 +484,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       );
 
       // Initialize tool modules after all dependencies are set up
-      this.initializeToolModules();
+      await this.initializeToolModules();
 
       // Check for toolset configuration
       if (this.runtimeOptions?.equipToolset) {
@@ -513,7 +514,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   /**
    * Initialize tool modules with dependency injection
    */
-  private initializeToolModules(): void {
+  private async initializeToolModules(): Promise<void> {
     const dependencies: ToolDependencies = {
       toolsetManager: this.toolsetManager,
       discoveryEngine: this.discoveryEngine,
@@ -521,13 +522,25 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     };
 
     // Initialize configuration mode components
-    this.initializeConfigurationMode(dependencies);
+    await this.initializeConfigurationMode(dependencies);
   }
 
   /**
    * Initialize configuration mode components
    */
-  private initializeConfigurationMode(dependencies: ToolDependencies): void {
+  private async initializeConfigurationMode(dependencies: ToolDependencies): Promise<void> {
+    // Check if configuration tools menu is enabled via feature flag
+    this.configToolsMenuEnabled = await isConfigToolsMenuEnabledViaService();
+    
+    if (!this.configToolsMenuEnabled) {
+      logger.info('Configuration tools menu disabled - running in legacy mode (all tools exposed together)');
+      // In legacy mode, we still create ConfigToolsManager to have access to config tools
+      this.configToolsManager = new ConfigToolsManager(dependencies);
+      // Don't set configuration mode or create mode switching tools
+      return;
+    }
+
+    // Normal configuration mode setup
     // Create ConfigToolsManager with mode change callback
     this.configToolsManager = new ConfigToolsManager(
       dependencies,
@@ -606,6 +619,33 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   protected async getAvailableTools(): Promise<Tool[]> {
     const tools: Tool[] = [];
 
+    // Legacy mode: return all tools (backward compatibility)
+    if (!this.configToolsMenuEnabled) {
+      // Add all configuration tools
+      if (this.configToolsManager) {
+        try {
+          const configTools = this.configToolsManager.getMcpTools();
+          tools.push(...configTools);
+          logger.debug(`Legacy mode: added ${configTools.length} configuration tools`);
+        } catch (error) {
+          logger.error("Failed to get configuration tools:", error);
+        }
+      }
+
+      // Add all toolset tools
+      try {
+        const mcpTools = this.toolsetManager.getMcpTools();
+        tools.push(...mcpTools);
+        logger.debug(`Legacy mode: added ${mcpTools.length} toolset tools`);
+      } catch (error) {
+        logger.error("Failed to get toolset tools:", error);
+      }
+
+      logger.debug(`Legacy mode: returning ${tools.length} total tools`);
+      return tools;
+    }
+
+    // Configuration mode logic
     if (this.configurationMode) {
       // Configuration mode: show only configuration tools
       if (this.configToolsManager) {
@@ -644,6 +684,36 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    */
   protected async handleToolCall(name: string, args?: any): Promise<any> {
     try {
+      // Legacy mode: try config tools first, then toolset/router
+      if (!this.configToolsMenuEnabled) {
+        // Try configuration tools first
+        if (this.configToolsManager) {
+          const configTools = this.configToolsManager.getMcpTools();
+          const isConfigTool = configTools.some(tool => tool.name === name);
+          if (isConfigTool) {
+            return await this.configToolsManager.handleToolCall(name, args);
+          }
+        }
+
+        // Fall through to router for toolset/discovered tools
+        const originalToolName = this.toolsetManager.getOriginalToolName(name);
+        const toolNameForRouter = originalToolName || name;
+
+        if (!this.requestRouter) {
+          throw new Error(
+            "Request router is not available. Server may not be fully initialized."
+          );
+        }
+
+        const response = await this.requestRouter.routeToolCall({
+          name: toolNameForRouter,
+          arguments: args,
+        });
+
+        return response;
+      }
+
+      // Configuration mode routing
       if (this.configurationMode) {
         // Configuration mode: route to ConfigToolsManager
         if (this.configToolsManager) {

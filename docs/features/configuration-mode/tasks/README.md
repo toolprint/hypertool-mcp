@@ -19,11 +19,11 @@ TASK-001 (ConfigToolsManager)
 
 | Task ID | Title | Priority | Effort | Dependencies | Status |
 |---------|-------|----------|--------|--------------|--------|
-| [TASK-001](./TASK-001-config-tools-manager.md) | Create ConfigToolsManager | P0 | 2 days | None | Not Started |
-| [TASK-002](./TASK-002-mode-switching-tools.md) | Implement Mode Switching Tools | P0 | 1 day | TASK-001 | Not Started |
-| [TASK-003](./TASK-003-server-mode-integration.md) | Server Mode Integration | P0 | 2 days | TASK-001, TASK-002 | Not Started |
-| [TASK-004](./TASK-004-auto-exit-triggers.md) | Auto-Exit Triggers | P1 | 1 day | TASK-003 | Not Started |
-| [TASK-005](./TASK-005-feature-flag.md) | Feature Flag Support | P1 | 0.5 days | TASK-003 | Not Started |
+| [TASK-001](./TASK-001-config-tools-manager.md) | Create ConfigToolsManager | P0 | 2 days | None | Completed |
+| [TASK-002](./TASK-002-mode-switching-tools.md) | Implement Mode Switching Tools | P0 | 1 day | TASK-001 | Completed |
+| [TASK-003](./TASK-003-server-mode-integration.md) | Server Mode Integration | P0 | 2 days | TASK-001, TASK-002 | Completed |
+| [TASK-004](./TASK-004-auto-exit-triggers.md) | Auto-Exit Triggers | P1 | 1 day | TASK-003 | Completed |
+| [TASK-005](./TASK-005-feature-flag.md) | Feature Flag Support | P1 | 0.5 days | TASK-003 | Completed |
 | [TASK-006](./TASK-006-testing-suite.md) | Comprehensive Testing | P1 | 1.5 days | TASK-001 to 005 | Not Started |
 | [TASK-007](./TASK-007-documentation.md) | Documentation Updates | P2 | 0.5 days | TASK-001 to 006 | Not Started |
 

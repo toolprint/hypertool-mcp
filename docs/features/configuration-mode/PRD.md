@@ -356,17 +356,47 @@ The EnhancedMCPServer will need:
 4. Modified `callTool()` method to route based on mode
 5. Initialization logic to determine starting mode
 
-### Feature Flag
+### Feature Flag Support
 
-Add configuration option:
+Configuration mode is controlled via the Feature Flag Registry system:
+
 ```typescript
-interface RuntimeOptions {
-  // ... existing options
-  disableConfigurationMode?: boolean;
+// Feature Flag Definition (src/config/flagRegistry.ts)
+enableConfigToolsMenu: {
+  name: "enableConfigToolsMenu",
+  description: "Enable configuration tools menu mode (separates config tools from operational tools)",
+  defaultValue: true,  // Enabled by default
+  envVar: "HYPERTOOL_ENABLE_CONFIG_TOOLS_MENU",
 }
 ```
 
-When `disableConfigurationMode: true`, server operates in legacy mode with all tools exposed.
+**Control Methods**:
+1. **Environment Variable** (highest priority):
+   ```bash
+   # Enable configuration mode (default)
+   HYPERTOOL_ENABLE_CONFIG_TOOLS_MENU=true hypertool-mcp
+   
+   # Disable configuration mode (legacy behavior)
+   HYPERTOOL_ENABLE_CONFIG_TOOLS_MENU=false hypertool-mcp
+   ```
+
+2. **Config File** (medium priority):
+   ```json
+   {
+     "featureFlags": {
+       "enableConfigToolsMenu": false
+     }
+   }
+   ```
+
+3. **Default Value**: `true` (configuration mode enabled)
+
+**Legacy Mode Behavior**:
+When `enableConfigToolsMenu: false`, the server operates in legacy mode:
+- All configuration tools and operational tools are exposed together
+- No mode switching occurs
+- No `enter-configuration-mode` tool is available
+- Backward compatible with existing workflows
 
 ## Future Enhancements
 
