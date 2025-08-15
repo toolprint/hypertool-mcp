@@ -3,11 +3,11 @@
  */
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolModuleFactory, ToolModule } from "./types.js";
+import { ToolModuleFactory, ToolModule } from "../../types.js";
 import {
   getActiveToolsetResponseSchema,
   getActiveToolsetResponseZodSchema,
-} from "./schemas.js";
+} from "../../schemas.js";
 
 export const getActiveToolsetDefinition: Tool = {
   name: "get-active-toolset",

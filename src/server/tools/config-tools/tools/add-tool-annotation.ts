@@ -3,11 +3,11 @@
  */
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolModuleFactory, ToolModule } from "./types.js";
+import { ToolModuleFactory, ToolModule } from "../../types.js";
 import {
   addToolAnnotationResponseSchema,
   AddToolAnnotationResponse,
-} from "./schemas.js";
+} from "../../schemas.js";
 import { DynamicToolReference, ToolsetToolNote } from "../../toolset/types.js";
 
 export const addToolAnnotationDefinition: Tool = {
@@ -325,7 +325,7 @@ export const createAddToolAnnotationModule: ToolModuleFactory = (
 
         // Save the updated toolset to preferences
         try {
-          const preferences = await import("../../config/preferenceStore.js");
+          const preferences = await import("../../../../config/preferenceStore.js");
           const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
           const saveToolsetsToPreferences = preferences.saveStoredToolsets;
 

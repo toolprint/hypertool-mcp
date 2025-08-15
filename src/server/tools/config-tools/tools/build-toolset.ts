@@ -3,8 +3,8 @@
  */
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolModuleFactory, ToolModule } from "./types.js";
-import { buildToolsetResponseSchema } from "./schemas.js";
+import { ToolModuleFactory, ToolModule } from "../../types.js";
+import { buildToolsetResponseSchema } from "../../schemas.js";
 
 export const buildToolsetDefinition: Tool = {
   name: "build-toolset",

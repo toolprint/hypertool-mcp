@@ -35,7 +35,7 @@ import { createChildLogger } from "../utils/logging.js";
 
 const logger = createChildLogger({ module: "server/enhanced" });
 // Note: All mcp-tools functionality now handled by ToolsetManager
-import { ToolsetManager, ToolsetChangeEvent } from "../toolset/manager.js";
+import { ToolsetManager, ToolsetChangeEvent } from "./tools/toolset/manager.js";
 import { DiscoveredToolsChangedEvent } from "../discovery/types.js";
 import {
   ToolDependencies,

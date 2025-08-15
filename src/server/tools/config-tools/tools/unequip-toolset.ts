@@ -3,7 +3,7 @@
  */
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolModuleFactory, ToolModule } from "./types.js";
+import { ToolModuleFactory, ToolModule } from "../../types.js";
 
 export const unequipToolsetDefinition: Tool = {
   name: "unequip-toolset",

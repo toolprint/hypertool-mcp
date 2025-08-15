@@ -4,7 +4,7 @@
 
 import * as fs from "fs/promises";
 import * as path from "path";
-import { ToolsetConfig } from "../toolset/types.js";
+import { ToolsetConfig } from "../server/tools/toolset/types.js";
 import { APP_TECHNICAL_NAME, BRAND_NAME } from "./appConfig.js";
 import { getHomeDir } from "../utils/paths.js";
 

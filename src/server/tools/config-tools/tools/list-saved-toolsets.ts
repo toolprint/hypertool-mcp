@@ -3,8 +3,8 @@
  */
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolModuleFactory, ToolModule } from "./types.js";
-import { toolsetInfoSchema } from "./schemas.js";
+import { ToolModuleFactory, ToolModule } from "../../types.js";
+import { toolsetInfoSchema } from "../../schemas.js";
 
 export const listSavedToolsetsDefinition: Tool = {
   name: "list-saved-toolsets",

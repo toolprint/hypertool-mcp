@@ -3,7 +3,7 @@
  */
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolsetManager } from "../../toolset/manager.js";
+import { ToolsetManager } from "./toolset/manager.js";
 import { IToolDiscoveryEngine } from "../../discovery/types.js";
 import { RuntimeOptions } from "../../types/runtime.js";
 
