@@ -10,21 +10,10 @@ import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolsProvider } from "../../types.js";
 import { 
   ToolModule, 
-  ToolDependencies, 
-  ToolModuleFactory 
+  ToolDependencies
 } from "../types.js";
-import { ConfigToolDependencies, ConfigToolModule } from "./types.js";
 import { createChildLogger } from "../../../utils/logging.js";
-
-// Import configuration tool factories from local tools directory
-import { createListAvailableToolsModule } from "./tools/list-available-tools.js";
-import { createBuildToolsetModule } from "./tools/build-toolset.js";
-import { createListSavedToolsetsModule } from "./tools/list-saved-toolsets.js";
-import { createEquipToolsetModule } from "./tools/equip-toolset.js";
-import { createDeleteToolsetModule } from "./tools/delete-toolset.js";
-import { createUnequipToolsetModule } from "./tools/unequip-toolset.js";
-import { createGetActiveToolsetModule } from "./tools/get-active-toolset.js";
-import { createAddToolAnnotationModule } from "./tools/add-tool-annotation.js";
+import { CONFIG_TOOL_FACTORIES } from "./registry.js";
 
 const logger = createChildLogger({ module: "config-tools" });
 
@@ -33,23 +22,16 @@ const logger = createChildLogger({ module: "config-tools" });
  * Implements ToolsProvider interface for polymorphic tool handling
  */
 export class ConfigToolsManager implements ToolsProvider {
-  private toolModules: Map<string, ConfigToolModule> = new Map();
+  private toolModules: Map<string, ToolModule> = new Map();
   private dependencies: ToolDependencies;
-  private configurationMode: boolean = false;
+  private onModeChangeRequest?: () => void;
 
   constructor(
     dependencies: ToolDependencies,
-    private configDependencies: ConfigToolDependencies = {}
+    onModeChangeRequest?: () => void
   ) {
     this.dependencies = dependencies;
-    
-    // Set up mode callbacks if provided
-    if (configDependencies.setConfigurationMode) {
-      this.setConfigurationMode = this.setConfigurationMode.bind(this);
-    }
-    if (configDependencies.isConfigurationMode) {
-      this.isConfigurationMode = configDependencies.isConfigurationMode.bind(this);
-    }
+    this.onModeChangeRequest = onModeChangeRequest;
     
     this.registerTools();
   }
@@ -60,105 +42,33 @@ export class ConfigToolsManager implements ToolsProvider {
   private registerTools(): void {
     logger.debug("Registering configuration tools");
 
-    // Register existing configuration tools
-    const toolFactories: ToolModuleFactory[] = [
-      createListAvailableToolsModule,
-      createBuildToolsetModule,
-      createListSavedToolsetsModule,
-      createEquipToolsetModule,
-      createDeleteToolsetModule,
-      createUnequipToolsetModule,
-      createGetActiveToolsetModule,
-      createAddToolAnnotationModule,
-    ];
-
-    // Create and register each tool module
-    for (const factory of toolFactories) {
-      const module = factory(this.dependencies);
-      this.registerToolModule(module, "configuration");
+    // Create and register each configuration tool module from the registry
+    for (const factory of CONFIG_TOOL_FACTORIES) {
+      const module = factory(this.dependencies, this.onModeChangeRequest);
+      this.toolModules.set(module.toolName, module);
     }
-
-    // Note: Mode switching tools will be added in TASK-002
-    // They will be registered here with appropriate availableInMode settings
 
     logger.info(`Registered ${this.toolModules.size} configuration tools`);
   }
 
-  /**
-   * Register a single tool module
-   */
-  private registerToolModule(
-    module: ToolModule,
-    availableInMode: "configuration" | "normal" | "both" = "configuration"
-  ): void {
-    const configModule: ConfigToolModule = {
-      ...module,
-      availableInMode,
-    };
-    this.toolModules.set(module.toolName, configModule);
-    logger.debug(`Registered tool: ${module.toolName} (available in: ${availableInMode})`);
-  }
+
 
   /**
-   * Set the current configuration mode
-   */
-  public setConfigurationMode(mode: boolean): void {
-    const previousMode = this.configurationMode;
-    this.configurationMode = mode;
-    
-    if (previousMode !== mode) {
-      logger.info(`Configuration mode changed: ${previousMode} -> ${mode}`);
-    }
-  }
-
-  /**
-   * Get the current configuration mode
-   */
-  public isConfigurationMode(): boolean {
-    return this.configurationMode;
-  }
-
-  /**
-   * Get MCP tools based on current mode
+   * Get MCP tools for configuration mode
    * Implements ToolsProvider interface
    */
   public getMcpTools(): Tool[] {
+    // Return all configuration tools - server decides when to call this
     const tools: Tool[] = [];
     
-    for (const [toolName, module] of this.toolModules) {
-      // Filter tools based on current mode
-      const shouldInclude = this.shouldIncludeTool(module);
-      
-      if (shouldInclude) {
-        tools.push(module.definition);
-        logger.debug(`Including tool in response: ${toolName}`);
-      }
+    for (const [_toolName, module] of this.toolModules) {
+      tools.push(module.definition);
     }
 
-    logger.debug(`Returning ${tools.length} tools for mode: ${this.configurationMode ? 'configuration' : 'normal'}`);
+    logger.debug(`Returning ${tools.length} configuration tools`);
     return tools;
   }
 
-  /**
-   * Determine if a tool should be included based on current mode
-   */
-  private shouldIncludeTool(module: ConfigToolModule): boolean {
-    const mode = module.availableInMode || "configuration";
-    
-    if (mode === "both") {
-      return true;
-    }
-    
-    if (this.configurationMode && mode === "configuration") {
-      return true;
-    }
-    
-    if (!this.configurationMode && mode === "normal") {
-      return true;
-    }
-    
-    return false;
-  }
 
   /**
    * Handle tool call - route to appropriate handler
@@ -167,22 +77,17 @@ export class ConfigToolsManager implements ToolsProvider {
     const module = this.toolModules.get(name);
     
     if (!module) {
-      throw new Error(`Tool not found: ${name}`);
+      throw new Error(`Configuration tool not found: ${name}`);
     }
 
-    // Check if tool is available in current mode
-    if (!this.shouldIncludeTool(module)) {
-      throw new Error(`Tool not available in current mode: ${name}`);
-    }
-
-    logger.debug(`Handling tool call: ${name}`, { args });
+    logger.debug(`Handling configuration tool call: ${name}`, { args });
     
     try {
       const result = await module.handler(args);
-      logger.debug(`Tool call completed: ${name}`);
+      logger.debug(`Configuration tool call completed: ${name}`);
       return result;
     } catch (error) {
-      logger.error(`Tool call failed: ${name}`, error);
+      logger.error(`Configuration tool call failed: ${name}`, error);
       throw error;
     }
   }
@@ -190,23 +95,7 @@ export class ConfigToolsManager implements ToolsProvider {
   /**
    * Get all registered tool modules (for testing)
    */
-  public getToolModules(): Map<string, ConfigToolModule> {
+  public getToolModules(): Map<string, ToolModule> {
     return this.toolModules;
-  }
-
-  /**
-   * Register mode switching tools (will be called from TASK-002)
-   */
-  public registerModeSwitchingTools(
-    enterConfigModeModule: ToolModule,
-    exitConfigModeModule: ToolModule
-  ): void {
-    // Enter config mode is available in normal mode
-    this.registerToolModule(enterConfigModeModule, "normal");
-    
-    // Exit config mode is available in configuration mode  
-    this.registerToolModule(exitConfigModeModule, "configuration");
-    
-    logger.info("Registered mode switching tools");
   }
 }

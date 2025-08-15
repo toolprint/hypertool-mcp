@@ -20,5 +20,5 @@ export interface ToolDependencies {
 }
 
 export interface ToolModuleFactory {
-  (deps: ToolDependencies): ToolModule;
+  (deps: ToolDependencies, onModeChangeRequest?: () => void): ToolModule;
 }

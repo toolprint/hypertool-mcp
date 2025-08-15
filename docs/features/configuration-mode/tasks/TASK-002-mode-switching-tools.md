@@ -20,18 +20,18 @@ Create the mode switching tools (`enter-configuration-mode` and `exit-configurat
 ## Technical Details
 
 ### Implementation Steps
-1. Create tool module for `enter-configuration-mode`
-2. Create tool module for `exit-configuration-mode`
-3. Define input/output schemas using Zod
+1. Create tool module for `enter-configuration-mode` in `src/server/tools/common/`
+2. Create tool module for `exit-configuration-mode` in `src/server/tools/config-tools/tools/`
+3. Define input/output schemas using Zod for both tools
 4. Implement tool handlers that call the `onModeChangeRequest` callback
-5. Add tools to ConfigToolsManager registration
-6. Update ConfigToolsManager to use callback instead of internal state
+5. Add `exit-configuration-mode` to ConfigToolsManager registration
+6. Server will manage `enter-configuration-mode` directly and add it to tool list in normal mode
+7. Update ToolModuleFactory interface to support optional callback parameter
 
 ### Files to Create
-- `src/config-tools/tools/enter-configuration-mode.ts`
-- `src/config-tools/tools/exit-configuration-mode.ts`
-- `src/config-tools/tools/enter-configuration-mode.test.ts`
-- `src/config-tools/tools/exit-configuration-mode.test.ts`
+- `src/server/tools/common/enter-configuration-mode.ts` (managed by server, not ConfigToolsManager)
+- `src/server/tools/config-tools/tools/exit-configuration-mode.ts`
+- `src/server/tools/config-tools/tools/mode-switching.test.ts`
 
 ### Tool Specifications
 

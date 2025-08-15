@@ -180,13 +180,13 @@ Implement a "Configuration Mode" that:
 
 **ConfigToolsManager** (New Component)
 - Manages all configuration-related tools
-- Located at: `src/config-tools/manager.ts`
+- Located at: `src/server/tools/config-tools/manager.ts`
 - Implements `ToolsProvider` interface
 - Responsibilities:
   - Register configuration tool modules
   - Provide `getMcpTools()` method for configuration tools
   - Handle tool execution routing for config tools
-  - Manage mode-switching tools (`enter-configuration-mode`, `exit-configuration-mode`)
+  - Manage `exit-configuration-mode` tool (but NOT `enter-configuration-mode`)
 
 **ToolsetManager** (Existing, Modified)
 - Continues to manage toolset tools
@@ -197,13 +197,17 @@ Implement a "Configuration Mode" that:
 **EnhancedMCPServer** (Modified)
 - Maintains `configurationMode` state
 - Instantiates both ToolsetManager and ConfigToolsManager
+- Manages `enter-configuration-mode` tool directly (located at `src/server/tools/common/enter-configuration-mode.ts`)
 - Tool exposure logic:
   ```typescript
   // Pseudocode
   if (this.configurationMode) {
     return this.configToolsManager.getMcpTools();
   } else {
-    return this.toolsetManager.getMcpTools();
+    const tools = this.toolsetManager.getMcpTools();
+    // Server adds enter-configuration-mode tool to the list
+    tools.push(enterConfigurationModeTool);
+    return tools;
   }
   ```
 
