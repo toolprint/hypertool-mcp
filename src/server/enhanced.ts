@@ -484,25 +484,8 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       );
 
       // Initialize tool modules after all dependencies are set up
+      // This also restores the last equipped toolset and sets initial mode
       await this.initializeToolModules();
-
-      // Check for toolset configuration
-      if (this.runtimeOptions?.equipToolset) {
-        // User explicitly specified a toolset to equip
-        logger.info(`Equipping toolset: ${this.runtimeOptions!.equipToolset!}`);
-        const result = await this.toolsetManager.equipToolset(
-          this.runtimeOptions!.equipToolset!
-        );
-        if (!result.success) {
-          logger.error(`Failed to equip toolset: ${result.error}`);
-        }
-      } else {
-        // No explicit toolset specified, try to restore the last equipped one
-        const restored = await this.toolsetManager.restoreLastEquippedToolset();
-        if (!restored) {
-          logger.debug("No previously equipped toolset to restore");
-        }
-      }
 
       await this.checkToolsetStatus(options.debug);
     } catch (error) {
@@ -520,6 +503,25 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       discoveryEngine: this.discoveryEngine,
       runtimeOptions: this.runtimeOptions,
     };
+
+    // Restore toolset BEFORE initializing configuration mode
+    // This ensures we know if a toolset is active when determining initial mode
+    if (this.runtimeOptions?.equipToolset) {
+      // User explicitly specified a toolset to equip
+      logger.info(`Equipping toolset: ${this.runtimeOptions!.equipToolset!}`);
+      const result = await this.toolsetManager.equipToolset(
+        this.runtimeOptions!.equipToolset!
+      );
+      if (!result.success) {
+        logger.error(`Failed to equip toolset: ${result.error}`);
+      }
+    } else {
+      // No explicit toolset specified, try to restore the last equipped one
+      const restored = await this.toolsetManager.restoreLastEquippedToolset();
+      if (!restored) {
+        logger.debug("No previously equipped toolset to restore");
+      }
+    }
 
     // Initialize configuration mode components
     await this.initializeConfigurationMode(dependencies);
@@ -554,6 +556,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     );
 
     // Determine initial mode based on toolset status
+    // At this point, toolset has already been restored if one was saved
     const hasEquippedToolset = this.toolsetManager.hasActiveToolset();
     this.configurationMode = !hasEquippedToolset;
 
