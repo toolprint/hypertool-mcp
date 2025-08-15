@@ -64,7 +64,8 @@ export const buildToolsetDefinition: Tool = {
 };
 
 export const createBuildToolsetModule: ToolModuleFactory = (
-  deps
+  deps,
+  onModeChangeRequest?: () => void
 ): ToolModule => {
   return {
     toolName: "build-toolset",
@@ -79,6 +80,11 @@ export const createBuildToolsetModule: ToolModuleFactory = (
             autoEquip: args?.autoEquip,
           }
         );
+
+        // Auto-exit to normal mode if autoEquip succeeded
+        if (args?.autoEquip && result.meta?.success && onModeChangeRequest) {
+          onModeChangeRequest();
+        }
 
         return {
           content: [

@@ -42,7 +42,6 @@ import { DiscoveredToolsChangedEvent } from "../discovery/types.js";
 import {
   ToolDependencies,
   ToolModule,
-  TOOL_MODULE_FACTORIES,
 } from "./tools/index.js";
 import chalk from "chalk";
 import { output } from "../utils/output.js";
@@ -64,8 +63,6 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   private configurationMode: boolean = false;
   private enterConfigurationModeTool?: ToolModule;
   private runtimeOptions?: RuntimeOptions;
-  private toolModules: ToolModule[] = [];
-  private toolModuleMap: Map<string, ToolModule> = new Map();
 
   constructor(config: MetaMCPServerConfig) {
     super(config);
@@ -79,17 +76,6 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     this.configurationMode = !this.configurationMode;
     logger.debug(`Mode changed via ConfigToolsManager: ${this.configurationMode ? 'configuration' : 'normal'}`);
     await this.notifyToolsChanged();
-  };
-
-  /**
-   * Handle mode change request from ToolsetManager (always exit to normal mode)
-   */
-  private handleToolsetModeChange = async () => {
-    if (this.configurationMode) {
-      this.configurationMode = false;
-      logger.debug('Mode changed via ToolsetManager: normal');
-      await this.notifyToolsChanged();
-    }
   };
 
   /**
@@ -534,15 +520,6 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       runtimeOptions: this.runtimeOptions,
     };
 
-    // Create tool modules using factory functions
-    this.toolModules = TOOL_MODULE_FACTORIES.map((tf) => tf(dependencies));
-
-    // Create fast lookup map
-    this.toolModuleMap.clear();
-    for (const module of this.toolModules) {
-      this.toolModuleMap.set(module.toolName, module);
-    }
-
     // Initialize configuration mode components
     this.initializeConfigurationMode(dependencies);
   }
@@ -641,10 +618,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         }
       }
     } else {
-      // Normal mode: show toolset tools + built-in tools + enter-configuration-mode
-
-      // Add built-in toolset management tools from modules
-      tools.push(...this.toolModules.map((module) => module.definition));
+      // Normal mode: show toolset tools + enter-configuration-mode
 
       // Add tools from toolset manager (handles filtering and formatting)
       try {
@@ -678,17 +652,11 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           throw new Error("Configuration tools manager not available");
         }
       } else {
-        // Normal mode: check built-in tools, enter-configuration-mode, then toolset/router
+        // Normal mode: check enter-configuration-mode, then toolset/router
 
         // Check if this is enter-configuration-mode tool
         if (name === "enter-configuration-mode" && this.enterConfigurationModeTool) {
           return await this.enterConfigurationModeTool.handler(args);
-        }
-
-        // Check if this is a built-in toolset management tool (O(1) lookup)
-        const toolModule = this.toolModuleMap.get(name);
-        if (toolModule) {
-          return await toolModule.handler(args);
         }
 
         // Check if this is a flattened tool name from active toolset
