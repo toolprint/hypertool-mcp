@@ -5,14 +5,17 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolModuleFactory, ToolModule } from "../types.js";
 import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { CONFIG_TOOL_NAMES } from "../config-tools/registry.js";
 
 // Define the output schema
-const enterConfigurationModeResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  availableTools: z.array(z.string()).optional()
-});
+const enterConfigurationModeResponseSchema = zodToJsonSchema(
+  z.object({
+    success: z.boolean(),
+    message: z.string(),
+    availableTools: z.array(z.string()).optional()
+  })
+);
 
 export const enterConfigurationModeDefinition: Tool = {
   name: "enter-configuration-mode",

@@ -63,6 +63,14 @@ dev *args='':
         node dist/bin.js {{args}}
     fi
 
+[group('dev')]
+start-http:
+    npm run start:http
+
+[group('dev')]
+start-stdio:
+    npm run start:stdio
+
 # Run tests
 [group('test')]
 test:

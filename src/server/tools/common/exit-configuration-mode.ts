@@ -5,13 +5,16 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolModuleFactory, ToolModule } from "../types.js";
 import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 // Define the output schema
-const exitConfigurationModeResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  currentMode: z.enum(["normal", "configuration"])
-});
+const exitConfigurationModeResponseSchema = zodToJsonSchema(
+  z.object({
+    success: z.boolean(),
+    message: z.string(),
+    currentMode: z.enum(["normal", "configuration"])
+  })
+);
 
 export const exitConfigurationModeDefinition: Tool = {
   name: "exit-configuration-mode",
