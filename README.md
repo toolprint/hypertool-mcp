@@ -289,6 +289,11 @@ just typecheck      # Check types
 just pre-publish-checks  # Run all quality checks
 ```
 
+### Service command
+
+The `hypertool-mcp service` subcommand is currently disabled and will exit with a
+notification when invoked.
+
 ## 🤝 Contributing
 
 Found a bug? Have an idea? We'd love your help!
