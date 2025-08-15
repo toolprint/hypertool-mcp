@@ -86,13 +86,18 @@ typecheck:
     npx tsc --noEmit
 
 # Clean build artifacts and dependencies
-[group('clean')]
+[group('build')]
 clean:
     rm -rf dist/
     rm -rf node_modules/
     rm -rf coverage/
     rm -f *.tgz
     @echo "✅ Clean complete!"
+
+# Install dependencies
+[group('build')]
+install: clean
+    npm install
 
 # Format code
 [group('lint')]

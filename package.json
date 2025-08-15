@@ -173,7 +173,6 @@
     "commander": "^14.0.0",
     "express": "^5.1.0",
     "figlet": "^1.8.2",
-    "forever": "^4.0.3",
     "inquirer": "^12.7.0",
     "memfs": "^4.24.0",
     "node-cache": "^5.1.2",
