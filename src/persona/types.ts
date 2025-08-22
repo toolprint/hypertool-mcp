@@ -167,10 +167,10 @@ export interface ValidationResult {
   isValid: boolean;
 
   /** Array of validation errors */
-  errors: PersonaValidationError[];
+  errors: PersonaValidationErrorInfo[];
 
   /** Array of validation warnings */
-  warnings: PersonaValidationError[];
+  warnings: PersonaValidationErrorInfo[];
 }
 
 /**
@@ -179,7 +179,7 @@ export interface ValidationResult {
  * Provides specific information about validation failures including
  * the type of error, affected field, and actionable suggestions.
  */
-export interface PersonaValidationError {
+export interface PersonaValidationErrorInfo {
   /** Type of validation error */
   type: "schema" | "business" | "tool-resolution" | "mcp-config";
 
@@ -241,12 +241,12 @@ export enum PersonaErrorCode {
 }
 
 /**
- * Persona system error class
+ * Persona system error interface
  *
- * Custom error class for persona operations that includes error codes,
- * additional details, and actionable suggestions for resolution.
+ * Interface definition for persona error structure - the actual implementation
+ * is provided by the PersonaError class in errors.ts
  */
-export interface PersonaError extends Error {
+export interface PersonaErrorInterface extends Error {
   /** Specific error code for programmatic handling */
   code: PersonaErrorCode;
 

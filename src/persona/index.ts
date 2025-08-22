@@ -18,9 +18,9 @@ export type {
   PersonaDiscoveryResult,
   PersonaReference,
   ValidationResult,
-  PersonaValidationError,
+  PersonaValidationErrorInfo,
   ActivationResult,
-  PersonaError,
+  PersonaErrorInterface,
   PersonaCacheConfig,
   PersonaCacheStats,
   PersonaDiscoveryConfig,
@@ -28,6 +28,33 @@ export type {
 
 // Enums
 export { PersonaErrorCode, PersonaEvents } from "./types.js";
+
+// Error classes and utilities
+export {
+  PersonaError,
+  PersonaDiscoveryError,
+  PersonaValidationError,
+  PersonaActivationError,
+  PersonaRuntimeError,
+  // Factory functions
+  createPersonaNotFoundError,
+  createSchemaValidationError,
+  createYamlParseError,
+  createToolResolutionError,
+  createToolsetNotFoundError,
+  createPermissionError,
+  createFileSystemError,
+  createMcpConfigConflictError,
+  createDuplicatePersonaNameError,
+  createActivationFailedError,
+  createArchiveExtractionError,
+  // Utility functions
+  isPersonaError,
+  isRecoverableError,
+  getErrorCode,
+  formatErrorForUser,
+  createErrorSummary,
+} from "./errors.js";
 
 // Future exports (will be added as implementation progresses):
 // export { PersonaLoader } from "./loader.js";
