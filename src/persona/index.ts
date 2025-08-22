@@ -148,8 +148,18 @@ export {
   type CacheMetrics,
 } from "./cache.js";
 
+// Persona Manager
+export {
+  PersonaManager,
+  createPersonaManager,
+  defaultPersonaManager,
+  type PersonaManagerConfig,
+  type ActivePersonaState,
+  type PersonaListOptions,
+  type PersonaActivationOptions,
+} from "./manager.js";
+
 // Future exports (will be added as implementation progresses):
-// export { PersonaManager } from "./manager.js";
 // export { PersonaToolsetBridge } from "./toolset-bridge.js";
 // export { PersonaMCPIntegration } from "./mcp-integration.js";
 
