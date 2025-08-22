@@ -137,9 +137,19 @@ export {
   type BatchLoadResult,
 } from "./loader.js";
 
+// Persona Cache System
+export {
+  PersonaCache,
+  createPersonaCache,
+  defaultPersonaCache,
+  PersonaCacheFactory,
+  EvictionReason,
+  CacheEvents,
+  type CacheMetrics,
+} from "./cache.js";
+
 // Future exports (will be added as implementation progresses):
 // export { PersonaManager } from "./manager.js";
-// export { PersonaCache } from "./cache.js";
 // export { PersonaToolsetBridge } from "./toolset-bridge.js";
 // export { PersonaMCPIntegration } from "./mcp-integration.js";
 
