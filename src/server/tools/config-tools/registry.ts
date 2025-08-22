@@ -1,6 +1,6 @@
 /**
  * Configuration Tools Registry
- * 
+ *
  * Central registry of all configuration tools for HyperTool MCP.
  * This provides a single source of truth for configuration tool management.
  */
@@ -15,6 +15,7 @@ import { createUnequipToolsetModule } from "./tools/unequip-toolset.js";
 import { createGetActiveToolsetModule } from "./tools/get-active-toolset.js";
 import { createAddToolAnnotationModule } from "./tools/add-tool-annotation.js";
 import { createExitConfigurationModeModule } from "../common/exit-configuration-mode.js";
+import { createListPersonasModule } from "../persona/list-personas.js";
 
 /**
  * Registry of all configuration tool factories
@@ -28,6 +29,7 @@ export const CONFIG_TOOL_FACTORIES: ToolModuleFactory[] = [
   createUnequipToolsetModule,
   createGetActiveToolsetModule,
   createAddToolAnnotationModule,
+  createListPersonasModule, // Persona management tool
   createExitConfigurationModeModule,
 ];
 
@@ -45,7 +47,8 @@ export const CONFIG_TOOL_NAMES = [
   "unequip-toolset",
   "get-active-toolset",
   "add-tool-annotation",
+  "list-personas", // Persona management tool
   "exit-configuration-mode",
 ] as const;
 
-export type ConfigToolName = typeof CONFIG_TOOL_NAMES[number];
+export type ConfigToolName = (typeof CONFIG_TOOL_NAMES)[number];

@@ -16,7 +16,9 @@ vi.mock("./registry.js", () => ({
         description: "List available tools",
         inputSchema: { type: "object", properties: {} },
       },
-      handler: vi.fn().mockResolvedValue({ content: [{ type: "text", text: "success" }] }),
+      handler: vi
+        .fn()
+        .mockResolvedValue({ content: [{ type: "text", text: "success" }] }),
     })),
     vi.fn(() => ({
       toolName: "build-toolset",
@@ -25,7 +27,9 @@ vi.mock("./registry.js", () => ({
         description: "Build a toolset",
         inputSchema: { type: "object", properties: {} },
       },
-      handler: vi.fn().mockResolvedValue({ content: [{ type: "text", text: "success" }] }),
+      handler: vi
+        .fn()
+        .mockResolvedValue({ content: [{ type: "text", text: "success" }] }),
     })),
     vi.fn((deps, callback) => ({
       toolName: "exit-configuration-mode",
@@ -54,7 +58,7 @@ describe("ConfigToolsManager", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockDeps = {
       toolsetManager: {} as any,
       discoveryEngine: {} as any,
@@ -78,8 +82,8 @@ describe("ConfigToolsManager", () => {
     it("should return all configuration tools", () => {
       const tools = manager.getMcpTools();
       expect(tools).toHaveLength(3);
-      
-      const toolNames = tools.map(t => t.name);
+
+      const toolNames = tools.map((t) => t.name);
       expect(toolNames).toContain("list-available-tools");
       expect(toolNames).toContain("build-toolset");
       expect(toolNames).toContain("exit-configuration-mode");
@@ -93,8 +97,9 @@ describe("ConfigToolsManager", () => {
     });
 
     it("should throw error for unknown tools", async () => {
-      await expect(manager.handleToolCall("unknown-tool", {}))
-        .rejects.toThrow("Configuration tool not found: unknown-tool");
+      await expect(manager.handleToolCall("unknown-tool", {})).rejects.toThrow(
+        "Configuration tool not found: unknown-tool"
+      );
     });
 
     it("should call mode change callback for exit-configuration-mode", async () => {

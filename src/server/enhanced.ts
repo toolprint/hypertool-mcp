@@ -11,11 +11,18 @@ import {
   IToolDiscoveryEngine,
   ToolDiscoveryEngine,
 } from "../discovery/index.js";
-import { IConnectionManager, ConnectionManager, ConnectionState } from "../connection/index.js";
+import {
+  IConnectionManager,
+  ConnectionManager,
+  ConnectionState,
+} from "../connection/index.js";
 import { ExtensionAwareConnectionFactory } from "../connection/extensionFactory.js";
 import { ExtensionManager } from "../extensions/manager.js";
 import { APP_NAME, APP_TECHNICAL_NAME, ServerConfig } from "../config/index.js";
-import { isDxtEnabledViaService, isConfigToolsMenuEnabledViaService } from "../config/featureFlagService.js";
+import {
+  isDxtEnabledViaService,
+  isConfigToolsMenuEnabledViaService,
+} from "../config/featureFlagService.js";
 import ora from "ora";
 
 // Helper to create conditional spinners
@@ -23,10 +30,10 @@ function createSpinner(text: string, isStdio: boolean) {
   if (isStdio) {
     // Return a mock spinner that does nothing in stdio mode
     return {
-      start: () => ({ succeed: () => { }, fail: () => { }, warn: () => { } }),
-      succeed: () => { },
-      fail: () => { },
-      warn: () => { },
+      start: () => ({ succeed: () => {}, fail: () => {}, warn: () => {} }),
+      succeed: () => {},
+      fail: () => {},
+      warn: () => {},
     };
   }
   return ora(text).start();
@@ -39,10 +46,7 @@ import { ToolsetManager, ToolsetChangeEvent } from "./tools/toolset/manager.js";
 import { ConfigToolsManager } from "./tools/config-tools/manager.js";
 import { createEnterConfigurationModeModule } from "./tools/common/enter-configuration-mode.js";
 import { DiscoveredToolsChangedEvent } from "../discovery/types.js";
-import {
-  ToolDependencies,
-  ToolModule,
-} from "./tools/index.js";
+import { ToolDependencies, ToolModule } from "./tools/index.js";
 import chalk from "chalk";
 import { output } from "../utils/output.js";
 import { theme, semantic } from "../utils/theme.js";
@@ -75,7 +79,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    */
   private handleConfigToolsModeChange = async () => {
     this.configurationMode = !this.configurationMode;
-    logger.debug(`Mode changed via ConfigToolsManager: ${this.configurationMode ? 'configuration' : 'normal'}`);
+    logger.debug(
+      `Mode changed via ConfigToolsManager: ${this.configurationMode ? "configuration" : "normal"}`
+    );
     await this.notifyToolsChanged();
   };
 
@@ -278,7 +284,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
     await this.connectionManager.initialize(filteredConfigs);
     mainSpinner.succeed("🔗 Connection manager initialized");
-    await this.connectionManager.start()
+    await this.connectionManager.start();
 
     for (const [sName, _] of Object.entries(serverConfigs)) {
       const serverSpinner = createSpinner(
@@ -288,12 +294,18 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       try {
         const cmStatus = this.connectionManager.status[sName];
         if (cmStatus.state === "connected") {
-          serverSpinner.succeed(`Connected to [${sName}] MCP <-> [${serverConfigs[sName].type}]`);
+          serverSpinner.succeed(
+            `Connected to [${sName}] MCP <-> [${serverConfigs[sName].type}]`
+          );
         } else {
-          serverSpinner.fail(`Failed to connect to [${sName}] MCP <-> [${serverConfigs[sName].type}]`);
+          serverSpinner.fail(
+            `Failed to connect to [${sName}] MCP <-> [${serverConfigs[sName].type}]`
+          );
         }
       } catch (error) {
-        serverSpinner.fail(`Failed to check connection to [${sName}] MCP <-> [${serverConfigs[sName].type}]: ${(error as Error).message}`);
+        serverSpinner.fail(
+          `Failed to check connection to [${sName}] MCP <-> [${serverConfigs[sName].type}]: ${(error as Error).message}`
+        );
       }
     }
   }
@@ -471,7 +483,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             if (options.debug) {
               logger.info(
                 `Tools changed while toolset "${activeToolsetInfo.name}" is equipped. ` +
-                `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
+                  `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
               );
             }
           }
@@ -530,12 +542,16 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   /**
    * Initialize configuration mode components
    */
-  private async initializeConfigurationMode(dependencies: ToolDependencies): Promise<void> {
+  private async initializeConfigurationMode(
+    dependencies: ToolDependencies
+  ): Promise<void> {
     // Check if configuration tools menu is enabled via feature flag
     this.configToolsMenuEnabled = await isConfigToolsMenuEnabledViaService();
-    
+
     if (!this.configToolsMenuEnabled) {
-      logger.info('Configuration tools menu disabled - running in legacy mode (all tools exposed together)');
+      logger.info(
+        "Configuration tools menu disabled - running in legacy mode (all tools exposed together)"
+      );
       // In legacy mode, we still create ConfigToolsManager to have access to config tools
       this.configToolsManager = new ConfigToolsManager(dependencies);
       // Don't set configuration mode or create mode switching tools
@@ -560,7 +576,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     const hasEquippedToolset = this.toolsetManager.hasActiveToolset();
     this.configurationMode = !hasEquippedToolset;
 
-    logger.debug(`Initial configuration mode: ${this.configurationMode ? 'configuration' : 'normal'} (toolset equipped: ${hasEquippedToolset})`);
+    logger.debug(
+      `Initial configuration mode: ${this.configurationMode ? "configuration" : "normal"} (toolset equipped: ${hasEquippedToolset})`
+    );
   }
 
   /**
@@ -571,9 +589,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const listResult = await this.toolsetManager.listSavedToolsets();
       const storedToolsets = listResult.success
         ? listResult.toolsets.reduce(
-          (acc: any, t: any) => ({ ...acc, [t.name]: t }),
-          {}
-        )
+            (acc: any, t: any) => ({ ...acc, [t.name]: t }),
+            {}
+          )
         : {};
       const hasToolsets = Object.keys(storedToolsets).length > 0;
       const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();
@@ -629,7 +647,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         try {
           const configTools = this.configToolsManager.getMcpTools();
           tools.push(...configTools);
-          logger.debug(`Legacy mode: added ${configTools.length} configuration tools`);
+          logger.debug(
+            `Legacy mode: added ${configTools.length} configuration tools`
+          );
         } catch (error) {
           logger.error("Failed to get configuration tools:", error);
         }
@@ -655,7 +675,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         try {
           const configTools = this.configToolsManager.getMcpTools();
           tools.push(...configTools);
-          logger.debug(`Configuration mode: returning ${configTools.length} configuration tools`);
+          logger.debug(
+            `Configuration mode: returning ${configTools.length} configuration tools`
+          );
         } catch (error) {
           logger.error("Failed to get configuration tools:", error);
         }
@@ -667,7 +689,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       try {
         const mcpTools = this.toolsetManager.getMcpTools();
         tools.push(...mcpTools);
-        logger.debug(`Normal mode: got ${mcpTools.length} tools from toolset manager`);
+        logger.debug(
+          `Normal mode: got ${mcpTools.length} tools from toolset manager`
+        );
       } catch (error) {
         logger.error("Failed to get toolset tools:", error);
       }
@@ -678,7 +702,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       }
     }
 
-    logger.debug(`Total tools available: ${tools.length} (mode: ${this.configurationMode ? 'configuration' : 'normal'})`);
+    logger.debug(
+      `Total tools available: ${tools.length} (mode: ${this.configurationMode ? "configuration" : "normal"})`
+    );
     return tools;
   }
 
@@ -692,7 +718,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         // Try configuration tools first
         if (this.configToolsManager) {
           const configTools = this.configToolsManager.getMcpTools();
-          const isConfigTool = configTools.some(tool => tool.name === name);
+          const isConfigTool = configTools.some((tool) => tool.name === name);
           if (isConfigTool) {
             return await this.configToolsManager.handleToolCall(name, args);
           }
@@ -728,7 +754,10 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         // Normal mode: check enter-configuration-mode, then toolset/router
 
         // Check if this is enter-configuration-mode tool
-        if (name === "enter-configuration-mode" && this.enterConfigurationModeTool) {
+        if (
+          name === "enter-configuration-mode" &&
+          this.enterConfigurationModeTool
+        ) {
           return await this.enterConfigurationModeTool.handler(args);
         }
 

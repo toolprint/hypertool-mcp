@@ -51,16 +51,16 @@ const DEFAULT_IGNORE_PATTERNS = [
   // Version control
   "**/.git/**",
   "**/.git",
-  "**/.svn/**", 
+  "**/.svn/**",
   "**/.hg/**",
-  
+
   // Dependencies
   "**/node_modules/**",
   "**/node_modules",
   "**/vendor/**",
   "**/venv/**",
   "**/env/**",
-  
+
   // Build outputs
   "**/dist/**",
   "**/build/**",
@@ -68,18 +68,18 @@ const DEFAULT_IGNORE_PATTERNS = [
   "**/.next/**",
   "**/.nuxt/**",
   "**/target/**",
-  
+
   // IDE/Editor
   "**/.vscode/**",
   "**/.idea/**",
   "**/.cursor/**",
-  
+
   // OS files
   "**/.DS_Store",
   "**/Thumbs.db",
   "**/.Spotlight-V100",
   "**/.Trashes",
-  
+
   // Temporary files
   "**/tmp/**",
   "**/.tmp/**",
@@ -87,16 +87,16 @@ const DEFAULT_IGNORE_PATTERNS = [
   "**/.temp/**",
   "**/*.tmp",
   "**/*.temp",
-  
+
   // Log files
   "**/logs/**",
   "**/*.log",
-  
+
   // Cache directories
   "**/.cache/**",
   "**/.vitest-cache/**",
   "**/.pytest_cache/**",
-  
+
   // Agent specific
   "**/.taskmaster/**",
   "**/.serena/**",
@@ -145,27 +145,27 @@ function resolvePath(path: string): string {
  */
 function matchesIgnorePattern(path: string, patterns: string[]): boolean {
   const normalizedPath = path.replace(/\\/g, "/");
-  
+
   for (const pattern of patterns) {
     const normalizedPattern = pattern.replace(/\\/g, "/");
-    
+
     // Exact match
     if (normalizedPattern === normalizedPath) {
       return true;
     }
-    
+
     // ** wildcard (matches any number of directories)
     if (normalizedPattern.includes("**/")) {
       const regexPattern = normalizedPattern
         .replace(/\*\*/g, ".*")
         .replace(/\*/g, "[^/]*")
         .replace(/\?/g, "[^/]");
-      
+
       const regex = new RegExp(`^${regexPattern}$`);
       if (regex.test(normalizedPath)) {
         return true;
       }
-      
+
       // Check if any parent path matches
       const parts = normalizedPath.split("/");
       for (let i = 0; i < parts.length; i++) {
@@ -175,27 +175,30 @@ function matchesIgnorePattern(path: string, patterns: string[]): boolean {
         }
       }
     }
-    
+
     // Single * wildcard
     else if (normalizedPattern.includes("*")) {
       const regexPattern = normalizedPattern
         .replace(/\*/g, "[^/]*")
         .replace(/\?/g, "[^/]");
-      
+
       const regex = new RegExp(`^${regexPattern}$`);
       if (regex.test(normalizedPath)) {
         return true;
       }
     }
-    
+
     // Directory pattern (ends with /**)
     else if (normalizedPattern.endsWith("/**")) {
       const dirPattern = normalizedPattern.slice(0, -3);
-      if (normalizedPath.startsWith(dirPattern + "/") || normalizedPath === dirPattern) {
+      if (
+        normalizedPath.startsWith(dirPattern + "/") ||
+        normalizedPath === dirPattern
+      ) {
         return true;
       }
     }
-    
+
     // Basename match
     else {
       const pathBasename = basename(normalizedPath);
@@ -204,19 +207,23 @@ function matchesIgnorePattern(path: string, patterns: string[]): boolean {
       }
     }
   }
-  
+
   return false;
 }
 
 /**
  * Check if a directory should be ignored based on patterns
  */
-function shouldIgnoreDirectory(dirPath: string, basePath: string, ignorePatterns: string[]): boolean {
+function shouldIgnoreDirectory(
+  dirPath: string,
+  basePath: string,
+  ignorePatterns: string[]
+): boolean {
   const relativePath = relative(basePath, dirPath);
   if (!relativePath || relativePath === ".") {
     return false;
   }
-  
+
   return matchesIgnorePattern(relativePath, ignorePatterns);
 }
 
@@ -238,7 +245,10 @@ function isSupportedArchiveFile(filename: string): boolean {
 /**
  * Safely check if a path exists and is accessible
  */
-async function safeAccess(path: string, mode: number = fsConstants.R_OK): Promise<boolean> {
+async function safeAccess(
+  path: string,
+  mode: number = fsConstants.R_OK
+): Promise<boolean> {
   try {
     await fs.access(path, mode);
     return true;
@@ -250,7 +260,11 @@ async function safeAccess(path: string, mode: number = fsConstants.R_OK): Promis
 /**
  * Safely get directory stats with error handling
  */
-async function safeStats(path: string): Promise<{ isDirectory: boolean; isFile: boolean; isSymlink: boolean } | null> {
+async function safeStats(path: string): Promise<{
+  isDirectory: boolean;
+  isFile: boolean;
+  isSymlink: boolean;
+} | null> {
   try {
     const stats = await fs.lstat(path);
     return {
@@ -271,12 +285,12 @@ async function createPersonaReference(
   isArchive: boolean = false
 ): Promise<PersonaReference> {
   const name = basename(personaPath, isArchive ? extname(personaPath) : "");
-  
+
   // Basic structure check for quick validation
   let isValid = false;
   let description: string | undefined;
   const issues: string[] = [];
-  
+
   if (isArchive) {
     // For archives, we can only check if the file exists and is readable
     isValid = await safeAccess(personaPath, fsConstants.R_OK);
@@ -287,16 +301,18 @@ async function createPersonaReference(
     // For directories, check for persona config file
     const configFiles = SCANNER_DEFAULTS.SUPPORTED_CONFIG_FILES;
     let hasConfigFile = false;
-    
+
     for (const configFile of configFiles) {
       const configPath = join(personaPath, configFile);
       if (await safeAccess(configPath, fsConstants.R_OK)) {
         hasConfigFile = true;
-        
+
         // Try to quickly read description without full parsing
         try {
           const configContent = await fs.readFile(configPath, "utf-8");
-          const descMatch = configContent.match(/description:\s*["']?([^"'\n\r]+)["']?/);
+          const descMatch = configContent.match(
+            /description:\s*["']?([^"'\n\r]+)["']?/
+          );
           if (descMatch) {
             description = descMatch[1].trim();
           }
@@ -306,14 +322,14 @@ async function createPersonaReference(
         break;
       }
     }
-    
+
     if (!hasConfigFile) {
       issues.push("No persona.yaml or persona.yml file found");
     }
-    
+
     isValid = hasConfigFile;
   }
-  
+
   return {
     name,
     path: personaPath,
@@ -337,98 +353,111 @@ async function scanSingleDirectory(
     errors: [],
     warnings: [],
   };
-  
+
   const maxDepth = options.maxDepth ?? SCANNER_DEFAULTS.MAX_SCAN_DEPTH;
   const ignorePatterns = [
     ...DEFAULT_IGNORE_PATTERNS,
-    ...(options.ignorePatterns ?? [])
+    ...(options.ignorePatterns ?? []),
   ];
-  
+
   // Check if we've exceeded max depth
   if (currentDepth >= maxDepth) {
     return result;
   }
-  
+
   // Check if directory exists and is accessible
   if (!(await safeAccess(dirPath, fsConstants.R_OK))) {
     result.errors.push(`Directory not accessible: ${dirPath}`);
     return result;
   }
-  
+
   const stats = await safeStats(dirPath);
   if (!stats) {
     result.errors.push(`Cannot get stats for directory: ${dirPath}`);
     return result;
   }
-  
+
   if (!stats.isDirectory) {
     result.errors.push(`Path is not a directory: ${dirPath}`);
     return result;
   }
-  
+
   // Check if this directory should be ignored
-  if (currentDepth > 0 && shouldIgnoreDirectory(dirPath, dirPath, ignorePatterns)) {
+  if (
+    currentDepth > 0 &&
+    shouldIgnoreDirectory(dirPath, dirPath, ignorePatterns)
+  ) {
     return result;
   }
-  
+
   let entries: string[];
   try {
     entries = await fs.readdir(dirPath);
   } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'EACCES') {
+    if (error instanceof Error && "code" in error && error.code === "EACCES") {
       result.warnings.push(`Permission denied accessing directory: ${dirPath}`);
     } else {
-      result.errors.push(`Failed to read directory ${dirPath}: ${error instanceof Error ? error.message : String(error)}`);
+      result.errors.push(
+        `Failed to read directory ${dirPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
     return result;
   }
-  
+
   // Process each entry
   for (const entry of entries) {
     const entryPath = join(dirPath, entry);
     const entryStats = await safeStats(entryPath);
-    
+
     if (!entryStats) {
       result.warnings.push(`Cannot get stats for entry: ${entryPath}`);
       continue;
     }
-    
+
     // Handle symbolic links
     if (entryStats.isSymlink && !options.followSymlinks) {
       continue;
     }
-    
+
     // Check if entry should be ignored
     const relativeEntryPath = relative(dirPath, entryPath);
     if (matchesIgnorePattern(relativeEntryPath, ignorePatterns)) {
       continue;
     }
-    
+
     if (entryStats.isDirectory) {
       // Check if this directory contains a persona config file
       const hasPersonaConfig = await Promise.all(
-        SCANNER_DEFAULTS.SUPPORTED_CONFIG_FILES.map(configFile =>
+        SCANNER_DEFAULTS.SUPPORTED_CONFIG_FILES.map((configFile) =>
           safeAccess(join(entryPath, configFile), fsConstants.R_OK)
         )
-      ).then(results => results.some(hasAccess => hasAccess));
-      
+      ).then((results) => results.some((hasAccess) => hasAccess));
+
       if (hasPersonaConfig) {
         // This is a persona directory
         try {
           const personaRef = await createPersonaReference(entryPath, false);
           result.personas.push(personaRef);
         } catch (error) {
-          result.errors.push(`Failed to create persona reference for ${entryPath}: ${error instanceof Error ? error.message : String(error)}`);
+          result.errors.push(
+            `Failed to create persona reference for ${entryPath}: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       } else if (currentDepth + 1 < maxDepth) {
         // Recursively scan subdirectory
         try {
-          const subResult = await scanSingleDirectory(entryPath, options, currentDepth + 1);
+          const subResult = await scanSingleDirectory(
+            entryPath,
+            options,
+            currentDepth + 1
+          );
           result.personas.push(...subResult.personas);
           result.errors.push(...subResult.errors);
           result.warnings.push(...subResult.warnings);
         } catch (error) {
-          result.errors.push(`Failed to scan subdirectory ${entryPath}: ${error instanceof Error ? error.message : String(error)}`);
+          result.errors.push(
+            `Failed to scan subdirectory ${entryPath}: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
     } else if (entryStats.isFile && isSupportedArchiveFile(entry)) {
@@ -437,11 +466,13 @@ async function scanSingleDirectory(
         const personaRef = await createPersonaReference(entryPath, true);
         result.personas.push(personaRef);
       } catch (error) {
-        result.errors.push(`Failed to create persona reference for archive ${entryPath}: ${error instanceof Error ? error.message : String(error)}`);
+        result.errors.push(
+          `Failed to create persona reference for archive ${entryPath}: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
   }
-  
+
   return result;
 }
 
@@ -451,7 +482,7 @@ async function scanSingleDirectory(
 function getSearchPaths(config?: PersonaDiscoveryConfig): string[] {
   const standardPaths = STANDARD_PATHS.map(resolvePath);
   const additionalPaths = (config?.additionalPaths ?? []).map(resolvePath);
-  
+
   // Remove duplicates while preserving order
   const allPaths = [...standardPaths, ...additionalPaths];
   return Array.from(new Set(allPaths));
@@ -464,7 +495,7 @@ async function scanDirectoriesParallel(
   paths: string[],
   options: ScannerOptions
 ): Promise<DirectoryScanResult[]> {
-  return Promise.all(paths.map(path => scanSingleDirectory(path, options)));
+  return Promise.all(paths.map((path) => scanSingleDirectory(path, options)));
 }
 
 /**
@@ -475,7 +506,7 @@ async function scanDirectoriesSequential(
   options: ScannerOptions
 ): Promise<DirectoryScanResult[]> {
   const results: DirectoryScanResult[] = [];
-  
+
   for (const path of paths) {
     try {
       const result = await scanSingleDirectory(path, options);
@@ -484,63 +515,67 @@ async function scanDirectoriesSequential(
       // Create a result with just the error
       results.push({
         personas: [],
-        errors: [`Failed to scan ${path}: ${error instanceof Error ? error.message : String(error)}`],
+        errors: [
+          `Failed to scan ${path}: ${error instanceof Error ? error.message : String(error)}`,
+        ],
         warnings: [],
       });
     }
   }
-  
+
   return results;
 }
 
 /**
  * Scan for persona folders and archives in configured locations
- * 
+ *
  * @param config Discovery configuration with additional paths and options
  * @returns Promise resolving to array of discovered persona references
  */
-export async function scanForPersonas(config?: PersonaDiscoveryConfig): Promise<PersonaReference[]> {
+export async function scanForPersonas(
+  config?: PersonaDiscoveryConfig
+): Promise<PersonaReference[]> {
   const searchPaths = getSearchPaths(config);
-  
+
   const scannerOptions: ScannerOptions = {
     maxDepth: config?.maxDepth ?? SCANNER_DEFAULTS.MAX_SCAN_DEPTH,
     followSymlinks: config?.followSymlinks ?? false,
     ignorePatterns: config?.ignorePatterns ?? [],
     parallel: config?.parallelScan ?? true,
   };
-  
+
   try {
     const results = scannerOptions.parallel
       ? await scanDirectoriesParallel(searchPaths, scannerOptions)
       : await scanDirectoriesSequential(searchPaths, scannerOptions);
-    
+
     // Combine all results
     const allPersonas: PersonaReference[] = [];
     const allErrors: string[] = [];
     const allWarnings: string[] = [];
-    
+
     for (const result of results) {
       allPersonas.push(...result.personas);
       allErrors.push(...result.errors);
       allWarnings.push(...result.warnings);
     }
-    
+
     // Remove duplicate personas (same path)
-    const uniquePersonas = allPersonas.filter((persona, index, array) => 
-      array.findIndex(p => p.path === persona.path) === index
+    const uniquePersonas = allPersonas.filter(
+      (persona, index, array) =>
+        array.findIndex((p) => p.path === persona.path) === index
     );
-    
+
     // Log warnings and errors if there are any
     if (allWarnings.length > 0) {
       console.warn(`Persona scanner warnings: ${allWarnings.join("; ")}`);
     }
-    
+
     if (allErrors.length > 0) {
       console.warn(`Persona scanner errors: ${allErrors.join("; ")}`);
     }
-    
+
     return uniquePersonas;
-    
   } catch (error) {
     throw createFileSystemError(
       "scanning for personas",
@@ -552,7 +587,7 @@ export async function scanForPersonas(config?: PersonaDiscoveryConfig): Promise<
 
 /**
  * Scan a specific directory for personas
- * 
+ *
  * @param dirPath Path to directory to scan
  * @param options Scanner options
  * @returns Promise resolving to array of discovered persona references
@@ -562,28 +597,27 @@ export async function scanDirectory(
   options?: Partial<ScannerOptions>
 ): Promise<PersonaReference[]> {
   const resolvedPath = resolvePath(dirPath);
-  
+
   const scannerOptions: ScannerOptions = {
     maxDepth: options?.maxDepth ?? SCANNER_DEFAULTS.MAX_SCAN_DEPTH,
     followSymlinks: options?.followSymlinks ?? false,
     ignorePatterns: options?.ignorePatterns ?? [],
     parallel: false, // Single directory scan doesn't benefit from parallelism
   };
-  
+
   try {
     const result = await scanSingleDirectory(resolvedPath, scannerOptions);
-    
+
     // Log warnings and errors
     if (result.warnings.length > 0) {
       console.warn(`Directory scan warnings: ${result.warnings.join("; ")}`);
     }
-    
+
     if (result.errors.length > 0) {
       console.warn(`Directory scan errors: ${result.errors.join("; ")}`);
     }
-    
+
     return result.personas;
-    
   } catch (error) {
     throw createFileSystemError(
       "scanning directory",
@@ -595,23 +629,23 @@ export async function scanDirectory(
 
 /**
  * Check if a path appears to be a valid persona folder
- * 
+ *
  * @param dirPath Path to check
  * @returns Promise resolving to true if path contains persona configuration
  */
 export async function isPersonaDirectory(dirPath: string): Promise<boolean> {
   const resolvedPath = resolvePath(dirPath);
-  
+
   // Check if directory exists and is accessible
   if (!(await safeAccess(resolvedPath, fsConstants.R_OK))) {
     return false;
   }
-  
+
   const stats = await safeStats(resolvedPath);
   if (!stats?.isDirectory) {
     return false;
   }
-  
+
   // Check for persona config files
   for (const configFile of SCANNER_DEFAULTS.SUPPORTED_CONFIG_FILES) {
     const configPath = join(resolvedPath, configFile);
@@ -619,36 +653,36 @@ export async function isPersonaDirectory(dirPath: string): Promise<boolean> {
       return true;
     }
   }
-  
+
   return false;
 }
 
 /**
  * Check if a path is a valid persona archive
- * 
+ *
  * @param filePath Path to check
  * @returns Promise resolving to true if path is a supported persona archive
  */
 export async function isPersonaArchive(filePath: string): Promise<boolean> {
   const resolvedPath = resolvePath(filePath);
-  
+
   // Check file extension
   if (!isSupportedArchiveFile(basename(resolvedPath))) {
     return false;
   }
-  
+
   // Check if file exists and is accessible
   if (!(await safeAccess(resolvedPath, fsConstants.R_OK))) {
     return false;
   }
-  
+
   const stats = await safeStats(resolvedPath);
   return stats?.isFile ?? false;
 }
 
 /**
  * Get standard search paths with home directory resolution
- * 
+ *
  * @returns Array of resolved standard search paths
  */
 export function getStandardSearchPaths(): string[] {
@@ -657,39 +691,45 @@ export function getStandardSearchPaths(): string[] {
 
 /**
  * Validate that a search path exists and is accessible
- * 
+ *
  * @param path Path to validate
  * @returns Promise resolving to true if path is valid for scanning
  */
 export async function validateSearchPath(path: string): Promise<boolean> {
   const resolvedPath = resolvePath(path);
-  
+
   if (!(await safeAccess(resolvedPath, fsConstants.R_OK))) {
     return false;
   }
-  
+
   const stats = await safeStats(resolvedPath);
   return stats?.isDirectory ?? false;
 }
 
 /**
  * Check if scanning would find any personas without doing a full scan
- * 
+ *
  * @param config Discovery configuration
  * @returns Promise resolving to true if scanning would likely find personas
  */
-export async function hasPersonasInPaths(config?: PersonaDiscoveryConfig): Promise<boolean> {
+export async function hasPersonasInPaths(
+  config?: PersonaDiscoveryConfig
+): Promise<boolean> {
   const searchPaths = getSearchPaths(config);
-  
+
   for (const path of searchPaths) {
     if (await validateSearchPath(path)) {
       // Quick check: if directory exists and is accessible, assume it might contain personas
       try {
         const entries = await fs.readdir(path);
         // Look for potential persona folders or archives
-        for (const entry of entries.slice(0, 10)) { // Check first 10 entries for performance
+        for (const entry of entries.slice(0, 10)) {
+          // Check first 10 entries for performance
           const entryPath = join(path, entry);
-          if (await isPersonaDirectory(entryPath) || await isPersonaArchive(entryPath)) {
+          if (
+            (await isPersonaDirectory(entryPath)) ||
+            (await isPersonaArchive(entryPath))
+          ) {
             return true;
           }
         }
@@ -698,6 +738,6 @@ export async function hasPersonasInPaths(config?: PersonaDiscoveryConfig): Promi
       }
     }
   }
-  
+
   return false;
 }

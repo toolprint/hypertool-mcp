@@ -1,6 +1,6 @@
 /**
  * Configuration Tools Manager
- * 
+ *
  * Manages all configuration-related tools for HyperTool MCP.
  * This component is responsible for exposing tools in configuration mode
  * separate from the operational tools managed by ToolsetManager.
@@ -8,10 +8,7 @@
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolsProvider } from "../../types.js";
-import { 
-  ToolModule, 
-  ToolDependencies
-} from "../types.js";
+import { ToolModule, ToolDependencies } from "../types.js";
 import { createChildLogger } from "../../../utils/logging.js";
 import { CONFIG_TOOL_FACTORIES } from "./registry.js";
 
@@ -32,7 +29,7 @@ export class ConfigToolsManager implements ToolsProvider {
   ) {
     this.dependencies = dependencies;
     this.onModeChangeRequest = onModeChangeRequest;
-    
+
     this.registerTools();
   }
 
@@ -51,8 +48,6 @@ export class ConfigToolsManager implements ToolsProvider {
     logger.info(`Registered ${this.toolModules.size} configuration tools`);
   }
 
-
-
   /**
    * Get MCP tools for configuration mode
    * Implements ToolsProvider interface
@@ -60,7 +55,7 @@ export class ConfigToolsManager implements ToolsProvider {
   public getMcpTools(): Tool[] {
     // Return all configuration tools - server decides when to call this
     const tools: Tool[] = [];
-    
+
     for (const [_toolName, module] of this.toolModules) {
       tools.push(module.definition);
     }
@@ -69,19 +64,18 @@ export class ConfigToolsManager implements ToolsProvider {
     return tools;
   }
 
-
   /**
    * Handle tool call - route to appropriate handler
    */
   public async handleToolCall(name: string, args: any): Promise<any> {
     const module = this.toolModules.get(name);
-    
+
     if (!module) {
       throw new Error(`Configuration tool not found: ${name}`);
     }
 
     logger.debug(`Handling configuration tool call: ${name}`, { args });
-    
+
     try {
       const result = await module.handler(args);
       logger.debug(`Configuration tool call completed: ${name}`);

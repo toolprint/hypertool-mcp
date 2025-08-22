@@ -39,7 +39,7 @@ export const createEquipToolsetModule: ToolModuleFactory = (
           if (onModeChangeRequest) {
             onModeChangeRequest();
           }
-          
+
           return {
             content: [
               {

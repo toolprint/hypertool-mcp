@@ -155,7 +155,8 @@ describe("ConnectionManager", () => {
 
     it("should continue initializing when a server fails", async () => {
       const failingFactory = new MockConnectionFactory();
-      const originalCreate = failingFactory.createConnection.bind(failingFactory);
+      const originalCreate =
+        failingFactory.createConnection.bind(failingFactory);
       vi.spyOn(failingFactory, "createConnection").mockImplementation(
         (serverName: string, config: any) => {
           if (serverName === "bad-server") {

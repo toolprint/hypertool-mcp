@@ -11,7 +11,7 @@ import { z } from "zod";
 
 /**
  * Schema for persona name validation
- * 
+ *
  * Names must be hyphen-delimited lowercase following the pattern:
  * - Start with a lowercase letter (a-z)
  * - Contain only lowercase letters, numbers, and hyphens
@@ -33,7 +33,7 @@ export const PersonaNameSchema = z
 
 /**
  * Schema for tool ID validation
- * 
+ *
  * Tool IDs must follow the namespacedName format with MCP server prefix
  * Examples: "git.status", "docker.ps", "linear.create-issue"
  */
@@ -47,7 +47,7 @@ export const ToolIdSchema = z
 
 /**
  * Schema for persona toolset configuration
- * 
+ *
  * Validates individual toolset within a persona configuration
  */
 export const PersonaToolsetSchema = z.object({
@@ -60,7 +60,7 @@ export const PersonaToolsetSchema = z.object({
 
 /**
  * Schema for persona metadata
- * 
+ *
  * Optional metadata fields for persona information
  */
 export const PersonaMetadataSchema = z
@@ -70,10 +70,7 @@ export const PersonaMetadataSchema = z
       .array(z.string().min(1, "Tag cannot be empty"))
       .optional()
       .describe("Categorization tags"),
-    created: z
-      .string()
-      .optional()
-      .describe("Creation timestamp (ISO string)"),
+    created: z.string().optional().describe("Creation timestamp (ISO string)"),
     lastModified: z
       .string()
       .optional()
@@ -84,7 +81,7 @@ export const PersonaMetadataSchema = z
 
 /**
  * Main persona configuration schema
- * 
+ *
  * Validates the complete structure of a persona.yaml/yml file
  */
 export const PersonaConfigSchema = z
@@ -212,7 +209,7 @@ export interface SchemaValidationError {
 
 /**
  * Validate persona configuration against schema
- * 
+ *
  * @param data - Raw persona configuration data to validate
  * @returns Detailed validation result with errors and suggestions
  */
@@ -251,7 +248,7 @@ export function validatePersonaConfig(data: unknown): SchemaValidationResult {
 
 /**
  * Validate just the toolset array
- * 
+ *
  * @param toolsets - Array of toolset configurations to validate
  * @returns Validation result for toolsets
  */
@@ -293,7 +290,7 @@ export function validatePersonaToolsets(
 
 /**
  * Generate helpful suggestions based on validation errors
- * 
+ *
  * @param issue - Zod validation issue
  * @returns Suggested fix for the validation error
  */
@@ -363,7 +360,7 @@ function generateSuggestion(issue: z.ZodIssue): string {
 
 /**
  * Create a validation error summary for display
- * 
+ *
  * @param errors - Array of validation errors
  * @returns Formatted error summary string
  */
@@ -394,7 +391,7 @@ export const SUPPORTED_PERSONA_FILES = ["persona.yaml", "persona.yml"] as const;
 
 /**
  * Check if a filename is a supported persona configuration file
- * 
+ *
  * @param filename - Name of the file to check
  * @returns True if the file is a supported persona configuration file
  */
@@ -404,7 +401,7 @@ export function isSupportedPersonaFile(filename: string): boolean {
 
 /**
  * Extract persona name from a file path
- * 
+ *
  * @param filePath - Path to the persona configuration file
  * @returns Extracted persona name from the parent directory
  */
@@ -414,11 +411,11 @@ export function extractPersonaNameFromPath(filePath: string): string {
   const configFileIndex = pathParts.findIndex((part) =>
     SUPPORTED_PERSONA_FILES.includes(part as any)
   );
-  
+
   if (configFileIndex > 0) {
     return pathParts[configFileIndex - 1];
   }
-  
+
   // Fallback: use the last directory in the path
   return pathParts[pathParts.length - 2] || "unknown";
 }

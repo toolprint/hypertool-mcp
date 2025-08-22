@@ -325,7 +325,9 @@ export const createAddToolAnnotationModule: ToolModuleFactory = (
 
         // Save the updated toolset to preferences
         try {
-          const preferences = await import("../../../../config/preferenceStore.js");
+          const preferences = await import(
+            "../../../../config/preferenceStore.js"
+          );
           const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
           const saveToolsetsToPreferences = preferences.saveStoredToolsets;
 
