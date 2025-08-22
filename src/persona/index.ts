@@ -102,11 +102,21 @@ export {
   type ParseOptions,
 } from "./parser.js";
 
+// Persona Discovery Engine
+export {
+  PersonaDiscovery,
+  defaultPersonaDiscovery,
+  discoverPersonas,
+  refreshPersonaDiscovery,
+  hasAvailablePersonas,
+  getDiscoveryCacheStats,
+  clearDiscoveryCache,
+} from "./discovery.js";
+
 // Future exports (will be added as implementation progresses):
 // export { PersonaLoader } from "./loader.js";
 // export { PersonaManager } from "./manager.js";
 // export { PersonaValidator } from "./validator.js";
-// export { PersonaDiscovery } from "./discovery.js";
 // export { PersonaCache } from "./cache.js";
 // export { PersonaToolsetBridge } from "./toolset-bridge.js";
 // export { PersonaMCPIntegration } from "./mcp-integration.js";

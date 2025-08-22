@@ -39,7 +39,12 @@ export class PersonaError extends Error implements PersonaErrorInterface {
       cause?: Error;
     } = {}
   ) {
-    super(message, { cause: options.cause });
+    super(message);
+    
+    // Set cause manually for older Node.js versions
+    if (options.cause) {
+      (this as any).cause = options.cause;
+    }
 
     this.name = "PersonaError";
     this.code = code;
