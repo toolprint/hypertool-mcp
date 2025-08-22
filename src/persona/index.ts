@@ -87,6 +87,21 @@ export {
   hasPersonasInPaths,
 } from "./scanner.js";
 
+// YAML Parser
+export {
+  parsePersonaYAML,
+  parsePersonaYAMLFile,
+  parseMultiplePersonaFiles,
+  parseResultToValidationResult,
+  isPersonaConfigFile,
+  getSupportedPersonaFiles,
+  isValidYAMLSyntax,
+  extractPersonaNameFromYAML,
+  type ParseResult,
+  type YAMLError,
+  type ParseOptions,
+} from "./parser.js";
+
 // Future exports (will be added as implementation progresses):
 // export { PersonaLoader } from "./loader.js";
 // export { PersonaManager } from "./manager.js";
