@@ -56,6 +56,26 @@ export {
   createErrorSummary,
 } from "./errors.js";
 
+// Schema validation
+export {
+  PersonaNameSchema,
+  ToolIdSchema,
+  PersonaToolsetSchema,
+  PersonaMetadataSchema,
+  PersonaConfigSchema,
+  type PersonaConfigData,
+  type PersonaToolsetData,
+  type PersonaMetadataData,
+  type SchemaValidationResult,
+  type SchemaValidationError,
+  validatePersonaConfig,
+  validatePersonaToolsets,
+  createValidationErrorSummary,
+  SUPPORTED_PERSONA_FILES,
+  isSupportedPersonaFile,
+  extractPersonaNameFromPath,
+} from "./schemas.js";
+
 // Future exports (will be added as implementation progresses):
 // export { PersonaLoader } from "./loader.js";
 // export { PersonaManager } from "./manager.js";
