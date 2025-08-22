@@ -123,8 +123,21 @@ export {
   type ValidationOptions,
 } from "./validator.js";
 
+// Persona Loader
+export {
+  PersonaLoader,
+  createPersonaLoader,
+  loadPersona,
+  loadMultiplePersonas,
+  discoverAndLoadAllPersonas,
+  defaultPersonaLoader,
+  type PersonaLoadOptions,
+  type AssetCatalogOptions,
+  type PersonaLoadResult,
+  type BatchLoadResult,
+} from "./loader.js";
+
 // Future exports (will be added as implementation progresses):
-// export { PersonaLoader } from "./loader.js";
 // export { PersonaManager } from "./manager.js";
 // export { PersonaCache } from "./cache.js";
 // export { PersonaToolsetBridge } from "./toolset-bridge.js";
