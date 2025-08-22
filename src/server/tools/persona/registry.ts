@@ -7,12 +7,14 @@
 
 import { ToolModuleFactory } from "../types.js";
 import { createListPersonasModule } from "./list-personas.js";
+import { createValidatePersonaModule } from "./validate-persona.js";
 
 /**
  * Registry of all persona tool factories
  */
 export const PERSONA_TOOL_FACTORIES: ToolModuleFactory[] = [
   createListPersonasModule,
+  createValidatePersonaModule,
 ];
 
 /**
@@ -20,6 +22,7 @@ export const PERSONA_TOOL_FACTORIES: ToolModuleFactory[] = [
  */
 export const PERSONA_TOOL_NAMES = [
   "list-personas",
+  "validate-persona",
 ] as const;
 
 export type PersonaToolName = (typeof PERSONA_TOOL_NAMES)[number];
