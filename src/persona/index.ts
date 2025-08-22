@@ -76,6 +76,17 @@ export {
   extractPersonaNameFromPath,
 } from "./schemas.js";
 
+// File system scanner
+export {
+  scanForPersonas,
+  scanDirectory,
+  isPersonaDirectory,
+  isPersonaArchive,
+  getStandardSearchPaths,
+  validateSearchPath,
+  hasPersonasInPaths,
+} from "./scanner.js";
+
 // Future exports (will be added as implementation progresses):
 // export { PersonaLoader } from "./loader.js";
 // export { PersonaManager } from "./manager.js";
