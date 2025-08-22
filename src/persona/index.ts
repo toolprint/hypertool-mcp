@@ -1,0 +1,81 @@
+/**
+ * Persona Content Pack System
+ *
+ * This module provides a complete system for managing tool configurations
+ * through YAML-based personas. Personas allow users to quickly switch between
+ * different development contexts and tool configurations.
+ *
+ * @fileoverview Main entry point for the persona system
+ * @module persona
+ */
+
+// Core types and interfaces
+export type {
+  PersonaToolset,
+  PersonaConfig,
+  PersonaAssets,
+  LoadedPersona,
+  PersonaDiscoveryResult,
+  PersonaReference,
+  ValidationResult,
+  PersonaValidationError,
+  ActivationResult,
+  PersonaError,
+  PersonaCacheConfig,
+  PersonaCacheStats,
+  PersonaDiscoveryConfig,
+} from "./types.js";
+
+// Enums
+export { PersonaErrorCode, PersonaEvents } from "./types.js";
+
+// Future exports (will be added as implementation progresses):
+// export { PersonaLoader } from "./loader.js";
+// export { PersonaManager } from "./manager.js";
+// export { PersonaValidator } from "./validator.js";
+// export { PersonaDiscovery } from "./discovery.js";
+// export { PersonaCache } from "./cache.js";
+// export { PersonaToolsetBridge } from "./toolset-bridge.js";
+// export { PersonaMCPIntegration } from "./mcp-integration.js";
+
+/**
+ * Version information for the persona system
+ */
+export const PERSONA_SYSTEM_VERSION = "1.0.0";
+
+/**
+ * Default configuration values
+ */
+export const PERSONA_DEFAULTS = {
+  /** Default cache TTL in milliseconds (5 minutes) */
+  CACHE_TTL: 5 * 60 * 1000,
+
+  /** Default maximum cache size */
+  MAX_CACHE_SIZE: 100,
+
+  /** Default maximum directory scan depth */
+  MAX_SCAN_DEPTH: 3,
+
+  /** Standard persona search paths */
+  STANDARD_SEARCH_PATHS: [
+    "~/.toolprint/hypertool-mcp/personas",
+    "./personas",
+    ".",
+  ],
+
+  /** Supported persona file names */
+  SUPPORTED_CONFIG_FILES: ["persona.yaml", "persona.yml"],
+
+  /** Supported archive extensions */
+  SUPPORTED_ARCHIVE_EXTENSIONS: [".htp"],
+
+  /** Default ignore patterns for discovery */
+  DEFAULT_IGNORE_PATTERNS: [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.DS_Store",
+    "**/Thumbs.db",
+  ],
+} as const;
