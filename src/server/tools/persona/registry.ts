@@ -9,6 +9,7 @@ import { ToolModuleFactory } from "../types.js";
 import { createListPersonasModule } from "./list-personas.js";
 import { createValidatePersonaModule } from "./validate-persona.js";
 import { createActivatePersonaModule } from "./activate-persona.js";
+import { createDeactivatePersonaModule } from "./deactivate-persona.js";
 import { createGetActivePersonaModule } from "./get-active-persona.js";
 
 /**
@@ -18,6 +19,7 @@ export const PERSONA_TOOL_FACTORIES: ToolModuleFactory[] = [
   createListPersonasModule,
   createValidatePersonaModule,
   createActivatePersonaModule,
+  createDeactivatePersonaModule,
   createGetActivePersonaModule,
 ];
 
@@ -28,6 +30,7 @@ export const PERSONA_TOOL_NAMES = [
   "list-personas",
   "validate-persona",
   "activate-persona",
+  "deactivate-persona",
   "get-active-persona",
 ] as const;
 
