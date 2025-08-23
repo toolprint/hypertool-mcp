@@ -1,0 +1,43 @@
+name: complex-persona
+description: Complex multi-toolset persona with extensive configuration
+version: "2.1"
+toolsets:
+  - name: backend-dev
+    toolIds:
+      - git.status
+      - git.commit
+      - git.push
+      - docker.build
+      - docker.run
+      - docker.compose.up
+      - database.query
+      - testing.unit.run
+  - name: frontend-dev
+    toolIds:
+      - npm.install
+      - npm.build
+      - npm.test
+      - webpack.build
+      - browser.test
+  - name: devops
+    toolIds:
+      - kubernetes.deploy
+      - terraform.apply
+      - monitoring.check
+      - logs.tail
+  - name: debugging
+    toolIds:
+      - debugger.attach
+      - profiler.start
+      - logs.search
+      - metrics.query
+defaultToolset: backend-dev
+metadata:
+  author: DevOps Team
+  tags:
+    - fullstack
+    - devops
+    - debugging
+    - enterprise
+  created: "2023-06-15T08:30:00Z"
+  lastModified: "2024-01-15T14:22:00Z"

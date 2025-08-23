@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "git": {
+      "command": "git-mcp",
+      "args": ["--stdio"]
+    },
+    "docker": {
+      "command": "docker-mcp",
+      "args": ["--stdio"]
+    },
+    "filesystem": {
+      "command": "filesystem-mcp", 
+      "args": ["--stdio"]
+    }
+  }
+}
