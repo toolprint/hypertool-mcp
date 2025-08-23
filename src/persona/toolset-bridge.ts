@@ -9,7 +9,10 @@
  */
 
 import type { IToolDiscoveryEngine } from "../discovery/types.js";
-import type { ToolsetConfig, DynamicToolReference } from "../server/tools/toolset/types.js";
+import type {
+  ToolsetConfig,
+  DynamicToolReference,
+} from "../server/tools/toolset/types.js";
 import type { PersonaToolset } from "./types.js";
 import { createChildLogger } from "../utils/logging.js";
 
@@ -77,7 +80,7 @@ export class PersonaToolsetBridge {
     options: BridgeOptions = {}
   ) {
     this.toolDiscoveryEngine = toolDiscoveryEngine;
-    
+
     // Apply default options
     this.options = {
       validateTools: options.validateTools ?? true,
@@ -163,12 +166,18 @@ export class PersonaToolsetBridge {
       }
 
       // Generate toolset name
-      const toolsetName = this.generateToolsetName(personaName, personaToolset.name);
+      const toolsetName = this.generateToolsetName(
+        personaName,
+        personaToolset.name
+      );
 
       // Create ToolsetConfig
       const toolsetConfig: ToolsetConfig = {
         name: toolsetName,
-        description: this.generateToolsetDescription(personaName, personaToolset),
+        description: this.generateToolsetDescription(
+          personaName,
+          personaToolset
+        ),
         version: "1.0.0",
         createdAt: new Date(),
         tools: toolReferences,
@@ -190,7 +199,8 @@ export class PersonaToolsetBridge {
         stats,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error("Failed to convert persona toolset", {
         personaName,
         toolsetName: personaToolset.name,
@@ -221,12 +231,17 @@ export class PersonaToolsetBridge {
     const allWarnings: string[] = [];
 
     for (const personaToolset of personaToolsets) {
-      const result = await this.convertPersonaToolset(personaToolset, personaName);
+      const result = await this.convertPersonaToolset(
+        personaToolset,
+        personaName
+      );
 
       if (result.success && result.toolsetConfig) {
         toolsetConfigs.push(result.toolsetConfig);
         if (result.warnings) {
-          allWarnings.push(...result.warnings.map(w => `${personaToolset.name}: ${w}`));
+          allWarnings.push(
+            ...result.warnings.map((w) => `${personaToolset.name}: ${w}`)
+          );
         }
       } else {
         errors.push({
@@ -247,10 +262,17 @@ export class PersonaToolsetBridge {
   /**
    * Generate a unique toolset name from persona and toolset names
    */
-  private generateToolsetName(personaName: string, toolsetName: string): string {
+  private generateToolsetName(
+    personaName: string,
+    toolsetName: string
+  ): string {
     // Convert to lowercase and replace invalid characters
-    const cleanPersonaName = personaName.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-    const cleanToolsetName = toolsetName.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+    const cleanPersonaName = personaName
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-");
+    const cleanToolsetName = toolsetName
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-");
 
     // Combine with prefix
     return `${this.options.namePrefix}-${cleanPersonaName}-${cleanToolsetName}`;
@@ -264,7 +286,7 @@ export class PersonaToolsetBridge {
     personaToolset: PersonaToolset
   ): string {
     const baseDescription = `Toolset "${personaToolset.name}" from persona "${personaName}"`;
-    
+
     if (!this.options.includeMetadata) {
       return baseDescription;
     }
@@ -290,13 +312,16 @@ export class PersonaToolsetBridge {
 
     for (const toolRef of toolReferences) {
       try {
-        const resolution = this.toolDiscoveryEngine.resolveToolReference(toolRef, {
-          allowStaleRefs: false,
-        });
+        const resolution = this.toolDiscoveryEngine.resolveToolReference(
+          toolRef,
+          {
+            allowStaleRefs: false,
+          }
+        );
 
         if (resolution && resolution.exists) {
           stats.resolvedTools++;
-          
+
           // Log any warnings from resolution
           if (resolution.warnings.length > 0) {
             warnings.push(

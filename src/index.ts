@@ -509,6 +509,10 @@ ${theme.label("Examples:")}
     program.addCommand(createExtensionsCommand());
   }
 
+  // Add persona management commands
+  const { createPersonaCommand } = await import("./commands/persona/index.js");
+  program.addCommand(createPersonaCommand());
+
   // Toolset management is available via MCP tools when server is running
   // No top-level CLI commands needed per docs/NAVIGATION.md
 
@@ -555,7 +559,7 @@ ${theme.label("Examples:")}
   // If no command is specified, default to 'mcp run' or 'setup'
   // But only if the first argument isn't already a known command
   const cliArgs = process.argv.slice(2);
-  const knownCommands = ["config", "mcp", "setup", "service", "help"];
+  const knownCommands = ["config", "mcp", "setup", "service", "persona", "help"];
 
   // Add extensions to known commands only if DXT is enabled
   if (featureFlagService.isDxtEnabled()) {

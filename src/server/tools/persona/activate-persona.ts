@@ -131,7 +131,7 @@ function generateActivationSuggestions(
 
   if (error.includes("not found") || error.includes("PERSONA_NOT_FOUND")) {
     suggestions.push(`Persona "${personaName}" was not found.`);
-    
+
     if (availablePersonas.length > 0) {
       suggestions.push("Available personas:");
       availablePersonas.slice(0, 5).forEach((name) => {
@@ -145,32 +145,43 @@ function generateActivationSuggestions(
         "No personas are currently available. Try refreshing persona discovery."
       );
     }
-    
+
     suggestions.push('Use "list-personas" to see all available personas.');
-  } else if (error.includes("validation failed") || error.includes("VALIDATION_FAILED")) {
+  } else if (
+    error.includes("validation failed") ||
+    error.includes("VALIDATION_FAILED")
+  ) {
     suggestions.push("Persona validation failed. Common issues:");
     suggestions.push("  - Check YAML syntax in persona.yaml");
     suggestions.push("  - Ensure all required fields are present");
     suggestions.push("  - Verify toolset references are valid");
-    suggestions.push('Use "validate-persona" to see detailed validation results.');
+    suggestions.push(
+      'Use "validate-persona" to see detailed validation results.'
+    );
   } else if (error.includes("toolset") && error.includes("not found")) {
     suggestions.push("Specified toolset was not found in the persona.");
+    suggestions.push("Check available toolsets in the persona configuration.");
     suggestions.push(
-      "Check available toolsets in the persona configuration."
+      "Try activating without specifying a toolset to use the default."
     );
-    suggestions.push("Try activating without specifying a toolset to use the default.");
   } else if (error.includes("tool resolution")) {
     suggestions.push("Tool resolution failed during activation:");
     suggestions.push("  - Check that required MCP servers are running");
     suggestions.push("  - Verify tool IDs match available tools");
-    suggestions.push("  - Consider using partial activation if some tools are unavailable");
+    suggestions.push(
+      "  - Consider using partial activation if some tools are unavailable"
+    );
   } else {
     // Generic suggestions
     suggestions.push("Activation failed. Try these troubleshooting steps:");
     suggestions.push('  1. Use "list-personas" to verify the persona exists');
-    suggestions.push('  2. Use "validate-persona" to check for configuration issues');
+    suggestions.push(
+      '  2. Use "validate-persona" to check for configuration issues'
+    );
     suggestions.push("  3. Check that required MCP servers are connected");
-    suggestions.push("  4. Try activating with force=true to bypass validation");
+    suggestions.push(
+      "  4. Try activating with force=true to bypass validation"
+    );
   }
 
   return suggestions;
@@ -210,7 +221,7 @@ function createActivationResponse(
 
   // Get active persona state for detailed information
   const activeState = personaManager.getActivePersona();
-  
+
   const response: any = {
     success: true,
     persona: {
@@ -233,7 +244,7 @@ function createActivationResponse(
     const toolset = activeState.persona.config.toolsets?.find(
       (t) => t.name === result.activatedToolset
     );
-    
+
     if (toolset) {
       response.toolsetInfo = {
         name: toolset.name,
@@ -323,13 +334,16 @@ export const createActivatePersonaModule: ToolModuleFactory = (
         });
 
         // Create detailed response
-        const response = createActivationResponse(activationResult, personaManager);
+        const response = createActivationResponse(
+          activationResult,
+          personaManager
+        );
 
         // Add suggestions if activation failed
         if (!activationResult.success) {
           const availablePersonas = await getAvailablePersonaNames();
           const primaryError = activationResult.errors?.[0] || "Unknown error";
-          
+
           response.suggestions = generateActivationSuggestions(
             personaName,
             primaryError,
@@ -357,7 +371,7 @@ export const createActivatePersonaModule: ToolModuleFactory = (
         });
 
         const availablePersonas = await getAvailablePersonaNames();
-        
+
         const errorResponse = {
           success: false,
           errors: [`Activation failed: ${errorMessage}`],

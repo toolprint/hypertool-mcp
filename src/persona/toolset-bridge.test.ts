@@ -57,7 +57,9 @@ describe("PersonaToolsetBridge", () => {
 
       expect(result.success).toBe(true);
       expect(result.toolsetConfig).toBeDefined();
-      expect(result.toolsetConfig!.name).toBe("persona-test-persona-dev-essentials");
+      expect(result.toolsetConfig!.name).toBe(
+        "persona-test-persona-dev-essentials"
+      );
       expect(result.toolsetConfig!.tools).toHaveLength(4);
       expect(result.toolsetConfig!.tools[0].namespacedName).toBe("git.status");
       expect(result.toolsetConfig!.version).toBe("1.0.0");
@@ -80,7 +82,9 @@ describe("PersonaToolsetBridge", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.toolsetConfig!.name).toBe("persona-my-awesome-persona-dev-essentials");
+      expect(result.toolsetConfig!.name).toBe(
+        "persona-my-awesome-persona-dev-essentials"
+      );
       expect(result.toolsetConfig!.description).toContain(
         'Toolset "dev-essentials" from persona "my-awesome-persona"'
       );
@@ -226,8 +230,12 @@ describe("PersonaToolsetBridge", () => {
       expect(result.success).toBe(true);
       expect(result.toolsetConfigs).toHaveLength(2);
       expect(result.errors).toHaveLength(0);
-      expect(result.toolsetConfigs[0].name).toBe("persona-test-persona-toolset1");
-      expect(result.toolsetConfigs[1].name).toBe("persona-test-persona-toolset2");
+      expect(result.toolsetConfigs[0].name).toBe(
+        "persona-test-persona-toolset1"
+      );
+      expect(result.toolsetConfigs[1].name).toBe(
+        "persona-test-persona-toolset2"
+      );
     });
 
     it("should handle mixed success and failure", async () => {
@@ -291,7 +299,9 @@ describe("PersonaToolsetBridge", () => {
       });
 
       expect(createdBridge).toBeInstanceOf(PersonaToolsetBridge);
-      expect(createdBridge.getConfiguration().options.namePrefix).toBe("custom");
+      expect(createdBridge.getConfiguration().options.namePrefix).toBe(
+        "custom"
+      );
     });
 
     it("should convert single toolset using utility function", async () => {
@@ -311,7 +321,9 @@ describe("PersonaToolsetBridge", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.toolsetConfig!.name).toBe("persona-test-persona-dev-essentials");
+      expect(result.toolsetConfig!.name).toBe(
+        "persona-test-persona-dev-essentials"
+      );
     });
   });
 
@@ -332,13 +344,17 @@ describe("PersonaToolsetBridge", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.toolsetConfig!.name).toBe("persona-my-persona-name-my-awesome-toolset-");
+      expect(result.toolsetConfig!.name).toBe(
+        "persona-my-persona-name-my-awesome-toolset-"
+      );
     });
 
     it("should handle discovery engine throwing errors", async () => {
-      vi.mocked(mockDiscoveryEngine.resolveToolReference).mockImplementation(() => {
-        throw new Error("Discovery engine error");
-      });
+      vi.mocked(mockDiscoveryEngine.resolveToolReference).mockImplementation(
+        () => {
+          throw new Error("Discovery engine error");
+        }
+      );
 
       const result = await bridge.convertPersonaToolset(
         samplePersonaToolset,
