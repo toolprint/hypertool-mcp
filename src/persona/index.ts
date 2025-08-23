@@ -168,8 +168,16 @@ export {
   type BridgeOptions,
 } from "./toolset-bridge.js";
 
-// Future exports (will be added as implementation progresses):
-// export { PersonaMCPIntegration } from "./mcp-integration.js";
+// MCP Configuration Integration
+export {
+  PersonaMcpIntegration,
+  createPersonaMcpIntegration,
+  personaHasMcpConfig,
+  validatePersonaMcpConfigFile,
+  type McpConfigBackup,
+  type McpConfigMergeOptions,
+  type McpConfigMergeResult,
+} from "./mcp-integration.js";
 
 /**
  * Version information for the persona system

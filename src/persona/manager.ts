@@ -10,6 +10,7 @@
  */
 
 import { EventEmitter } from "events";
+import { createChildLogger } from "../utils/logging.js";
 import type { IToolDiscoveryEngine } from "../discovery/types.js";
 import type {
   LoadedPersona,
@@ -35,6 +36,13 @@ import {
 } from "./errors.js";
 import { PersonaToolsetBridge, type BridgeOptions } from "./toolset-bridge.js";
 import type { ToolsetManager } from "../server/tools/toolset/manager.js";
+import { 
+  PersonaMcpIntegration, 
+  type McpConfigMergeOptions,
+  type McpConfigMergeResult,
+  personaHasMcpConfig 
+} from "./mcp-integration.js";
+import type { MCPConfig } from "../types/config.js";
 
 /**
  * Persona manager configuration options
@@ -69,6 +77,16 @@ export interface PersonaManagerConfig {
 
   /** Bridge configuration options for toolset conversion */
   bridgeOptions?: BridgeOptions;
+
+  /** MCP configuration handlers for persona integration */
+  mcpConfigHandlers?: {
+    getCurrentConfig: () => Promise<MCPConfig | null>;
+    setCurrentConfig: (config: MCPConfig) => Promise<void>;
+    restartConnections?: () => Promise<void>;
+  };
+
+  /** MCP configuration merge options */
+  mcpMergeOptions?: Partial<McpConfigMergeOptions>;
 }
 
 /**
@@ -97,6 +115,8 @@ export interface ActivePersonaState {
     validationPassed: boolean;
     toolsResolved: number;
     warnings: string[];
+    mcpConfigApplied?: boolean;
+    mcpConfigWarnings?: string[];
   };
 }
 
@@ -154,16 +174,23 @@ export interface PersonaActivationOptions {
  * state management with cleanup and restoration capabilities.
  */
 export class PersonaManager extends EventEmitter {
+  private readonly logger = createChildLogger({ module: "persona/manager" });
   private readonly loader: PersonaLoader;
   private readonly cache: PersonaCache;
   private readonly discovery: PersonaDiscovery;
   private readonly toolsetBridge: PersonaToolsetBridge;
+  private readonly mcpIntegration: PersonaMcpIntegration;
   private readonly config: Omit<
     Required<PersonaManagerConfig>,
-    "toolDiscoveryEngine" | "toolsetManager"
-  > & { 
+    "toolDiscoveryEngine" | "toolsetManager" | "mcpConfigHandlers"
+  > & {
     toolDiscoveryEngine?: IToolDiscoveryEngine;
     toolsetManager?: ToolsetManager;
+    mcpConfigHandlers?: {
+      getCurrentConfig: () => Promise<MCPConfig | null>;
+      setCurrentConfig: (config: MCPConfig) => Promise<void>;
+      restartConnections?: () => Promise<void>;
+    };
   };
 
   private activeState: ActivePersonaState | null = null;
@@ -178,6 +205,7 @@ export class PersonaManager extends EventEmitter {
     this.config = {
       toolDiscoveryEngine: config.toolDiscoveryEngine,
       toolsetManager: config.toolsetManager,
+      mcpConfigHandlers: config.mcpConfigHandlers,
       cacheConfig: config.cacheConfig || {},
       discoveryConfig: config.discoveryConfig || {},
       defaultLoadOptions: config.defaultLoadOptions || {},
@@ -186,6 +214,7 @@ export class PersonaManager extends EventEmitter {
       persistState: config.persistState ?? false,
       stateKey: config.stateKey ?? "hypertool-mcp-persona-state",
       bridgeOptions: config.bridgeOptions || {},
+      mcpMergeOptions: config.mcpMergeOptions || {},
     };
 
     // Initialize components
@@ -199,6 +228,19 @@ export class PersonaManager extends EventEmitter {
       this.config.toolDiscoveryEngine,
       this.config.bridgeOptions
     );
+    
+    // Initialize MCP integration
+    if (this.config.mcpConfigHandlers) {
+      this.mcpIntegration = new PersonaMcpIntegration(
+        this.config.mcpConfigHandlers.getCurrentConfig,
+        this.config.mcpConfigHandlers.setCurrentConfig,
+        this.config.mcpConfigHandlers.restartConnections,
+        this.config.mcpMergeOptions
+      );
+    } else {
+      // Create null integration for personas without MCP config handlers
+      this.mcpIntegration = PersonaMcpIntegration.createNullIntegration();
+    }
 
     this.setupEventHandling();
   }
@@ -317,6 +359,16 @@ export class PersonaManager extends EventEmitter {
     const previousToolset = this.activeState.activeToolset;
 
     try {
+      // Restore MCP configuration if it was applied
+      if (this.activeState.metadata.mcpConfigApplied && this.mcpIntegration.hasBackup()) {
+        try {
+          await this.mcpIntegration.restoreOriginalConfig();
+        } catch (error) {
+          this.logger.warn("Failed to restore MCP configuration during deactivation:", error);
+          // Don't fail the entire deactivation for this
+        }
+      }
+
       // Restore previous state if available
       if (this.activeState.previousState) {
         await this.restorePreviousState(this.activeState.previousState);
@@ -496,6 +548,7 @@ export class PersonaManager extends EventEmitter {
     // Clean up components
     this.cache.destroy();
     this.discovery.dispose();
+    this.mcpIntegration.dispose();
 
     // Clear state
     this.discoveredPersonas = [];
@@ -635,14 +688,38 @@ export class PersonaManager extends EventEmitter {
       }
     }
 
-    // Apply MCP configuration if present (placeholder)
-    if (persona.mcpConfig) {
+    // Apply MCP configuration if present
+    let mcpConfigApplied = false;
+    let mcpConfigWarnings: string[] = [];
+    
+    if (personaHasMcpConfig(persona.assets)) {
       try {
-        await this.applyMcpConfig(persona.mcpConfig);
-      } catch (error) {
-        warnings.push(
-          `MCP config application failed: ${error instanceof Error ? error.message : String(error)}`
+        const mcpResult = await this.mcpIntegration.applyPersonaConfig(
+          persona.assets.mcpConfigFile!,
+          this.config.mcpMergeOptions
         );
+        
+        mcpConfigApplied = mcpResult.success;
+        
+        if (mcpResult.warnings.length > 0) {
+          mcpConfigWarnings.push(...mcpResult.warnings);
+          warnings.push(...mcpResult.warnings);
+        }
+        
+        if (mcpResult.errors.length > 0) {
+          warnings.push(...mcpResult.errors);
+        }
+        
+        if (mcpResult.conflicts.length > 0) {
+          warnings.push(`MCP config conflicts resolved: ${mcpResult.conflicts.length}`);
+        }
+
+      } catch (error) {
+        const errorMessage = `MCP config application failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`;
+        warnings.push(errorMessage);
+        mcpConfigWarnings.push(errorMessage);
       }
     }
 
@@ -657,6 +734,8 @@ export class PersonaManager extends EventEmitter {
         validationPassed: persona.validation.isValid,
         toolsResolved,
         warnings,
+        mcpConfigApplied,
+        mcpConfigWarnings,
       },
     };
 
@@ -765,25 +844,21 @@ export class PersonaManager extends EventEmitter {
         }
 
         // Return the number of successfully resolved tools
-        return conversionResult.stats?.resolvedTools || conversionResult.toolsetConfig.tools.length;
+        return (
+          conversionResult.stats?.resolvedTools ||
+          conversionResult.toolsetConfig.tools.length
+        );
       } else {
         // No toolset manager available - fall back to basic tool resolution count
         return conversionResult.stats?.resolvedTools || toolset.toolIds.length;
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to apply persona toolset: ${errorMessage}`);
     }
   }
 
-  /**
-   * Apply MCP configuration (placeholder for MCP integration)
-   */
-  private async applyMcpConfig(mcpConfig: any): Promise<void> {
-    // This would integrate with the actual MCP configuration system
-    // Placeholder implementation
-    return Promise.resolve();
-  }
 
   /**
    * Capture current state for restoration
@@ -815,13 +890,12 @@ export class PersonaManager extends EventEmitter {
         await this.config.toolsetManager.unequipToolset();
       }
 
-      // Restore previous MCP configuration if available
-      if (previousState?.mcpConfig) {
-        await this.applyMcpConfig(previousState.mcpConfig);
-      }
+      // Note: MCP configuration restoration is handled by the mcpIntegration.restoreOriginalConfig()
+      // during deactivatePersona(), not here
     } catch (error) {
       // Log error but don't fail deactivation
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to restore previous state: ${errorMessage}`);
     }
   }
