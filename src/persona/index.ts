@@ -159,8 +159,16 @@ export {
   type PersonaActivationOptions,
 } from "./manager.js";
 
+// Toolset Bridge Integration
+export {
+  PersonaToolsetBridge,
+  createPersonaToolsetBridge,
+  convertPersonaToolset,
+  type ToolsetConversionResult,
+  type BridgeOptions,
+} from "./toolset-bridge.js";
+
 // Future exports (will be added as implementation progresses):
-// export { PersonaToolsetBridge } from "./toolset-bridge.js";
 // export { PersonaMCPIntegration } from "./mcp-integration.js";
 
 /**

@@ -33,6 +33,8 @@ import {
   createToolsetNotFoundError,
   isPersonaError,
 } from "./errors.js";
+import { PersonaToolsetBridge, type BridgeOptions } from "./toolset-bridge.js";
+import type { ToolsetManager } from "../server/tools/toolset/manager.js";
 
 /**
  * Persona manager configuration options
@@ -40,6 +42,9 @@ import {
 export interface PersonaManagerConfig {
   /** Tool discovery engine for validation */
   toolDiscoveryEngine?: IToolDiscoveryEngine;
+
+  /** Toolset manager for integration with existing toolset system */
+  toolsetManager?: ToolsetManager;
 
   /** Cache configuration for loaded personas */
   cacheConfig?: PersonaCacheConfig;
@@ -61,6 +66,9 @@ export interface PersonaManagerConfig {
 
   /** State persistence key for local storage */
   stateKey?: string;
+
+  /** Bridge configuration options for toolset conversion */
+  bridgeOptions?: BridgeOptions;
 }
 
 /**
@@ -149,10 +157,14 @@ export class PersonaManager extends EventEmitter {
   private readonly loader: PersonaLoader;
   private readonly cache: PersonaCache;
   private readonly discovery: PersonaDiscovery;
+  private readonly toolsetBridge: PersonaToolsetBridge;
   private readonly config: Omit<
     Required<PersonaManagerConfig>,
-    "toolDiscoveryEngine"
-  > & { toolDiscoveryEngine?: IToolDiscoveryEngine };
+    "toolDiscoveryEngine" | "toolsetManager"
+  > & { 
+    toolDiscoveryEngine?: IToolDiscoveryEngine;
+    toolsetManager?: ToolsetManager;
+  };
 
   private activeState: ActivePersonaState | null = null;
   private discoveredPersonas: PersonaReference[] = [];
@@ -165,6 +177,7 @@ export class PersonaManager extends EventEmitter {
     // Apply default configuration
     this.config = {
       toolDiscoveryEngine: config.toolDiscoveryEngine,
+      toolsetManager: config.toolsetManager,
       cacheConfig: config.cacheConfig || {},
       discoveryConfig: config.discoveryConfig || {},
       defaultLoadOptions: config.defaultLoadOptions || {},
@@ -172,6 +185,7 @@ export class PersonaManager extends EventEmitter {
       validateOnActivation: config.validateOnActivation ?? true,
       persistState: config.persistState ?? false,
       stateKey: config.stateKey ?? "hypertool-mcp-persona-state",
+      bridgeOptions: config.bridgeOptions || {},
     };
 
     // Initialize components
@@ -180,6 +194,10 @@ export class PersonaManager extends EventEmitter {
     this.loader = new PersonaLoader(
       this.config.toolDiscoveryEngine,
       this.discovery
+    );
+    this.toolsetBridge = new PersonaToolsetBridge(
+      this.config.toolDiscoveryEngine,
+      this.config.bridgeOptions
     );
 
     this.setupEventHandling();
@@ -454,6 +472,7 @@ export class PersonaManager extends EventEmitter {
     activePersona: string | null;
     discoveredCount: number;
     lastDiscovery: Date | null;
+    bridge: ReturnType<PersonaToolsetBridge["getConfiguration"]>;
   } {
     return {
       discovery: this.discovery.getDiscoveryStats(),
@@ -461,6 +480,7 @@ export class PersonaManager extends EventEmitter {
       activePersona: this.activeState?.persona.config.name || null,
       discoveredCount: this.discoveredPersonas.length,
       lastDiscovery: this.lastDiscovery,
+      bridge: this.toolsetBridge.getConfiguration(),
     };
   }
 
@@ -710,30 +730,50 @@ export class PersonaManager extends EventEmitter {
   }
 
   /**
-   * Apply toolset configuration (placeholder for toolset integration)
+   * Apply toolset configuration via the toolset bridge
    */
   private async applyToolset(toolset: PersonaToolset): Promise<number> {
-    // This would integrate with the actual toolset system
-    // For now, just validate that tools exist if we have discovery engine
-
-    if (!this.config.toolDiscoveryEngine) {
-      return toolset.toolIds.length; // Assume all tools are available
+    if (!this.activeState?.persona) {
+      throw new Error("No active persona to apply toolset for");
     }
 
-    let resolvedCount = 0;
-    for (const toolId of toolset.toolIds) {
-      try {
-        const tool =
-          await this.config.toolDiscoveryEngine.getToolByName(toolId);
-        if (tool) {
-          resolvedCount++;
-        }
-      } catch {
-        // Tool not available, continue
+    const personaName = this.activeState.persona.config.name;
+
+    try {
+      // Convert persona toolset to ToolsetConfig format using the bridge
+      const conversionResult = await this.toolsetBridge.convertPersonaToolset(
+        toolset,
+        personaName
+      );
+
+      if (!conversionResult.success || !conversionResult.toolsetConfig) {
+        throw new Error(
+          `Failed to convert persona toolset: ${conversionResult.error}`
+        );
       }
-    }
 
-    return resolvedCount;
+      // Apply the toolset through the toolset manager if available
+      if (this.config.toolsetManager) {
+        const validation = this.config.toolsetManager.setCurrentToolset(
+          conversionResult.toolsetConfig
+        );
+
+        if (!validation.valid) {
+          throw new Error(
+            `Invalid toolset configuration: ${validation.errors.join(", ")}`
+          );
+        }
+
+        // Return the number of successfully resolved tools
+        return conversionResult.stats?.resolvedTools || conversionResult.toolsetConfig.tools.length;
+      } else {
+        // No toolset manager available - fall back to basic tool resolution count
+        return conversionResult.stats?.resolvedTools || toolset.toolIds.length;
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to apply persona toolset: ${errorMessage}`);
+    }
   }
 
   /**
@@ -764,9 +804,26 @@ export class PersonaManager extends EventEmitter {
   private async restorePreviousState(
     previousState: ActivePersonaState["previousState"]
   ): Promise<void> {
-    // This would restore the previous toolset and MCP configuration
-    // Placeholder implementation
-    return Promise.resolve();
+    try {
+      // Restore previous toolset if available
+      if (previousState?.toolsetName && this.config.toolsetManager) {
+        // Try to restore previous toolset (this is a simplified implementation)
+        // In a full implementation, you'd need to restore the exact previous state
+        await this.config.toolsetManager.unequipToolset();
+      } else if (this.config.toolsetManager) {
+        // No previous toolset, just unequip current one
+        await this.config.toolsetManager.unequipToolset();
+      }
+
+      // Restore previous MCP configuration if available
+      if (previousState?.mcpConfig) {
+        await this.applyMcpConfig(previousState.mcpConfig);
+      }
+    } catch (error) {
+      // Log error but don't fail deactivation
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to restore previous state: ${errorMessage}`);
+    }
   }
 
   /**
