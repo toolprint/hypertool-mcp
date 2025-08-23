@@ -61,7 +61,7 @@ describe("PersonaCache", () => {
   afterEach(async () => {
     // Cleanup
     cache.destroy();
-    
+
     // Clean up temporary files
     try {
       await fs.rmdir(tempDir, { recursive: true });
@@ -73,7 +73,7 @@ describe("PersonaCache", () => {
   describe("Basic Cache Operations", () => {
     it("should store and retrieve a persona", () => {
       const persona = testPersonas[0];
-      
+
       // Should not be cached initially
       expect(cache.has(persona.config.name, persona.sourcePath)).toBe(false);
       expect(cache.get(persona.config.name, persona.sourcePath)).toBeNull();
@@ -89,13 +89,20 @@ describe("PersonaCache", () => {
 
     it("should handle cache keys with same name but different paths", () => {
       const persona1 = testPersonas[0];
-      const persona2 = { ...testPersonas[1], config: { ...testPersonas[1].config, name: persona1.config.name } };
+      const persona2 = {
+        ...testPersonas[1],
+        config: { ...testPersonas[1].config, name: persona1.config.name },
+      };
 
       cache.set(persona1);
       cache.set(persona2);
 
-      expect(cache.get(persona1.config.name, persona1.sourcePath)).toBe(persona1);
-      expect(cache.get(persona2.config.name, persona2.sourcePath)).toBe(persona2);
+      expect(cache.get(persona1.config.name, persona1.sourcePath)).toBe(
+        persona1
+      );
+      expect(cache.get(persona2.config.name, persona2.sourcePath)).toBe(
+        persona2
+      );
     });
 
     it("should update existing cache entries", () => {
@@ -117,24 +124,27 @@ describe("PersonaCache", () => {
       cache.set(persona);
 
       expect(cache.has(persona.config.name, persona.sourcePath)).toBe(true);
-      
+
       const deleted = cache.delete(persona.config.name, persona.sourcePath);
       expect(deleted).toBe(true);
       expect(cache.has(persona.config.name, persona.sourcePath)).toBe(false);
-      
-      const deletedAgain = cache.delete(persona.config.name, persona.sourcePath);
+
+      const deletedAgain = cache.delete(
+        persona.config.name,
+        persona.sourcePath
+      );
       expect(deletedAgain).toBe(false);
     });
 
     it("should clear all cached personas", () => {
-      testPersonas.forEach(persona => cache.set(persona));
-      
+      testPersonas.forEach((persona) => cache.set(persona));
+
       expect(cache.getStats().size).toBe(testPersonas.length);
-      
+
       cache.clear();
-      
+
       expect(cache.getStats().size).toBe(0);
-      testPersonas.forEach(persona => {
+      testPersonas.forEach((persona) => {
         expect(cache.has(persona.config.name, persona.sourcePath)).toBe(false);
       });
     });
@@ -148,7 +158,7 @@ describe("PersonaCache", () => {
       expect(cache.has(persona.config.name, persona.sourcePath)).toBe(true);
 
       // Wait for TTL to expire
-      await new Promise(resolve => setTimeout(resolve, 1100));
+      await new Promise((resolve) => setTimeout(resolve, 1100));
 
       expect(cache.has(persona.config.name, persona.sourcePath)).toBe(false);
       expect(cache.get(persona.config.name, persona.sourcePath)).toBeNull();
@@ -172,7 +182,11 @@ describe("PersonaCache", () => {
       const persona = testPersonas[0];
       cache.set(persona);
 
-      const refreshed = cache.refreshTTL(persona.config.name, persona.sourcePath, 5000);
+      const refreshed = cache.refreshTTL(
+        persona.config.name,
+        persona.sourcePath,
+        5000
+      );
       expect(refreshed).toBe(true);
 
       // Should still be accessible after original TTL would have expired
@@ -190,7 +204,7 @@ describe("PersonaCache", () => {
   describe("LRU Eviction", () => {
     it("should evict least recently used personas when size limit reached", async () => {
       // Fill cache to capacity
-      testPersonas.slice(0, 3).forEach(persona => cache.set(persona));
+      testPersonas.slice(0, 3).forEach((persona) => cache.set(persona));
       expect(cache.getStats().size).toBe(3);
 
       // Access personas to establish LRU order
@@ -206,14 +220,22 @@ describe("PersonaCache", () => {
       expect(cache.getStats().size).toBe(3);
 
       // LRU persona (testPersonas[0]) should be evicted
-      expect(cache.has(testPersonas[0].config.name, testPersonas[0].sourcePath)).toBe(false);
-      expect(cache.has(testPersonas[1].config.name, testPersonas[1].sourcePath)).toBe(true);
-      expect(cache.has(testPersonas[2].config.name, testPersonas[2].sourcePath)).toBe(true);
-      expect(cache.has(extraPersona.config.name, extraPersona.sourcePath)).toBe(true);
+      expect(
+        cache.has(testPersonas[0].config.name, testPersonas[0].sourcePath)
+      ).toBe(false);
+      expect(
+        cache.has(testPersonas[1].config.name, testPersonas[1].sourcePath)
+      ).toBe(true);
+      expect(
+        cache.has(testPersonas[2].config.name, testPersonas[2].sourcePath)
+      ).toBe(true);
+      expect(cache.has(extraPersona.config.name, extraPersona.sourcePath)).toBe(
+        true
+      );
     });
 
     it("should track access order correctly", () => {
-      testPersonas.slice(0, 3).forEach(persona => cache.set(persona));
+      testPersonas.slice(0, 3).forEach((persona) => cache.set(persona));
 
       // Access in specific order to establish LRU
       cache.get(testPersonas[0].config.name, testPersonas[0].sourcePath);
@@ -268,7 +290,7 @@ describe("PersonaCache", () => {
 
     it("should provide detailed metrics", () => {
       const persona = testPersonas[0];
-      
+
       // Generate some operations
       cache.get(persona.config.name, persona.sourcePath); // miss
       cache.set(persona);
@@ -277,7 +299,7 @@ describe("PersonaCache", () => {
       const metrics = cache.getMetrics();
       expect(metrics.operations).toBe(2); // 2 get operations
       expect(metrics.averageLookupTime).toBeGreaterThan(0);
-      expect(typeof metrics.evictionCounts).toBe('object');
+      expect(typeof metrics.evictionCounts).toBe("object");
     });
 
     it("should track eviction reasons", () => {
@@ -326,7 +348,7 @@ describe("PersonaCache", () => {
     });
 
     it("should emit clear events", (done) => {
-      testPersonas.forEach(persona => cache.set(persona));
+      testPersonas.forEach((persona) => cache.set(persona));
 
       cache.on(CacheEvents.CACHE_CLEARED, (event) => {
         expect(event.count).toBe(testPersonas.length);
@@ -369,14 +391,14 @@ describe("PersonaCache", () => {
 
       const stats = cache.getStats();
       expect(stats.memoryUsage).toBeGreaterThan(0);
-      expect(typeof stats.memoryUsage).toBe('number');
+      expect(typeof stats.memoryUsage).toBe("number");
     });
 
     it("should handle memory pressure with eviction", () => {
       // This test would need a more sophisticated setup to actually trigger
       // memory-based eviction, but we can verify the mechanism exists
-      testPersonas.forEach(persona => cache.set(persona));
-      
+      testPersonas.forEach((persona) => cache.set(persona));
+
       const initialSize = cache.getStats().size;
       expect(initialSize).toBeLessThanOrEqual(3); // Max size limit
     });
@@ -390,14 +412,14 @@ describe("PersonaCache", () => {
       expect(cache.getStats().size).toBe(1);
 
       // Wait for TTL expiration and cleanup
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      await new Promise((resolve) => setTimeout(resolve, 1200));
 
       // Size should be reduced after cleanup
       expect(cache.getStats().size).toBe(0);
     });
 
     it("should destroy cache properly", () => {
-      testPersonas.forEach(persona => cache.set(persona));
+      testPersonas.forEach((persona) => cache.set(persona));
       expect(cache.getStats().size).toBe(testPersonas.length);
 
       cache.destroy();
@@ -460,17 +482,17 @@ describe("Cache Utilities", () => {
     });
 
     expect(cache).toBeInstanceOf(PersonaCache);
-    
+
     // Cleanup
     cache.destroy();
   });
 
   it("should use default cache instance", () => {
     expect(defaultPersonaCache).toBeInstanceOf(PersonaCache);
-    
+
     const stats = defaultPersonaCache.getStats();
-    expect(typeof stats.hits).toBe('number');
-    expect(typeof stats.misses).toBe('number');
+    expect(typeof stats.hits).toBe("number");
+    expect(typeof stats.misses).toBe("number");
   });
 });
 
@@ -485,21 +507,26 @@ async function createTestPersonas(tempDir: string): Promise<LoadedPersona[]> {
     await fs.mkdir(personaDir, { recursive: true });
 
     const configFile = join(personaDir, "persona.yaml");
-    await fs.writeFile(configFile, `
+    await fs.writeFile(
+      configFile,
+      `
 name: ${personaName}
 description: Test persona ${i}
 toolsets:
   - name: default
     toolIds: ["test.tool1", "test.tool2"]
-`);
+`
+    );
 
     const config: PersonaConfig = {
       name: personaName,
       description: `Test persona ${i}`,
-      toolsets: [{
-        name: "default",
-        toolIds: ["test.tool1", "test.tool2"]
-      }],
+      toolsets: [
+        {
+          name: "default",
+          toolIds: ["test.tool1", "test.tool2"],
+        },
+      ],
       defaultToolset: "default",
     };
 
@@ -533,21 +560,26 @@ async function createExtraTestPersona(tempDir: string): Promise<LoadedPersona> {
   await fs.mkdir(personaDir, { recursive: true });
 
   const configFile = join(personaDir, "persona.yaml");
-  await fs.writeFile(configFile, `
+  await fs.writeFile(
+    configFile,
+    `
 name: ${personaName}
 description: Extra test persona
 toolsets:
   - name: default
     toolIds: ["test.tool3", "test.tool4"]
-`);
+`
+  );
 
   const config: PersonaConfig = {
     name: personaName,
     description: "Extra test persona",
-    toolsets: [{
-      name: "default",
-      toolIds: ["test.tool3", "test.tool4"]
-    }],
+    toolsets: [
+      {
+        name: "default",
+        toolIds: ["test.tool3", "test.tool4"],
+      },
+    ],
     defaultToolset: "default",
   };
 

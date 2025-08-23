@@ -17,7 +17,8 @@ export const listPersonasDefinition: Tool = {
     properties: {
       includeInvalid: {
         type: "boolean",
-        description: "Whether to include invalid personas in the results (default: false)",
+        description:
+          "Whether to include invalid personas in the results (default: false)",
         default: false,
       },
     },
@@ -95,7 +96,12 @@ export const listPersonasDefinition: Tool = {
             },
           },
         },
-        required: ["totalPersonas", "validPersonas", "invalidPersonas", "searchPaths"],
+        required: [
+          "totalPersonas",
+          "validPersonas",
+          "invalidPersonas",
+          "searchPaths",
+        ],
       },
       warnings: {
         type: "array",
@@ -135,7 +141,7 @@ export const listPersonasDefinition: Tool = {
 async function getToolsetCount(personaPath: string): Promise<number> {
   try {
     // Skip toolset counting for archive files
-    if (personaPath.endsWith('.htp')) {
+    if (personaPath.endsWith(".htp")) {
       return 0; // Cannot easily count toolsets in archives without extraction
     }
 
@@ -159,14 +165,16 @@ async function getToolsetCount(personaPath: string): Promise<number> {
     }
 
     // Count toolsets using regex (similar to discovery engine approach)
-    const toolsetMatches = configContent.match(/^\s*-\s*name:\s*["']?([^"'\n\r]+)["']?/gm);
-    
+    const toolsetMatches = configContent.match(
+      /^\s*-\s*name:\s*["']?([^"'\n\r]+)["']?/gm
+    );
+
     // Check if we're in a toolsets section
     const toolsetsMatch = configContent.match(/^toolsets:\s*$/m);
     if (toolsetsMatch && toolsetMatches) {
       return toolsetMatches.length;
     }
-    
+
     return 0; // No toolsets section or no toolset entries found
   } catch (error) {
     // If we can't parse, return 0 rather than failing the entire operation
@@ -174,7 +182,9 @@ async function getToolsetCount(personaPath: string): Promise<number> {
   }
 }
 
-export const createListPersonasModule: ToolModuleFactory = (deps): ToolModule => {
+export const createListPersonasModule: ToolModuleFactory = (
+  deps
+): ToolModule => {
   return {
     toolName: "list-personas",
     definition: listPersonasDefinition,
@@ -192,7 +202,9 @@ export const createListPersonasModule: ToolModuleFactory = (deps): ToolModule =>
 
         // Calculate summary statistics
         const totalPersonas = discoveryResult.personas.length;
-        const validPersonas = discoveryResult.personas.filter((p) => p.isValid).length;
+        const validPersonas = discoveryResult.personas.filter(
+          (p) => p.isValid
+        ).length;
         const invalidPersonas = totalPersonas - validPersonas;
 
         // Build response structure with toolset counts
@@ -204,7 +216,8 @@ export const createListPersonasModule: ToolModuleFactory = (deps): ToolModule =>
             isValid: persona.isValid,
             isArchive: persona.isArchive,
             toolsetCount: await getToolsetCount(persona.path),
-            ...(persona.issues && persona.issues.length > 0 && { issues: persona.issues }),
+            ...(persona.issues &&
+              persona.issues.length > 0 && { issues: persona.issues }),
           }))
         );
 
@@ -231,8 +244,9 @@ export const createListPersonasModule: ToolModuleFactory = (deps): ToolModule =>
           structuredContent: response,
         };
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
         const errorResponse = {
           success: false,
           personas: [],

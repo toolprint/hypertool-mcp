@@ -47,7 +47,9 @@ export class PersonaToolsManager implements ToolsProvider {
    * @returns Array of tool definitions for MCP protocol
    */
   getMcpTools(): Tool[] {
-    return Array.from(this.toolModules.values()).map((module) => module.definition);
+    return Array.from(this.toolModules.values()).map(
+      (module) => module.definition
+    );
   }
 
   /**

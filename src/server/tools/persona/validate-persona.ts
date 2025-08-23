@@ -4,8 +4,14 @@
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolModuleFactory, ToolModule } from "../types.js";
-import { validatePersona, ValidationOptions } from "../../../persona/validator.js";
-import { ValidationResult, PersonaValidationErrorInfo } from "../../../persona/types.js";
+import {
+  validatePersona,
+  ValidationOptions,
+} from "../../../persona/validator.js";
+import {
+  ValidationResult,
+  PersonaValidationErrorInfo,
+} from "../../../persona/types.js";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { stat } from "fs/promises";
@@ -53,21 +59,25 @@ export const validatePersonaDefinition: Tool = {
     properties: {
       personaPath: {
         type: "string",
-        description: "Path to the persona folder or persona.yaml/yml file to validate",
+        description:
+          "Path to the persona folder or persona.yaml/yml file to validate",
       },
       includeWarnings: {
         type: "boolean",
-        description: "Whether to include warnings in the validation result (default: true)",
+        description:
+          "Whether to include warnings in the validation result (default: true)",
         default: true,
       },
       checkToolAvailability: {
-        type: "boolean", 
-        description: "Whether to perform tool availability validation (default: true)",
+        type: "boolean",
+        description:
+          "Whether to perform tool availability validation (default: true)",
         default: true,
       },
       validateMcpConfig: {
         type: "boolean",
-        description: "Whether to validate MCP config files if present (default: true)",
+        description:
+          "Whether to validate MCP config files if present (default: true)",
         default: true,
       },
     },
@@ -89,7 +99,9 @@ export const validatePersonaDefinition: Tool = {
  * @param path Path to check
  * @returns "file" | "directory" | "not-found"
  */
-async function getPathType(path: string): Promise<"file" | "directory" | "not-found"> {
+async function getPathType(
+  path: string
+): Promise<"file" | "directory" | "not-found"> {
   try {
     const stats = await stat(path);
     return stats.isDirectory() ? "directory" : "file";
@@ -114,7 +126,7 @@ function createValidationSummary(
     validationLayers: [
       "YAML Syntax & Schema",
       "Business Rules",
-      "Tool Resolution", 
+      "Tool Resolution",
       "MCP Configuration",
     ],
     pathType: pathType as "file" | "directory", // Filter out "not-found"
@@ -134,42 +146,56 @@ function generateActionableSuggestions(
   const suggestions: string[] = [];
 
   if (!result.isValid) {
-    suggestions.push(`Fix the ${result.errors.length} error(s) found in "${personaPath}"`);
-    
+    suggestions.push(
+      `Fix the ${result.errors.length} error(s) found in "${personaPath}"`
+    );
+
     // Group suggestions by error type
-    const errorTypes = [...new Set(result.errors.map(e => e.type))];
+    const errorTypes = [...new Set(result.errors.map((e) => e.type))];
     for (const errorType of errorTypes) {
       switch (errorType) {
         case "schema":
-          suggestions.push("Check YAML syntax and ensure all required fields are present");
+          suggestions.push(
+            "Check YAML syntax and ensure all required fields are present"
+          );
           break;
         case "business":
-          suggestions.push("Review business rules: persona name should match folder name, default toolset should exist");
+          suggestions.push(
+            "Review business rules: persona name should match folder name, default toolset should exist"
+          );
           break;
         case "tool-resolution":
-          suggestions.push("Verify that all tool IDs reference existing tools from connected MCP servers");
+          suggestions.push(
+            "Verify that all tool IDs reference existing tools from connected MCP servers"
+          );
           break;
         case "mcp-config":
-          suggestions.push("Check mcp.json file format and server configuration validity");
+          suggestions.push(
+            "Check mcp.json file format and server configuration validity"
+          );
           break;
       }
     }
   }
 
   if (result.warnings.length > 0) {
-    suggestions.push(`Consider addressing ${result.warnings.length} warning(s) to improve persona quality`);
+    suggestions.push(
+      `Consider addressing ${result.warnings.length} warning(s) to improve persona quality`
+    );
   }
 
   return suggestions;
 }
 
-export const createValidatePersonaModule: ToolModuleFactory = (deps): ToolModule => {
+export const createValidatePersonaModule: ToolModuleFactory = (
+  deps
+): ToolModule => {
   return {
     toolName: "validate-persona",
     definition: validatePersonaDefinition,
     handler: async (args: any) => {
       try {
-        const { 
+        const {
           personaPath,
           includeWarnings = true,
           checkToolAvailability = true,
@@ -181,12 +207,16 @@ export const createValidatePersonaModule: ToolModuleFactory = (deps): ToolModule
             success: false,
             result: {
               isValid: false,
-              errors: [{
-                type: "schema" as const,
-                message: "personaPath parameter is required and must be a string",
-                suggestion: "Provide a valid path to a persona folder or persona.yaml/yml file",
-                severity: "error" as const,
-              }],
+              errors: [
+                {
+                  type: "schema" as const,
+                  message:
+                    "personaPath parameter is required and must be a string",
+                  suggestion:
+                    "Provide a valid path to a persona folder or persona.yaml/yml file",
+                  severity: "error" as const,
+                },
+              ],
               warnings: [],
             },
             personaPath: personaPath || "",
@@ -195,7 +225,7 @@ export const createValidatePersonaModule: ToolModuleFactory = (deps): ToolModule
               totalWarnings: 0,
               validationLayers: [
                 "YAML Syntax & Schema",
-                "Business Rules", 
+                "Business Rules",
                 "Tool Resolution",
                 "MCP Configuration",
               ],
@@ -218,18 +248,21 @@ export const createValidatePersonaModule: ToolModuleFactory = (deps): ToolModule
 
         // Check if path exists and determine type
         const pathType = await getPathType(personaPath);
-        
+
         if (pathType === "not-found") {
           const errorResponse = {
             success: false,
             result: {
               isValid: false,
-              errors: [{
-                type: "schema" as const,
-                message: `Path "${personaPath}" does not exist`,
-                suggestion: "Check the path and ensure the persona folder or file exists",
-                severity: "error" as const,
-              }],
+              errors: [
+                {
+                  type: "schema" as const,
+                  message: `Path "${personaPath}" does not exist`,
+                  suggestion:
+                    "Check the path and ensure the persona folder or file exists",
+                  severity: "error" as const,
+                },
+              ],
               warnings: [],
             },
             personaPath,
@@ -239,7 +272,7 @@ export const createValidatePersonaModule: ToolModuleFactory = (deps): ToolModule
               validationLayers: [
                 "YAML Syntax & Schema",
                 "Business Rules",
-                "Tool Resolution", 
+                "Tool Resolution",
                 "MCP Configuration",
               ],
               pathType: "file" as const,
@@ -275,17 +308,26 @@ export const createValidatePersonaModule: ToolModuleFactory = (deps): ToolModule
         );
 
         // Generate actionable suggestions
-        const suggestions = generateActionableSuggestions(validationResult, personaPath);
+        const suggestions = generateActionableSuggestions(
+          validationResult,
+          personaPath
+        );
 
         // Add suggestions to errors and warnings if they don't already have them
-        const enrichedErrors = validationResult.errors.map(error => ({
+        const enrichedErrors = validationResult.errors.map((error) => ({
           ...error,
-          suggestion: error.suggestion || suggestions.find(s => s.includes(error.type)) || "Check the persona configuration and documentation",
+          suggestion:
+            error.suggestion ||
+            suggestions.find((s) => s.includes(error.type)) ||
+            "Check the persona configuration and documentation",
         }));
 
-        const enrichedWarnings = validationResult.warnings.map(warning => ({
+        const enrichedWarnings = validationResult.warnings.map((warning) => ({
           ...warning,
-          suggestion: warning.suggestion || suggestions.find(s => s.includes(warning.type)) || "Consider improving the persona configuration",
+          suggestion:
+            warning.suggestion ||
+            suggestions.find((s) => s.includes(warning.type)) ||
+            "Consider improving the persona configuration",
         }));
 
         const response = {
@@ -309,18 +351,22 @@ export const createValidatePersonaModule: ToolModuleFactory = (deps): ToolModule
           structuredContent: response,
         };
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
         const errorResponse = {
           success: false,
           result: {
             isValid: false,
-            errors: [{
-              type: "schema" as const,
-              message: `Validation failed: ${errorMessage}`,
-              suggestion: "Check that the path is accessible and the persona configuration is valid",
-              severity: "error" as const,
-            }],
+            errors: [
+              {
+                type: "schema" as const,
+                message: `Validation failed: ${errorMessage}`,
+                suggestion:
+                  "Check that the path is accessible and the persona configuration is valid",
+                severity: "error" as const,
+              },
+            ],
             warnings: [],
           },
           personaPath: args?.personaPath || "",

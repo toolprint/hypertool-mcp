@@ -1,7 +1,7 @@
 /**
  * Persona Loader Implementation
  *
- * This module implements persona loading functionality that parses YAML configs, 
+ * This module implements persona loading functionality that parses YAML configs,
  * loads MCP configurations, and catalogs all assets in persona folders. The loader
  * orchestrates the parsing, validation, and asset discovery process to create
  * complete LoadedPersona objects ready for activation.
@@ -49,22 +49,22 @@ import { PersonaDiscovery } from "./discovery.js";
 export interface PersonaLoadOptions {
   /** Whether to perform full validation during loading */
   validateOnLoad?: boolean;
-  
+
   /** Whether to load MCP configuration files */
   loadMcpConfig?: boolean;
-  
+
   /** Whether to catalog all assets in the persona folder */
   catalogAssets?: boolean;
-  
+
   /** Tool discovery engine for validation */
   toolDiscoveryEngine?: IToolDiscoveryEngine;
-  
+
   /** Custom validation options */
   validationOptions?: ValidationOptions;
-  
+
   /** Whether to stop on validation errors */
   stopOnValidationError?: boolean;
-  
+
   /** Whether to include warnings in validation results */
   includeWarnings?: boolean;
 }
@@ -75,13 +75,13 @@ export interface PersonaLoadOptions {
 export interface AssetCatalogOptions {
   /** Maximum directory depth to scan for assets */
   maxDepth?: number;
-  
+
   /** File extensions to include in asset catalog */
   includedExtensions?: string[];
-  
+
   /** File patterns to exclude from asset catalog */
   excludePatterns?: string[];
-  
+
   /** Whether to follow symbolic links */
   followSymlinks?: boolean;
 }
@@ -92,16 +92,16 @@ export interface AssetCatalogOptions {
 export interface PersonaLoadResult {
   /** Whether loading was successful */
   success: boolean;
-  
+
   /** Loaded persona if successful */
   persona?: LoadedPersona;
-  
+
   /** Loading errors */
   errors: string[];
-  
+
   /** Loading warnings */
   warnings: string[];
-  
+
   /** Load time in milliseconds */
   loadTime: number;
 }
@@ -112,17 +112,17 @@ export interface PersonaLoadResult {
 export interface BatchLoadResult {
   /** Successfully loaded personas */
   loaded: LoadedPersona[];
-  
+
   /** Failed loading attempts with errors */
   failed: Array<{
     path: string;
     errors: string[];
     warnings: string[];
   }>;
-  
+
   /** Total load time in milliseconds */
   totalLoadTime: number;
-  
+
   /** Load statistics */
   stats: {
     attempted: number;
@@ -143,7 +143,7 @@ export class PersonaLoader {
   private validator: PersonaValidator;
   private discovery?: PersonaDiscovery;
   private toolDiscoveryEngine?: IToolDiscoveryEngine;
-  
+
   constructor(
     toolDiscoveryEngine?: IToolDiscoveryEngine,
     discovery?: PersonaDiscovery
@@ -176,14 +176,14 @@ export class PersonaLoader {
       // Step 1: Determine if path is file or directory
       let configFilePath: string;
       let personaDirectory: string;
-      
+
       const stats = await fs.stat(filePath);
-      
+
       if (stats.isDirectory()) {
         // Find persona config file in directory
         personaDirectory = filePath;
         configFilePath = await this.findPersonaConfigFile(personaDirectory);
-        
+
         if (!configFilePath) {
           result.errors.push(
             `No persona configuration file found in directory "${filePath}". Expected: ${getSupportedPersonaFiles().join(" or ")}`
@@ -198,11 +198,13 @@ export class PersonaLoader {
           );
           return result;
         }
-        
+
         configFilePath = filePath;
         personaDirectory = dirname(filePath);
       } else {
-        result.errors.push(`Path "${filePath}" is not a valid file or directory`);
+        result.errors.push(
+          `Path "${filePath}" is not a valid file or directory`
+        );
         return result;
       }
 
@@ -213,9 +215,9 @@ export class PersonaLoader {
       });
 
       if (!parseResult.success || !parseResult.data) {
-        result.errors.push(...parseResult.errors.map(e => e.message));
+        result.errors.push(...parseResult.errors.map((e) => e.message));
         if (options.includeWarnings && parseResult.warnings.length > 0) {
-          result.warnings.push(...parseResult.warnings.map(w => w.message));
+          result.warnings.push(...parseResult.warnings.map((w) => w.message));
         }
         return result;
       }
@@ -236,7 +238,7 @@ export class PersonaLoader {
           mcpConfig = await this.loadMcpConfigFile(assets.mcpConfigFile);
         } catch (error) {
           const errorMessage = `Failed to load MCP configuration: ${error instanceof Error ? error.message : String(error)}`;
-          
+
           if (options.stopOnValidationError) {
             result.errors.push(errorMessage);
             return result;
@@ -257,9 +259,11 @@ export class PersonaLoader {
         const context: ValidationContext = {
           personaPath: personaDirectory,
           expectedPersonaName: basename(personaDirectory),
-          checkToolAvailability: options.validationOptions?.checkToolAvailability,
+          checkToolAvailability:
+            options.validationOptions?.checkToolAvailability,
           validateMcpConfig: options.validationOptions?.validateMcpConfig,
-          toolDiscoveryEngine: options.toolDiscoveryEngine || this.toolDiscoveryEngine,
+          toolDiscoveryEngine:
+            options.toolDiscoveryEngine || this.toolDiscoveryEngine,
           assets,
         };
 
@@ -274,8 +278,10 @@ export class PersonaLoader {
 
         // Add validation errors and warnings to result
         if (!validationResult.isValid) {
-          const validationErrors = validationResult.errors.map(e => e.message);
-          
+          const validationErrors = validationResult.errors.map(
+            (e) => e.message
+          );
+
           if (options.stopOnValidationError) {
             result.errors.push(...validationErrors);
             return result;
@@ -285,7 +291,9 @@ export class PersonaLoader {
         }
 
         if (options.includeWarnings && validationResult.warnings.length > 0) {
-          result.warnings.push(...validationResult.warnings.map(w => w.message));
+          result.warnings.push(
+            ...validationResult.warnings.map((w) => w.message)
+          );
         }
       }
 
@@ -301,14 +309,13 @@ export class PersonaLoader {
 
       result.success = true;
       result.persona = loadedPersona;
-      
-      return result;
 
+      return result;
     } catch (error) {
-      const errorMessage = isPersonaError(error) 
-        ? error.message 
+      const errorMessage = isPersonaError(error)
+        ? error.message
         : `Failed to load persona: ${error instanceof Error ? error.message : String(error)}`;
-      
+
       result.errors.push(errorMessage);
       return result;
     } finally {
@@ -406,8 +413,10 @@ export class PersonaLoader {
 
     // Calculate statistics
     result.totalLoadTime = Date.now() - startTime;
-    result.stats.averageLoadTime = 
-      loadTimes.length > 0 ? Math.round(loadTimes.reduce((a, b) => a + b, 0) / loadTimes.length) : 0;
+    result.stats.averageLoadTime =
+      loadTimes.length > 0
+        ? Math.round(loadTimes.reduce((a, b) => a + b, 0) / loadTimes.length)
+        : 0;
 
     return result;
   }
@@ -423,7 +432,7 @@ export class PersonaLoader {
     discoveredPersonas: PersonaReference[],
     options: PersonaLoadOptions = {}
   ): Promise<BatchLoadResult> {
-    const paths = discoveredPersonas.map(ref => ref.path);
+    const paths = discoveredPersonas.map((ref) => ref.path);
     return this.loadMultiplePersonas(paths, options);
   }
 
@@ -437,14 +446,16 @@ export class PersonaLoader {
   public async discoverAndLoadPersonas(
     discoveryConfig: PersonaDiscoveryConfig = {},
     loadOptions: PersonaLoadOptions = {}
-  ): Promise<BatchLoadResult & { discoveryErrors: string[]; discoveryWarnings: string[] }> {
+  ): Promise<
+    BatchLoadResult & { discoveryErrors: string[]; discoveryWarnings: string[] }
+  > {
     // Use provided discovery instance or create a default one
     const discovery = this.discovery || new PersonaDiscovery();
-    
+
     try {
       // Discover personas
       const discoveryResult = await discovery.discoverPersonas(discoveryConfig);
-      
+
       // Load discovered personas
       const batchResult = await this.loadPersonasFromDiscovery(
         discoveryResult.personas,
@@ -458,7 +469,7 @@ export class PersonaLoader {
       };
     } catch (error) {
       const errorMessage = `Discovery failed: ${error instanceof Error ? error.message : String(error)}`;
-      
+
       return {
         loaded: [],
         failed: [],
@@ -490,7 +501,11 @@ export class PersonaLoader {
       assets: persona.assets,
     };
 
-    return this.validator.validatePersonaConfig(persona.config, context, options);
+    return this.validator.validatePersonaConfig(
+      persona.config,
+      context,
+      options
+    );
   }
 
   /**
@@ -498,7 +513,7 @@ export class PersonaLoader {
    */
   private async findPersonaConfigFile(directory: string): Promise<string> {
     const supportedFiles = getSupportedPersonaFiles();
-    
+
     for (const filename of supportedFiles) {
       const filePath = join(directory, filename);
       try {
@@ -509,11 +524,10 @@ export class PersonaLoader {
         continue;
       }
     }
-    
-    throw createPersonaNotFoundError(
-      basename(directory),
-      [`No persona configuration file found in "${directory}"`]
-    );
+
+    throw createPersonaNotFoundError(basename(directory), [
+      `No persona configuration file found in "${directory}"`,
+    ]);
   }
 
   /**
@@ -523,12 +537,14 @@ export class PersonaLoader {
     try {
       const content = await fs.readFile(filePath, "utf-8");
       const mcpConfig = JSON.parse(content) as MCPConfig;
-      
+
       // Basic validation
       if (!mcpConfig.mcpServers || typeof mcpConfig.mcpServers !== "object") {
-        throw new Error("Invalid MCP config: missing or invalid 'mcpServers' object");
+        throw new Error(
+          "Invalid MCP config: missing or invalid 'mcpServers' object"
+        );
       }
-      
+
       return mcpConfig;
     } catch (error) {
       throw createFileSystemError(
@@ -567,17 +583,22 @@ export class PersonaLoader {
     // Catalog additional assets
     try {
       const assetFiles: string[] = [];
-      const entries = await fs.readdir(personaDirectory, { withFileTypes: true });
-      
+      const entries = await fs.readdir(personaDirectory, {
+        withFileTypes: true,
+      });
+
       for (const entry of entries) {
         if (entry.isFile()) {
           const filePath = join(personaDirectory, entry.name);
-          
+
           // Skip the main config files we've already cataloged
-          if (filePath === configFilePath || filePath === assets.mcpConfigFile) {
+          if (
+            filePath === configFilePath ||
+            filePath === assets.mcpConfigFile
+          ) {
             continue;
           }
-          
+
           // Skip common non-asset files
           const skipPatterns = [
             /^\..*/, // Hidden files
@@ -585,14 +606,16 @@ export class PersonaLoader {
             /license$/i, // License files
             /\.log$/i, // Log files
           ];
-          
-          const shouldSkip = skipPatterns.some(pattern => pattern.test(entry.name));
+
+          const shouldSkip = skipPatterns.some((pattern) =>
+            pattern.test(entry.name)
+          );
           if (!shouldSkip) {
             assetFiles.push(filePath);
           }
         }
       }
-      
+
       if (assetFiles.length > 0) {
         assets.assetFiles = assetFiles;
       }
@@ -625,7 +648,7 @@ export class PersonaLoader {
   public getLoaderStats(): {
     hasToolDiscoveryEngine: boolean;
     hasDiscoveryEngine: boolean;
-    validatorStats: ReturnType<PersonaValidator['getValidationStats']>;
+    validatorStats: ReturnType<PersonaValidator["getValidationStats"]>;
   } {
     return {
       hasToolDiscoveryEngine: !!this.toolDiscoveryEngine,
@@ -689,7 +712,9 @@ export async function loadMultiplePersonas(
 export async function discoverAndLoadAllPersonas(
   discoveryConfig: PersonaDiscoveryConfig = {},
   loadOptions: PersonaLoadOptions = {}
-): Promise<BatchLoadResult & { discoveryErrors: string[]; discoveryWarnings: string[] }> {
+): Promise<
+  BatchLoadResult & { discoveryErrors: string[]; discoveryWarnings: string[] }
+> {
   const loader = new PersonaLoader(loadOptions.toolDiscoveryEngine);
   return loader.discoverAndLoadPersonas(discoveryConfig, loadOptions);
 }
