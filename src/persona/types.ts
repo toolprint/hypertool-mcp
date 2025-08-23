@@ -318,6 +318,9 @@ export interface PersonaCacheStats {
  * Configuration for how persona discovery should be performed.
  */
 export interface PersonaDiscoveryConfig {
+  /** Primary search paths (overrides standard locations if provided) */
+  searchPaths?: string[];
+
   /** Additional search paths beyond standard locations */
   additionalPaths?: string[];
 
@@ -332,4 +335,19 @@ export interface PersonaDiscoveryConfig {
 
   /** Whether to enable parallel scanning */
   parallelScan?: boolean;
+
+  /** Whether to include archive files in discovery */
+  includeArchives?: boolean;
+
+  /** Whether to watch for file system changes */
+  watchForChanges?: boolean;
+
+  /** Whether to enable caching for discovery results */
+  enableCache?: boolean;
+
+  /** Maximum size for discovery cache */
+  maxCacheSize?: number;
+
+  /** Cache TTL in milliseconds */
+  cacheTtl?: number;
 }

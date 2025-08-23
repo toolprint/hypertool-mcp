@@ -480,6 +480,17 @@ async function scanSingleDirectory(
  * Get all search paths including standard and custom paths
  */
 function getSearchPaths(config?: PersonaDiscoveryConfig): string[] {
+  // If explicit searchPaths are provided, use those and ignore standard paths
+  if (config?.searchPaths && config.searchPaths.length > 0) {
+    const searchPaths = config.searchPaths.map(resolvePath);
+    const additionalPaths = (config?.additionalPaths ?? []).map(resolvePath);
+    
+    // Remove duplicates while preserving order
+    const allPaths = [...searchPaths, ...additionalPaths];
+    return Array.from(new Set(allPaths));
+  }
+
+  // Otherwise use standard paths plus additional paths
   const standardPaths = STANDARD_PATHS.map(resolvePath);
   const additionalPaths = (config?.additionalPaths ?? []).map(resolvePath);
 
