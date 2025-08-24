@@ -27,7 +27,7 @@ const logger = createChildLogger({ module: "persona-cli" });
  */
 async function initializePersonaManager(): Promise<PersonaManager> {
   const config: PersonaManagerConfig = {
-    autoDiscover: false, // We'll discover manually as needed
+    autoDiscover: true, // Enable auto-discovery for CLI commands to work properly
     validateOnActivation: true,
     persistState: true,
     stateKey: "hypertool-persona-cli-state",
@@ -181,6 +181,14 @@ export function createActivateCommand(): Command {
         console.log(theme.info(`🎯 Activating persona "${name}"...`));
 
         const manager = await initializePersonaManager();
+
+        // Debug: Show discovered personas count for troubleshooting
+        const stats = manager.getStats();
+        if (stats.discoveredCount > 0) {
+          console.log(theme.muted(`   Discovered ${stats.discoveredCount} personas`));
+        } else {
+          console.log(theme.warning(`   ⚠️  No personas discovered - this may cause activation to fail`));
+        }
 
         // Activate the persona
         const result = await manager.activatePersona(name, {

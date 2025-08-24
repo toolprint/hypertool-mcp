@@ -34,15 +34,16 @@ export const PersonaNameSchema = z
 /**
  * Schema for tool ID validation
  *
- * Tool IDs must follow the namespacedName format with MCP server prefix
- * Examples: "git.status", "docker.ps", "linear.create-issue"
+ * Tool IDs must follow the namespacedName format with MCP server prefix.
+ * Supports compound tool names with multiple segments separated by dots.
+ * Examples: "git.status", "docker.compose.up", "testing.unit.run", "linear.create-issue"
  */
 export const ToolIdSchema = z
   .string()
   .min(3, "Tool ID must be at least 3 characters long")
   .regex(
-    /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/,
-    "Tool ID must follow namespacedName format (e.g., 'server.tool-name')"
+    /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$/,
+    "Tool ID must follow namespacedName format (e.g., 'server.tool-name' or 'server.compound.tool-name')"
   );
 
 /**
@@ -336,7 +337,7 @@ function generateSuggestion(issue: z.ZodIssue): string {
         return "Use hyphen-delimited lowercase format: letters, numbers, and hyphens only (e.g., 'dev-tools')";
       }
       if (path.includes("toolIds")) {
-        return "Use namespacedName format: 'server.tool-name' (e.g., 'git.status')";
+        return "Use namespacedName format: 'server.tool-name' or 'server.compound.tool-name' (e.g., 'git.status', 'docker.compose.up')";
       }
       return `Follow the required format for ${path}`;
 

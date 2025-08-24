@@ -680,7 +680,7 @@ export class PersonaManager extends EventEmitter {
     let toolsResolved = 0;
     if (selectedToolset) {
       try {
-        toolsResolved = await this.applyToolset(selectedToolset);
+        toolsResolved = await this.applyToolset(selectedToolset, persona);
       } catch (error) {
         warnings.push(
           `Some tools could not be resolved: ${error instanceof Error ? error.message : String(error)}`
@@ -777,7 +777,7 @@ export class PersonaManager extends EventEmitter {
 
     try {
       // Apply new toolset
-      const toolsResolved = await this.applyToolset(toolset);
+      const toolsResolved = await this.applyToolset(toolset, persona);
 
       // Update active state
       this.activeState.activeToolset = toolsetName;
@@ -811,12 +811,8 @@ export class PersonaManager extends EventEmitter {
   /**
    * Apply toolset configuration via the toolset bridge
    */
-  private async applyToolset(toolset: PersonaToolset): Promise<number> {
-    if (!this.activeState?.persona) {
-      throw new Error("No active persona to apply toolset for");
-    }
-
-    const personaName = this.activeState.persona.config.name;
+  private async applyToolset(toolset: PersonaToolset, persona: LoadedPersona): Promise<number> {
+    const personaName = persona.config.name;
 
     try {
       // Convert persona toolset to ToolsetConfig format using the bridge

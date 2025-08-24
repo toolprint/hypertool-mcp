@@ -480,6 +480,12 @@ export class PersonaDiscovery extends EventEmitter {
         );
         if (!toolsetMatches) {
           result.issues.push("Toolsets section exists but no toolsets defined");
+        } else {
+          // Basic tool ID format validation
+          const toolIdIssues = this.validateToolIdsInYaml(configContent);
+          if (toolIdIssues.length > 0) {
+            result.issues.push(...toolIdIssues);
+          }
         }
       }
 
@@ -493,6 +499,63 @@ export class PersonaDiscovery extends EventEmitter {
       );
       return result;
     }
+  }
+
+  /**
+   * Validate tool IDs in YAML content using basic regex matching
+   * 
+   * This provides basic format validation during discovery without full parsing
+   * to catch obvious tool ID format errors early.
+   */
+  private validateToolIdsInYaml(configContent: string): string[] {
+    const issues: string[] = [];
+    
+    try {
+      // Find toolsets section and extract only tool IDs from toolIds arrays
+      const toolsetsSection = configContent.match(/^toolsets:\s*$(.*?)^(?:\w+:|$)/ms);
+      
+      if (toolsetsSection && toolsetsSection[1]) {
+        const toolsetsContent = toolsetsSection[1];
+        
+        // Extract tool IDs only from toolIds sections
+        // Look for "toolIds:" followed by list items
+        const toolIdsMatches = toolsetsContent.match(/toolIds:\s*$((?:\s*-\s+[^\n\r]*$)+)/gm);
+        
+        if (toolIdsMatches) {
+          // Basic tool ID format validation using the same pattern as ToolIdSchema
+          const toolIdPattern = /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$/;
+          const invalidToolIds: string[] = [];
+          
+          for (const toolIdsBlock of toolIdsMatches) {
+            // Extract individual tool ID lines
+            const toolIdLines = toolIdsBlock.match(/^\s*-\s+(.+)$/gm);
+            
+            if (toolIdLines) {
+              for (const line of toolIdLines) {
+                const toolId = line.replace(/^\s*-\s+/, '').trim();
+                
+                // Skip if it looks like a YAML key (contains :)
+                if (toolId.includes(':')) continue;
+                
+                // Validate against tool ID pattern
+                if (!toolIdPattern.test(toolId)) {
+                  invalidToolIds.push(toolId);
+                }
+              }
+            }
+          }
+          
+          if (invalidToolIds.length > 0) {
+            issues.push(`Invalid tool ID format(s): ${invalidToolIds.join(', ')} - must follow namespacedName format (e.g., 'server.tool-name' or 'server.compound.tool-name')`);
+          }
+        }
+      }
+    } catch (error) {
+      // Don't fail discovery for regex errors, just skip validation
+      // This is best-effort validation
+    }
+    
+    return issues;
   }
 
   /**
