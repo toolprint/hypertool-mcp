@@ -142,3 +142,10 @@ tmp
 
 # Serena
 .serena/
+
+# Codanna
+.codanna/
+.fastembed_cache/
+
+# Vibe worktree directories
+.worktrees/
