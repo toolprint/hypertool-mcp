@@ -1,0 +1,12 @@
+name: invalid_persona_with_underscores
+description: This persona has various validation issues
+toolsets:
+  - name: bad-toolset
+    # Missing toolIds array
+  - name: another-bad
+    toolIds: "not-an-array"
+defaultToolset: non-existent-toolset
+metadata:
+  author: 123  # Should be string but using number format
+  tags: "not-an-array"  # Should be array
+  created: invalid-date

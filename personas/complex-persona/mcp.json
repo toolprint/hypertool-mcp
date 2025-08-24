@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "git": {
+      "command": "git-mcp",
+      "args": ["--stdio"],
+      "env": {
+        "GIT_CONFIG_GLOBAL": "/etc/gitconfig"
+      }
+    },
+    "docker": {
+      "command": "docker-mcp",
+      "args": ["--stdio", "--socket", "/var/run/docker.sock"]
+    },
+    "database": {
+      "command": "postgres-mcp",
+      "args": ["--stdio"],
+      "env": {
+        "DB_HOST": "localhost",
+        "DB_PORT": "5432"
+      }
+    },
+    "kubernetes": {
+      "command": "k8s-mcp",
+      "args": ["--stdio", "--kubeconfig", "~/.kube/config"]
+    },
+    "terraform": {
+      "command": "terraform-mcp",
+      "args": ["--stdio"]
+    }
+  }
+}
