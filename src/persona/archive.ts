@@ -267,11 +267,16 @@ export async function packPersona(
           gzip: true,
           file: archivePath,
           cwd: tempDir,
-          filter: (path) => {
-            // Exclude any hidden files except our metadata
-            return (
-              !path.startsWith(".") || path === ARCHIVE_CONSTANTS.METADATA_FILE
-            );
+          filter: (path, stat) => {
+            // Allow the root directory
+            if (path === ".") return true;
+
+            // Exclude hidden files (starting with .) except our metadata file
+            const basename = path.split("/").pop() || "";
+            const include =
+              !basename.startsWith(".") ||
+              basename === ARCHIVE_CONSTANTS.METADATA_FILE;
+            return include;
           },
           ...(options.preservePermissions !== false && { preservePaths: true }),
         },
@@ -361,7 +366,14 @@ export async function unpackPersona(
       }
     }
 
-    // Create extract directory
+    // Create extract directory (clean it first if using force)
+    if (options.force) {
+      try {
+        await fs.rm(extractPath, { recursive: true, force: true });
+      } catch {
+        // Ignore errors if directory doesn't exist
+      }
+    }
     await fs.mkdir(extractPath, { recursive: true });
 
     try {
@@ -429,15 +441,28 @@ export async function listArchiveContents(
     await tar.list({
       file: archivePath,
       onentry: (entry) => {
+        // Normalize path by removing ./ prefix
+        let normalizedPath = entry.path;
+        if (normalizedPath.startsWith("./")) {
+          normalizedPath = normalizedPath.substring(2);
+        }
+
         // Skip the metadata file from the listing
-        if (entry.path !== ARCHIVE_CONSTANTS.METADATA_FILE) {
-          contents.push(entry.path);
+        if (normalizedPath !== ARCHIVE_CONSTANTS.METADATA_FILE) {
+          // Skip directory entries (they end with /)
+          if (normalizedPath && !normalizedPath.endsWith("/")) {
+            contents.push(normalizedPath);
+          }
         }
       },
     });
 
     return contents;
   } catch (error) {
+    // Re-throw PersonaErrors as-is to preserve their error codes
+    if (error instanceof PersonaError) {
+      throw error;
+    }
     throw new PersonaError(
       PersonaErrorCode.ARCHIVE_EXTRACTION_FAILED,
       `Failed to list archive contents: ${error instanceof Error ? error.message : String(error)}`,
@@ -449,6 +474,7 @@ export async function listArchiveContents(
 /**
  * Copy directory recursively with proper error handling
  */
+
 async function copyDirectory(src: string, dest: string): Promise<void> {
   const stats = await fs.stat(src);
 

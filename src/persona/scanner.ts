@@ -133,8 +133,11 @@ interface ScannerOptions {
  * Resolve a path, expanding tilde (~) to home directory
  */
 function resolvePath(path: string): string {
-  if (path.startsWith("~/")) {
-    return join(homedir(), path.slice(2));
+  if (path.startsWith("~")) {
+    if (path === "~" || path.startsWith("~/")) {
+      const homePath = homedir();
+      return path === "~" ? homePath : join(homePath, path.slice(2));
+    }
   }
   return resolve(path);
 }
@@ -157,13 +160,45 @@ function matchesIgnorePattern(path: string, patterns: string[]): boolean {
     // ** wildcard (matches any number of directories)
     if (normalizedPattern.includes("**/")) {
       const regexPattern = normalizedPattern
-        .replace(/\*\*/g, ".*")
+        .replace(/\*\*/g, "DOUBLE_ASTERISK_PLACEHOLDER")
         .replace(/\*/g, "[^/]*")
+        .replace(/DOUBLE_ASTERISK_PLACEHOLDER/g, ".*")
         .replace(/\?/g, "[^/]");
 
       const regex = new RegExp(`^${regexPattern}$`);
+      if (
+        process.env.NODE_ENV === "test" &&
+        (normalizedPath.includes("node_modules") ||
+          normalizedPath.includes(".git"))
+      ) {
+        console.log(
+          `  Testing pattern "${normalizedPattern}" -> regex "${regexPattern}" against path "${normalizedPath}" = ${regex.test(normalizedPath)}`
+        );
+      }
       if (regex.test(normalizedPath)) {
         return true;
+      }
+
+      // Special handling for patterns starting with ** - they should also match without prefix
+      if (normalizedPattern.startsWith("**/")) {
+        const withoutPrefix = normalizedPattern.slice(3); // Remove **/
+        const withoutPrefixRegex = withoutPrefix
+          .replace(/\*\*/g, "DOUBLE_ASTERISK_PLACEHOLDER")
+          .replace(/\*/g, "[^/]*")
+          .replace(/DOUBLE_ASTERISK_PLACEHOLDER/g, ".*")
+          .replace(/\?/g, "[^/]");
+        const withoutPrefixPattern = new RegExp(`^${withoutPrefixRegex}$`);
+        if (withoutPrefixPattern.test(normalizedPath)) {
+          return true;
+        }
+
+        // Additional check: if pattern is like "something/**", also match just "something"
+        if (withoutPrefix.endsWith("/**")) {
+          const directoryName = withoutPrefix.slice(0, -3); // Remove /**
+          if (normalizedPath === directoryName) {
+            return true;
+          }
+        }
       }
 
       // Check if any parent path matches
@@ -346,7 +381,8 @@ async function createPersonaReference(
 async function scanSingleDirectory(
   dirPath: string,
   options: ScannerOptions,
-  currentDepth: number = 0
+  currentDepth: number = 0,
+  basePath: string = dirPath
 ): Promise<DirectoryScanResult> {
   const result: DirectoryScanResult = {
     personas: [],
@@ -385,7 +421,7 @@ async function scanSingleDirectory(
   // Check if this directory should be ignored
   if (
     currentDepth > 0 &&
-    shouldIgnoreDirectory(dirPath, dirPath, ignorePatterns)
+    shouldIgnoreDirectory(dirPath, basePath, ignorePatterns)
   ) {
     return result;
   }
@@ -420,12 +456,15 @@ async function scanSingleDirectory(
     }
 
     // Check if entry should be ignored
-    const relativeEntryPath = relative(dirPath, entryPath);
+    const relativeEntryPath = relative(basePath, entryPath);
     if (matchesIgnorePattern(relativeEntryPath, ignorePatterns)) {
       continue;
     }
 
-    if (entryStats.isDirectory) {
+    if (
+      entryStats.isDirectory ||
+      (entryStats.isSymlink && options.followSymlinks)
+    ) {
       // Check if this directory contains a persona config file
       const hasPersonaConfig = await Promise.all(
         SCANNER_DEFAULTS.SUPPORTED_CONFIG_FILES.map((configFile) =>
@@ -449,7 +488,8 @@ async function scanSingleDirectory(
           const subResult = await scanSingleDirectory(
             entryPath,
             options,
-            currentDepth + 1
+            currentDepth + 1,
+            basePath
           );
           result.personas.push(...subResult.personas);
           result.errors.push(...subResult.errors);
@@ -488,6 +528,15 @@ function getSearchPaths(config?: PersonaDiscoveryConfig): string[] {
     // Remove duplicates while preserving order
     const allPaths = [...searchPaths, ...additionalPaths];
     return Array.from(new Set(allPaths));
+  }
+
+  // If only additionalPaths are provided (no searchPaths), just use those
+  if (
+    config?.additionalPaths &&
+    config.additionalPaths.length > 0 &&
+    !config?.searchPaths
+  ) {
+    return config.additionalPaths.map(resolvePath);
   }
 
   // Otherwise use configured path plus additional paths
@@ -538,14 +587,26 @@ async function scanDirectoriesSequential(
 }
 
 /**
+ * Scan result including personas, errors, and warnings
+ */
+export interface ScanResult {
+  /** Discovered persona references */
+  personas: PersonaReference[];
+  /** Errors encountered during scanning */
+  errors: string[];
+  /** Warnings encountered during scanning */
+  warnings: string[];
+}
+
+/**
  * Scan for persona folders and archives in configured locations
  *
  * @param config Discovery configuration with additional paths and options
- * @returns Promise resolving to array of discovered persona references
+ * @returns Promise resolving to scan result with personas and errors
  */
 export async function scanForPersonas(
   config?: PersonaDiscoveryConfig
-): Promise<PersonaReference[]> {
+): Promise<ScanResult> {
   const searchPaths = getSearchPaths(config);
 
   const scannerOptions: ScannerOptions = {
@@ -586,13 +647,21 @@ export async function scanForPersonas(
       console.warn(`Persona scanner errors: ${allErrors.join("; ")}`);
     }
 
-    return uniquePersonas;
+    return {
+      personas: uniquePersonas,
+      errors: allErrors,
+      warnings: allWarnings,
+    };
   } catch (error) {
-    throw createFileSystemError(
-      "scanning for personas",
-      searchPaths.join(", "),
-      error instanceof Error ? error : undefined
-    );
+    // Return result with error instead of throwing
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return {
+      personas: [],
+      errors: [
+        `Failed to scan paths ${searchPaths.join(", ")}: ${errorMessage}`,
+      ],
+      warnings: [],
+    };
   }
 }
 
@@ -608,6 +677,27 @@ export async function scanDirectory(
   options?: Partial<ScannerOptions>
 ): Promise<PersonaReference[]> {
   const resolvedPath = resolvePath(dirPath);
+
+  // Check if directory exists before scanning
+  try {
+    const stats = await fs.stat(resolvedPath);
+    if (!stats.isDirectory()) {
+      throw createFileSystemError(
+        "scanning directory",
+        resolvedPath,
+        new Error(`Path is not a directory: ${resolvedPath}`)
+      );
+    }
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      throw createFileSystemError(
+        "scanning directory",
+        resolvedPath,
+        new Error(`Directory does not exist: ${resolvedPath}`)
+      );
+    }
+    throw error;
+  }
 
   const scannerOptions: ScannerOptions = {
     maxDepth: options?.maxDepth ?? SCANNER_DEFAULTS.MAX_SCAN_DEPTH,
@@ -730,7 +820,7 @@ export async function hasPersonasInPaths(
 
   for (const path of searchPaths) {
     if (await validateSearchPath(path)) {
-      // Quick check: if directory exists and is accessible, assume it might contain personas
+      // Quick check: if directory exists and is accessible, check if it contains personas
       try {
         const entries = await fs.readdir(path);
         // Look for potential persona folders or archives
@@ -744,10 +834,12 @@ export async function hasPersonasInPaths(
             return true;
           }
         }
+        // If we reach here, this directory has no personas, continue to next path
       } catch {
         // Ignore errors and continue checking other paths
       }
     }
+    // If path is not valid, continue to next path
   }
 
   return false;

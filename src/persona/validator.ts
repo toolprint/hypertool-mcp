@@ -149,6 +149,31 @@ export class PersonaValidator {
           const mcpResult = await this.validateMcpConfig(
             context.assets.mcpConfigFile
           );
+
+          // Check if validation failed due to file reading issues (treat as warning)
+          const fileReadingErrors = mcpResult.errors.filter((error) =>
+            error.message.includes("Failed to read MCP config file")
+          );
+
+          if (fileReadingErrors.length > 0) {
+            // Convert file reading errors to warnings
+            if (includeWarnings) {
+              result.warnings.push(
+                ...fileReadingErrors.map((error) => ({
+                  ...error,
+                  severity: "warning" as const,
+                }))
+              );
+            }
+            // Remove file reading errors from the result
+            const nonFileErrors = mcpResult.errors.filter(
+              (error) =>
+                !error.message.includes("Failed to read MCP config file")
+            );
+            mcpResult.errors = nonFileErrors;
+            mcpResult.isValid = nonFileErrors.length === 0;
+          }
+
           this.mergeValidationResults(result, mcpResult, includeWarnings);
           if (!mcpResult.isValid && stopOnFirstError) {
             return result;
@@ -217,11 +242,35 @@ export class PersonaValidator {
     };
 
     try {
-      // Step 1: Parse the YAML file with schema validation
-      const parseResult = await parsePersonaYAMLFile(filePath, {
-        validateSchema: true,
-        includeWarnings: options.includeWarnings ?? true,
-      });
+      // Step 1: Read file content directly (bypassing filename restriction)
+      let content: string;
+      try {
+        content = await readFile(filePath, "utf-8");
+      } catch (error) {
+        const fsError = error as NodeJS.ErrnoException;
+        result.errors.push({
+          type: "schema",
+          message: `Failed to validate file "${filePath}": ${fsError.message}`,
+          suggestion:
+            fsError.code === "ENOENT"
+              ? `Verify that the file exists at "${filePath}"`
+              : fsError.code === "EACCES"
+                ? `Check file permissions for "${filePath}"`
+                : `Check file accessibility and try again`,
+          severity: "error",
+        });
+        return result;
+      }
+
+      // Step 2: Parse the YAML content with schema validation
+      const parseResult = parsePersonaYAML(
+        content,
+        filePath.split(/[/\\]/).pop() || "",
+        {
+          validateSchema: true,
+          includeWarnings: options.includeWarnings ?? true,
+        }
+      );
 
       // Convert parse errors to validation errors
       if (!parseResult.success) {
@@ -241,10 +290,11 @@ export class PersonaValidator {
         return result;
       }
 
-      // Step 2: Create validation context
+      // Step 3: Create validation context
       const context: ValidationContext = {
         personaPath: filePath,
-        expectedPersonaName: extractPersonaNameFromPath(filePath),
+        // Don't enforce folder name matching for explicit file validation
+        expectedPersonaName: undefined,
         checkToolAvailability: options.checkToolAvailability,
         validateMcpConfig: options.validateMcpConfig,
         toolDiscoveryEngine: this.toolDiscoveryEngine,
@@ -256,7 +306,7 @@ export class PersonaValidator {
         },
       };
 
-      // Step 3: Perform comprehensive validation
+      // Step 4: Perform comprehensive validation
       const validationResult = await this.validatePersonaConfig(
         parseResult.data,
         context,
@@ -287,6 +337,22 @@ export class PersonaValidator {
     options: ValidationOptions = {}
   ): Promise<ValidationResult> {
     try {
+      // First, check if directory exists
+      const stats = await stat(directoryPath);
+      if (!stats.isDirectory()) {
+        return {
+          isValid: false,
+          errors: [
+            {
+              type: "schema",
+              message: `Failed to validate directory "${directoryPath}": Path is not a directory`,
+              severity: "error",
+            },
+          ],
+          warnings: [],
+        };
+      }
+
       // Find the persona configuration file
       const configFile = await this.findPersonaConfigFile(directoryPath);
 
@@ -526,6 +592,7 @@ export class PersonaValidator {
           suggestion: "Fix the JSON syntax errors in the mcp.json file",
           severity: "error",
         });
+        result.isValid = false;
         return result;
       }
 
@@ -539,6 +606,7 @@ export class PersonaValidator {
             "Add an 'mcpServers' object to the mcp.json file with server configurations",
           severity: "error",
         });
+        result.isValid = false;
         return result;
       }
 

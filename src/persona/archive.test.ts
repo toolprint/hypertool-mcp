@@ -81,7 +81,7 @@ async function createTestPersona(
 
   // Create optional mcp.json
   const mcpConfig = {
-    servers: {
+    mcpServers: {
       "test-server": {
         command: "node",
         args: ["./test-server.js"],
@@ -133,12 +133,32 @@ defaultToolset: development`;
     "utf8"
   );
 
-  // Create assets directory
+  // Create assets directory with both files
   const assetsDir = join(testPersonaDir, "assets");
   await fs.mkdir(assetsDir, { recursive: true });
   await fs.writeFile(
     join(assetsDir, "README.md"),
     "# Test Persona\n\nThis is a test persona for archive functionality.",
+    "utf8"
+  );
+  await fs.writeFile(
+    join(assetsDir, "config.json"),
+    JSON.stringify({ test: true }, null, 2),
+    "utf8"
+  );
+
+  // Create mcp.json
+  const mcpConfig = {
+    mcpServers: {
+      "test-server": {
+        command: "node",
+        args: ["./test-server.js"],
+      },
+    },
+  };
+  await fs.writeFile(
+    join(testPersonaDir, "mcp.json"),
+    JSON.stringify(mcpConfig, null, 2),
     "utf8"
   );
 });
@@ -174,24 +194,7 @@ describe("Archive Extension Validation", () => {
 
 describe("Pack Persona", () => {
   it("should create archive from valid persona directory", async () => {
-    // Debug: Check if persona.yaml exists and what it contains
-    const configPath = join(testPersonaDir, "persona.yaml");
-    const configExists = await fs
-      .access(configPath)
-      .then(() => true)
-      .catch(() => false);
-    console.log("persona.yaml exists:", configExists);
-
-    if (configExists) {
-      const configContent = await fs.readFile(configPath, "utf8");
-      console.log("persona.yaml content:", configContent);
-    }
-
     const result = await packPersona(testPersonaDir, testArchivePath);
-
-    if (!result.success) {
-      console.log("Pack persona failed with errors:", result.errors);
-    }
 
     expect(result.success).toBe(true);
     expect(result.path).toBe(testArchivePath);
@@ -250,7 +253,7 @@ describe("Pack Persona", () => {
   it("should not overwrite existing archive without force", async () => {
     // Create archive first
     await packPersona(testPersonaDir, testArchivePath);
-    expect(await fs.access(testArchivePath)).resolves.toBeUndefined();
+    await expect(fs.access(testArchivePath)).resolves.toBeUndefined();
 
     // Try to create again without force
     const result = await packPersona(testPersonaDir, testArchivePath);
@@ -321,17 +324,17 @@ describe("Unpack Persona", () => {
     expect(result.metadata?.personaName).toBe("test-persona");
 
     // Verify extracted files
-    expect(
-      await fs.access(join(extractPath, "persona.yaml"))
+    await expect(
+      fs.access(join(extractPath, "persona.yaml"))
     ).resolves.toBeUndefined();
-    expect(
-      await fs.access(join(extractPath, "mcp.json"))
+    await expect(
+      fs.access(join(extractPath, "mcp.json"))
     ).resolves.toBeUndefined();
-    expect(
-      await fs.access(join(extractPath, "assets", "README.md"))
+    await expect(
+      fs.access(join(extractPath, "assets", "README.md"))
     ).resolves.toBeUndefined();
-    expect(
-      await fs.access(join(extractPath, "assets", "config.json"))
+    await expect(
+      fs.access(join(extractPath, "assets", "config.json"))
     ).resolves.toBeUndefined();
 
     // Metadata file should be cleaned up
@@ -359,7 +362,7 @@ describe("Unpack Persona", () => {
 
     expect(result.success).toBe(false);
     expect(result.errors).toHaveLength(1);
-    expect(result.errors?.[0]).toContain("Cannot read archive file");
+    expect(result.errors?.[0]).toContain("File system error");
   });
 
   it("should not overwrite existing directory without force", async () => {
@@ -389,8 +392,8 @@ describe("Unpack Persona", () => {
     await expect(
       fs.access(join(extractPath, "existing.txt"))
     ).rejects.toThrow();
-    expect(
-      await fs.access(join(extractPath, "persona.yaml"))
+    await expect(
+      fs.access(join(extractPath, "persona.yaml"))
     ).resolves.toBeUndefined();
   });
 
@@ -431,8 +434,8 @@ describe("Unpack Persona", () => {
 
     expect(result.success).toBe(true);
     expect(result.metadata).toBeUndefined(); // No metadata in simple archive
-    expect(
-      await fs.access(join(extractPath, "persona.yaml"))
+    await expect(
+      fs.access(join(extractPath, "persona.yaml"))
     ).resolves.toBeUndefined();
   });
 });

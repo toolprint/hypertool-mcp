@@ -19,6 +19,7 @@ import {
   validateSearchPath,
   hasPersonasInPaths,
 } from "./scanner.js";
+import { clearDiscoveryCache } from "./discovery.js";
 import type { PersonaReference, PersonaDiscoveryConfig } from "./types.js";
 
 // Mock console.warn to avoid noise in tests
@@ -40,6 +41,9 @@ describe("PersonaScanner", () => {
   beforeEach(async () => {
     // Create temporary directory for test files
     tempDir = await fs.mkdtemp(join(tmpdir(), "persona-scanner-test-"));
+
+    // Override persona directory to use temp directory for tests
+    process.env.HYPERTOOL_PERSONA_DIR = tempDir;
 
     // Define test directory structure
     testStructure = {
@@ -139,6 +143,12 @@ description: A deeply nested persona
   });
 
   afterEach(async () => {
+    // Clear discovery cache to prevent test pollution
+    clearDiscoveryCache();
+
+    // Clean up environment variable
+    delete process.env.HYPERTOOL_PERSONA_DIR;
+
     // Clean up temporary files
     try {
       await fs.rmdir(tempDir, { recursive: true });
@@ -155,10 +165,12 @@ description: A deeply nested persona
           maxDepth: 3,
         };
 
-        const personas = await scanForPersonas(config);
+        const result = await scanForPersonas(config);
 
         // Filter out any discovered personas from standard paths
-        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
+        const testPersonas = result.personas.filter((p) =>
+          p.path.startsWith(tempDir)
+        );
 
         expect(testPersonas.length).toBeGreaterThanOrEqual(3);
 
@@ -183,8 +195,10 @@ description: A deeply nested persona
           additionalPaths: [tempDir],
         };
 
-        const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
+        const result = await scanForPersonas(config);
+        const testPersonas = result.personas.filter((p) =>
+          p.path.startsWith(tempDir)
+        );
 
         const archivePersona = testPersonas.find(
           (p) => p.name === "archive-persona"
@@ -200,8 +214,10 @@ description: A deeply nested persona
           maxDepth: 3,
         };
 
-        const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
+        const result = await scanForPersonas(config);
+        const testPersonas = result.personas.filter((p) =>
+          p.path.startsWith(tempDir)
+        );
 
         const nestedPersona = testPersonas.find(
           (p) => p.name === "nested-persona"
@@ -215,11 +231,13 @@ description: A deeply nested persona
       it("should respect max depth limit", async () => {
         const config: PersonaDiscoveryConfig = {
           additionalPaths: [tempDir],
-          maxDepth: 2, // Should not reach deep-persona at level 3
+          maxDepth: 2, // Should not reach nested-persona at level 3, or deep-persona at level 4
         };
 
-        const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
+        const result = await scanForPersonas(config);
+        const testPersonas = result.personas.filter((p) =>
+          p.path.startsWith(tempDir)
+        );
 
         const deepPersona = testPersonas.find((p) => p.name === "deep-persona");
         expect(deepPersona).toBeUndefined();
@@ -227,7 +245,21 @@ description: A deeply nested persona
         const nestedPersona = testPersonas.find(
           (p) => p.name === "nested-persona"
         );
-        expect(nestedPersona).toBeDefined(); // Should still be found at level 2
+        expect(nestedPersona).toBeUndefined(); // Should not be found - it's at depth 3
+
+        // But with maxDepth = 4, nested-persona should be found
+        const config4: PersonaDiscoveryConfig = {
+          additionalPaths: [tempDir],
+          maxDepth: 4,
+        };
+        const result4 = await scanForPersonas(config4);
+        const testPersonas4 = result4.personas.filter((p) =>
+          p.path.startsWith(tempDir)
+        );
+        const nestedPersona4 = testPersonas4.find(
+          (p) => p.name === "nested-persona"
+        );
+        expect(nestedPersona4).toBeDefined(); // Should be found at depth 3 with maxDepth 4
       });
     });
 
@@ -237,8 +269,10 @@ description: A deeply nested persona
           additionalPaths: [tempDir],
         };
 
-        const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
+        const result = await scanForPersonas(config);
+        const testPersonas = result.personas.filter((p) =>
+          p.path.startsWith(tempDir)
+        );
 
         // Should not find personas in node_modules or .git
         const ignoredPersonas = testPersonas.filter(
@@ -253,8 +287,10 @@ description: A deeply nested persona
           ignorePatterns: ["**/valid-persona/**", "**/minimal-persona"],
         };
 
-        const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
+        const result = await scanForPersonas(config);
+        const testPersonas = result.personas.filter((p) =>
+          p.path.startsWith(tempDir)
+        );
 
         const ignoredPersonas = testPersonas.filter(
           (p) => p.name === "valid-persona" || p.name === "minimal-persona"
@@ -275,10 +311,10 @@ description: A deeply nested persona
         };
 
         const startTime = Date.now();
-        const personas = await scanForPersonas(config);
+        const result = await scanForPersonas(config);
         const duration = Date.now() - startTime;
 
-        expect(personas).toBeDefined();
+        expect(result.personas).toBeDefined();
         // Parallel scanning should be reasonably fast
         expect(duration).toBeLessThan(5000);
       });
@@ -289,8 +325,10 @@ description: A deeply nested persona
           parallelScan: false,
         };
 
-        const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
+        const result = await scanForPersonas(config);
+        const testPersonas = result.personas.filter((p) =>
+          p.path.startsWith(tempDir)
+        );
 
         expect(testPersonas.length).toBeGreaterThan(0);
       });
@@ -303,8 +341,10 @@ description: A deeply nested persona
           followSymlinks: false,
         };
 
-        const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
+        const result = await scanForPersonas(config);
+        const testPersonas = result.personas.filter((p) =>
+          p.path.startsWith(tempDir)
+        );
 
         const symlinkPersona = testPersonas.find(
           (p) => p.name === "symlink-persona"
@@ -327,8 +367,10 @@ description: A deeply nested persona
           followSymlinks: true,
         };
 
-        const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
+        const result = await scanForPersonas(config);
+        const testPersonas = result.personas.filter((p) =>
+          p.path.startsWith(tempDir)
+        );
 
         const symlinkPersona = testPersonas.find(
           (p) => p.name === "symlink-persona"
@@ -355,8 +397,8 @@ description: A deeply nested persona
         };
 
         // Should not throw, but might log warnings
-        const personas = await scanForPersonas(config);
-        expect(personas).toBeDefined();
+        const result = await scanForPersonas(config);
+        expect(result.personas).toBeDefined();
 
         // Restore permissions for cleanup
         try {
@@ -371,8 +413,8 @@ description: A deeply nested persona
           additionalPaths: ["/non/existent/path"],
         };
 
-        const personas = await scanForPersonas(config);
-        expect(personas).toBeDefined();
+        const result = await scanForPersonas(config);
+        expect(result.personas).toBeDefined();
         expect(console.warn).toHaveBeenCalled();
       });
     });
@@ -383,8 +425,10 @@ description: A deeply nested persona
           additionalPaths: [tempDir, tempDir], // Same path twice
         };
 
-        const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
+        const result = await scanForPersonas(config);
+        const testPersonas = result.personas.filter((p) =>
+          p.path.startsWith(tempDir)
+        );
 
         // Should not have duplicates based on path
         const uniquePaths = new Set(testPersonas.map((p) => p.path));
@@ -471,12 +515,21 @@ description: A deeply nested persona
 
   describe("getStandardSearchPaths", () => {
     it("should return configured persona directory", () => {
-      const paths = getStandardSearchPaths();
+      // Temporarily clear environment variable to test default paths
+      const originalEnv = process.env.HYPERTOOL_PERSONA_DIR;
+      delete process.env.HYPERTOOL_PERSONA_DIR;
+      try {
+        const paths = getStandardSearchPaths();
 
-      expect(paths).toHaveLength(1); // Changed from 3 to 1
-      expect(paths[0]).toContain(".toolprint");
-      expect(paths[0]).toContain("hypertool-mcp");
-      expect(paths[0]).toContain("personas");
+        expect(paths).toHaveLength(1); // Changed from 3 to 1
+        expect(paths[0]).toContain(".toolprint");
+        expect(paths[0]).toContain("hypertool-mcp");
+        expect(paths[0]).toContain("personas");
+      } finally {
+        if (originalEnv) {
+          process.env.HYPERTOOL_PERSONA_DIR = originalEnv;
+        }
+      }
     });
 
     it("should return absolute path", () => {
@@ -559,8 +612,8 @@ description: A deeply nested persona
           maxDepth: 2, // Limit depth to prevent infinite loops
         };
 
-        const personas = await scanForPersonas(config);
-        expect(personas).toBeDefined();
+        const result = await scanForPersonas(config);
+        expect(result.personas).toBeDefined();
       } catch {
         // Skip test if symlinks aren't supported
       }
@@ -585,8 +638,10 @@ description: A deeply nested persona
         maxDepth: 15, // Allow deep scanning
       };
 
-      const personas = await scanForPersonas(config);
-      const deepPersona = personas.find((p) => p.name === "deep-persona");
+      const result = await scanForPersonas(config);
+      const deepPersona = result.personas.find(
+        (p) => p.name === "deep-persona"
+      );
       expect(deepPersona).toBeDefined();
     });
 

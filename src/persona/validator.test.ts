@@ -28,7 +28,13 @@ import type {
 const createMockToolDiscoveryEngine = (
   availableTools: AvailableToolInfo[] = []
 ): IToolDiscoveryEngine => ({
-  getAvailableTools: vi.fn().mockReturnValue(availableTools),
+  getAvailableTools: vi
+    .fn()
+    .mockImplementation((connectedOnly: boolean = true) =>
+      connectedOnly
+        ? availableTools.filter((tool) => tool.isConnected)
+        : availableTools
+    ),
   discoverTools: vi.fn().mockResolvedValue(availableTools),
   isToolAvailable: vi
     .fn()

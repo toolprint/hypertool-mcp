@@ -155,16 +155,28 @@ export class PersonaMcpIntegration {
         // No base config to merge, just apply the persona config
         await this.setCurrentConfig(personaConfig);
 
+        const warnings: string[] = [];
+
         // Restart connections if handler provided
         if (this.restartConnections) {
-          await this.restartConnections();
+          try {
+            await this.restartConnections();
+          } catch (error) {
+            logger.warn(
+              "Failed to restart connections after applying persona config:",
+              error
+            );
+            warnings.push(
+              `Connection restart failed: ${error instanceof Error ? error.message : String(error)}`
+            );
+          }
         }
 
         return {
           success: true,
           mergedConfig: personaConfig,
           conflicts: [],
-          warnings: [],
+          warnings,
           errors: [],
           stats: {
             baseServersCount: 0,
@@ -408,57 +420,58 @@ export class PersonaMcpIntegration {
         let resolvedServer: ServerEntry | null = null;
 
         // Apply conflict resolution strategy
-        switch (options.conflictResolution) {
-          case "persona-wins":
-            resolvedServer = this.mergeServerConfigs(
-              baseServer,
-              personaServer,
-              options
-            );
-            break;
-
-          case "base-wins":
-            resolvedServer = this.mergeServerConfigs(
-              personaServer,
-              baseServer,
-              options
-            );
-            warnings.push(`Using base config for server "${serverName}"`);
-            break;
-
-          case "user-choice":
-            // In a real implementation, this would prompt the user
-            // For now, default to persona-wins
-            resolvedServer = this.mergeServerConfigs(
-              baseServer,
-              personaServer,
-              options
-            );
-            warnings.push(
-              `Auto-resolved conflict for server "${serverName}" (persona wins)`
-            );
-            break;
-
-          case "error":
-            errors.push(
-              `Configuration conflict for server "${serverName}" - resolution required`
-            );
-            continue;
-
-          default:
-            if (options.customResolver) {
-              resolvedServer = options.customResolver(
-                serverName,
-                baseServer,
-                personaServer
-              );
-            } else {
+        // Custom resolver takes precedence if provided
+        if (options.customResolver) {
+          resolvedServer = options.customResolver(
+            serverName,
+            baseServer,
+            personaServer
+          );
+        } else {
+          switch (options.conflictResolution) {
+            case "persona-wins":
               resolvedServer = this.mergeServerConfigs(
                 baseServer,
                 personaServer,
                 options
               );
-            }
+              break;
+
+            case "base-wins":
+              resolvedServer = this.mergeServerConfigs(
+                personaServer,
+                baseServer,
+                options
+              );
+              warnings.push(`Using base config for server "${serverName}"`);
+              break;
+
+            case "user-choice":
+              // In a real implementation, this would prompt the user
+              // For now, default to persona-wins
+              resolvedServer = this.mergeServerConfigs(
+                baseServer,
+                personaServer,
+                options
+              );
+              warnings.push(
+                `Auto-resolved conflict for server "${serverName}" (persona wins)`
+              );
+              break;
+
+            case "error":
+              errors.push(
+                `Configuration conflict for server "${serverName}" - resolution required`
+              );
+              continue;
+
+            default:
+              resolvedServer = this.mergeServerConfigs(
+                baseServer,
+                personaServer,
+                options
+              );
+          }
         }
 
         if (resolvedServer) {

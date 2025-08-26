@@ -208,8 +208,9 @@ export async function parsePersonaYAMLFile(
   filePath: string,
   options: ParseOptions = {}
 ): Promise<ParseResult<PersonaConfig>> {
-  // Validate file extension
   const filename = filePath.split(/[/\\]/).pop() || "";
+
+  // Validate file extension first
   if (!isSupportedPersonaFile(filename)) {
     return {
       success: false,
@@ -272,7 +273,7 @@ export function isPersonaConfigFile(filePath: string): boolean {
  * @returns Array of supported file extensions
  */
 export function getSupportedPersonaFiles(): readonly string[] {
-  return SUPPORTED_PERSONA_FILES;
+  return Object.freeze([...SUPPORTED_PERSONA_FILES]);
 }
 
 /**
@@ -383,8 +384,26 @@ export async function parseMultiplePersonaFiles(
 
   // Parse all files concurrently
   const parsePromises = filePaths.map(async (filePath) => {
-    const result = await parsePersonaYAMLFile(filePath, options);
-    return { filePath, result };
+    try {
+      const result = await parsePersonaYAMLFile(filePath, options);
+      return { filePath, result };
+    } catch (error) {
+      // Handle unexpected errors during parsing
+      return {
+        filePath,
+        result: {
+          success: false,
+          errors: [
+            {
+              type: "schema",
+              message: `Failed to parse ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
+              severity: "error",
+            },
+          ],
+          warnings: [],
+        } as ParseResult<PersonaConfig>,
+      };
+    }
   });
 
   const parsedResults = await Promise.allSettled(parsePromises);

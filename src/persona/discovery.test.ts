@@ -55,6 +55,9 @@ describe("PersonaDiscovery", () => {
     // Create temporary directory for test files
     tempDir = await fs.mkdtemp(join(tmpdir(), "persona-discovery-test-"));
 
+    // Override persona directory to use temp directory for tests
+    process.env.HYPERTOOL_PERSONA_DIR = tempDir;
+
     // Create test directory structure
     testStructure = {
       "valid-persona": {
@@ -135,6 +138,12 @@ description: Second persona with duplicate name
   });
 
   afterEach(async () => {
+    // Clear discovery cache to prevent test pollution
+    clearDiscoveryCache();
+
+    // Clean up environment variable
+    delete process.env.HYPERTOOL_PERSONA_DIR;
+
     // Clean up discovery instance
     if (discovery) {
       discovery.dispose();
@@ -219,7 +228,7 @@ description: Second persona with duplicate name
 
         // Mismatched name should be invalid
         const mismatchPersona = result.personas.find(
-          (p) => p.name === "mismatch-name-persona"
+          (p) => p.name === "different-name"
         );
         expect(mismatchPersona?.isValid).toBe(false);
         expect(
@@ -454,11 +463,20 @@ description: Second persona with duplicate name
 
     describe("Utility Methods", () => {
       it("should provide standard search paths", () => {
-        const paths = discovery.getStandardSearchPaths();
-        expect(paths).toHaveLength(1); // Changed from 3 to 1
-        expect(paths[0]).toContain(".toolprint");
-        expect(paths[0]).toContain("hypertool-mcp");
-        expect(paths[0]).toContain("personas");
+        // Temporarily clear environment variable to test default paths
+        const originalEnv = process.env.HYPERTOOL_PERSONA_DIR;
+        delete process.env.HYPERTOOL_PERSONA_DIR;
+        try {
+          const paths = discovery.getStandardSearchPaths();
+          expect(paths).toHaveLength(1); // Changed from 3 to 1
+          expect(paths[0]).toContain(".toolprint");
+          expect(paths[0]).toContain("hypertool-mcp");
+          expect(paths[0]).toContain("personas");
+        } finally {
+          if (originalEnv) {
+            process.env.HYPERTOOL_PERSONA_DIR = originalEnv;
+          }
+        }
       });
 
       it("should validate search paths", async () => {

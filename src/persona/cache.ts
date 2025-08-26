@@ -383,6 +383,13 @@ export class PersonaCache extends EventEmitter {
   }
 
   /**
+   * Manually trigger cleanup of expired entries
+   */
+  public cleanup(): void {
+    this.cleanupExpiredEntries();
+  }
+
+  /**
    * Cleanup and destroy cache
    */
   public destroy(): void {

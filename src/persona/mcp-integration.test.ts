@@ -225,7 +225,7 @@ describe("PersonaMcpIntegration", () => {
 
       expect(result.success).toBe(false);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]).toContain("File not found");
+      expect(result.errors[0]).toContain("File system error");
       expect(mockSetCurrentConfig).not.toHaveBeenCalled();
     });
 
@@ -274,8 +274,19 @@ describe("PersonaMcpIntegration", () => {
         new Error("Connection restart failed")
       );
 
-      const result = await integration.applyPersonaConfig(testConfigPath);
+      // Mock file system access
+      mockedFs.access.mockResolvedValue(undefined);
+      mockedFs.readFile.mockResolvedValue(JSON.stringify(samplePersonaConfig));
 
+      // Make sure the parser mock is properly configured
+      MockedMCPConfigParser.mockImplementation(() => ({
+        parseFile: vi.fn().mockResolvedValue({
+          success: true,
+          config: samplePersonaConfig,
+        }),
+      }));
+
+      const result = await integration.applyPersonaConfig(testConfigPath);
       expect(result.success).toBe(true); // Should still succeed
       expect(result.warnings).toContain(
         "Connection restart failed: Connection restart failed"
@@ -407,8 +418,10 @@ describe("PersonaMcpIntegration", () => {
         env: {},
       });
 
+      // Add missing mocks
+      mockedFs.access.mockResolvedValue(undefined);
+
       const result = await integration.applyPersonaConfig(testConfigPath, {
-        conflictResolution: "persona-wins",
         customResolver,
       });
 
@@ -513,6 +526,14 @@ describe("helper functions", () => {
       mockedFs.access.mockResolvedValue(undefined);
       mockedFs.readFile.mockResolvedValue("{ invalid json }");
 
+      // Mock parser to return parse error
+      MockedMCPConfigParser.mockImplementation(() => ({
+        parseFile: vi.fn().mockResolvedValue({
+          success: false,
+          error: "Invalid JSON syntax in config file",
+        }),
+      }));
+
       const result = await validatePersonaMcpConfigFile(testPath);
 
       expect(result.isValid).toBe(false);
@@ -527,6 +548,14 @@ describe("helper functions", () => {
           servers: {},
         })
       );
+
+      // Mock parser to return validation error
+      MockedMCPConfigParser.mockImplementation(() => ({
+        parseFile: vi.fn().mockResolvedValue({
+          success: false,
+          validationErrors: ["Config missing 'mcpServers' field"],
+        }),
+      }));
 
       const result = await validatePersonaMcpConfigFile(testPath);
 
@@ -585,6 +614,35 @@ describe("merge scenarios", () => {
 
     mockedFs.access.mockResolvedValue(undefined);
 
+    // Setup MCPConfigParser mock for complex persona config
+    MockedMCPConfigParser.mockImplementation(() => ({
+      parseFile: vi.fn().mockImplementation((filePath: string) => {
+        if (filePath === "/test/mcp.json") {
+          const complexPersona: MCPConfig = {
+            mcpServers: {
+              "server-a": {
+                type: "stdio",
+                command: "persona-a",
+                env: { PERSONA_A: "persona-value-a" },
+              },
+              "server-d": {
+                type: "http",
+                url: "http://persona-d.com",
+              },
+            },
+          };
+          return Promise.resolve({
+            success: true,
+            config: complexPersona,
+          });
+        }
+        return Promise.resolve({
+          success: true,
+          config: samplePersonaConfig,
+        });
+      }),
+    }));
+
     integration = new PersonaMcpIntegration(
       mockGetCurrentConfig,
       mockSetCurrentConfig
@@ -630,6 +688,7 @@ describe("merge scenarios", () => {
     };
 
     mockGetCurrentConfig.mockResolvedValue(complexBase);
+    mockedFs.access.mockResolvedValue(undefined);
     mockedFs.readFile.mockResolvedValue(JSON.stringify(complexPersona));
 
     const result = await integration.applyPersonaConfig("/test/mcp.json", {

@@ -42,8 +42,8 @@ export const ToolIdSchema = z
   .string()
   .min(3, "Tool ID must be at least 3 characters long")
   .regex(
-    /^[a-zA-Z][a-zA-Z0-9_-]*(\.[a-zA-Z][a-zA-Z0-9_-]*)+$/,
-    "Tool ID must follow namespacedName format (e.g., 'server.tool_name' or 'server.compound-tool_name')"
+    /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/,
+    "Tool ID must follow namespacedName format (e.g., 'server.tool-name' with lowercase letters, numbers, and hyphens only)"
   );
 
 /**
@@ -313,7 +313,7 @@ function generateSuggestion(issue: z.ZodIssue): string {
 
     case z.ZodIssueCode.too_small:
       if (path === "description") {
-        return "Add more detail to the description (minimum 10 characters)";
+        return "Add more detail to the description (at least 10 characters)";
       }
       if (path.includes("toolIds")) {
         return "Add at least one tool ID to the toolset";

@@ -25,6 +25,7 @@ import {
   getStandardSearchPaths,
   validateSearchPath,
   hasPersonasInPaths,
+  type ScanResult,
 } from "./scanner.js";
 import {
   createFileSystemError,
@@ -60,10 +61,14 @@ interface DiscoveryStats {
   cacheMisses: number;
   /** Last discovery timestamp */
   lastDiscovery?: Date;
+  /** Last scan time (alias for lastDiscovery) */
+  lastScanTime?: Date;
+  /** Total personas found in last discovery */
+  totalPersonas: number;
+  /** Alias for totalPersonas (for backward compatibility) */
+  lastPersonaCount: number;
   /** Average discovery time in milliseconds */
   averageDiscoveryTime: number;
-  /** Total personas found in last discovery */
-  lastPersonaCount: number;
 }
 
 /**
@@ -90,6 +95,8 @@ interface QuickValidationResult {
   isValid: boolean;
   /** Brief description if extractable */
   description?: string;
+  /** Extracted name from YAML content */
+  extractedName?: string;
   /** Issues found during quick validation */
   issues: string[];
 }
@@ -108,6 +115,7 @@ export class PersonaDiscovery extends EventEmitter {
     cacheHits: 0,
     cacheMisses: 0,
     averageDiscoveryTime: 0,
+    totalPersonas: 0,
     lastPersonaCount: 0,
   };
 
@@ -149,6 +157,7 @@ export class PersonaDiscovery extends EventEmitter {
         this.emit(PersonaEvents.PERSONA_DISCOVERED, {
           count: cachedResult.personas.length,
           fromCache: true,
+          timestamp: new Date(),
         });
         return cachedResult;
       }
@@ -169,6 +178,7 @@ export class PersonaDiscovery extends EventEmitter {
         count: result.personas.length,
         fromCache: false,
         duration: Date.now() - context.startTime.getTime(),
+        timestamp: new Date(),
       });
 
       return result;
@@ -317,11 +327,15 @@ export class PersonaDiscovery extends EventEmitter {
   ): Promise<PersonaDiscoveryResult> {
     try {
       // Use the scanner to find persona references
-      const personas = await scanForPersonas(context.config);
+      const scanResult = await scanForPersonas(context.config);
+
+      // Add scanner errors and warnings to context
+      context.errors.push(...scanResult.errors);
+      context.warnings.push(...scanResult.warnings);
 
       // Perform quick validation on each discovered persona
       const validatedPersonas = await Promise.all(
-        personas.map(async (persona) =>
+        scanResult.personas.map(async (persona) =>
           this.quickValidatePersona(persona, context)
         )
       );
@@ -377,6 +391,7 @@ export class PersonaDiscovery extends EventEmitter {
 
       return {
         ...persona,
+        name: validation.extractedName || persona.name,
         isValid: validation.isValid,
         description: validation.description || persona.description,
         issues: validation.issues.length > 0 ? validation.issues : undefined,
@@ -447,6 +462,9 @@ export class PersonaDiscovery extends EventEmitter {
       } else {
         const name = nameMatch[1].trim();
         const expectedName = basename(personaPath);
+
+        // Set the extracted name regardless of validation issues
+        result.extractedName = name;
 
         // Basic name format validation
         if (!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(name)) {
@@ -530,8 +548,7 @@ export class PersonaDiscovery extends EventEmitter {
 
         if (toolIdsMatches) {
           // Basic tool ID format validation using the same pattern as ToolIdSchema
-          const toolIdPattern =
-            /^[a-zA-Z][a-zA-Z0-9_-]*(\.[a-zA-Z][a-zA-Z0-9_-]*)+$/;
+          const toolIdPattern = /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/;
           const invalidToolIds: string[] = [];
 
           for (const toolIdsBlock of toolIdsMatches) {
@@ -555,7 +572,7 @@ export class PersonaDiscovery extends EventEmitter {
 
           if (invalidToolIds.length > 0) {
             issues.push(
-              `Invalid tool ID format(s): ${invalidToolIds.join(", ")} - must follow namespacedName format (e.g., 'server.tool-name' or 'server.compound.tool-name')`
+              `Invalid tool ID format(s): ${invalidToolIds.join(", ")} - must follow namespacedName format (e.g., 'server.tool-name' with lowercase letters, numbers, and hyphens only)`
             );
           }
         }
@@ -693,7 +710,10 @@ export class PersonaDiscovery extends EventEmitter {
     const duration = Date.now() - context.startTime.getTime();
 
     this.stats.totalDiscoveries++;
-    this.stats.lastDiscovery = new Date();
+    const discoveryTime = new Date();
+    this.stats.lastDiscovery = discoveryTime;
+    this.stats.lastScanTime = discoveryTime;
+    this.stats.totalPersonas = result.personas.length;
     this.stats.lastPersonaCount = result.personas.length;
 
     // Update rolling average

@@ -76,6 +76,192 @@ start-stdio:
 test:
     npm run test
 
+# Test categories
+[group('test')]
+test-unit:
+    npm run test:unit
+
+[group('test')]
+test-integration:
+    npm run test:integration
+
+[group('test')]
+test-e2e:
+    npm run test:e2e
+
+[group('test')]
+test-failing:
+    @echo "🚫 Running only currently failing tests..."
+    npx vitest run src/persona/mcp-integration.test.ts src/persona/parser.test.ts test/integration/persona-cli.test.ts test/integration/persona-discovery.test.ts test/integration/persona-mcp-config.test.ts test/integration/persona-toolset.test.ts test/e2e/persona-performance.test.ts test/e2e/persona-workflows.test.ts --reporter=verbose
+
+[group('test')]
+test-passing:
+    @echo "✅ Running only currently passing tests..."
+    npx vitest run --exclude="**/persona-mcp-config.test.ts" --exclude="**/persona-toolset.test.ts" --exclude="**/persona-cli.test.ts" --exclude="**/persona-discovery.test.ts" --exclude="**/persona-performance.test.ts" --exclude="**/persona-workflows.test.ts" --exclude="**/mcp-integration.test.ts" --exclude="**/parser.test.ts"
+
+[group('test')]
+test-quick:
+    @echo "⚡ Running fast unit tests..."
+    npm run test:fast
+
+# Persona test targets
+[group('test')]
+test-persona:
+    @echo "🎭 Running all persona tests..."
+    npx vitest run src/persona test/integration/persona-* test/e2e/persona-*
+
+[group('test')]
+test-persona-unit:
+    @echo "🎭 Running persona unit tests..."
+    npx vitest run src/persona
+
+[group('test')]
+test-persona-integration:
+    @echo "🎭 Running persona integration tests..."
+    npx vitest run test/integration/persona-* test/e2e/persona-*
+
+[group('test')]
+test-persona-failing:
+    @echo "🎭🚫 Running only failing persona tests..."
+    npx vitest run src/persona/mcp-integration.test.ts src/persona/parser.test.ts test/integration/persona-* test/e2e/persona-* --reporter=verbose
+
+# Individual persona component tests
+[group('test')]
+test-persona-schemas:
+    npx vitest run src/persona/schemas.test.ts --reporter=verbose
+
+[group('test')]
+test-persona-parser:
+    npx vitest run src/persona/parser.test.ts --reporter=verbose
+
+[group('test')]
+test-persona-scanner:
+    npx vitest run src/persona/scanner.test.ts --reporter=verbose
+
+[group('test')]
+test-persona-discovery:
+    npx vitest run src/persona/discovery.test.ts --reporter=verbose
+
+[group('test')]
+test-persona-cache:
+    npx vitest run src/persona/cache.test.ts --reporter=verbose
+
+[group('test')]
+test-persona-archive:
+    npx vitest run src/persona/archive.test.ts --reporter=verbose
+
+[group('test')]
+test-persona-mcp:
+    npx vitest run src/persona/mcp-integration.test.ts --reporter=verbose
+
+[group('test')]
+test-persona-installer:
+    npx vitest run src/persona/installer.test.ts --reporter=verbose
+
+[group('test')]
+test-persona-validator:
+    npx vitest run src/persona/validator.test.ts --reporter=verbose
+
+# Individual integration test files
+[group('test')]
+test-integration-cli:
+    npx vitest run test/integration/persona-cli.test.ts --reporter=verbose
+
+[group('test')]
+test-integration-discovery:
+    npx vitest run test/integration/persona-discovery.test.ts --reporter=verbose
+
+[group('test')]
+test-integration-mcp-config:
+    npx vitest run test/integration/persona-mcp-config.test.ts --reporter=verbose
+
+[group('test')]
+test-integration-toolset:
+    npx vitest run test/integration/persona-toolset.test.ts --reporter=verbose
+
+[group('test')]
+test-integration-core:
+    npx vitest run test/integration/persona-core.test.ts --reporter=verbose
+
+[group('test')]
+test-integration-setup:
+    npx vitest run test/integration/setup-*.test.ts --reporter=verbose
+
+[group('test')]
+test-integration-backup:
+    npx vitest run test/integration/backup-restore.test.ts --reporter=verbose
+
+# Debug and watch targets
+[group('test')]
+test-debug FILE:
+    @echo "🐛 Debugging test file: {{FILE}}"
+    npx vitest run {{FILE}} --reporter=verbose --testTimeout=60000
+
+[group('test')]
+test-watch FILE:
+    @echo "👁️  Watching test file: {{FILE}}"
+    npx vitest {{FILE}} --reporter=verbose
+
+[group('test')]
+test-debug-failing:
+    @echo "🐛 Debugging all failing tests..."
+    npx vitest run src/persona/mcp-integration.test.ts src/persona/parser.test.ts test/integration/persona-cli.test.ts test/integration/persona-discovery.test.ts test/integration/persona-mcp-config.test.ts test/integration/persona-toolset.test.ts test/e2e/persona-performance.test.ts test/e2e/persona-workflows.test.ts --reporter=verbose --testTimeout=60000
+
+[group('test')]
+test-debug-persona:
+    @echo "🐛🎭 Debugging persona tests..."
+    npx vitest run src/persona test/integration/persona-* test/e2e/persona-* --reporter=verbose --testTimeout=60000
+
+[group('test')]
+test-debug-integration:
+    @echo "🐛🔧 Debugging integration tests..."
+    npx vitest run test/integration --reporter=verbose --testTimeout=60000
+
+# Diagnostic targets
+[group('test')]
+test-list-failing:
+    @echo "📋 Currently failing test files:"
+    @echo "Unit Tests:"
+    @echo "  - src/persona/mcp-integration.test.ts"
+    @echo "  - src/persona/parser.test.ts"
+    @echo "Integration Tests:"
+    @echo "  - test/integration/persona-cli.test.ts"
+    @echo "  - test/integration/persona-discovery.test.ts"
+    @echo "  - test/integration/persona-mcp-config.test.ts"
+    @echo "  - test/integration/persona-toolset.test.ts"
+    @echo "E2E Tests:"
+    @echo "  - test/e2e/persona-performance.test.ts"
+    @echo "  - test/e2e/persona-workflows.test.ts"
+
+[group('test')]
+test-count-failures:
+    @echo "🔢 Failure count per test file (last known):"
+    @echo "src/persona/mcp-integration.test.ts: 3 failures"
+    @echo "src/persona/parser.test.ts: 1 failure"
+    @echo "test/integration/persona-mcp-config.test.ts: 10 failures"
+    @echo "test/integration/persona-cli.test.ts: ~15 failures"
+    @echo "test/integration/persona-discovery.test.ts: ~10 failures"
+    @echo "test/integration/persona-toolset.test.ts: ~15 failures"
+    @echo "test/e2e/persona-performance.test.ts: ~8 failures"
+    @echo "test/e2e/persona-workflows.test.ts: ~6 failures"
+    @echo "Total: ~68 failures across 8 files"
+
+[group('test')]
+test-summary:
+    @echo "📊 Test Summary:"
+    @echo "✅ Passing: 60 test files (1127 individual tests)"
+    @echo "🚫 Failing: 8 test files (68 individual failures)"
+    @echo "📄 Total: 68 test files (1214 individual tests)"
+    @echo "📈 Success Rate: 93% (1127/1214)"
+    @echo ""
+    @echo "Focus Areas:"
+    @echo "1. Unit Tests: Fix 4 failures in 2 files"
+    @echo "2. Integration Tests: Fix ~50 failures in 4 files"
+    @echo "3. E2E Tests: Fix ~14 failures in 2 files"
+    @echo ""
+    @echo "Use 'just test-list-failing' to see specific files"
+    @echo "Use 'just test-failing' to run only failing tests"
+
 # Launch MCP inspector with custom stdio command
 [group('dev')]
 inspect *args:

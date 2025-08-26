@@ -261,6 +261,7 @@ export function createAddCommand(): Command {
                 )
               );
               process.exit(1);
+              return; // Prevent further execution in test environment
             } else {
               console.log(
                 theme.warning(
