@@ -730,6 +730,77 @@ export class PersonaManager extends EventEmitter {
       }
     }
 
+    // Now that MCP config is applied and servers may have started,
+    // validate tool availability if we have a discovery engine
+    if (mcpConfigApplied && this.config.toolDiscoveryEngine) {
+      try {
+        this.logger.info(
+          "MCP config applied, waiting for servers to connect before validating tools..."
+        );
+
+        // Wait longer for servers to fully connect and tools to be discovered
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+
+        // Force a refresh of the discovery engine
+        await this.config.toolDiscoveryEngine.refreshCache();
+
+        const availableTools =
+          this.config.toolDiscoveryEngine.getAvailableTools(true);
+        this.logger.info(
+          `Available tools after MCP config: ${availableTools.length}`,
+          {
+            tools: availableTools.map((t) => t.namespacedName).slice(0, 10), // Log first 10 tools
+          }
+        );
+
+        const { PersonaValidator } = await import("./validator.js");
+        const validator = new PersonaValidator(this.config.toolDiscoveryEngine);
+        const toolValidationResult = await validator.validatePersonaConfig(
+          persona.config,
+          {
+            personaPath: persona.sourcePath,
+            checkToolAvailability: true,
+            validateMcpConfig: false, // Already validated
+            toolDiscoveryEngine: this.config.toolDiscoveryEngine,
+          },
+          {
+            checkToolAvailability: true,
+            validateMcpConfig: false,
+            includeWarnings: true,
+          }
+        );
+
+        if (!toolValidationResult.isValid) {
+          const toolErrors = toolValidationResult.errors
+            .filter((e) => e.type === "tool-resolution")
+            .map((e) => e.message);
+
+          if (toolErrors.length > 0) {
+            // Convert tool resolution errors to warnings instead of failing activation
+            warnings.push(...toolErrors);
+            this.logger.warn(
+              "Some tools could not be resolved, but persona activation will continue",
+              {
+                errors: toolErrors,
+              }
+            );
+          }
+        }
+
+        if (toolValidationResult.warnings.length > 0) {
+          warnings.push(...toolValidationResult.warnings.map((w) => w.message));
+        }
+      } catch (error) {
+        if (error instanceof PersonaError) {
+          throw error;
+        }
+        const errorMessage = `Tool validation failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`;
+        warnings.push(errorMessage);
+      }
+    }
+
     // Create active state
     this.activeState = {
       persona,

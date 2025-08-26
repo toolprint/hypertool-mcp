@@ -608,6 +608,16 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         validateOnActivation: true,
         persistState: true,
         stateKey: "hypertool-persona-runtime-state",
+        defaultLoadOptions: {
+          validateOnLoad: true,
+          validationOptions: {
+            // Skip tool availability checking during initial load since persona
+            // may define its own MCP servers that aren't running yet
+            checkToolAvailability: false,
+            validateMcpConfig: true,
+            includeWarnings: true,
+          },
+        },
       });
 
       // Initialize the persona manager

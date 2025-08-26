@@ -124,6 +124,9 @@ export async function analyzeSource(sourcePath: string): Promise<SourceInfo> {
         if (parseResult.success && parseResult.data) {
           const config = parseResult.data;
           sourceInfo.personaName = config.name;
+        } else {
+          // Parsing failed, fallback to folder name
+          sourceInfo.personaName = basename(resolvedPath);
         }
       } catch {
         // If we can't read config, use folder name

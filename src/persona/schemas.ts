@@ -23,12 +23,12 @@ export const PersonaNameSchema = z
   .min(2, "Persona name must be at least 2 characters long")
   .max(63, "Persona name must not exceed 63 characters")
   .regex(
-    /^[a-z][a-z0-9-]*[a-z0-9]$/,
-    "Persona name must be hyphen-delimited lowercase (e.g., 'dev-tools', 'backend-api')"
+    /^[a-z][a-z0-9-_]*[a-z0-9_]$/,
+    "Persona name must be lowercase alphanumeric with hyphens or underscores (e.g., 'dev-tools', 'backend_api')"
   )
   .refine(
-    (name) => !name.includes("--"),
-    "Persona name cannot contain consecutive hyphens"
+    (name) => !name.includes("--") && !name.includes("__"),
+    "Persona name cannot contain consecutive hyphens or underscores"
   );
 
 /**
@@ -42,8 +42,8 @@ export const ToolIdSchema = z
   .string()
   .min(3, "Tool ID must be at least 3 characters long")
   .regex(
-    /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/,
-    "Tool ID must follow namespacedName format (e.g., 'server.tool-name' with lowercase letters, numbers, and hyphens only)"
+    /^[a-z][a-z0-9-_]*(\.[a-z][a-z0-9-_]*)+$/,
+    "Tool ID must follow namespacedName format (e.g., 'server.tool-name' or 'server.tool_name' with lowercase letters, numbers, hyphens, and underscores only)"
   );
 
 /**
@@ -301,7 +301,7 @@ function generateSuggestion(issue: z.ZodIssue): string {
   switch (issue.code) {
     case z.ZodIssueCode.invalid_type:
       if (path === "name") {
-        return "Ensure the persona name is a string with hyphen-delimited lowercase format";
+        return "Ensure the persona name is a string with lowercase alphanumeric characters, hyphens, or underscores";
       }
       if (path === "description") {
         return "Provide a string description that's at least 10 characters long";
@@ -334,10 +334,10 @@ function generateSuggestion(issue: z.ZodIssue): string {
 
     case z.ZodIssueCode.invalid_string:
       if (path === "name") {
-        return "Use hyphen-delimited lowercase format: letters, numbers, and hyphens only (e.g., 'dev-tools')";
+        return "Use lowercase alphanumeric with hyphens or underscores (e.g., 'dev-tools', 'backend_api')";
       }
       if (path.includes("toolIds")) {
-        return "Use namespacedName format: 'server.tool-name' or 'server.compound.tool-name' (e.g., 'git.status', 'docker.compose.up')";
+        return "Use namespacedName format: 'server.tool-name' or 'server.tool_name' (e.g., 'git.status', 'filesystem.read_file')";
       }
       return `Follow the required format for ${path}`;
 

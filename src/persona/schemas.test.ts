@@ -31,7 +31,9 @@ describe("PersonaSchemas", () => {
       const validNames = [
         "dev",
         "dev-tools",
+        "dev_tools", // underscore format
         "backend-api",
+        "backend_api", // underscore format
         "frontend-dev",
         "test-automation",
         "db-admin",
@@ -59,9 +61,9 @@ describe("PersonaSchemas", () => {
         { name: "", error: "too_small" },
         { name: "a", error: "too_small" },
         { name: "DevTools", error: "invalid_string" },
-        { name: "dev_tools", error: "invalid_string" },
         { name: "dev tools", error: "invalid_string" },
         { name: "dev--tools", error: "custom" }, // consecutive hyphens
+        { name: "dev__tools", error: "custom" }, // consecutive underscores
         { name: "-dev-tools", error: "invalid_string" },
         { name: "dev-tools-", error: "invalid_string" },
         { name: "dev.tools", error: "invalid_string" },
@@ -124,6 +126,14 @@ describe("PersonaSchemas", () => {
         "monitoring.check-health",
         "backup.create-snapshot",
         "ci.run-pipeline",
+        // Underscore formats
+        "git_server.status",
+        "filesystem.read_file",
+        "memory.create_entities",
+        // Multi-segment formats
+        "git.status.extra",
+        "docker.compose.up",
+        "kubernetes.cluster.deploy",
       ];
 
       validToolIds.forEach((toolId) => {
@@ -142,10 +152,7 @@ describe("PersonaSchemas", () => {
         { id: "git.", error: "invalid_string" }, // missing tool name
         { id: ".status", error: "invalid_string" }, // missing server name
         { id: "Git.Status", error: "invalid_string" }, // uppercase
-        { id: "git_server.status", error: "invalid_string" }, // underscore
         { id: "git server.status", error: "invalid_string" }, // space
-        { id: "git.create_issue", error: "invalid_string" }, // underscore in tool name
-        { id: "git.status.extra", error: "invalid_string" }, // too many dots
         { id: "123.status", error: "invalid_string" }, // number start
         { id: "git.123", error: "invalid_string" }, // number start in tool
       ];
@@ -867,7 +874,7 @@ describe("PersonaSchemas", () => {
       const commonMistakes = [
         {
           config: { name: "DevTools", description: "Development tools" },
-          expectedSuggestion: "hyphen-delimited lowercase",
+          expectedSuggestion: "lowercase alphanumeric",
         },
         {
           config: { name: "dev-tools", description: "Short" },
@@ -902,8 +909,8 @@ describe("PersonaSchemas", () => {
         description: "Test configuration",
         toolsets: [
           {
-            name: "invalid_name",
-            toolIds: ["invalid-tool-id"],
+            name: "InvalidName", // uppercase is still invalid
+            toolIds: ["invalid-tool"], // missing server prefix
           },
         ],
       };

@@ -467,9 +467,9 @@ export class PersonaDiscovery extends EventEmitter {
         result.extractedName = name;
 
         // Basic name format validation
-        if (!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(name)) {
+        if (!/^[a-z][a-z0-9-_]*[a-z0-9_]$/.test(name)) {
           result.issues.push(
-            "Invalid name format (should be hyphen-delimited lowercase)"
+            "Invalid name format (should be lowercase with hyphens or underscores)"
           );
         }
 
@@ -548,7 +548,7 @@ export class PersonaDiscovery extends EventEmitter {
 
         if (toolIdsMatches) {
           // Basic tool ID format validation using the same pattern as ToolIdSchema
-          const toolIdPattern = /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/;
+          const toolIdPattern = /^[a-z][a-z0-9-_]*(\.[a-z][a-z0-9-_]*)+$/;
           const invalidToolIds: string[] = [];
 
           for (const toolIdsBlock of toolIdsMatches) {
