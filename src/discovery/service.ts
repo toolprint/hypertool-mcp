@@ -362,6 +362,7 @@ export class ToolDiscoveryEngine
           logger.error("Periodic tool discovery failed:", error);
         });
       }, this.config.refreshInterval);
+      this.refreshTimer?.unref(); // Allow CLI exit (see docs/bugs/process-exit-unref.md)
     }
 
     this.emit("started");

@@ -648,11 +648,13 @@ export class PersonaCache extends EventEmitter {
     this.ttlCleanupInterval = setInterval(() => {
       this.cleanupExpiredEntries();
     }, 30000);
+    this.ttlCleanupInterval?.unref(); // Allow CLI exit (see docs/bugs/process-exit-unref.md)
 
     // Metrics update every 60 seconds
     this.metricsUpdateInterval = setInterval(() => {
       this.updateMetricsHistory();
     }, 60000);
+    this.metricsUpdateInterval?.unref(); // Allow CLI exit (see docs/bugs/process-exit-unref.md)
   }
 
   /**

@@ -9,6 +9,10 @@ import { Command } from "commander";
 import { theme, semantic } from "../../utils/theme.js";
 import { createChildLogger } from "../../utils/logging.js";
 import {
+  getPersonaDirectory,
+  getPersonaDirectorySource,
+} from "../../config/personaConfig.js";
+import {
   PersonaManager,
   type PersonaManagerConfig,
 } from "../../persona/manager.js";
@@ -17,6 +21,7 @@ import { PersonaLoader } from "../../persona/loader.js";
 import { validatePersona } from "../../persona/validator.js";
 import type { PersonaReference, LoadedPersona } from "../../persona/types.js";
 import { isPersonaError } from "../../persona/errors.js";
+import { createAddCommand } from "./add.js";
 
 const logger = createChildLogger({ module: "persona-cli" });
 
@@ -101,10 +106,15 @@ export function createListCommand(): Command {
               )
             );
           }
-          console.log(theme.info("💡 Place personas in these search paths:"));
-          for (const path of discoveryResult.searchPaths) {
-            console.log(`   • ${theme.muted(path)}`);
-          }
+
+          // Show the configured persona directory
+          const personaDir = await getPersonaDirectory();
+          const configSource = await getPersonaDirectorySource();
+
+          console.log(theme.info("💡 Place personas in:"));
+          console.log(`   • ${theme.muted(personaDir)}`);
+          console.log(theme.muted(`   (${configSource})`));
+
           return;
         }
 
@@ -141,10 +151,17 @@ export function createListCommand(): Command {
         }
         console.log();
 
-        // Show search paths
-        console.log(theme.info("🔍 Search Paths"));
-        for (const path of discoveryResult.searchPaths) {
-          console.log(`   • ${theme.muted(path)}`);
+        // Show configured persona directory (only if using additional paths)
+        if (discoveryResult.searchPaths.length > 1) {
+          console.log(theme.info("🔍 Search Paths"));
+          for (const path of discoveryResult.searchPaths) {
+            console.log(`   • ${theme.muted(path)}`);
+          }
+        } else {
+          const configSource = await getPersonaDirectorySource();
+          console.log(theme.info("📍 Persona Directory"));
+          console.log(`   • ${theme.muted(discoveryResult.searchPaths[0])}`);
+          console.log(theme.muted(`   (${configSource})`));
         }
         console.log();
 
@@ -185,9 +202,15 @@ export function createActivateCommand(): Command {
         // Debug: Show discovered personas count for troubleshooting
         const stats = manager.getStats();
         if (stats.discoveredCount > 0) {
-          console.log(theme.muted(`   Discovered ${stats.discoveredCount} personas`));
+          console.log(
+            theme.muted(`   Discovered ${stats.discoveredCount} personas`)
+          );
         } else {
-          console.log(theme.warning(`   ⚠️  No personas discovered - this may cause activation to fail`));
+          console.log(
+            theme.warning(
+              `   ⚠️  No personas discovered - this may cause activation to fail`
+            )
+          );
         }
 
         // Activate the persona
@@ -467,6 +490,8 @@ export function createPersonaCommand(): Command {
 ${theme.label("Examples:")}
   ${theme.muted("hypertool persona list                    # List all available personas")}
   ${theme.muted("hypertool persona list --include-invalid  # Include invalid personas")}
+  ${theme.muted("hypertool persona add ./my-persona        # Install persona from folder")}
+  ${theme.muted("hypertool persona add ./persona.htp       # Install persona from archive")}
   ${theme.muted("hypertool persona activate frontend       # Activate 'frontend' persona")}
   ${theme.muted("hypertool persona activate backend --toolset api  # Activate with specific toolset")}
   ${theme.muted("hypertool persona validate ./my-persona   # Validate persona at path")}
@@ -476,6 +501,7 @@ ${theme.label("Examples:")}
 
   // Add all subcommands
   personaCommand.addCommand(createListCommand());
+  personaCommand.addCommand(createAddCommand());
   personaCommand.addCommand(createActivateCommand());
   personaCommand.addCommand(createValidateCommand());
   personaCommand.addCommand(createStatusCommand());
