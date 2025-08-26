@@ -139,10 +139,20 @@ export class PersonaMcpIntegration {
     options?: Partial<McpConfigMergeOptions>
   ): Promise<McpConfigMergeResult> {
     try {
-      logger.debug(`Applying persona MCP config from: ${mcpConfigFile}`);
+      logger.info(`Loading persona MCP configuration from: ${mcpConfigFile}`);
 
       // Load persona MCP configuration
       const personaConfig = await this.loadPersonaMcpConfig(mcpConfigFile);
+
+      // Log the servers found in the persona config
+      const serverNames = Object.keys(personaConfig.mcpServers);
+      if (serverNames.length > 0) {
+        logger.info(
+          `Found ${serverNames.length} MCP server${serverNames.length !== 1 ? "s" : ""} in persona config: ${serverNames.join(", ")}`
+        );
+      } else {
+        logger.info("No MCP servers found in persona configuration");
+      }
 
       // Get current MCP configuration
       const currentConfig = await this.getCurrentConfig();
@@ -157,20 +167,8 @@ export class PersonaMcpIntegration {
 
         const warnings: string[] = [];
 
-        // Restart connections if handler provided
-        if (this.restartConnections) {
-          try {
-            await this.restartConnections();
-          } catch (error) {
-            logger.warn(
-              "Failed to restart connections after applying persona config:",
-              error
-            );
-            warnings.push(
-              `Connection restart failed: ${error instanceof Error ? error.message : String(error)}`
-            );
-          }
-        }
+        // Note: setCurrentConfig already handles connecting to the servers,
+        // so no need to call restartConnections() here
 
         return {
           success: true,

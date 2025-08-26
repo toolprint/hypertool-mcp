@@ -11,6 +11,9 @@
 
 import { EventEmitter } from "events";
 import { createChildLogger } from "../utils/logging.js";
+import { promises as fs } from "fs";
+import path from "path";
+import os from "os";
 import type { IToolDiscoveryEngine } from "../discovery/types.js";
 import type {
   LoadedPersona,
@@ -48,8 +51,8 @@ import type { MCPConfig } from "../types/config.js";
  * Persona manager configuration options
  */
 export interface PersonaManagerConfig {
-  /** Tool discovery engine for validation */
-  toolDiscoveryEngine?: IToolDiscoveryEngine;
+  /** Tool discovery engine getter for validation - returns current instance */
+  getToolDiscoveryEngine?: () => IToolDiscoveryEngine | undefined;
 
   /** Toolset manager for integration with existing toolset system */
   toolsetManager?: ToolsetManager;
@@ -182,9 +185,9 @@ export class PersonaManager extends EventEmitter {
   private readonly mcpIntegration: PersonaMcpIntegration;
   private readonly config: Omit<
     Required<PersonaManagerConfig>,
-    "toolDiscoveryEngine" | "toolsetManager" | "mcpConfigHandlers"
+    "getToolDiscoveryEngine" | "toolsetManager" | "mcpConfigHandlers"
   > & {
-    toolDiscoveryEngine?: IToolDiscoveryEngine;
+    getToolDiscoveryEngine?: () => IToolDiscoveryEngine | undefined;
     toolsetManager?: ToolsetManager;
     mcpConfigHandlers?: {
       getCurrentConfig: () => Promise<MCPConfig | null>;
@@ -203,7 +206,7 @@ export class PersonaManager extends EventEmitter {
 
     // Apply default configuration
     this.config = {
-      toolDiscoveryEngine: config.toolDiscoveryEngine,
+      getToolDiscoveryEngine: config.getToolDiscoveryEngine,
       toolsetManager: config.toolsetManager,
       mcpConfigHandlers: config.mcpConfigHandlers,
       cacheConfig: config.cacheConfig || {},
@@ -221,11 +224,11 @@ export class PersonaManager extends EventEmitter {
     this.cache = new PersonaCache(this.config.cacheConfig);
     this.discovery = new PersonaDiscovery(this.config.cacheConfig);
     this.loader = new PersonaLoader(
-      this.config.toolDiscoveryEngine,
+      this.config.getToolDiscoveryEngine?.(),
       this.discovery
     );
     this.toolsetBridge = new PersonaToolsetBridge(
-      this.config.toolDiscoveryEngine,
+      this.config.getToolDiscoveryEngine,
       this.config.bridgeOptions
     );
 
@@ -385,7 +388,7 @@ export class PersonaManager extends EventEmitter {
 
       // Clear persisted state if enabled
       if (this.config.persistState) {
-        this.clearPersistedState();
+        await this.clearPersistedState();
       }
 
       if (!options.silent) {
@@ -732,36 +735,86 @@ export class PersonaManager extends EventEmitter {
 
     // Now that MCP config is applied and servers may have started,
     // validate tool availability if we have a discovery engine
-    if (mcpConfigApplied && this.config.toolDiscoveryEngine) {
+    const discoveryEngine = this.config.getToolDiscoveryEngine?.();
+    if (mcpConfigApplied && discoveryEngine) {
       try {
         this.logger.info(
           "MCP config applied, waiting for servers to connect before validating tools..."
         );
 
-        // Wait longer for servers to fully connect and tools to be discovered
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        // Wait for servers to fully connect and tools to be discovered
+        this.logger.debug(
+          "Waiting for tools to be discovered from MCP servers..."
+        );
+        let retries = 0;
+        let availableTools: any[] = [];
 
-        // Force a refresh of the discovery engine
-        await this.config.toolDiscoveryEngine.refreshCache();
+        while (retries < 20) {
+          // Max 10 seconds (20 * 500ms)
+          // Force a refresh of the discovery engine
+          this.logger.debug(`Tool discovery attempt ${retries + 1}/20`);
+          await discoveryEngine.refreshCache();
 
-        const availableTools =
-          this.config.toolDiscoveryEngine.getAvailableTools(true);
+          availableTools = discoveryEngine.getAvailableTools(true);
+          this.logger.debug(
+            `Found ${availableTools.length} tools on attempt ${retries + 1}`
+          );
+
+          if (availableTools.length > 0) {
+            this.logger.info(
+              `Tools discovered successfully after ${retries + 1} attempts`
+            );
+            break;
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          retries++;
+        }
+
+        if (availableTools.length === 0) {
+          this.logger.warn(
+            "No tools discovered after waiting 10 seconds - continuing anyway"
+          );
+        }
+
+        this.logger.debug(
+          "Getting final available tools from discovery engine"
+        );
+
+        // Get more detailed info about the discovery engine state
+        this.logger.debug("Discovery engine details:", {
+          engineType: discoveryEngine.constructor.name,
+          hasGetStats: typeof discoveryEngine.getStats === "function",
+          stats:
+            typeof discoveryEngine.getStats === "function"
+              ? discoveryEngine.getStats()
+              : "No stats method",
+        });
+
+        // Log all tools grouped by server for debugging
+        const toolsByServer: Record<string, string[]> = {};
+        availableTools.forEach((tool) => {
+          const serverName = tool.serverName || "unknown";
+          if (!toolsByServer[serverName]) toolsByServer[serverName] = [];
+          toolsByServer[serverName].push(tool.namespacedName);
+        });
+
         this.logger.info(
           `Available tools after MCP config: ${availableTools.length}`,
           {
-            tools: availableTools.map((t) => t.namespacedName).slice(0, 10), // Log first 10 tools
+            toolsByServer,
           }
         );
 
         const { PersonaValidator } = await import("./validator.js");
-        const validator = new PersonaValidator(this.config.toolDiscoveryEngine);
+        const validator = new PersonaValidator(discoveryEngine);
         const toolValidationResult = await validator.validatePersonaConfig(
           persona.config,
           {
             personaPath: persona.sourcePath,
             checkToolAvailability: true,
             validateMcpConfig: false, // Already validated
-            toolDiscoveryEngine: this.config.toolDiscoveryEngine,
+            toolDiscoveryEngine: discoveryEngine,
           },
           {
             checkToolAvailability: true,
@@ -769,6 +822,26 @@ export class PersonaManager extends EventEmitter {
             includeWarnings: true,
           }
         );
+
+        // Reapply toolset now that MCP servers are connected and tools are available
+        if (selectedToolset) {
+          try {
+            this.logger.info(
+              `Reapplying persona toolset '${selectedToolset.name}' with newly available tools...`
+            );
+            const toolsReapplied = await this.applyToolset(
+              selectedToolset,
+              persona
+            );
+            this.logger.info(
+              `Successfully applied persona toolset '${selectedToolset.name}' with ${toolsReapplied} tools`
+            );
+          } catch (error) {
+            const errorMessage = `Failed to reapply toolset after MCP connection: ${error instanceof Error ? error.message : String(error)}`;
+            warnings.push(errorMessage);
+            this.logger.warn(errorMessage);
+          }
+        }
 
         if (!toolValidationResult.isValid) {
           const toolErrors = toolValidationResult.errors
@@ -819,7 +892,7 @@ export class PersonaManager extends EventEmitter {
 
     // Persist state if enabled
     if (this.config.persistState) {
-      this.persistActiveState();
+      await this.persistActiveState();
     }
 
     return {
@@ -979,8 +1052,8 @@ export class PersonaManager extends EventEmitter {
   /**
    * Persist active state for session restoration
    */
-  private persistActiveState(): void {
-    if (!this.activeState || typeof localStorage === "undefined") {
+  private async persistActiveState(): Promise<void> {
+    if (!this.activeState) {
       return;
     }
 
@@ -993,9 +1066,11 @@ export class PersonaManager extends EventEmitter {
         metadata: this.activeState.metadata,
       };
 
-      localStorage.setItem(this.config.stateKey, JSON.stringify(stateData));
+      const stateFilePath = this.getStateFilePath();
+      await fs.mkdir(path.dirname(stateFilePath), { recursive: true });
+      await fs.writeFile(stateFilePath, JSON.stringify(stateData, null, 2));
     } catch (error) {
-      // Ignore persistence errors
+      this.logger.debug("Failed to persist persona state", { error });
     }
   }
 
@@ -1003,17 +1078,21 @@ export class PersonaManager extends EventEmitter {
    * Restore persisted state
    */
   private async restorePersistedState(): Promise<void> {
-    if (typeof localStorage === "undefined") {
-      return;
-    }
-
     try {
-      const stateJson = localStorage.getItem(this.config.stateKey);
-      if (!stateJson) {
+      const stateFilePath = this.getStateFilePath();
+
+      // Check if state file exists
+      try {
+        await fs.access(stateFilePath);
+      } catch {
+        // State file doesn't exist, nothing to restore
         return;
       }
 
+      const stateJson = await fs.readFile(stateFilePath, "utf8");
       const stateData = JSON.parse(stateJson);
+
+      this.logger.info(`Restoring persisted persona: ${stateData.personaName}`);
 
       // Try to restore the persona
       await this.activatePersona(stateData.personaName, {
@@ -1026,22 +1105,30 @@ export class PersonaManager extends EventEmitter {
         this.activeState.metadata.activationSource = "restored";
       }
     } catch (error) {
+      this.logger.debug("Failed to restore persisted state", { error });
       // Clear invalid persisted state
-      this.clearPersistedState();
+      await this.clearPersistedState();
     }
   }
 
   /**
    * Clear persisted state
    */
-  private clearPersistedState(): void {
-    if (typeof localStorage !== "undefined") {
-      try {
-        localStorage.removeItem(this.config.stateKey);
-      } catch {
-        // Ignore cleanup errors
-      }
+  private async clearPersistedState(): Promise<void> {
+    try {
+      const stateFilePath = this.getStateFilePath();
+      await fs.unlink(stateFilePath);
+    } catch {
+      // Ignore cleanup errors (file might not exist)
     }
+  }
+
+  /**
+   * Get the file path for persisted state
+   */
+  private getStateFilePath(): string {
+    const stateDir = path.join(os.homedir(), ".toolprint", "hypertool-mcp");
+    return path.join(stateDir, `${this.config.stateKey}.json`);
   }
 
   /**

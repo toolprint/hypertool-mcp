@@ -72,14 +72,16 @@ export interface BridgeOptions {
  * ToolsetConfig format expected by the ToolsetManager.
  */
 export class PersonaToolsetBridge {
-  private readonly toolDiscoveryEngine?: IToolDiscoveryEngine;
+  private readonly getToolDiscoveryEngine?: () =>
+    | IToolDiscoveryEngine
+    | undefined;
   private readonly options: Required<BridgeOptions>;
 
   constructor(
-    toolDiscoveryEngine?: IToolDiscoveryEngine,
+    getToolDiscoveryEngine?: () => IToolDiscoveryEngine | undefined,
     options: BridgeOptions = {}
   ) {
-    this.toolDiscoveryEngine = toolDiscoveryEngine;
+    this.getToolDiscoveryEngine = getToolDiscoveryEngine;
 
     // Apply default options
     this.options = {
@@ -91,7 +93,7 @@ export class PersonaToolsetBridge {
     };
 
     logger.debug("PersonaToolsetBridge initialized", {
-      hasDiscoveryEngine: !!this.toolDiscoveryEngine,
+      hasDiscoveryEngine: !!this.getToolDiscoveryEngine?.(),
       options: this.options,
     });
   }
@@ -128,7 +130,7 @@ export class PersonaToolsetBridge {
       const warnings: string[] = [];
 
       // Validate tool resolution if enabled and discovery engine is available
-      if (this.options.validateTools && this.toolDiscoveryEngine) {
+      if (this.options.validateTools && this.getToolDiscoveryEngine?.()) {
         const validationResult = await this.validateToolReferences(
           toolReferences,
           stats,
@@ -306,18 +308,16 @@ export class PersonaToolsetBridge {
     stats: ToolsetConversionResult["stats"],
     warnings: string[]
   ): Promise<void> {
-    if (!this.toolDiscoveryEngine || !stats) {
+    const toolDiscoveryEngine = this.getToolDiscoveryEngine?.();
+    if (!toolDiscoveryEngine || !stats) {
       return;
     }
 
     for (const toolRef of toolReferences) {
       try {
-        const resolution = this.toolDiscoveryEngine.resolveToolReference(
-          toolRef,
-          {
-            allowStaleRefs: false,
-          }
-        );
+        const resolution = toolDiscoveryEngine.resolveToolReference(toolRef, {
+          allowStaleRefs: false,
+        });
 
         if (resolution && resolution.exists) {
           stats.resolvedTools++;
@@ -365,7 +365,7 @@ export class PersonaToolsetBridge {
     version: string;
   } {
     return {
-      hasDiscoveryEngine: !!this.toolDiscoveryEngine,
+      hasDiscoveryEngine: !!this.getToolDiscoveryEngine?.(),
       options: this.options,
       version: "1.0.0",
     };
@@ -379,7 +379,8 @@ export class PersonaToolsetBridge {
     totalTools: number;
     connectedServers: number;
   }> {
-    if (!this.toolDiscoveryEngine) {
+    const toolDiscoveryEngine = this.getToolDiscoveryEngine?.();
+    if (!toolDiscoveryEngine) {
       return {
         discoveryEngineAvailable: false,
         totalTools: 0,
@@ -388,7 +389,7 @@ export class PersonaToolsetBridge {
     }
 
     try {
-      const stats = this.toolDiscoveryEngine.getStats();
+      const stats = toolDiscoveryEngine.getStats();
       return {
         discoveryEngineAvailable: true,
         totalTools: stats.totalTools,
@@ -412,7 +413,7 @@ export function createPersonaToolsetBridge(
   toolDiscoveryEngine?: IToolDiscoveryEngine,
   options?: BridgeOptions
 ): PersonaToolsetBridge {
-  return new PersonaToolsetBridge(toolDiscoveryEngine, options);
+  return new PersonaToolsetBridge(() => toolDiscoveryEngine, options);
 }
 
 /**
@@ -424,6 +425,6 @@ export async function convertPersonaToolset(
   toolDiscoveryEngine?: IToolDiscoveryEngine,
   options?: BridgeOptions
 ): Promise<ToolsetConversionResult> {
-  const bridge = new PersonaToolsetBridge(toolDiscoveryEngine, options);
+  const bridge = new PersonaToolsetBridge(() => toolDiscoveryEngine, options);
   return bridge.convertPersonaToolset(personaToolset, personaName);
 }

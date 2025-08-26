@@ -35,7 +35,7 @@ describe("PersonaToolsetBridge", () => {
       }),
     } as any;
 
-    bridge = new PersonaToolsetBridge(mockDiscoveryEngine);
+    bridge = new PersonaToolsetBridge(() => mockDiscoveryEngine);
   });
 
   describe("convertPersonaToolset", () => {
@@ -125,9 +125,12 @@ describe("PersonaToolsetBridge", () => {
           errors: ["Tool not found"],
         } as any);
 
-      const bridgeWithPartial = new PersonaToolsetBridge(mockDiscoveryEngine, {
-        allowPartialToolsets: true,
-      });
+      const bridgeWithPartial = new PersonaToolsetBridge(
+        () => mockDiscoveryEngine,
+        {
+          allowPartialToolsets: true,
+        }
+      );
 
       const result = await bridgeWithPartial.convertPersonaToolset(
         samplePersonaToolset,
@@ -161,7 +164,7 @@ describe("PersonaToolsetBridge", () => {
           errors: ["Tool not found"],
         } as any);
 
-      const strictBridge = new PersonaToolsetBridge(mockDiscoveryEngine, {
+      const strictBridge = new PersonaToolsetBridge(() => mockDiscoveryEngine, {
         allowPartialToolsets: false,
       });
 

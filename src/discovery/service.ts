@@ -147,6 +147,17 @@ export class ToolDiscoveryEngine
 
     const toolsResult = await client.listTools();
     const toolDefinitions: Tool[] = toolsResult.tools || [];
+
+    logger.debug(
+      `Server ${serverName} returned ${toolDefinitions.length} tools`,
+      {
+        serverName,
+        toolCount: toolDefinitions.length,
+        toolNames: toolDefinitions.map((t) => t.name),
+        hasClient: !!client,
+        hasSDKClient: !!client.sdkClient,
+      }
+    );
     const discoveredTools: DiscoveredTool[] = [];
 
     for (const toolDef of toolDefinitions) {

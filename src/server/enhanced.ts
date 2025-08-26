@@ -68,6 +68,8 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   private enterConfigurationModeTool?: ToolModule;
   private runtimeOptions?: RuntimeOptions;
   private configToolsMenuEnabled: boolean = true;
+  private serverInitOptions?: ServerInitOptions;
+  private currentServerConfigs: Record<string, ServerConfig> = {};
 
   constructor(config: MetaMCPServerConfig) {
     super(config);
@@ -93,6 +95,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     runtimeOptions?: RuntimeOptions
   ): Promise<void> {
     this.runtimeOptions = runtimeOptions;
+    this.serverInitOptions = options;
 
     await this.initializeRouting(options);
     await super.start(options);
@@ -327,6 +330,15 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
     await this.connectionManager.initialize(filteredConfigs);
     mainSpinner.succeed("🔗 Connection manager initialized");
+
+    // Log individual server connection attempts
+    const serverNames = Object.keys(filteredConfigs);
+    for (const [sName, config] of Object.entries(filteredConfigs)) {
+      logger.info(
+        `Attempting to connect to MCP server '${sName}' (${config.type})...`
+      );
+    }
+
     await this.connectionManager.start();
 
     for (const [sName, _] of Object.entries(serverConfigs)) {
@@ -340,14 +352,24 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           serverSpinner.succeed(
             `Connected to [${sName}] MCP <-> [${serverConfigs[sName].type}]`
           );
+          logger.info(
+            `✅ Successfully connected to MCP server '${sName}' (${serverConfigs[sName].type})`
+          );
         } else {
           serverSpinner.fail(
             `Failed to connect to [${sName}] MCP <-> [${serverConfigs[sName].type}]`
           );
+          logger.warn(
+            `❌ Failed to connect to MCP server '${sName}' (${serverConfigs[sName].type}) - state: ${cmStatus.state}`
+          );
         }
       } catch (error) {
+        const errorMsg = (error as Error).message;
         serverSpinner.fail(
-          `Failed to check connection to [${sName}] MCP <-> [${serverConfigs[sName].type}]: ${(error as Error).message}`
+          `Failed to check connection to [${sName}] MCP <-> [${serverConfigs[sName].type}]: ${errorMsg}`
+        );
+        logger.error(
+          `❌ Connection error for MCP server '${sName}' (${serverConfigs[sName].type}): ${errorMsg}`
         );
       }
     }
@@ -447,6 +469,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         console.log(chalk.yellow(message));
         output.displaySpaceBuffer();
       }
+
+      // Store current configurations for persona MCP integration
+      this.currentServerConfigs = mergedConfigs;
 
       // Initialize connection manager with merged configs (including extensions)
       await this.connectToDownstreamServers(mergedConfigs, options);
@@ -600,14 +625,17 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       // Import PersonaManager class
       const { PersonaManager } = await import("../persona/manager.js");
 
-      // Create persona manager with proper configuration
+      // Create persona manager with proper configuration and MCP handlers
       const personaManager = new PersonaManager({
-        toolDiscoveryEngine: this.discoveryEngine,
+        getToolDiscoveryEngine: () => this.discoveryEngine,
         toolsetManager: this.toolsetManager,
         autoDiscover: true,
         validateOnActivation: true,
         persistState: true,
         stateKey: "hypertool-persona-runtime-state",
+        bridgeOptions: {
+          allowPartialToolsets: true,
+        },
         defaultLoadOptions: {
           validateOnLoad: true,
           validationOptions: {
@@ -616,6 +644,114 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             checkToolAvailability: false,
             validateMcpConfig: true,
             includeWarnings: true,
+          },
+        },
+        // Provide MCP configuration handlers for persona integration
+        mcpConfigHandlers: {
+          getCurrentConfig: async () => {
+            // Return current MCP configuration in the expected format
+            if (Object.keys(this.currentServerConfigs).length > 0) {
+              return { mcpServers: this.currentServerConfigs };
+            }
+            return null;
+          },
+
+          setCurrentConfig: async (config) => {
+            if (!config.mcpServers) {
+              return;
+            }
+
+            const serverNames = Object.keys(config.mcpServers);
+            logger.info(
+              `Applying persona MCP configuration with ${serverNames.length} server${serverNames.length !== 1 ? "s" : ""}: ${serverNames.join(", ")}`
+            );
+
+            // Stop existing connections
+            if (this.connectionManager) {
+              logger.info("Stopping existing MCP server connections...");
+              await this.connectionManager.stop();
+            }
+
+            // Filter self-referencing servers and convert ServerEntry to ServerConfig
+            const serverConfigs: Record<string, ServerConfig> = {};
+            for (const [name, entry] of Object.entries(config.mcpServers)) {
+              // Only include actual ServerConfig entries, skip extensions
+              if ("type" in entry || "command" in entry || "url" in entry) {
+                serverConfigs[name] = entry as ServerConfig;
+              }
+            }
+
+            const filteredConfigs =
+              this.filterSelfReferencingServers(serverConfigs);
+            const filteredNames = Object.keys(filteredConfigs);
+
+            if (filteredNames.length < serverNames.length) {
+              const excludedNames = serverNames.filter(
+                (name) => !filteredNames.includes(name)
+              );
+              logger.info(
+                `Excluded ${excludedNames.length} server${excludedNames.length !== 1 ? "s" : ""} (self-referencing or invalid): ${excludedNames.join(", ")}`
+              );
+            }
+
+            // Update stored configurations
+            this.currentServerConfigs = filteredConfigs;
+
+            // Initialize new connection manager with new configs
+            if (Object.keys(filteredConfigs).length > 0) {
+              logger.info(
+                `Starting connections to ${filteredNames.length} MCP server${filteredNames.length !== 1 ? "s" : ""}...`
+              );
+              await this.connectToDownstreamServers(
+                filteredConfigs,
+                this.serverInitOptions || { transport: { type: "stdio" } }
+              );
+
+              // Restart discovery engine with new connections
+              if (this.discoveryEngine && this.connectionManager) {
+                await this.discoveryEngine.stop();
+                this.discoveryEngine = new (
+                  await import("../discovery/index.js")
+                ).ToolDiscoveryEngine(this.connectionManager);
+                await this.discoveryEngine.initialize({
+                  autoDiscovery: true,
+                  enableMetrics: true,
+                });
+                await this.discoveryEngine.start();
+
+                // Force immediate discovery after engine restart to ensure tools are available
+                logger.debug(
+                  "Forcing immediate tool discovery after engine restart"
+                );
+                await this.discoveryEngine.discoverTools();
+
+                // Update toolset manager with new discovery engine
+                this.toolsetManager.setDiscoveryEngine(this.discoveryEngine);
+
+                // Notify clients of tool changes
+                await this.notifyToolsChanged();
+              }
+            }
+          },
+
+          restartConnections: async () => {
+            if (this.connectionManager) {
+              // Stop and restart connections with current configs
+              await this.connectionManager.stop();
+              if (Object.keys(this.currentServerConfigs).length > 0) {
+                await this.connectToDownstreamServers(
+                  this.currentServerConfigs,
+                  this.serverInitOptions || { transport: { type: "stdio" } }
+                );
+
+                // Restart discovery after connection restart
+                if (this.discoveryEngine) {
+                  await this.discoveryEngine.stop();
+                  await this.discoveryEngine.start();
+                  await this.notifyToolsChanged();
+                }
+              }
+            }
           },
         },
       });
@@ -701,11 +837,17 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           delete config.transport;
         }
 
+        // Set default type to 'stdio' if command is present but no type specified
+        if (!config.type && config.command) {
+          config.type = "stdio";
+        }
+
         serverConfigs[serverName] = config as ServerConfig;
       }
 
-      logger.debug(
-        `Successfully loaded persona MCP config from ${mcpConfigPath}`
+      const serverNames = Object.keys(serverConfigs);
+      logger.info(
+        `Successfully loaded persona MCP config from ${mcpConfigPath} with ${serverNames.length} server${serverNames.length !== 1 ? "s" : ""}: ${serverNames.join(", ")}`
       );
       return serverConfigs;
     } catch (error) {

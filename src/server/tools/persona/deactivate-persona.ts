@@ -138,7 +138,7 @@ export const createDeactivatePersonaModule: ToolModuleFactory = (
 ): ToolModule => {
   // Create PersonaManager instance with dependencies
   const personaManager = new PersonaManager({
-    toolDiscoveryEngine: deps.discoveryEngine,
+    getToolDiscoveryEngine: () => deps.discoveryEngine,
     toolsetManager: deps.toolsetManager,
     validateOnActivation: true,
     autoDiscover: true,
