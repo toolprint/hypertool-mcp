@@ -185,7 +185,9 @@ describe("PersonaSchemas", () => {
       const result = PersonaToolsetSchema.safeParse(toolset);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.issues.some(issue => issue.path.includes("name"))).toBe(true);
+        expect(
+          result.error.issues.some((issue) => issue.path.includes("name"))
+        ).toBe(true);
       }
     });
 
@@ -197,7 +199,9 @@ describe("PersonaSchemas", () => {
       const result = PersonaToolsetSchema.safeParse(toolset);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.issues.some(issue => issue.path.includes("toolIds"))).toBe(true);
+        expect(
+          result.error.issues.some((issue) => issue.path.includes("toolIds"))
+        ).toBe(true);
       }
     });
 
@@ -223,7 +227,7 @@ describe("PersonaSchemas", () => {
       const result = PersonaToolsetSchema.safeParse(toolset);
       expect(result.success).toBe(false);
       if (!result.success) {
-        const toolIdError = result.error.issues.find(issue => 
+        const toolIdError = result.error.issues.find((issue) =>
           issue.path.includes("toolIds")
         );
         expect(toolIdError).toBeDefined();
@@ -271,9 +275,11 @@ describe("PersonaSchemas", () => {
       const result = PersonaMetadataSchema.safeParse(metadata);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.issues.some(issue => 
-          issue.message.includes("Tag cannot be empty")
-        )).toBe(true);
+        expect(
+          result.error.issues.some((issue) =>
+            issue.message.includes("Tag cannot be empty")
+          )
+        ).toBe(true);
       }
     });
 
@@ -306,7 +312,8 @@ describe("PersonaSchemas", () => {
       it("should accept complete configuration", () => {
         const config = {
           name: "complete-persona",
-          description: "A complete persona configuration with all optional fields",
+          description:
+            "A complete persona configuration with all optional fields",
           version: "1.0.0",
           toolsets: [
             {
@@ -356,9 +363,9 @@ describe("PersonaSchemas", () => {
         const result = PersonaConfigSchema.safeParse(config);
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect(result.error.issues.some(issue => 
-            issue.path.includes("name")
-          )).toBe(true);
+          expect(
+            result.error.issues.some((issue) => issue.path.includes("name"))
+          ).toBe(true);
         }
       });
 
@@ -370,9 +377,11 @@ describe("PersonaSchemas", () => {
         const result = PersonaConfigSchema.safeParse(config);
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect(result.error.issues.some(issue => 
-            issue.path.includes("description")
-          )).toBe(true);
+          expect(
+            result.error.issues.some((issue) =>
+              issue.path.includes("description")
+            )
+          ).toBe(true);
         }
       });
     });
@@ -437,7 +446,7 @@ describe("PersonaSchemas", () => {
         const result = PersonaConfigSchema.safeParse(config);
         expect(result.success).toBe(false);
         if (!result.success) {
-          const defaultToolsetError = result.error.issues.find(issue =>
+          const defaultToolsetError = result.error.issues.find((issue) =>
             issue.path.includes("defaultToolset")
           );
           expect(defaultToolsetError).toBeDefined();
@@ -449,14 +458,15 @@ describe("PersonaSchemas", () => {
       it("should reject defaultToolset without toolsets", () => {
         const config = {
           name: "default-without-toolsets",
-          description: "Configuration with default toolset but no toolsets array",
+          description:
+            "Configuration with default toolset but no toolsets array",
           defaultToolset: "development",
         };
 
         const result = PersonaConfigSchema.safeParse(config);
         expect(result.success).toBe(false);
         if (!result.success) {
-          const error = result.error.issues.find(issue =>
+          const error = result.error.issues.find((issue) =>
             issue.message.includes("Cannot specify defaultToolset")
           );
           expect(error).toBeDefined();
@@ -486,7 +496,7 @@ describe("PersonaSchemas", () => {
         const result = PersonaConfigSchema.safeParse(config);
         expect(result.success).toBe(false);
         if (!result.success) {
-          const duplicateError = result.error.issues.find(issue =>
+          const duplicateError = result.error.issues.find((issue) =>
             issue.message.includes("Duplicate toolset names")
           );
           expect(duplicateError).toBeDefined();
@@ -509,7 +519,7 @@ describe("PersonaSchemas", () => {
         const result = PersonaConfigSchema.safeParse(config);
         expect(result.success).toBe(false);
         if (!result.success) {
-          const duplicateError = result.error.issues.find(issue =>
+          const duplicateError = result.error.issues.find((issue) =>
             issue.message.includes("Duplicate tool IDs")
           );
           expect(duplicateError).toBeDefined();
@@ -578,12 +588,12 @@ describe("PersonaSchemas", () => {
       expect(result.errors.length).toBeGreaterThan(0);
 
       // Check that errors contain path information
-      const pathsWithErrors = result.errors.map(error => error.path);
+      const pathsWithErrors = result.errors.map((error) => error.path);
       expect(pathsWithErrors).toContain("name");
       expect(pathsWithErrors).toContain("description");
 
       // Check that suggestions are provided
-      result.errors.forEach(error => {
+      result.errors.forEach((error) => {
         expect(error.suggestion).toBeDefined();
         expect(error.suggestion).not.toBe("");
       });
@@ -602,7 +612,7 @@ describe("PersonaSchemas", () => {
         validatePersonaConfig(true),
       ];
 
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.success).toBe(false);
         expect(result.errors.length).toBeGreaterThan(0);
       });
@@ -771,21 +781,21 @@ describe("PersonaSchemas", () => {
       });
 
       it("should handle malformed paths", () => {
-        const paths = [
-          "",
-          "/persona.yaml",
-          "persona.yaml",
-        ];
+        const paths = ["", "/persona.yaml", "persona.yaml"];
 
-        paths.forEach(path => {
+        paths.forEach((path) => {
           const result = extractPersonaNameFromPath(path);
           expect(typeof result).toBe("string");
         });
       });
 
       it("should handle both supported file extensions", () => {
-        expect(extractPersonaNameFromPath("/path/test/persona.yaml")).toBe("test");
-        expect(extractPersonaNameFromPath("/path/test/persona.yml")).toBe("test");
+        expect(extractPersonaNameFromPath("/path/test/persona.yaml")).toBe(
+          "test"
+        );
+        expect(extractPersonaNameFromPath("/path/test/persona.yml")).toBe(
+          "test"
+        );
       });
     });
 
@@ -864,10 +874,10 @@ describe("PersonaSchemas", () => {
           expectedSuggestion: "at least 10 characters",
         },
         {
-          config: { 
-            name: "dev-tools", 
-            description: "Development tools", 
-            toolsets: [{ name: "dev", toolIds: [] }]
+          config: {
+            name: "dev-tools",
+            description: "Development tools",
+            toolsets: [{ name: "dev", toolIds: [] }],
           },
           expectedSuggestion: "at least one tool",
         },
@@ -876,9 +886,11 @@ describe("PersonaSchemas", () => {
       commonMistakes.forEach(({ config, expectedSuggestion }) => {
         const result = validatePersonaConfig(config);
         expect(result.success).toBe(false);
-        
-        const hasExpectedSuggestion = result.errors.some(error =>
-          error.suggestion?.toLowerCase().includes(expectedSuggestion.toLowerCase())
+
+        const hasExpectedSuggestion = result.errors.some((error) =>
+          error.suggestion
+            ?.toLowerCase()
+            .includes(expectedSuggestion.toLowerCase())
         );
         expect(hasExpectedSuggestion).toBe(true);
       });
@@ -899,10 +911,11 @@ describe("PersonaSchemas", () => {
       const result = validatePersonaConfig(config);
       expect(result.success).toBe(false);
 
-      const toolsetNameError = result.errors.find(error =>
-        error.path.includes("toolsets") && error.path.includes("name")
+      const toolsetNameError = result.errors.find(
+        (error) =>
+          error.path.includes("toolsets") && error.path.includes("name")
       );
-      const toolIdError = result.errors.find(error =>
+      const toolIdError = result.errors.find((error) =>
         error.path.includes("toolIds")
       );
 

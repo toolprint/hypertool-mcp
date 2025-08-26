@@ -179,6 +179,31 @@ export {
   type McpConfigMergeResult,
 } from "./mcp-integration.js";
 
+// Archive Handling
+export {
+  packPersona,
+  unpackPersona,
+  listArchiveContents,
+  isHtpArchive,
+  type ArchiveOptions,
+  type ArchiveMetadata,
+  type ArchiveResult,
+} from "./archive.js";
+
+// Persona Installation
+export {
+  installPersona,
+  analyzeSource,
+  checkPersonaExists,
+  getStandardPersonasDir,
+  listInstalledPersonas,
+  uninstallPersona,
+  SourceType,
+  type InstallOptions,
+  type InstallResult,
+  type SourceInfo,
+} from "./installer.js";
+
 /**
  * Version information for the persona system
  */

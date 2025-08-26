@@ -1,6 +1,6 @@
 /**
  * Integration tests for Persona + Toolset system interaction
- * 
+ *
  * This test suite verifies that persona activation correctly integrates with
  * the existing toolset manager system, testing the complete workflow from
  * persona discovery through toolset activation and cleanup.
@@ -93,7 +93,7 @@ describe('Persona + Toolset Integration Tests', () => {
 
     // Create discovery engine
     discoveryEngine = new MockToolDiscoveryEngine();
-    
+
     // Create toolset manager
     toolsetManager = new ToolsetManager();
 
@@ -129,7 +129,7 @@ describe('Persona + Toolset Integration Tests', () => {
       // Verify persona is discovered
       const personas = await personaManager.listPersonas();
       expect(personas).toHaveLength(3);
-      
+
       const validPersona = personas.find(p => p.name === 'valid-persona');
       expect(validPersona).toBeDefined();
       expect(validPersona?.isValid).toBe(true);
@@ -162,13 +162,13 @@ describe('Persona + Toolset Integration Tests', () => {
       // Verify toolset contains expected tools from persona
       const currentToolset = toolsetManager.getCurrentToolset();
       expect(currentToolset).toBeDefined();
-      expect(currentToolset?.tools.some(t => 
+      expect(currentToolset?.tools.some(t =>
         t.namespacedName === 'git.status' || t.toolId === 'git.status'
       )).toBe(true);
-      expect(currentToolset?.tools.some(t => 
+      expect(currentToolset?.tools.some(t =>
         t.namespacedName === 'git.add' || t.toolId === 'git.add'
       )).toBe(true);
-      expect(currentToolset?.tools.some(t => 
+      expect(currentToolset?.tools.some(t =>
         t.namespacedName === 'docker.ps' || t.toolId === 'docker.ps'
       )).toBe(true);
     });
@@ -195,10 +195,10 @@ describe('Persona + Toolset Integration Tests', () => {
 
       // Verify toolset was updated
       const currentToolset = toolsetManager.getCurrentToolset();
-      expect(currentToolset?.tools.some(t => 
+      expect(currentToolset?.tools.some(t =>
         t.namespacedName === 'jest.run' || t.toolId === 'jest.run'
       )).toBe(true);
-      expect(currentToolset?.tools.some(t => 
+      expect(currentToolset?.tools.some(t =>
         t.namespacedName === 'coverage.check' || t.toolId === 'coverage.check'
       )).toBe(true);
     });
@@ -287,7 +287,7 @@ describe('Persona + Toolset Integration Tests', () => {
       // Verify only available tools are in the toolset
       const currentToolset = toolsetManager.getCurrentToolset();
       expect(currentToolset?.tools.length).toBeLessThan(4);
-      expect(currentToolset?.tools.some(t => 
+      expect(currentToolset?.tools.some(t =>
         t.namespacedName === 'git.status' || t.toolId === 'git.status'
       )).toBe(true);
     });
@@ -341,7 +341,7 @@ describe('Persona + Toolset Integration Tests', () => {
       ]);
 
       // At least one should succeed
-      const successes = results.filter(r => 
+      const successes = results.filter(r =>
         r.status === 'fulfilled' && r.value.success
       ).length;
       expect(successes).toBeGreaterThan(0);

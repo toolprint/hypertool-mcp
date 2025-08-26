@@ -42,8 +42,8 @@ export const ToolIdSchema = z
   .string()
   .min(3, "Tool ID must be at least 3 characters long")
   .regex(
-    /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$/,
-    "Tool ID must follow namespacedName format (e.g., 'server.tool-name' or 'server.compound.tool-name')"
+    /^[a-zA-Z][a-zA-Z0-9_-]*(\.[a-zA-Z][a-zA-Z0-9_-]*)+$/,
+    "Tool ID must follow namespacedName format (e.g., 'server.tool_name' or 'server.compound-tool_name')"
   );
 
 /**

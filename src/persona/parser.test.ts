@@ -55,7 +55,9 @@ description: A test persona for unit testing purposes
         expect(result.success).toBe(true);
         expect(result.data).toBeDefined();
         expect(result.data?.name).toBe("test-persona");
-        expect(result.data?.description).toBe("A test persona for unit testing purposes");
+        expect(result.data?.description).toBe(
+          "A test persona for unit testing purposes"
+        );
         expect(result.errors).toHaveLength(0);
         expect(result.warnings).toHaveLength(0);
       });
@@ -194,12 +196,18 @@ defaultToolset: non-existent
 
         expect(result.success).toBe(false);
         expect(result.errors.length).toBeGreaterThan(1);
-        
+
         // Check for specific validation errors
-        const nameError = result.errors.find(e => e.field === "name");
-        const descriptionError = result.errors.find(e => e.field === "description");
-        const toolsetError = result.errors.find(e => e.message.includes("toolIds"));
-        const defaultToolsetError = result.errors.find(e => e.field === "defaultToolset");
+        const nameError = result.errors.find((e) => e.field === "name");
+        const descriptionError = result.errors.find(
+          (e) => e.field === "description"
+        );
+        const toolsetError = result.errors.find((e) =>
+          e.message.includes("toolIds")
+        );
+        const defaultToolsetError = result.errors.find(
+          (e) => e.field === "defaultToolset"
+        );
 
         expect(nameError).toBeDefined();
         expect(descriptionError).toBeDefined();
@@ -261,16 +269,20 @@ description: A test persona configuration
 
         const customValidation = (data: any): ValidationResult => ({
           isValid: false,
-          errors: [{
-            type: "business",
-            message: "Custom validation failed",
-            severity: "error",
-          }],
-          warnings: [{
-            type: "business", 
-            message: "Custom warning",
-            severity: "warning",
-          }],
+          errors: [
+            {
+              type: "business",
+              message: "Custom validation failed",
+              severity: "error",
+            },
+          ],
+          warnings: [
+            {
+              type: "business",
+              message: "Custom warning",
+              severity: "warning",
+            },
+          ],
         });
 
         const result = parsePersonaYAML(yamlContent, undefined, {
@@ -278,8 +290,8 @@ description: A test persona configuration
         });
 
         expect(result.success).toBe(false);
-        expect(result.errors.some(e => e.type === "business")).toBe(true);
-        expect(result.warnings.some(w => w.type === "business")).toBe(true);
+        expect(result.errors.some((e) => e.type === "business")).toBe(true);
+        expect(result.warnings.some((w) => w.type === "business")).toBe(true);
       });
 
       it("should pass custom validation when successful", () => {
@@ -383,15 +395,17 @@ description: A persona with yml extension
 
         expect(result.success).toBe(false);
         expect(result.errors[0].message).toContain("Failed to read file");
-        expect(result.errors[0].suggestion).toContain("Verify that the file exists");
+        expect(result.errors[0].suggestion).toContain(
+          "Verify that the file exists"
+        );
       });
 
       it("should handle permission errors", async () => {
         const filePath = join(tempDir, "no-permission.yaml");
-        
+
         // Create file and remove read permissions (on Unix-like systems)
         await fs.writeFile(filePath, "content");
-        
+
         // Mock fs.readFile to simulate permission error
         const originalReadFile = fs.readFile;
         vi.mocked(fs.readFile).mockRejectedValueOnce(
@@ -441,9 +455,18 @@ description: Short
   describe("parseMultiplePersonaFiles", () => {
     it("should parse multiple valid files concurrently", async () => {
       const files = [
-        { name: "persona1.yaml", content: "name: persona-one\ndescription: First persona" },
-        { name: "persona2.yaml", content: "name: persona-two\ndescription: Second persona" },
-        { name: "persona3.yaml", content: "name: persona-three\ndescription: Third persona" },
+        {
+          name: "persona1.yaml",
+          content: "name: persona-one\ndescription: First persona",
+        },
+        {
+          name: "persona2.yaml",
+          content: "name: persona-two\ndescription: Second persona",
+        },
+        {
+          name: "persona3.yaml",
+          content: "name: persona-three\ndescription: Third persona",
+        },
       ];
 
       const filePaths = await Promise.all(
@@ -460,13 +483,18 @@ description: Short
       filePaths.forEach((filePath, index) => {
         const result = results.get(filePath);
         expect(result?.success).toBe(true);
-        expect(result?.data?.name).toBe(`persona-${["one", "two", "three"][index]}`);
+        expect(result?.data?.name).toBe(
+          `persona-${["one", "two", "three"][index]}`
+        );
       });
     });
 
     it("should handle mix of valid and invalid files", async () => {
       const files = [
-        { name: "valid.yaml", content: "name: valid-persona\ndescription: Valid persona" },
+        {
+          name: "valid.yaml",
+          content: "name: valid-persona\ndescription: Valid persona",
+        },
         { name: "invalid.yaml", content: "name: [invalid yaml" },
         { name: "missing.yaml", exists: false },
       ];
@@ -499,9 +527,11 @@ description: Short
 
     it("should handle promise rejections gracefully", async () => {
       const filePath = join(tempDir, "test.yaml");
-      
+
       // Mock parsePersonaYAMLFile to throw an error
-      const originalParseYAMLFile = vi.fn().mockRejectedValue(new Error("Unexpected error"));
+      const originalParseYAMLFile = vi
+        .fn()
+        .mockRejectedValue(new Error("Unexpected error"));
 
       const results = await parseMultiplePersonaFiles([filePath]);
 
@@ -555,7 +585,7 @@ description: Short
 
       it("should return readonly array", () => {
         const supported = getSupportedPersonaFiles();
-        
+
         // This is a compile-time check, but we can verify behavior
         expect(() => {
           (supported as any).push("persona.json");
@@ -725,7 +755,7 @@ toolsets:
     it("should extract line numbers from generic errors", () => {
       // Mock a generic error that contains line information in message
       const yamlContent = "invalid: yaml: [structure";
-      
+
       const result = parsePersonaYAML(yamlContent);
 
       expect(result.success).toBe(false);
@@ -747,7 +777,7 @@ description: A persona with many tools for performance testing
 toolsets:
   - name: large-toolset
     toolIds:
-${toolIds.map(id => `      - ${id}`).join('\n')}
+${toolIds.map((id) => `      - ${id}`).join("\n")}
 `;
 
       const startTime = Date.now();
@@ -779,7 +809,9 @@ metadata:
       const result = parsePersonaYAML(yamlContent);
 
       expect(result.success).toBe(true);
-      expect(result.data?.metadata?.complex?.level1?.level2?.level3?.value).toBe("deep-value");
+      expect(
+        result.data?.metadata?.complex?.level1?.level2?.level3?.value
+      ).toBe("deep-value");
     });
 
     it("should handle YAML with special characters", () => {

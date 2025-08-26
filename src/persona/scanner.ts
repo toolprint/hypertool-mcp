@@ -21,6 +21,7 @@ import {
   createPermissionError,
   createFileSystemError,
 } from "./errors.js";
+import { getPersonaDirectorySync } from "../config/personaConfig.js";
 /**
  * Default configuration values (local to scanner to avoid circular imports)
  */
@@ -36,13 +37,12 @@ const SCANNER_DEFAULTS = {
 } as const;
 
 /**
- * Standard persona search paths with home directory resolution
+ * Note: Standard search path is now dynamically determined from configuration
+ * using the getPersonaDirectorySync() function which checks:
+ * 1. HYPERTOOL_PERSONA_DIR environment variable
+ * 2. personaDir setting in config.json
+ * 3. Default ~/.toolprint/hypertool-mcp/personas
  */
-const STANDARD_PATHS = [
-  "~/.toolprint/hypertool-mcp/personas",
-  "./personas",
-  ".",
-] as const;
 
 /**
  * Default ignore patterns for scanning (includes .gitignore patterns)
@@ -484,14 +484,14 @@ function getSearchPaths(config?: PersonaDiscoveryConfig): string[] {
   if (config?.searchPaths && config.searchPaths.length > 0) {
     const searchPaths = config.searchPaths.map(resolvePath);
     const additionalPaths = (config?.additionalPaths ?? []).map(resolvePath);
-    
+
     // Remove duplicates while preserving order
     const allPaths = [...searchPaths, ...additionalPaths];
     return Array.from(new Set(allPaths));
   }
 
-  // Otherwise use standard paths plus additional paths
-  const standardPaths = STANDARD_PATHS.map(resolvePath);
+  // Otherwise use configured path plus additional paths
+  const standardPaths = getStandardSearchPaths(); // Already resolved
   const additionalPaths = (config?.additionalPaths ?? []).map(resolvePath);
 
   // Remove duplicates while preserving order
@@ -692,12 +692,12 @@ export async function isPersonaArchive(filePath: string): Promise<boolean> {
 }
 
 /**
- * Get standard search paths with home directory resolution
+ * Get configured persona search path
  *
- * @returns Array of resolved standard search paths
+ * @returns Array with single configured persona directory path
  */
 export function getStandardSearchPaths(): string[] {
-  return STANDARD_PATHS.map(resolvePath);
+  return [getPersonaDirectorySync()];
 }
 
 /**

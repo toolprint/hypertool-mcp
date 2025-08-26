@@ -9,7 +9,7 @@
       "args": ["--stdio"]
     },
     "filesystem": {
-      "command": "filesystem-mcp", 
+      "command": "filesystem-mcp",
       "args": ["--stdio"]
     }
   }

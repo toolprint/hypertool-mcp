@@ -192,6 +192,13 @@ const mcpServerRunOptions = [
     flags: "--group <name>",
     description: theme.info("Server group name to load servers from"),
   },
+  {
+    flags: "-p, --persona <name>",
+    description:
+      theme.info("Persona name to activate on startup") +
+      "\n" +
+      theme.muted("(makes --mcp-config optional)"),
+  },
 ];
 
 /**
@@ -263,6 +270,7 @@ async function runMcpServer(options: any): Promise<void> {
     profile: options.profile,
     logLevel,
     group: options.group,
+    persona: options.persona,
   };
 
   // ! We use dynamic imports to ensure that the transport and logging configuration is initialized
@@ -296,19 +304,36 @@ async function runMcpServer(options: any): Promise<void> {
 
   // Handle configuration discovery results
   if (!configResult.configPath) {
-    console.error(semantic.messageError("❌ No MCP configuration found"));
-    console.error("");
-    console.error(
-      theme.warning(configResult.errorMessage || "Unknown configuration error")
-    );
-    console.error("");
-    console.error(
-      theme.info("💡 Use --linked-app <app-id> to load app-specific config or")
-    );
-    console.error(
-      theme.info("   --mcp-config <path> to specify a configuration file")
-    );
-    process.exit(1);
+    // If persona is provided, allow startup without explicit MCP config
+    if (!runtimeOptions.persona) {
+      console.error(semantic.messageError("❌ No MCP configuration found"));
+      console.error("");
+      console.error(
+        theme.warning(
+          configResult.errorMessage || "Unknown configuration error"
+        )
+      );
+      console.error("");
+      console.error(
+        theme.info(
+          "💡 Use --linked-app <app-id> to load app-specific config or"
+        )
+      );
+      console.error(
+        theme.info("   --mcp-config <path> to specify a configuration file or")
+      );
+      console.error(
+        theme.info("   --persona <name> to start with persona configuration")
+      );
+      process.exit(1);
+    } else {
+      // When persona is provided but no MCP config found, create a minimal config
+      if (runtimeOptions.debug) {
+        logger.debug(
+          `No MCP config found, but persona '${runtimeOptions.persona}' provided - will use minimal config`
+        );
+      }
+    }
   }
 
   // Display config source info in debug mode
@@ -415,7 +440,7 @@ async function runMcpServer(options: any): Promise<void> {
   const initOptions = MetaMCPServerFactory.createInitOptions({
     transport: transportConfig,
     debug: runtimeOptions.debug,
-    configPath: configResult.configPath,
+    configPath: configResult.configPath || undefined, // Use undefined when persona mode without config
     configSource: configResult.configSource,
   });
 
@@ -474,13 +499,16 @@ ${theme.label("MCP Server Options (can be used directly):")}
   ${theme.info("--port <number>         Port for HTTP transport")}
   ${theme.info("--debug                 Enable debug mode")}
   ${theme.info("--linked-app <app-id>   Link to application config (claude-desktop, cursor, claude-code)")}
+  ${theme.info("-p, --persona <name>    Activate persona on startup (makes --mcp-config optional)")}
   ${theme.muted("... and other MCP options (see 'mcp run --help' for full list)")}
 
 ${theme.label("Examples:")}
   ${theme.muted("hypertool-mcp --mcp-config ./config.json")}
   ${theme.muted("hypertool-mcp --mcp-config ./config.json --transport http --port 3000")}
   ${theme.muted("hypertool-mcp --mcp-config ~/.config/mcp.json --debug")}
-  ${theme.muted("hypertool-mcp --linked-app claude-desktop")}`
+  ${theme.muted("hypertool-mcp --linked-app claude-desktop")}
+  ${theme.muted("hypertool-mcp --persona frontend-dev")}
+  ${theme.muted("hypertool-mcp -p backend-api --debug")}`
   );
 
   // Add config subcommands
@@ -559,7 +587,14 @@ ${theme.label("Examples:")}
   // If no command is specified, default to 'mcp run' or 'setup'
   // But only if the first argument isn't already a known command
   const cliArgs = process.argv.slice(2);
-  const knownCommands = ["config", "mcp", "setup", "service", "persona", "help"];
+  const knownCommands = [
+    "config",
+    "mcp",
+    "setup",
+    "service",
+    "persona",
+    "help",
+  ];
 
   // Add extensions to known commands only if DXT is enabled
   if (featureFlagService.isDxtEnabled()) {

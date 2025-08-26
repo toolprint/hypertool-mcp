@@ -18,19 +18,23 @@ import {
   type ValidationContext,
   type ValidationOptions,
 } from "./validator.js";
+import type { PersonaConfig, ValidationResult } from "./types.js";
 import type {
-  PersonaConfig,
-  ValidationResult,
-} from "./types.js";
-import type { IToolDiscoveryEngine, AvailableToolInfo } from "../discovery/types.js";
+  IToolDiscoveryEngine,
+  AvailableToolInfo,
+} from "../discovery/types.js";
 
 // Mock tool discovery engine for testing
-const createMockToolDiscoveryEngine = (availableTools: AvailableToolInfo[] = []): IToolDiscoveryEngine => ({
+const createMockToolDiscoveryEngine = (
+  availableTools: AvailableToolInfo[] = []
+): IToolDiscoveryEngine => ({
   getAvailableTools: vi.fn().mockReturnValue(availableTools),
   discoverTools: vi.fn().mockResolvedValue(availableTools),
-  isToolAvailable: vi.fn().mockImplementation((toolId: string) => 
-    availableTools.some(tool => tool.namespacedName === toolId)
-  ),
+  isToolAvailable: vi
+    .fn()
+    .mockImplementation((toolId: string) =>
+      availableTools.some((tool) => tool.namespacedName === toolId)
+    ),
   clearCache: vi.fn(),
   getStats: vi.fn().mockReturnValue({}),
 });
@@ -57,7 +61,7 @@ describe("PersonaValidator", () => {
         lastSeen: new Date(),
       },
       {
-        namespacedName: "git.add", 
+        namespacedName: "git.add",
         toolName: "add",
         serverName: "git",
         description: "Add files to git",
@@ -69,7 +73,7 @@ describe("PersonaValidator", () => {
       {
         namespacedName: "docker.ps",
         toolName: "ps",
-        serverName: "docker", 
+        serverName: "docker",
         description: "List docker containers",
         schema: {},
         sourceType: "mcp-server",
@@ -145,7 +149,9 @@ describe("PersonaValidator", () => {
         expect(result.errors).toHaveLength(1);
         expect(result.errors[0].type).toBe("business");
         expect(result.errors[0].field).toBe("name");
-        expect(result.errors[0].message).toContain("does not match folder name");
+        expect(result.errors[0].message).toContain(
+          "does not match folder name"
+        );
       });
 
       it("should detect invalid default toolset", async () => {
@@ -171,7 +177,9 @@ describe("PersonaValidator", () => {
         expect(result.errors).toHaveLength(1);
         expect(result.errors[0].type).toBe("business");
         expect(result.errors[0].field).toBe("defaultToolset");
-        expect(result.errors[0].message).toContain("not defined in the toolsets array");
+        expect(result.errors[0].message).toContain(
+          "not defined in the toolsets array"
+        );
       });
 
       it("should warn about similar toolset names", async () => {
@@ -184,7 +192,7 @@ describe("PersonaValidator", () => {
               toolIds: ["git.status"],
             },
             {
-              name: "devel",  // Similar to "dev"
+              name: "devel", // Similar to "dev"
               toolIds: ["git.add"],
             },
           ],
@@ -199,7 +207,9 @@ describe("PersonaValidator", () => {
         expect(result.isValid).toBe(true);
         expect(result.warnings).toHaveLength(1);
         expect(result.warnings[0].type).toBe("business");
-        expect(result.warnings[0].message).toContain("very similar and may be confusing");
+        expect(result.warnings[0].message).toContain(
+          "very similar and may be confusing"
+        );
       });
 
       it("should warn when no toolsets are defined", async () => {
@@ -243,7 +253,7 @@ describe("PersonaValidator", () => {
         expect(result.errors).toHaveLength(1);
         expect(result.errors[0].type).toBe("tool-resolution");
         expect(result.errors[0].message).toContain("non.existent");
-        
+
         expect(result.warnings).toHaveLength(1);
         expect(result.warnings[0].type).toBe("tool-resolution");
         expect(result.warnings[0].message).toContain("offline.tool");
@@ -267,7 +277,10 @@ describe("PersonaValidator", () => {
 
         // Create validator without tool discovery engine
         const validatorNoTool = new PersonaValidator();
-        const result = await validatorNoTool.validatePersonaConfig(config, context);
+        const result = await validatorNoTool.validatePersonaConfig(
+          config,
+          context
+        );
 
         // Should be valid since tool resolution is skipped
         expect(result.isValid).toBe(true);
@@ -305,11 +318,21 @@ describe("PersonaValidator", () => {
           customValidators: [customValidator],
         };
 
-        const result = await validator.validatePersonaConfig(config, context, options);
+        const result = await validator.validatePersonaConfig(
+          config,
+          context,
+          options
+        );
 
         expect(result.isValid).toBe(false);
-        expect(result.errors.some(e => e.message.includes("Custom validation failed"))).toBe(true);
-        expect(result.warnings.some(w => w.message.includes("Custom warning"))).toBe(true);
+        expect(
+          result.errors.some((e) =>
+            e.message.includes("Custom validation failed")
+          )
+        ).toBe(true);
+        expect(
+          result.warnings.some((w) => w.message.includes("Custom warning"))
+        ).toBe(true);
       });
 
       it("should handle custom validator exceptions", async () => {
@@ -330,10 +353,18 @@ describe("PersonaValidator", () => {
           customValidators: [throwingValidator],
         };
 
-        const result = await validator.validatePersonaConfig(config, context, options);
+        const result = await validator.validatePersonaConfig(
+          config,
+          context,
+          options
+        );
 
         expect(result.isValid).toBe(false);
-        expect(result.errors.some(e => e.message.includes("Custom validation failed"))).toBe(true);
+        expect(
+          result.errors.some((e) =>
+            e.message.includes("Custom validation failed")
+          )
+        ).toBe(true);
       });
 
       it("should stop on first error when requested", async () => {
@@ -358,12 +389,16 @@ describe("PersonaValidator", () => {
           stopOnFirstError: true,
         };
 
-        const result = await validator.validatePersonaConfig(config, context, options);
+        const result = await validator.validatePersonaConfig(
+          config,
+          context,
+          options
+        );
 
         expect(result.isValid).toBe(false);
         // Should only have business rule errors, not tool resolution errors
         expect(result.errors.length).toBeGreaterThan(0);
-        expect(result.errors.every(e => e.type === "business")).toBe(true);
+        expect(result.errors.every((e) => e.type === "business")).toBe(true);
       });
     });
 
@@ -411,7 +446,7 @@ defaultToolset: development
       it("should find and validate MCP config", async () => {
         const personaDir = join(tempDir, "persona-with-mcp");
         await fs.mkdir(personaDir);
-        
+
         const personaPath = join(personaDir, "persona.yaml");
         const yamlContent = `
 name: persona-with-mcp
@@ -434,13 +469,15 @@ description: A persona with MCP configuration
 
         expect(result.isValid).toBe(true);
         // Should not have MCP config errors
-        expect(result.errors.filter(e => e.type === "mcp-config")).toHaveLength(0);
+        expect(
+          result.errors.filter((e) => e.type === "mcp-config")
+        ).toHaveLength(0);
       });
 
       it("should handle invalid MCP config", async () => {
         const personaDir = join(tempDir, "persona-bad-mcp");
         await fs.mkdir(personaDir);
-        
+
         const personaPath = join(personaDir, "persona.yaml");
         const yamlContent = `
 name: persona-bad-mcp
@@ -455,7 +492,7 @@ description: A persona with bad MCP configuration
         const result = await validator.validatePersonaFile(personaPath);
 
         expect(result.isValid).toBe(false);
-        expect(result.errors.some(e => e.type === "mcp-config")).toBe(true);
+        expect(result.errors.some((e) => e.type === "mcp-config")).toBe(true);
       });
     });
 
@@ -463,7 +500,7 @@ description: A persona with bad MCP configuration
       it("should validate a persona directory", async () => {
         const personaDir = join(tempDir, "valid-directory-persona");
         await fs.mkdir(personaDir);
-        
+
         const personaPath = join(personaDir, "persona.yaml");
         const yamlContent = `
 name: valid-directory-persona
@@ -479,12 +516,17 @@ description: A valid persona in directory form
       it("should handle directory without persona config", async () => {
         const personaDir = join(tempDir, "no-config-dir");
         await fs.mkdir(personaDir);
-        await fs.writeFile(join(personaDir, "other.txt"), "not a persona config");
+        await fs.writeFile(
+          join(personaDir, "other.txt"),
+          "not a persona config"
+        );
 
         const result = await validator.validatePersonaDirectory(personaDir);
 
         expect(result.isValid).toBe(false);
-        expect(result.errors[0].message).toContain("No persona configuration file found");
+        expect(result.errors[0].message).toContain(
+          "No persona configuration file found"
+        );
       });
 
       it("should handle non-existent directory", async () => {
@@ -493,7 +535,9 @@ description: A valid persona in directory form
         const result = await validator.validatePersonaDirectory(personaDir);
 
         expect(result.isValid).toBe(false);
-        expect(result.errors[0].message).toContain("Failed to validate directory");
+        expect(result.errors[0].message).toContain(
+          "Failed to validate directory"
+        );
       });
     });
 
@@ -621,7 +665,9 @@ description: A valid persona in directory form
 
         expect(result.isValid).toBe(true);
         expect(result.warnings.length).toBeGreaterThanOrEqual(1);
-        expect(result.warnings.some(w => w.message.includes("commonly used"))).toBe(true);
+        expect(
+          result.warnings.some((w) => w.message.includes("commonly used"))
+        ).toBe(true);
       });
     });
 
@@ -651,7 +697,7 @@ description: A valid persona in directory form
       it("should detect similar names correctly", () => {
         // Test private method
         const areNamesSimilar = (validator as any).areNamesSimilar;
-        
+
         expect(areNamesSimilar("dev", "devel")).toBe(true);
         expect(areNamesSimilar("test", "testing")).toBe(false);
         expect(areNamesSimilar("api-v1", "api-v2")).toBe(true);
@@ -671,14 +717,22 @@ description: A valid persona in directory form
         };
 
         // With warnings
-        const resultWithWarnings = await validator.validatePersonaConfig(config, context, {
-          includeWarnings: true,
-        });
+        const resultWithWarnings = await validator.validatePersonaConfig(
+          config,
+          context,
+          {
+            includeWarnings: true,
+          }
+        );
 
         // Without warnings
-        const resultWithoutWarnings = await validator.validatePersonaConfig(config, context, {
-          includeWarnings: false,
-        });
+        const resultWithoutWarnings = await validator.validatePersonaConfig(
+          config,
+          context,
+          {
+            includeWarnings: false,
+          }
+        );
 
         expect(resultWithWarnings.warnings.length).toBeGreaterThan(0);
         expect(resultWithoutWarnings.warnings).toHaveLength(0);
@@ -690,7 +744,7 @@ description: A valid persona in directory form
           description: "A persona with unavailable tools",
           toolsets: [
             {
-              name: "development", 
+              name: "development",
               toolIds: ["non.existent"],
             },
           ],
@@ -701,17 +755,29 @@ description: A valid persona in directory form
         };
 
         // With tool checking
-        const resultWithCheck = await validator.validatePersonaConfig(config, context, {
-          checkToolAvailability: true,
-        });
+        const resultWithCheck = await validator.validatePersonaConfig(
+          config,
+          context,
+          {
+            checkToolAvailability: true,
+          }
+        );
 
         // Without tool checking
-        const resultWithoutCheck = await validator.validatePersonaConfig(config, context, {
-          checkToolAvailability: false,
-        });
+        const resultWithoutCheck = await validator.validatePersonaConfig(
+          config,
+          context,
+          {
+            checkToolAvailability: false,
+          }
+        );
 
-        expect(resultWithCheck.errors.some(e => e.type === "tool-resolution")).toBe(true);
-        expect(resultWithoutCheck.errors.some(e => e.type === "tool-resolution")).toBe(false);
+        expect(
+          resultWithCheck.errors.some((e) => e.type === "tool-resolution")
+        ).toBe(true);
+        expect(
+          resultWithoutCheck.errors.some((e) => e.type === "tool-resolution")
+        ).toBe(false);
       });
     });
   });
@@ -751,7 +817,7 @@ description: A persona for quick validation testing
       it("should validate persona directory", async () => {
         const personaDir = join(tempDir, "quick-dir-test");
         await fs.mkdir(personaDir);
-        
+
         const personaPath = join(personaDir, "persona.yaml");
         const yamlContent = `
 name: quick-dir-test
@@ -778,7 +844,7 @@ description: A persona directory for quick validation testing
 
         for (const persona of personas) {
           const personaPath = join(tempDir, `${persona.name}.yaml`);
-          const yamlContent = persona.valid 
+          const yamlContent = persona.valid
             ? `name: ${persona.name}\ndescription: Valid persona ${persona.name}`
             : `name: ${persona.name}\ndescription: Short`; // Too short description
 
@@ -795,10 +861,7 @@ description: A persona directory for quick validation testing
       });
 
       it("should handle validation failures gracefully", async () => {
-        const paths = [
-          "/non/existent/path1.yaml",
-          "/non/existent/path2.yaml",
-        ];
+        const paths = ["/non/existent/path1.yaml", "/non/existent/path2.yaml"];
 
         const results = await validateMultiplePersonas(paths);
 
@@ -837,8 +900,13 @@ description: A persona directory for quick validation testing
       const result = await validator.validatePersonaConfig(config, context);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.type === "tool-resolution" && 
-        e.message.includes("Failed to validate tool availability"))).toBe(true);
+      expect(
+        result.errors.some(
+          (e) =>
+            e.type === "tool-resolution" &&
+            e.message.includes("Failed to validate tool availability")
+        )
+      ).toBe(true);
     });
 
     it("should handle MCP config file reading failures", async () => {
@@ -858,8 +926,8 @@ description: A persona directory for quick validation testing
       const result = await validator.validatePersonaConfig(config, context);
 
       // Should be treated as warning, not error
-        expect(result.isValid).toBe(true);
-        expect(result.warnings.some(w => w.type === "mcp-config")).toBe(true);
+      expect(result.isValid).toBe(true);
+      expect(result.warnings.some((w) => w.type === "mcp-config")).toBe(true);
     });
 
     it("should handle general validation exceptions", async () => {
@@ -875,14 +943,21 @@ description: A persona directory for quick validation testing
 
       // Mock validator methods to throw
       const throwingValidator = new PersonaValidator();
-      (throwingValidator as any).validateBusinessRules = vi.fn().mockImplementation(() => {
-        throw new Error("Validation exception");
-      });
+      (throwingValidator as any).validateBusinessRules = vi
+        .fn()
+        .mockImplementation(() => {
+          throw new Error("Validation exception");
+        });
 
-      const result = await throwingValidator.validatePersonaConfig(config, context);
+      const result = await throwingValidator.validatePersonaConfig(
+        config,
+        context
+      );
 
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.message.includes("Validation failed"))).toBe(true);
+      expect(
+        result.errors.some((e) => e.message.includes("Validation failed"))
+      ).toBe(true);
     });
   });
 
@@ -891,7 +966,7 @@ description: A persona directory for quick validation testing
       // Create a complete persona setup
       const personaDir = join(tempDir, "complete-persona");
       await fs.mkdir(personaDir);
-      
+
       const personaPath = join(personaDir, "persona.yaml");
       const yamlContent = `
 name: complete-persona
@@ -917,7 +992,7 @@ metadata:
       "args": ["--stdio"]
     },
     "docker": {
-      "type": "stdio", 
+      "type": "stdio",
       "command": "docker-mcp",
       "args": ["--stdio"]
     }

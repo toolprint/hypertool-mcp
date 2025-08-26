@@ -19,10 +19,7 @@ import {
   validateSearchPath,
   hasPersonasInPaths,
 } from "./scanner.js";
-import type {
-  PersonaReference,
-  PersonaDiscoveryConfig,
-} from "./types.js";
+import type { PersonaReference, PersonaDiscoveryConfig } from "./types.js";
 
 // Mock console.warn to avoid noise in tests
 const originalConsoleWarn = console.warn;
@@ -83,8 +80,8 @@ description: Minimal persona configuration
       },
 
       // Nested structure
-      "nested": {
-        "level1": {
+      nested: {
+        level1: {
           "nested-persona": {
             "persona.yaml": `
 name: nested-persona
@@ -103,7 +100,7 @@ description: A deeply nested persona
       },
 
       // Ignored directories
-      "node_modules": {
+      node_modules: {
         "ignored-persona": {
           "persona.yaml": "should be ignored",
         },
@@ -161,17 +158,19 @@ description: A deeply nested persona
         const personas = await scanForPersonas(config);
 
         // Filter out any discovered personas from standard paths
-        const testPersonas = personas.filter(p => p.path.startsWith(tempDir));
+        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
 
         expect(testPersonas.length).toBeGreaterThanOrEqual(3);
 
-        const personaNames = testPersonas.map(p => p.name);
+        const personaNames = testPersonas.map((p) => p.name);
         expect(personaNames).toContain("valid-persona");
         expect(personaNames).toContain("yaml-persona");
         expect(personaNames).toContain("minimal-persona");
 
         // Check persona properties
-        const validPersona = testPersonas.find(p => p.name === "valid-persona");
+        const validPersona = testPersonas.find(
+          (p) => p.name === "valid-persona"
+        );
         expect(validPersona).toBeDefined();
         expect(validPersona?.isArchive).toBe(false);
         expect(validPersona?.isValid).toBe(true);
@@ -185,9 +184,11 @@ description: A deeply nested persona
         };
 
         const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter(p => p.path.startsWith(tempDir));
+        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
 
-        const archivePersona = testPersonas.find(p => p.name === "archive-persona");
+        const archivePersona = testPersonas.find(
+          (p) => p.name === "archive-persona"
+        );
         expect(archivePersona).toBeDefined();
         expect(archivePersona?.isArchive).toBe(true);
         expect(archivePersona?.path).toBe(join(tempDir, "archive-persona.htp"));
@@ -200,11 +201,15 @@ description: A deeply nested persona
         };
 
         const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter(p => p.path.startsWith(tempDir));
+        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
 
-        const nestedPersona = testPersonas.find(p => p.name === "nested-persona");
+        const nestedPersona = testPersonas.find(
+          (p) => p.name === "nested-persona"
+        );
         expect(nestedPersona).toBeDefined();
-        expect(nestedPersona?.path).toBe(join(tempDir, "nested/level1/nested-persona"));
+        expect(nestedPersona?.path).toBe(
+          join(tempDir, "nested/level1/nested-persona")
+        );
       });
 
       it("should respect max depth limit", async () => {
@@ -214,12 +219,14 @@ description: A deeply nested persona
         };
 
         const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter(p => p.path.startsWith(tempDir));
+        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
 
-        const deepPersona = testPersonas.find(p => p.name === "deep-persona");
+        const deepPersona = testPersonas.find((p) => p.name === "deep-persona");
         expect(deepPersona).toBeUndefined();
 
-        const nestedPersona = testPersonas.find(p => p.name === "nested-persona");
+        const nestedPersona = testPersonas.find(
+          (p) => p.name === "nested-persona"
+        );
         expect(nestedPersona).toBeDefined(); // Should still be found at level 2
       });
     });
@@ -231,11 +238,11 @@ description: A deeply nested persona
         };
 
         const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter(p => p.path.startsWith(tempDir));
+        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
 
         // Should not find personas in node_modules or .git
-        const ignoredPersonas = testPersonas.filter(p => 
-          p.path.includes("node_modules") || p.path.includes(".git")
+        const ignoredPersonas = testPersonas.filter(
+          (p) => p.path.includes("node_modules") || p.path.includes(".git")
         );
         expect(ignoredPersonas).toHaveLength(0);
       });
@@ -247,15 +254,15 @@ description: A deeply nested persona
         };
 
         const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter(p => p.path.startsWith(tempDir));
+        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
 
-        const ignoredPersonas = testPersonas.filter(p => 
-          p.name === "valid-persona" || p.name === "minimal-persona"
+        const ignoredPersonas = testPersonas.filter(
+          (p) => p.name === "valid-persona" || p.name === "minimal-persona"
         );
         expect(ignoredPersonas).toHaveLength(0);
 
         // Should still find yaml-persona
-        const yamlPersona = testPersonas.find(p => p.name === "yaml-persona");
+        const yamlPersona = testPersonas.find((p) => p.name === "yaml-persona");
         expect(yamlPersona).toBeDefined();
       });
     });
@@ -283,7 +290,7 @@ description: A deeply nested persona
         };
 
         const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter(p => p.path.startsWith(tempDir));
+        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
 
         expect(testPersonas.length).toBeGreaterThan(0);
       });
@@ -297,9 +304,11 @@ description: A deeply nested persona
         };
 
         const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter(p => p.path.startsWith(tempDir));
+        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
 
-        const symlinkPersona = testPersonas.find(p => p.name === "symlink-persona");
+        const symlinkPersona = testPersonas.find(
+          (p) => p.name === "symlink-persona"
+        );
         // Should not be found when not following symlinks
         expect(symlinkPersona).toBeUndefined();
       });
@@ -319,9 +328,11 @@ description: A deeply nested persona
         };
 
         const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter(p => p.path.startsWith(tempDir));
+        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
 
-        const symlinkPersona = testPersonas.find(p => p.name === "symlink-persona");
+        const symlinkPersona = testPersonas.find(
+          (p) => p.name === "symlink-persona"
+        );
         expect(symlinkPersona).toBeDefined();
       });
     });
@@ -331,7 +342,7 @@ description: A deeply nested persona
         // Create a directory without read permissions (on Unix systems)
         const restrictedDir = join(tempDir, "restricted");
         await fs.mkdir(restrictedDir);
-        
+
         try {
           await fs.chmod(restrictedDir, 0o000); // Remove all permissions
         } catch {
@@ -373,10 +384,10 @@ description: A deeply nested persona
         };
 
         const personas = await scanForPersonas(config);
-        const testPersonas = personas.filter(p => p.path.startsWith(tempDir));
+        const testPersonas = personas.filter((p) => p.path.startsWith(tempDir));
 
         // Should not have duplicates based on path
-        const uniquePaths = new Set(testPersonas.map(p => p.path));
+        const uniquePaths = new Set(testPersonas.map((p) => p.path));
         expect(testPersonas).toHaveLength(uniquePaths.size);
       });
     });
@@ -387,7 +398,7 @@ description: A deeply nested persona
       const personas = await scanDirectory(tempDir);
 
       expect(personas.length).toBeGreaterThan(0);
-      const personaNames = personas.map(p => p.name);
+      const personaNames = personas.map((p) => p.name);
       expect(personaNames).toContain("valid-persona");
     });
 
@@ -397,7 +408,7 @@ description: A deeply nested persona
         ignorePatterns: ["**/valid-persona"],
       });
 
-      const validPersona = personas.find(p => p.name === "valid-persona");
+      const validPersona = personas.find((p) => p.name === "valid-persona");
       expect(validPersona).toBeUndefined();
     });
 
@@ -459,21 +470,21 @@ description: A deeply nested persona
   });
 
   describe("getStandardSearchPaths", () => {
-    it("should return standard search paths", () => {
+    it("should return configured persona directory", () => {
       const paths = getStandardSearchPaths();
-      
-      expect(paths).toHaveLength(3);
-      expect(paths[0]).toContain(homedir());
-      expect(paths[1]).toContain("personas");
-      expect(paths[2]).toBe(resolve("."));
+
+      expect(paths).toHaveLength(1); // Changed from 3 to 1
+      expect(paths[0]).toContain(".toolprint");
+      expect(paths[0]).toContain("hypertool-mcp");
+      expect(paths[0]).toContain("personas");
     });
 
-    it("should resolve tilde paths correctly", () => {
+    it("should return absolute path", () => {
       const paths = getStandardSearchPaths();
-      
-      // First path should expand ~ to home directory
+
+      // Path should be absolute (no ~ or relative paths)
       expect(paths[0]).not.toContain("~");
-      expect(paths[0]).toContain(homedir());
+      expect(paths[0]).toMatch(/^\/|^[A-Z]:\\/); // Unix absolute or Windows absolute
     });
   });
 
@@ -538,7 +549,7 @@ description: A deeply nested persona
         // Create circular symlinks
         const link1 = join(tempDir, "link1");
         const link2 = join(tempDir, "link2");
-        
+
         await fs.symlink(link2, link1);
         await fs.symlink(link1, link2);
 
@@ -575,7 +586,7 @@ description: A deeply nested persona
       };
 
       const personas = await scanForPersonas(config);
-      const deepPersona = personas.find(p => p.name === "deep-persona");
+      const deepPersona = personas.find((p) => p.name === "deep-persona");
       expect(deepPersona).toBeDefined();
     });
 
@@ -597,14 +608,14 @@ description: A deeply nested persona
       );
 
       const personas = await scanDirectory(manyEntriesDir);
-      const testPersona = personas.find(p => p.name === "test-persona");
+      const testPersona = personas.find((p) => p.name === "test-persona");
       expect(testPersona).toBeDefined();
     });
 
     it("should handle invalid YAML content gracefully", async () => {
       const personas = await scanDirectory(tempDir);
-      const invalidPersona = personas.find(p => p.name === "invalid-persona");
-      
+      const invalidPersona = personas.find((p) => p.name === "invalid-persona");
+
       expect(invalidPersona).toBeDefined();
       expect(invalidPersona?.isValid).toBe(true); // Scanner only checks file existence
       expect(invalidPersona?.description).toBeUndefined(); // Failed to parse description
@@ -614,14 +625,14 @@ description: A deeply nested persona
   describe("Performance", () => {
     it("should complete scanning within reasonable time", async () => {
       const startTime = Date.now();
-      
+
       const config: PersonaDiscoveryConfig = {
         additionalPaths: [tempDir],
         parallelScan: true,
       };
 
       await scanForPersonas(config);
-      
+
       const duration = Date.now() - startTime;
       expect(duration).toBeLessThan(5000); // Should complete within 5 seconds
     });

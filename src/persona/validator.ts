@@ -9,7 +9,7 @@
  * @fileoverview Persona configuration validation system
  */
 
-import { readFile } from "fs/promises";
+import { readFile, stat } from "fs/promises";
 import { basename, dirname } from "path";
 import type { MCPConfig } from "../types/config.js";
 import type { IToolDiscoveryEngine } from "../discovery/types.js";
@@ -782,11 +782,44 @@ export async function validatePersona(
 ): Promise<ValidationResult> {
   const validator = new PersonaValidator(toolDiscoveryEngine);
 
-  // Try as file first, then as directory
   try {
-    return await validator.validatePersonaFile(filePath, options);
-  } catch {
-    return await validator.validatePersonaDirectory(filePath, options);
+    // Check if path exists and determine if it's a file or directory
+    const stats = await stat(filePath);
+
+    if (stats.isDirectory()) {
+      return await validator.validatePersonaDirectory(filePath, options);
+    } else if (stats.isFile()) {
+      return await validator.validatePersonaFile(filePath, options);
+    } else {
+      return {
+        isValid: false,
+        errors: [
+          {
+            type: "schema",
+            message: `Path must be a file or directory: ${filePath}`,
+            severity: "error",
+          },
+        ],
+        warnings: [],
+      };
+    }
+  } catch (error) {
+    // Handle file system errors (path doesn't exist, no permission, etc.)
+    const nodeError = error as NodeJS.ErrnoException;
+    return {
+      isValid: false,
+      errors: [
+        {
+          type: "schema",
+          message:
+            nodeError.code === "ENOENT"
+              ? `Path does not exist: ${filePath}`
+              : `Failed to access path: ${filePath} - ${nodeError.message}`,
+          severity: "error",
+        },
+      ],
+      warnings: [],
+    };
   }
 }
 

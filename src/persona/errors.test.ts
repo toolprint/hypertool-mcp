@@ -53,7 +53,7 @@ describe("PersonaErrors", () => {
     it("should create persona error with options", () => {
       const details = { field: "name", value: "invalid" };
       const suggestions = ["Use hyphen-delimited format", "Lowercase only"];
-      
+
       const error = new PersonaError(
         PersonaErrorCode.INVALID_SCHEMA,
         "Invalid schema format",
@@ -268,7 +268,9 @@ describe("PersonaErrors", () => {
         expect(error.message).toContain("test-persona");
         expect(error.message).toContain("not found");
         expect(error.details.personaName).toBe("test-persona");
-        expect(error.suggestions).toContain('Verify that the persona name "test-persona" is correct');
+        expect(error.suggestions).toContain(
+          'Verify that the persona name "test-persona" is correct'
+        );
         expect(error.recoverable).toBe(true);
       });
 
@@ -277,13 +279,19 @@ describe("PersonaErrors", () => {
         const error = createPersonaNotFoundError("test-persona", searchPaths);
 
         expect(error.details.searchPaths).toEqual(searchPaths);
-        expect(error.suggestions.some(s => s.includes("/home/user/.personas"))).toBe(true);
+        expect(
+          error.suggestions.some((s) => s.includes("/home/user/.personas"))
+        ).toBe(true);
       });
     });
 
     describe("createSchemaValidationError", () => {
       it("should create schema validation error", () => {
-        const error = createSchemaValidationError("name", "InvalidName", "hyphen-delimited string");
+        const error = createSchemaValidationError(
+          "name",
+          "InvalidName",
+          "hyphen-delimited string"
+        );
 
         expect(error).toBeInstanceOf(PersonaValidationError);
         expect(error.code).toBe(PersonaErrorCode.INVALID_SCHEMA);
@@ -292,12 +300,19 @@ describe("PersonaErrors", () => {
         expect(error.details.field).toBe("name");
         expect(error.details.value).toBe("InvalidName");
         expect(error.details.expectedType).toBe("hyphen-delimited string");
-        expect(error.suggestions).toContain('Ensure field "name" is of type hyphen-delimited string');
+        expect(error.suggestions).toContain(
+          'Ensure field "name" is of type hyphen-delimited string'
+        );
       });
 
       it("should include cause if provided", () => {
         const cause = new Error("Original validation error");
-        const error = createSchemaValidationError("field", "value", "string", cause);
+        const error = createSchemaValidationError(
+          "field",
+          "value",
+          "string",
+          cause
+        );
 
         expect((error as any).cause).toBe(cause);
       });
@@ -311,7 +326,9 @@ describe("PersonaErrors", () => {
         expect(error.code).toBe(PersonaErrorCode.YAML_PARSE_ERROR);
         expect(error.message).toContain("/path/to/persona.yaml");
         expect(error.details.filePath).toBe("/path/to/persona.yaml");
-        expect(error.suggestions).toContain("Check the YAML file for syntax errors");
+        expect(error.suggestions).toContain(
+          "Check the YAML file for syntax errors"
+        );
       });
 
       it("should include line and column information", () => {
@@ -320,7 +337,9 @@ describe("PersonaErrors", () => {
         expect(error.message).toContain("line 10, column 5");
         expect(error.details.line).toBe(10);
         expect(error.details.column).toBe(5);
-        expect(error.suggestions.some(s => s.includes("line 10, column 5"))).toBe(true);
+        expect(
+          error.suggestions.some((s) => s.includes("line 10, column 5"))
+        ).toBe(true);
       });
     });
 
@@ -328,7 +347,7 @@ describe("PersonaErrors", () => {
       it("should create tool resolution error", () => {
         const toolIds = ["git.status", "docker.ps", "missing.tool"];
         const unavailableTools = ["missing.tool"];
-        
+
         const error = createToolResolutionError(toolIds, unavailableTools);
 
         expect(error).toBeInstanceOf(PersonaActivationError);
@@ -343,16 +362,23 @@ describe("PersonaErrors", () => {
       it("should truncate long unavailable tools list", () => {
         const toolIds = ["tool1", "tool2", "tool3", "tool4", "tool5"];
         const unavailableTools = ["tool1", "tool2", "tool3", "tool4"];
-        
+
         const error = createToolResolutionError(toolIds, unavailableTools);
 
-        expect(error.suggestions.some(s => s.includes("First few unavailable tools"))).toBe(true);
+        expect(
+          error.suggestions.some((s) =>
+            s.includes("First few unavailable tools")
+          )
+        ).toBe(true);
       });
     });
 
     describe("createToolsetNotFoundError", () => {
       it("should create toolset not found error", () => {
-        const error = createToolsetNotFoundError("missing-toolset", ["dev", "prod"]);
+        const error = createToolsetNotFoundError("missing-toolset", [
+          "dev",
+          "prod",
+        ]);
 
         expect(error).toBeInstanceOf(PersonaActivationError);
         expect(error.code).toBe(PersonaErrorCode.TOOLSET_NOT_FOUND);
@@ -365,7 +391,9 @@ describe("PersonaErrors", () => {
       it("should handle empty available toolsets", () => {
         const error = createToolsetNotFoundError("missing-toolset", []);
 
-        expect(error.suggestions).toContain("No toolsets are defined in this persona");
+        expect(error.suggestions).toContain(
+          "No toolsets are defined in this persona"
+        );
       });
     });
 
@@ -379,7 +407,9 @@ describe("PersonaErrors", () => {
         expect(error.message).toContain("/protected/path");
         expect(error.details.operation).toBe("reading");
         expect(error.details.path).toBe("/protected/path");
-        expect(error.suggestions).toContain('Check file permissions for "/protected/path"');
+        expect(error.suggestions).toContain(
+          'Check file permissions for "/protected/path"'
+        );
       });
     });
 
@@ -393,20 +423,27 @@ describe("PersonaErrors", () => {
         expect(error.message).toContain("/read-only/file");
         expect(error.details.operation).toBe("writing");
         expect(error.details.path).toBe("/read-only/file");
-        expect(error.suggestions).toContain('Verify that the path "/read-only/file" exists');
+        expect(error.suggestions).toContain(
+          'Verify that the path "/read-only/file" exists'
+        );
       });
     });
 
     describe("createMcpConfigConflictError", () => {
       it("should create MCP config conflict error", () => {
-        const error = createMcpConfigConflictError(["git", "docker"], "test-persona");
+        const error = createMcpConfigConflictError(
+          ["git", "docker"],
+          "test-persona"
+        );
 
         expect(error).toBeInstanceOf(PersonaActivationError);
         expect(error.code).toBe(PersonaErrorCode.MCP_CONFIG_CONFLICT);
         expect(error.message).toContain("test-persona");
         expect(error.details.conflictingKeys).toEqual(["git", "docker"]);
         expect(error.details.personaName).toBe("test-persona");
-        expect(error.suggestions).toContain("Conflicting configuration keys: git, docker");
+        expect(error.suggestions).toContain(
+          "Conflicting configuration keys: git, docker"
+        );
         expect(error.recoverable).toBe(false);
       });
     });
@@ -414,20 +451,28 @@ describe("PersonaErrors", () => {
     describe("createDuplicatePersonaNameError", () => {
       it("should create duplicate persona name error", () => {
         const existingPaths = ["/path1/persona", "/path2/persona"];
-        const error = createDuplicatePersonaNameError("duplicate-persona", existingPaths);
+        const error = createDuplicatePersonaNameError(
+          "duplicate-persona",
+          existingPaths
+        );
 
         expect(error).toBeInstanceOf(PersonaValidationError);
         expect(error.code).toBe(PersonaErrorCode.DUPLICATE_PERSONA_NAME);
         expect(error.message).toContain("duplicate-persona");
         expect(error.details.personaName).toBe("duplicate-persona");
         expect(error.details.existingPaths).toEqual(existingPaths);
-        expect(error.suggestions).toContain("Existing paths: /path1/persona, /path2/persona");
+        expect(error.suggestions).toContain(
+          "Existing paths: /path1/persona, /path2/persona"
+        );
       });
     });
 
     describe("createActivationFailedError", () => {
       it("should create activation failed error", () => {
-        const error = createActivationFailedError("test-persona", "validation failed");
+        const error = createActivationFailedError(
+          "test-persona",
+          "validation failed"
+        );
 
         expect(error).toBeInstanceOf(PersonaActivationError);
         expect(error.code).toBe(PersonaErrorCode.ACTIVATION_FAILED);
@@ -435,7 +480,9 @@ describe("PersonaErrors", () => {
         expect(error.message).toContain("validation failed");
         expect(error.details.personaName).toBe("test-persona");
         expect(error.details.reason).toBe("validation failed");
-        expect(error.suggestions).toContain("Validate the persona configuration using 'hypertool persona validate'");
+        expect(error.suggestions).toContain(
+          "Validate the persona configuration using 'hypertool persona validate'"
+        );
       });
     });
 
@@ -447,7 +494,9 @@ describe("PersonaErrors", () => {
         expect(error.code).toBe(PersonaErrorCode.ARCHIVE_EXTRACTION_FAILED);
         expect(error.message).toContain("/path/to/archive.htp");
         expect(error.details.archivePath).toBe("/path/to/archive.htp");
-        expect(error.suggestions).toContain("Verify that the archive file is not corrupted");
+        expect(error.suggestions).toContain(
+          "Verify that the archive file is not corrupted"
+        );
         expect(error.recoverable).toBe(false);
       });
     });
@@ -456,8 +505,14 @@ describe("PersonaErrors", () => {
   describe("Utility Functions", () => {
     describe("isPersonaError", () => {
       it("should identify PersonaError instances", () => {
-        const personaError = new PersonaError(PersonaErrorCode.VALIDATION_FAILED, "Test");
-        const validationError = new PersonaValidationError(PersonaErrorCode.INVALID_SCHEMA, "Test");
+        const personaError = new PersonaError(
+          PersonaErrorCode.VALIDATION_FAILED,
+          "Test"
+        );
+        const validationError = new PersonaValidationError(
+          PersonaErrorCode.INVALID_SCHEMA,
+          "Test"
+        );
         const standardError = new Error("Regular error");
 
         expect(isPersonaError(personaError)).toBe(true);
@@ -476,7 +531,7 @@ describe("PersonaErrors", () => {
           "Test",
           { recoverable: true }
         );
-        
+
         const nonRecoverableError = new PersonaError(
           PersonaErrorCode.ACTIVATION_FAILED,
           "Test",
@@ -490,10 +545,15 @@ describe("PersonaErrors", () => {
 
     describe("getErrorCode", () => {
       it("should extract error code from PersonaError", () => {
-        const error = new PersonaError(PersonaErrorCode.TOOL_RESOLUTION_FAILED, "Test");
+        const error = new PersonaError(
+          PersonaErrorCode.TOOL_RESOLUTION_FAILED,
+          "Test"
+        );
         const standardError = new Error("Standard error");
 
-        expect(getErrorCode(error)).toBe(PersonaErrorCode.TOOL_RESOLUTION_FAILED);
+        expect(getErrorCode(error)).toBe(
+          PersonaErrorCode.TOOL_RESOLUTION_FAILED
+        );
         expect(getErrorCode(standardError)).toBeUndefined();
         expect(getErrorCode(null)).toBeUndefined();
         expect(getErrorCode(undefined)).toBeUndefined();
@@ -527,7 +587,10 @@ describe("PersonaErrors", () => {
       });
 
       it("should create summary for single error", () => {
-        const error = new PersonaError(PersonaErrorCode.VALIDATION_FAILED, "Test error");
+        const error = new PersonaError(
+          PersonaErrorCode.VALIDATION_FAILED,
+          "Test error"
+        );
         const summary = createErrorSummary([error]);
 
         expect(summary).toContain("Found 1 error:");
@@ -537,9 +600,18 @@ describe("PersonaErrors", () => {
 
       it("should create summary for multiple errors", () => {
         const errors = [
-          new PersonaValidationError(PersonaErrorCode.INVALID_SCHEMA, "Schema error"),
-          new PersonaActivationError(PersonaErrorCode.ACTIVATION_FAILED, "Activation error"),
-          new PersonaValidationError(PersonaErrorCode.YAML_PARSE_ERROR, "YAML error"),
+          new PersonaValidationError(
+            PersonaErrorCode.INVALID_SCHEMA,
+            "Schema error"
+          ),
+          new PersonaActivationError(
+            PersonaErrorCode.ACTIVATION_FAILED,
+            "Activation error"
+          ),
+          new PersonaValidationError(
+            PersonaErrorCode.YAML_PARSE_ERROR,
+            "YAML error"
+          ),
         ];
 
         const summary = createErrorSummary(errors);
@@ -554,9 +626,15 @@ describe("PersonaErrors", () => {
 
       it("should include recoverable error count", () => {
         const errors = [
-          new PersonaError(PersonaErrorCode.VALIDATION_FAILED, "Test 1", { recoverable: true }),
-          new PersonaError(PersonaErrorCode.ACTIVATION_FAILED, "Test 2", { recoverable: false }),
-          new PersonaError(PersonaErrorCode.TOOL_RESOLUTION_FAILED, "Test 3", { recoverable: true }),
+          new PersonaError(PersonaErrorCode.VALIDATION_FAILED, "Test 1", {
+            recoverable: true,
+          }),
+          new PersonaError(PersonaErrorCode.ACTIVATION_FAILED, "Test 2", {
+            recoverable: false,
+          }),
+          new PersonaError(PersonaErrorCode.TOOL_RESOLUTION_FAILED, "Test 3", {
+            recoverable: true,
+          }),
         ];
 
         const summary = createErrorSummary(errors);
@@ -566,7 +644,9 @@ describe("PersonaErrors", () => {
 
       it("should handle single recoverable error", () => {
         const errors = [
-          new PersonaError(PersonaErrorCode.VALIDATION_FAILED, "Test", { recoverable: true }),
+          new PersonaError(PersonaErrorCode.VALIDATION_FAILED, "Test", {
+            recoverable: true,
+          }),
         ];
 
         const summary = createErrorSummary(errors);

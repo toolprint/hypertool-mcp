@@ -36,11 +36,11 @@ import {
 } from "./errors.js";
 import { PersonaToolsetBridge, type BridgeOptions } from "./toolset-bridge.js";
 import type { ToolsetManager } from "../server/tools/toolset/manager.js";
-import { 
-  PersonaMcpIntegration, 
+import {
+  PersonaMcpIntegration,
   type McpConfigMergeOptions,
   type McpConfigMergeResult,
-  personaHasMcpConfig 
+  personaHasMcpConfig,
 } from "./mcp-integration.js";
 import type { MCPConfig } from "../types/config.js";
 
@@ -228,7 +228,7 @@ export class PersonaManager extends EventEmitter {
       this.config.toolDiscoveryEngine,
       this.config.bridgeOptions
     );
-    
+
     // Initialize MCP integration
     if (this.config.mcpConfigHandlers) {
       this.mcpIntegration = new PersonaMcpIntegration(
@@ -360,11 +360,17 @@ export class PersonaManager extends EventEmitter {
 
     try {
       // Restore MCP configuration if it was applied
-      if (this.activeState.metadata.mcpConfigApplied && this.mcpIntegration.hasBackup()) {
+      if (
+        this.activeState.metadata.mcpConfigApplied &&
+        this.mcpIntegration.hasBackup()
+      ) {
         try {
           await this.mcpIntegration.restoreOriginalConfig();
         } catch (error) {
-          this.logger.warn("Failed to restore MCP configuration during deactivation:", error);
+          this.logger.warn(
+            "Failed to restore MCP configuration during deactivation:",
+            error
+          );
           // Don't fail the entire deactivation for this
         }
       }
@@ -618,7 +624,7 @@ export class PersonaManager extends EventEmitter {
     if (!loadResult.success || !loadResult.persona) {
       throw new PersonaError(
         PersonaErrorCode.ACTIVATION_FAILED,
-        `Failed to load persona "${personaName}": ${loadResult.errors.join(", ")}`,
+        `Failed to load persona "${personaName}": ${this.formatLoadErrors(loadResult.errors)}`,
         {
           details: { personaName, errors: loadResult.errors },
           recoverable: false,
@@ -691,29 +697,30 @@ export class PersonaManager extends EventEmitter {
     // Apply MCP configuration if present
     let mcpConfigApplied = false;
     let mcpConfigWarnings: string[] = [];
-    
+
     if (personaHasMcpConfig(persona.assets)) {
       try {
         const mcpResult = await this.mcpIntegration.applyPersonaConfig(
           persona.assets.mcpConfigFile!,
           this.config.mcpMergeOptions
         );
-        
+
         mcpConfigApplied = mcpResult.success;
-        
+
         if (mcpResult.warnings.length > 0) {
           mcpConfigWarnings.push(...mcpResult.warnings);
           warnings.push(...mcpResult.warnings);
         }
-        
+
         if (mcpResult.errors.length > 0) {
           warnings.push(...mcpResult.errors);
         }
-        
-        if (mcpResult.conflicts.length > 0) {
-          warnings.push(`MCP config conflicts resolved: ${mcpResult.conflicts.length}`);
-        }
 
+        if (mcpResult.conflicts.length > 0) {
+          warnings.push(
+            `MCP config conflicts resolved: ${mcpResult.conflicts.length}`
+          );
+        }
       } catch (error) {
         const errorMessage = `MCP config application failed: ${
           error instanceof Error ? error.message : String(error)
@@ -811,7 +818,10 @@ export class PersonaManager extends EventEmitter {
   /**
    * Apply toolset configuration via the toolset bridge
    */
-  private async applyToolset(toolset: PersonaToolset, persona: LoadedPersona): Promise<number> {
+  private async applyToolset(
+    toolset: PersonaToolset,
+    persona: LoadedPersona
+  ): Promise<number> {
     const personaName = persona.config.name;
 
     try {
@@ -854,7 +864,6 @@ export class PersonaManager extends EventEmitter {
       throw new Error(`Failed to apply persona toolset: ${errorMessage}`);
     }
   }
-
 
   /**
    * Capture current state for restoration
@@ -986,6 +995,61 @@ export class PersonaManager extends EventEmitter {
     this.discovery.on(PersonaEvents.PERSONA_DISCOVERED, (event) => {
       this.emit(PersonaEvents.PERSONA_DISCOVERED, event);
     });
+  }
+
+  /**
+   * Format load errors for better readability
+   */
+  private formatLoadErrors(errors: string[]): string {
+    if (errors.length === 0) {
+      return "Unknown error";
+    }
+
+    if (errors.length === 1) {
+      return errors[0];
+    }
+
+    // Group similar errors (especially tool ID format errors)
+    const errorGroups = new Map<
+      string,
+      { count: number; details: Set<string> }
+    >();
+
+    for (const error of errors) {
+      if (error.includes("Tool ID must follow namespacedName format")) {
+        const key = "Tool ID format errors";
+        if (!errorGroups.has(key)) {
+          errorGroups.set(key, { count: 0, details: new Set() });
+        }
+        errorGroups.get(key)!.count++;
+      } else {
+        // Other errors - group by exact message
+        const key = error;
+        if (!errorGroups.has(key)) {
+          errorGroups.set(key, { count: 1, details: new Set() });
+        } else {
+          errorGroups.get(key)!.count++;
+        }
+      }
+    }
+
+    // Format grouped errors
+    const parts: string[] = [];
+    for (const [errorType, info] of errorGroups) {
+      if (errorType === "Tool ID format errors") {
+        parts.push(
+          `${info.count} tool ID(s) must follow namespacedName format (e.g., 'server.tool-name')`
+        );
+      } else {
+        if (info.count > 1) {
+          parts.push(`${errorType} (${info.count} instances)`);
+        } else {
+          parts.push(errorType);
+        }
+      }
+    }
+
+    return parts.join(", ");
   }
 }
 

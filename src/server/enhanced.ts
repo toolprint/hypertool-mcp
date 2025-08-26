@@ -108,6 +108,49 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     // Load configuration from database
     let serverConfigs: Record<string, ServerConfig> = {};
 
+    // Check if we're in persona-only mode (persona specified but no config path)
+    if (
+      this.runtimeOptions?.persona &&
+      (!options.configPath || options.configPath === "")
+    ) {
+      logger.debug(
+        `Persona-only mode detected for "${this.runtimeOptions.persona}" - checking for persona MCP config`
+      );
+
+      // Try to find and load the persona's mcp.json file
+      try {
+        const personaMcpConfig = await this.loadPersonaMcpConfig(
+          this.runtimeOptions.persona
+        );
+        if (personaMcpConfig) {
+          serverConfigs = personaMcpConfig;
+          const serverCount = Object.keys(serverConfigs).length;
+          mainSpinner.succeed(
+            `Loaded ${serverCount} MCP server${serverCount !== 1 ? "s" : ""} from persona configuration`
+          );
+          logger.debug(
+            `Loaded persona MCP config with servers: ${Object.keys(serverConfigs).join(", ")}`
+          );
+        } else {
+          mainSpinner.succeed(
+            "Persona mode: Starting with minimal configuration"
+          );
+          logger.debug(
+            "No persona MCP config found - continuing with empty configuration"
+          );
+        }
+      } catch (error) {
+        mainSpinner.warn(
+          "Failed to load persona MCP config - continuing with minimal configuration"
+        );
+        logger.warn(
+          `Error loading persona MCP config: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+
+      return serverConfigs;
+    }
+
     try {
       const { loadMcpConfig } = await import("../config/mcpConfigLoader.js");
       const config = await loadMcpConfig(
@@ -535,8 +578,132 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       }
     }
 
+    // Initialize persona if specified
+    if (this.runtimeOptions?.persona) {
+      await this.initializePersona(this.runtimeOptions.persona, dependencies);
+    }
+
     // Initialize configuration mode components
     await this.initializeConfigurationMode(dependencies);
+  }
+
+  /**
+   * Initialize and activate a persona
+   */
+  private async initializePersona(
+    personaName: string,
+    dependencies: ToolDependencies
+  ): Promise<void> {
+    try {
+      logger.info(`Initializing persona: ${personaName}`);
+
+      // Import PersonaManager class
+      const { PersonaManager } = await import("../persona/manager.js");
+
+      // Create persona manager with proper configuration
+      const personaManager = new PersonaManager({
+        toolDiscoveryEngine: this.discoveryEngine,
+        toolsetManager: this.toolsetManager,
+        autoDiscover: true,
+        validateOnActivation: true,
+        persistState: true,
+        stateKey: "hypertool-persona-runtime-state",
+      });
+
+      // Initialize the persona manager
+      await personaManager.initialize();
+
+      // Activate the specified persona
+      const result = await personaManager.activatePersona(personaName);
+
+      if (result.success) {
+        logger.info(`Successfully activated persona: ${personaName}`);
+
+        // If persona has a default toolset and no explicit toolset was provided,
+        // activate the persona's default toolset
+        if (result.activatedToolset && !this.runtimeOptions?.equipToolset) {
+          logger.info(
+            `Auto-activating persona's default toolset: ${result.activatedToolset}`
+          );
+        }
+
+        if (result.warnings && result.warnings.length > 0) {
+          for (const warning of result.warnings) {
+            logger.warn(`Persona activation warning: ${warning}`);
+          }
+        }
+      } else {
+        logger.error(`Failed to activate persona: ${personaName}`);
+        if (result.errors && result.errors.length > 0) {
+          for (const error of result.errors) {
+            logger.error(`Persona activation error: ${error}`);
+          }
+        }
+      }
+    } catch (error) {
+      logger.error(`Error initializing persona ${personaName}:`, error);
+    }
+  }
+
+  /**
+   * Load MCP configuration from persona directory
+   */
+  private async loadPersonaMcpConfig(
+    personaName: string
+  ): Promise<Record<string, ServerConfig> | null> {
+    try {
+      const path = await import("path");
+      const fs = await import("fs/promises");
+
+      // Look for persona in the personas directory
+      const personaDir = path.join(process.cwd(), "personas", personaName);
+      const mcpConfigPath = path.join(personaDir, "mcp.json");
+
+      // Check if mcp.json exists
+      try {
+        await fs.access(mcpConfigPath);
+      } catch {
+        logger.debug(
+          `No mcp.json found for persona "${personaName}" at ${mcpConfigPath}`
+        );
+        return null;
+      }
+
+      // Load and parse the mcp.json file
+      const configContent = await fs.readFile(mcpConfigPath, "utf-8");
+      const mcpConfig = JSON.parse(configContent);
+
+      // Validate basic structure
+      if (!mcpConfig.mcpServers || typeof mcpConfig.mcpServers !== "object") {
+        throw new Error("Invalid MCP config: missing 'mcpServers' field");
+      }
+
+      // Transform the config format from persona format to internal format
+      const serverConfigs: Record<string, ServerConfig> = {};
+      for (const [serverName, serverConfig] of Object.entries(
+        mcpConfig.mcpServers
+      )) {
+        const config = serverConfig as any;
+
+        // Transform 'transport' field to 'type' if present
+        if (config.transport) {
+          config.type = config.transport;
+          delete config.transport;
+        }
+
+        serverConfigs[serverName] = config as ServerConfig;
+      }
+
+      logger.debug(
+        `Successfully loaded persona MCP config from ${mcpConfigPath}`
+      );
+      return serverConfigs;
+    } catch (error) {
+      logger.error(
+        `Failed to load persona MCP config for "${personaName}": ${error instanceof Error ? error.message : String(error)}`
+      );
+      throw error;
+    }
   }
 
   /**

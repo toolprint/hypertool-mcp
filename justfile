@@ -352,6 +352,23 @@ persona-setup-real:
     ls -la personas/
     echo "📝 Test with: just persona-list"
 
+# Setup personas from awesome-mcp-personas submodule
+[group('persona')]
+persona-setup-awesome:
+    #!/usr/bin/env bash
+    echo "🔧 Setting up personas from awesome-mcp-personas..."
+    rm -rf personas/
+    mkdir -p personas/
+    if [ -d "awesome-mcp-personas/personas" ]; then
+        cp -r awesome-mcp-personas/personas/* personas/
+        echo "✅ Copied personas from awesome-mcp-personas to personas/ directory:"
+        ls -la personas/
+        echo "📝 Test with: just persona-list"
+    else
+        echo "❌ awesome-mcp-personas/personas directory not found"
+        echo "💡 Run 'git submodule update --init --recursive' first"
+    fi
+
 # Debug persona discovery issues
 [group('persona')]
 persona-debug: _persona-ensure-build
@@ -377,7 +394,7 @@ persona-direct-test name='valid-persona':
     node dist/bin.js persona validate "test/fixtures/personas/{{name}}/persona.yaml"
     echo "✅ Direct validation test complete"
 
-# Clean up and recreate personas directory 
+# Clean up and recreate personas directory
 [group('persona')]
 persona-reset:
     #!/usr/bin/env bash
@@ -471,7 +488,7 @@ persona-copy-to-user:
     echo "🎯 Testing activation from user directory..."
     node dist/bin.js persona activate minimal-persona || echo "❌ Still fails"
 
-# Status: Report on persona system functionality 
+# Status: Report on persona system functionality
 [group('persona')]
 persona-status-report:
     #!/usr/bin/env bash
@@ -480,7 +497,7 @@ persona-status-report:
     echo ""
     echo "CORE FUNCTIONALITY:"
     echo "✅ Discovery: 'just persona-list' finds all personas with consistent validation"
-    echo "✅ Activation: 'just persona-activate <name>' works for all valid personas"  
+    echo "✅ Activation: 'just persona-activate <name>' works for all valid personas"
     echo "✅ Validation: Unified validation logic across discovery and activation"
     echo "✅ Tool ID Support: Simple (git.status) and compound (docker.compose.up) tool names"
     echo "✅ Deactivation: 'just persona-deactivate' works correctly"
@@ -500,7 +517,7 @@ persona-status-report:
     echo ""
     echo "TEST RESULTS:"
     echo "✅ minimal-persona: Simple persona without toolsets"
-    echo "✅ valid-persona: Complete persona with simple tool IDs"  
+    echo "✅ valid-persona: Complete persona with simple tool IDs"
     echo "✅ complex-persona: Advanced persona with compound tool IDs"
     echo "❌ invalid-persona: Correctly identified and marked invalid"
     echo ""
@@ -541,7 +558,7 @@ persona-select: _persona-ensure-build
     echo "🎭 Available Test Personas:"
     echo "─────────────────────────"
     echo "1) minimal-persona     - Basic configuration"
-    echo "2) valid-persona       - Complete valid example"  
+    echo "2) valid-persona       - Complete valid example"
     echo "3) complex-persona     - Advanced configuration"
     echo "4) invalid-persona     - Invalid for testing"
     echo ""
@@ -580,18 +597,18 @@ persona-dev-workflow: _persona-ensure-build
 persona-setup-directories: _persona-ensure-build
     #!/usr/bin/env bash
     echo "🔧 Setting up persona directories for testing..."
-    
+
     # Create the expected persona directories
     mkdir -p "./personas"
     mkdir -p "$HOME/.toolprint/hypertool-mcp/personas"
-    
+
     # Create symlinks to test fixtures for easy discovery
     echo "🔗 Creating symlinks to test fixtures..."
     if [[ ! -e "./personas/minimal-persona" ]]; then
         ln -sf "../test/fixtures/personas/minimal-persona" "./personas/minimal-persona"
     fi
     if [[ ! -e "./personas/valid-persona" ]]; then
-        ln -sf "../test/fixtures/personas/valid-persona" "./personas/valid-persona"  
+        ln -sf "../test/fixtures/personas/valid-persona" "./personas/valid-persona"
     fi
     if [[ ! -e "./personas/complex-persona" ]]; then
         ln -sf "../test/fixtures/personas/complex-persona" "./personas/complex-persona"
@@ -599,14 +616,14 @@ persona-setup-directories: _persona-ensure-build
     if [[ ! -e "./personas/invalid-persona" ]]; then
         ln -sf "../test/fixtures/personas/invalid-persona" "./personas/invalid-persona"
     fi
-    
+
     echo "✅ Persona directories setup complete!"
     echo "📁 Test personas are now discoverable at:"
     echo "   • ./personas/ (symlinked to test fixtures)"
     echo ""
     echo "💡 Run 'just persona-list' to verify discovery works"
 
-# Clean up persona development directories  
+# Clean up persona development directories
 [group('persona')]
 persona-cleanup-directories:
     #!/usr/bin/env bash
@@ -633,7 +650,7 @@ persona-quick-test-with-setup: persona-setup-directories
 persona-reset-active: persona-deactivate
     @echo "🔄 Active persona reset complete"
 
-[group('persona')]  
+[group('persona')]
 persona-start name='valid-persona': _persona-ensure-build
     node dist/bin.js persona activate {{name}}
     @echo "🚀 Persona {{name}} is now active"
