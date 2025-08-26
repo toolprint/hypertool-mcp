@@ -1,6 +1,6 @@
 /**
  * Integration tests for Persona + MCP Configuration system interaction
- * 
+ *
  * This test suite verifies that persona activation correctly integrates with
  * MCP configuration management, testing config merging, conflict resolution,
  * backup/restore functionality, and connection management.
@@ -199,7 +199,7 @@ describe('Persona + MCP Configuration Integration Tests', () => {
       // Verify merged configuration
       const finalConfig = await mcpHandlers.getCurrentConfig();
       expect(finalConfig?.mcpServers).toBeDefined();
-      
+
       // Should contain both existing and persona servers
       expect(finalConfig?.mcpServers['existing-server']).toBeDefined();
       expect(finalConfig?.mcpServers['git']).toBeDefined();
@@ -495,11 +495,11 @@ describe('Persona + MCP Configuration Integration Tests', () => {
   describe('Event Emission and Lifecycle', () => {
     it('should emit appropriate events during MCP config lifecycle', async () => {
       const events: any[] = [];
-      
+
       personaManager.on(PersonaEvents.PERSONA_ACTIVATED, (event) => {
         events.push({ type: 'activated', ...event });
       });
-      
+
       personaManager.on(PersonaEvents.PERSONA_DEACTIVATED, (event) => {
         events.push({ type: 'deactivated', ...event });
       });
@@ -508,7 +508,7 @@ describe('Persona + MCP Configuration Integration Tests', () => {
 
       // Activate persona with MCP config
       await personaManager.activatePersona('persona-with-mcp');
-      
+
       // Verify activation event contains MCP info
       const activatedEvent = events.find(e => e.type === 'activated');
       expect(activatedEvent).toBeDefined();
@@ -519,7 +519,7 @@ describe('Persona + MCP Configuration Integration Tests', () => {
 
       // Deactivate
       await personaManager.deactivatePersona();
-      
+
       const deactivatedEvent = events.find(e => e.type === 'deactivated');
       expect(deactivatedEvent).toBeDefined();
     });
@@ -579,7 +579,7 @@ version: "1.0"
 
       // Should fail validation or provide warnings
       const result = await personaManager.activatePersona('invalid-mcp-persona');
-      
+
       // Depends on implementation - could succeed with warnings or fail
       if (result.success) {
         expect(result.warnings).toBeDefined();

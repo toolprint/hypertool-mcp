@@ -81,14 +81,14 @@ test('starts in configuration mode when no toolset equipped', async () => {
 test('switches between modes correctly', async () => {
   // Start in normal mode with toolset
   const server = new EnhancedMCPServer({ /* with toolset */ });
-  
+
   // Enter configuration mode
   await server.callTool('enter-configuration-mode', {});
   const configTools = await server.listTools();
   expect(configTools).toContainEqual(
     expect.objectContaining({ name: 'exit-configuration-mode' })
   );
-  
+
   // Exit configuration mode
   await server.callTool('exit-configuration-mode', {});
   const normalTools = await server.listTools();

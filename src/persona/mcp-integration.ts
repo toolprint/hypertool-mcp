@@ -29,16 +29,16 @@ const logger = createChildLogger({ module: "persona/mcp-integration" });
 export interface McpConfigBackup {
   /** Original MCP configuration */
   originalConfig: MCPConfig;
-  
+
   /** Backup timestamp */
   backupTimestamp: Date;
-  
+
   /** Source of the backup (e.g., "file", "database") */
   source: string;
-  
+
   /** Original config file path if applicable */
   originalConfigPath?: string;
-  
+
   /** Additional metadata */
   metadata?: Record<string, any>;
 }
@@ -49,13 +49,13 @@ export interface McpConfigBackup {
 export interface McpConfigMergeOptions {
   /** How to resolve server name conflicts */
   conflictResolution: "persona-wins" | "base-wins" | "user-choice" | "error";
-  
+
   /** Whether to preserve environment variables from base config */
   preserveBaseEnv?: boolean;
-  
+
   /** Whether to merge environment variables or replace them */
   mergeEnvironment?: boolean;
-  
+
   /** Custom conflict resolver function */
   customResolver?: (
     serverName: string,
@@ -70,19 +70,19 @@ export interface McpConfigMergeOptions {
 export interface McpConfigMergeResult {
   /** Whether merge was successful */
   success: boolean;
-  
+
   /** Merged configuration */
   mergedConfig?: MCPConfig;
-  
+
   /** List of conflicts encountered */
   conflicts: string[];
-  
+
   /** Warnings during merge */
   warnings: string[];
-  
+
   /** Errors during merge */
   errors: string[];
-  
+
   /** Statistics about the merge */
   stats: {
     baseServersCount: number;
@@ -143,16 +143,18 @@ export class PersonaMcpIntegration {
 
       // Load persona MCP configuration
       const personaConfig = await this.loadPersonaMcpConfig(mcpConfigFile);
-      
+
       // Get current MCP configuration
       const currentConfig = await this.getCurrentConfig();
-      
+
       if (!currentConfig) {
-        logger.info("No current MCP config found, using persona config directly");
-        
+        logger.info(
+          "No current MCP config found, using persona config directly"
+        );
+
         // No base config to merge, just apply the persona config
         await this.setCurrentConfig(personaConfig);
-        
+
         // Restart connections if handler provided
         if (this.restartConnections) {
           await this.restartConnections();
@@ -199,7 +201,10 @@ export class PersonaMcpIntegration {
         try {
           await this.restartConnections();
         } catch (error) {
-          logger.warn("Failed to restart connections after applying persona config:", error);
+          logger.warn(
+            "Failed to restart connections after applying persona config:",
+            error
+          );
           mergeResult.warnings.push(
             `Connection restart failed: ${error instanceof Error ? error.message : String(error)}`
           );
@@ -208,12 +213,11 @@ export class PersonaMcpIntegration {
 
       logger.info("Successfully applied persona MCP configuration");
       return mergeResult;
-
     } catch (error) {
       const errorMessage = `Failed to apply persona MCP config: ${
         error instanceof Error ? error.message : String(error)
       }`;
-      
+
       logger.error(errorMessage, error);
 
       return {
@@ -255,7 +259,10 @@ export class PersonaMcpIntegration {
         try {
           await this.restartConnections();
         } catch (error) {
-          logger.warn("Failed to restart connections after restoring config:", error);
+          logger.warn(
+            "Failed to restart connections after restoring config:",
+            error
+          );
           // Don't throw here as the restore was successful
         }
       }
@@ -264,12 +271,11 @@ export class PersonaMcpIntegration {
       this.currentBackup = null;
 
       logger.info("Successfully restored original MCP configuration");
-
     } catch (error) {
       const errorMessage = `Failed to restore original MCP config: ${
         error instanceof Error ? error.message : String(error)
       }`;
-      
+
       logger.error(errorMessage, error);
       throw new PersonaError(
         PersonaErrorCode.MCP_CONFIG_CONFLICT,
@@ -306,25 +312,38 @@ export class PersonaMcpIntegration {
   private async loadPersonaMcpConfig(filePath: string): Promise<MCPConfig> {
     try {
       const parseResult = await this.parser.parseFile(filePath);
-      
+
       if (!parseResult.success || !parseResult.config) {
-        const errorMessage = parseResult.error || 
+        const errorMessage =
+          parseResult.error ||
           `Parse failed: ${parseResult.validationErrors?.join(", ") || "Unknown error"}`;
-        throw createFileSystemError("parsing persona MCP config", filePath, new Error(errorMessage));
+        throw createFileSystemError(
+          "parsing persona MCP config",
+          filePath,
+          new Error(errorMessage)
+        );
       }
 
-      if (parseResult.validationErrors && parseResult.validationErrors.length > 0) {
-        logger.warn(`Persona MCP config has warnings: ${parseResult.validationErrors.join(", ")}`);
+      if (
+        parseResult.validationErrors &&
+        parseResult.validationErrors.length > 0
+      ) {
+        logger.warn(
+          `Persona MCP config has warnings: ${parseResult.validationErrors.join(", ")}`
+        );
       }
 
       return parseResult.config;
-
     } catch (error) {
       if (error instanceof PersonaError) {
         throw error;
       }
-      
-      throw createFileSystemError("loading persona MCP config", filePath, error as Error);
+
+      throw createFileSystemError(
+        "loading persona MCP config",
+        filePath,
+        error as Error
+      );
     }
   }
 
@@ -356,7 +375,7 @@ export class PersonaMcpIntegration {
     const warnings: string[] = [];
     const errors: string[] = [];
     const mergedServers: Record<string, ServerEntry> = {};
-    
+
     let conflictsResolved = 0;
 
     try {
@@ -370,9 +389,11 @@ export class PersonaMcpIntegration {
       }
 
       // Process persona servers
-      for (const [serverName, personaServer] of Object.entries(personaServers)) {
+      for (const [serverName, personaServer] of Object.entries(
+        personaServers
+      )) {
         const baseServer = baseServers[serverName];
-        
+
         if (!baseServer) {
           // No conflict, add persona server
           mergedServers[serverName] = { ...personaServer };
@@ -389,30 +410,54 @@ export class PersonaMcpIntegration {
         // Apply conflict resolution strategy
         switch (options.conflictResolution) {
           case "persona-wins":
-            resolvedServer = this.mergeServerConfigs(baseServer, personaServer, options);
+            resolvedServer = this.mergeServerConfigs(
+              baseServer,
+              personaServer,
+              options
+            );
             break;
-            
+
           case "base-wins":
-            resolvedServer = this.mergeServerConfigs(personaServer, baseServer, options);
+            resolvedServer = this.mergeServerConfigs(
+              personaServer,
+              baseServer,
+              options
+            );
             warnings.push(`Using base config for server "${serverName}"`);
             break;
-            
+
           case "user-choice":
             // In a real implementation, this would prompt the user
             // For now, default to persona-wins
-            resolvedServer = this.mergeServerConfigs(baseServer, personaServer, options);
-            warnings.push(`Auto-resolved conflict for server "${serverName}" (persona wins)`);
+            resolvedServer = this.mergeServerConfigs(
+              baseServer,
+              personaServer,
+              options
+            );
+            warnings.push(
+              `Auto-resolved conflict for server "${serverName}" (persona wins)`
+            );
             break;
-            
+
           case "error":
-            errors.push(`Configuration conflict for server "${serverName}" - resolution required`);
+            errors.push(
+              `Configuration conflict for server "${serverName}" - resolution required`
+            );
             continue;
-            
+
           default:
             if (options.customResolver) {
-              resolvedServer = options.customResolver(serverName, baseServer, personaServer);
+              resolvedServer = options.customResolver(
+                serverName,
+                baseServer,
+                personaServer
+              );
             } else {
-              resolvedServer = this.mergeServerConfigs(baseServer, personaServer, options);
+              resolvedServer = this.mergeServerConfigs(
+                baseServer,
+                personaServer,
+                options
+              );
             }
         }
 
@@ -440,14 +485,13 @@ export class PersonaMcpIntegration {
           conflictsResolved,
         },
       };
-
     } catch (error) {
       const errorMessage = `Merge operation failed: ${
         error instanceof Error ? error.message : String(error)
       }`;
-      
+
       errors.push(errorMessage);
-      
+
       return {
         success: false,
         conflicts,
@@ -478,16 +522,21 @@ export class PersonaMcpIntegration {
     if (
       options.preserveBaseEnv &&
       options.mergeEnvironment &&
-      'env' in baseServer &&
+      "env" in baseServer &&
       baseServer.env &&
-      'env' in personaServer &&
+      "env" in personaServer &&
       personaServer.env
     ) {
       merged.env = {
         ...baseServer.env,
         ...personaServer.env, // Persona env takes precedence
       };
-    } else if (options.preserveBaseEnv && 'env' in baseServer && baseServer.env && !('env' in merged)) {
+    } else if (
+      options.preserveBaseEnv &&
+      "env" in baseServer &&
+      baseServer.env &&
+      !("env" in merged)
+    ) {
       // Preserve base env if persona doesn't have env
       merged.env = { ...baseServer.env };
     }
@@ -500,7 +549,7 @@ export class PersonaMcpIntegration {
    */
   private generateConfigHash(config: MCPConfig): string {
     const configString = JSON.stringify(config, Object.keys(config).sort());
-    
+
     // Simple hash function (not cryptographically secure, but sufficient for tracking)
     let hash = 0;
     for (let i = 0; i < configString.length; i++) {
@@ -508,7 +557,7 @@ export class PersonaMcpIntegration {
       hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
-    
+
     return hash.toString(16);
   }
 
@@ -516,13 +565,13 @@ export class PersonaMcpIntegration {
    * Validate MCP configuration format
    */
   public static validateMcpConfig(config: unknown): config is MCPConfig {
-    if (!config || typeof config !== 'object') {
+    if (!config || typeof config !== "object") {
       return false;
     }
 
     const mcpConfig = config as any;
-    
-    if (!mcpConfig.mcpServers || typeof mcpConfig.mcpServers !== 'object') {
+
+    if (!mcpConfig.mcpServers || typeof mcpConfig.mcpServers !== "object") {
       return false;
     }
 
@@ -582,20 +631,22 @@ export async function validatePersonaMcpConfigFile(filePath: string): Promise<{
 }> {
   try {
     await fs.access(filePath);
-    
+
     // Try to parse it to ensure it's valid
     const parser = new MCPConfigParser();
     const result = await parser.parseFile(filePath);
-    
+
     if (!result.success) {
       return {
         isValid: false,
-        error: result.error || result.validationErrors?.join(", ") || "Unknown parsing error",
+        error:
+          result.error ||
+          result.validationErrors?.join(", ") ||
+          "Unknown parsing error",
       };
     }
-    
+
     return { isValid: true };
-    
   } catch (error) {
     return {
       isValid: false,

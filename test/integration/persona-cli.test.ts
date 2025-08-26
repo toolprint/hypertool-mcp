@@ -1,6 +1,6 @@
 /**
  * Integration tests for Persona CLI commands
- * 
+ *
  * This test suite verifies that all persona CLI commands work correctly
  * with the actual persona system, testing argument parsing, command execution,
  * output formatting, error handling, and integration with MCP components.
@@ -78,7 +78,7 @@ describe('Persona CLI Integration Tests', () => {
 
       // Verify output contains expected content
       const output = getAllConsoleOutput(mockConsole);
-      
+
       expect(output).toContain('🔍 Discovering available personas');
       expect(output).toContain('📊 Persona Discovery Summary');
       expect(output).toContain('📦 Available Personas');
@@ -346,7 +346,7 @@ version: "1.0"
       const output = getAllConsoleOutput(mockConsole);
       // Depending on validation implementation, this might succeed with warnings
       expect(output).toContain('✅ Persona is valid') || expect(output).toContain('❌ Persona validation failed');
-      
+
       // Check for warnings section if it exists
       if (output.includes('Warnings:')) {
         expect(output).toContain('Warnings:');
@@ -444,10 +444,10 @@ version: "1.0"
 
     it('should show help text with examples', async () => {
       const personaCommand = createPersonaCommand();
-      
+
       // Capture help output
       const helpOutput = personaCommand.helpInformation();
-      
+
       expect(helpOutput).toContain('Persona content pack management');
       expect(helpOutput).toContain('Examples:');
       expect(helpOutput).toContain('hypertool persona list');
@@ -565,7 +565,7 @@ defaultToolset: workflow
   describe('Error Handling and Edge Cases', () => {
     it('should handle missing persona directory gracefully', async () => {
       const listCommand = createListCommand();
-      
+
       // Mock discovery to simulate missing directory
       const originalModule = await import('../../src/persona/discovery.js');
       const mockDiscoverPersonas = vi.fn().mockRejectedValue(
@@ -635,12 +635,12 @@ version: "1.0"
     // Set up the command with the arguments
     // Note: This is a simplified approach for testing
     // In real scenarios, commander handles argument parsing automatically
-    
+
     try {
       // For testing, we need to actually call the action function directly
       // since parseAsync might not work properly in test environment
       const actionMethod = (command as any)._actionHandler || (command as any).action;
-      
+
       if (actionMethod && typeof actionMethod === 'function') {
         // Extract action parameters based on command type
         if (command.name() === 'activate' && args.length > 0) {

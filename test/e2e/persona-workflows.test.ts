@@ -1,6 +1,6 @@
 /**
  * End-to-End Tests for Persona Workflows
- * 
+ *
  * Comprehensive E2E testing for complete persona lifecycle workflows from
  * discovery through activation, usage, and cleanup. Tests real-world scenarios
  * including multi-persona environments, error recovery, and concurrent operations.
@@ -71,7 +71,7 @@ class E2EToolDiscoveryEngine implements IToolDiscoveryEngine {
         server: 'git',
         inputSchema: { type: 'object', properties: {} },
       },
-      
+
       // Docker tools
       {
         name: 'docker.ps',
@@ -214,18 +214,18 @@ class E2EToolDiscoveryEngine implements IToolDiscoveryEngine {
 
   async discoverTools(): Promise<DiscoveredTool[]> {
     this.callCount++;
-    
+
     if (this.failureMode === 'permanent') {
       throw new Error('Tool discovery is permanently failing');
     }
-    
+
     if (this.failureMode === 'intermittent' && this.callCount % 3 === 0) {
       throw new Error('Intermittent tool discovery failure');
     }
-    
+
     // Simulate discovery latency
     await new Promise(resolve => setTimeout(resolve, Math.random() * 50));
-    
+
     return [...this.tools];
   }
 
@@ -237,7 +237,7 @@ class E2EToolDiscoveryEngine implements IToolDiscoveryEngine {
     if (this.failureMode === 'permanent') {
       throw new Error('Tool discovery refresh is permanently failing');
     }
-    
+
     // Simulate refresh latency
     await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
   }
@@ -276,19 +276,19 @@ class MockE2EToolsetManager {
 
   async setCurrentToolset(config: any) {
     this.operationCount++;
-    
+
     if (this.operationLatency > 0) {
       await new Promise(resolve => setTimeout(resolve, this.operationLatency));
     }
-    
+
     if (this.failureMode === 'permanent') {
       return { valid: false, errors: ['Toolset manager is permanently failing'] };
     }
-    
+
     if (this.failureMode === 'intermittent' && this.operationCount % 4 === 0) {
       return { valid: false, errors: ['Intermittent toolset manager failure'] };
     }
-    
+
     this.currentToolset = JSON.parse(JSON.stringify(config));
     this.events.push({ type: 'toolsetChanged', config: JSON.parse(JSON.stringify(config)), timestamp: Date.now() });
     return { valid: true, errors: [] };
@@ -300,15 +300,15 @@ class MockE2EToolsetManager {
 
   async unequipToolset() {
     this.operationCount++;
-    
+
     if (this.operationLatency > 0) {
       await new Promise(resolve => setTimeout(resolve, this.operationLatency));
     }
-    
+
     if (this.failureMode === 'permanent') {
       throw new Error('Toolset manager unequip is permanently failing');
     }
-    
+
     this.currentToolset = null;
     this.events.push({ type: 'toolsetUnequipped', timestamp: Date.now() });
   }
@@ -354,33 +354,33 @@ class MockE2EMcpHandlers {
 
   getCurrentConfig = vi.fn(async (): Promise<MCPConfig | null> => {
     this.operationCount++;
-    
+
     if (this.operationLatency > 0) {
       await new Promise(resolve => setTimeout(resolve, this.operationLatency));
     }
-    
+
     if (this.failureMode === 'permanent') {
       throw new Error('MCP config get is permanently failing');
     }
-    
+
     return this.currentConfig ? JSON.parse(JSON.stringify(this.currentConfig)) : null;
   });
 
   setCurrentConfig = vi.fn(async (config: MCPConfig): Promise<void> => {
     this.operationCount++;
-    
+
     if (this.operationLatency > 0) {
       await new Promise(resolve => setTimeout(resolve, this.operationLatency));
     }
-    
+
     if (this.failureMode === 'permanent') {
       throw new Error('MCP config set is permanently failing');
     }
-    
+
     if (this.failureMode === 'intermittent' && this.operationCount % 3 === 0) {
       throw new Error('Intermittent MCP config set failure');
     }
-    
+
     if (!this.originalConfig && this.currentConfig) {
       this.originalConfig = JSON.parse(JSON.stringify(this.currentConfig));
     }
@@ -389,15 +389,15 @@ class MockE2EMcpHandlers {
 
   restartConnections = vi.fn(async (): Promise<void> => {
     this.operationCount++;
-    
+
     if (this.operationLatency > 0) {
       await new Promise(resolve => setTimeout(resolve, this.operationLatency));
     }
-    
+
     if (this.failureMode === 'permanent') {
       throw new Error('MCP restart connections is permanently failing');
     }
-    
+
     // Simulate connection restart
   });
 
@@ -591,7 +591,7 @@ metadata:
 
       personas[`personas/${name}/assets/README.md`] = `# ${name}\n\nLarge complex persona for E2E testing.`;
       personas[`personas/${name}/assets/USAGE.md`] = `# Usage Guide\n\nDetailed usage instructions for ${name}.`;
-      
+
       // Add MCP config for some large personas
       if (i <= 2) {
         personas[`personas/${name}/mcp.json`] = JSON.stringify({
@@ -728,12 +728,12 @@ describe('Persona E2E Workflows', () => {
   describe('Complete Persona Lifecycle', () => {
     it('should handle full discovery to activation workflow', async () => {
       const startTime = Date.now();
-      
+
       // Step 1: Discovery
       const discoveryResult = await testEnvironment.personaManager.refreshDiscovery();
       expect(discoveryResult.personas.length).toBeGreaterThan(15);
       expect(discoveryResult.errors.length).toBe(0);
-      
+
       const discoveryTime = Date.now() - startTime;
       expect(discoveryTime).toBeLessThan(5000); // Should complete within 5 seconds
 
@@ -743,20 +743,20 @@ describe('Persona E2E Workflows', () => {
         refresh: false
       });
       expect(personas.length).toBeGreaterThan(10);
-      
+
       // Step 3: Activate a small persona
       const targetPersona = personas.find(p => p.name.startsWith('small-persona-'));
       expect(targetPersona).toBeDefined();
-      
+
       const activationStart = Date.now();
       const activationResult = await testEnvironment.personaManager.activatePersona(
         targetPersona!.name,
         { backupState: true }
       );
-      
+
       const activationTime = Date.now() - activationStart;
       expect(activationTime).toBeLessThan(1000); // Should activate within 1 second
-      
+
       expect(activationResult.success).toBe(true);
       expect(activationResult.personaName).toBe(targetPersona!.name);
       expect(activationResult.activatedToolset).toBeDefined();
@@ -779,10 +779,10 @@ describe('Persona E2E Workflows', () => {
       // Step 6: Deactivate persona
       const deactivationStart = Date.now();
       const deactivationResult = await testEnvironment.personaManager.deactivatePersona();
-      
+
       const deactivationTime = Date.now() - deactivationStart;
       expect(deactivationTime).toBeLessThan(500); // Should deactivate within 500ms
-      
+
       expect(deactivationResult.success).toBe(true);
       expect(testEnvironment.personaManager.getActivePersona()).toBeNull();
 
@@ -804,24 +804,24 @@ describe('Persona E2E Workflows', () => {
       const personas = await testEnvironment.personaManager.listPersonas({
         includeInvalid: false
       });
-      
+
       expect(personas.length).toBeGreaterThan(2);
-      
+
       // Activate first persona
       const firstPersona = personas.find(p => p.name.includes('small-persona-1'));
       expect(firstPersona).toBeDefined();
-      
+
       const firstResult = await testEnvironment.personaManager.activatePersona(firstPersona!.name);
       expect(firstResult.success).toBe(true);
-      
+
       // Verify first activation
       let activeState = testEnvironment.personaManager.getActivePersona();
       expect(activeState!.persona.config.name).toBe(firstPersona!.name);
-      
+
       // Switch to second persona
       const secondPersona = personas.find(p => p.name.includes('small-persona-2'));
       expect(secondPersona).toBeDefined();
-      
+
       const events: any[] = [];
       testEnvironment.personaManager.on(PersonaEvents.PERSONA_ACTIVATED, (event) => {
         events.push({ type: 'activated', ...event });
@@ -829,23 +829,23 @@ describe('Persona E2E Workflows', () => {
       testEnvironment.personaManager.on(PersonaEvents.PERSONA_DEACTIVATED, (event) => {
         events.push({ type: 'deactivated', ...event });
       });
-      
+
       const switchStart = Date.now();
       const secondResult = await testEnvironment.personaManager.activatePersona(secondPersona!.name);
       const switchTime = Date.now() - switchStart;
-      
+
       expect(switchTime).toBeLessThan(1000); // Switch should be fast
       expect(secondResult.success).toBe(true);
-      
+
       // Verify switch completed
       activeState = testEnvironment.personaManager.getActivePersona();
       expect(activeState!.persona.config.name).toBe(secondPersona!.name);
-      
+
       // Verify events were emitted
       expect(events).toHaveLength(2);
       expect(events.find(e => e.type === 'deactivated')).toBeDefined();
       expect(events.find(e => e.type === 'activated')).toBeDefined();
-      
+
       // Clean up
       await testEnvironment.personaManager.deactivatePersona();
     }, testTimeout);
@@ -860,29 +860,29 @@ describe('Persona E2E Workflows', () => {
           }
         }
       };
-      
+
       testEnvironment.mcpHandlers.setCurrentConfig(initialConfig);
-      
+
       await testEnvironment.personaManager.refreshDiscovery();
       const personas = await testEnvironment.personaManager.listPersonas();
-      
+
       // Find a persona with MCP configuration
       const mcpPersona = personas.find(p => p.name.includes('large-persona-1'));
       expect(mcpPersona).toBeDefined();
-      
+
       // Activate persona with MCP config
       const activationResult = await testEnvironment.personaManager.activatePersona(mcpPersona!.name);
       expect(activationResult.success).toBe(true);
-      
+
       // Verify MCP config was applied
       expect(testEnvironment.mcpHandlers.setCurrentConfig).toHaveBeenCalled();
-      
+
       const activeState = testEnvironment.personaManager.getActivePersona();
       expect(activeState!.metadata.mcpConfigApplied).toBe(true);
-      
+
       // Deactivate and verify restoration
       await testEnvironment.personaManager.deactivatePersona();
-      
+
       // MCP restoration is handled by the integration, verify calls were made
       expect(testEnvironment.mcpHandlers.getCurrentConfig).toHaveBeenCalled();
     }, testTimeout);
@@ -891,22 +891,22 @@ describe('Persona E2E Workflows', () => {
   describe('Multi-Persona Environment', () => {
     it('should discover and validate multiple personas efficiently', async () => {
       const startTime = Date.now();
-      
+
       const discoveryResult = await testEnvironment.personaManager.refreshDiscovery();
       const discoveryTime = Date.now() - startTime;
-      
+
       // Should discover 20+ personas within reasonable time
       expect(discoveryResult.personas.length).toBeGreaterThanOrEqual(20);
       expect(discoveryTime).toBeLessThan(3000); // Under 3 seconds for 20+ personas
-      
+
       // Check discovery performance stats
       const stats = testEnvironment.personaManager.getStats();
       expect(stats.discoveredCount).toBeGreaterThanOrEqual(20);
       expect(stats.lastDiscovery).toBeInstanceOf(Date);
-      
+
       // Verify cache effectiveness
       expect(stats.cache.size).toBeGreaterThan(0);
-      
+
       // List with various filters
       const validPersonas = await testEnvironment.personaManager.listPersonas({
         includeInvalid: false
@@ -914,7 +914,7 @@ describe('Persona E2E Workflows', () => {
       const allPersonas = await testEnvironment.personaManager.listPersonas({
         includeInvalid: true
       });
-      
+
       expect(validPersonas.length).toBeLessThan(allPersonas.length);
       expect(allPersonas.length - validPersonas.length).toBeGreaterThanOrEqual(4); // Invalid personas
     }, testTimeout);
@@ -922,73 +922,73 @@ describe('Persona E2E Workflows', () => {
     it('should handle persona conflicts and resolution', async () => {
       await testEnvironment.personaManager.refreshDiscovery();
       const personas = await testEnvironment.personaManager.listPersonas();
-      
+
       // Verify no duplicate names exist
       const names = personas.map(p => p.name);
       const uniqueNames = new Set(names);
       expect(names.length).toBe(uniqueNames.size);
-      
+
       // Simulate activation of personas with overlapping toolsets
       const smallPersona1 = personas.find(p => p.name === 'small-persona-1');
       const smallPersona2 = personas.find(p => p.name === 'small-persona-2');
-      
+
       expect(smallPersona1).toBeDefined();
       expect(smallPersona2).toBeDefined();
-      
+
       // Activate first persona
       await testEnvironment.personaManager.activatePersona(smallPersona1!.name);
-      
+
       const firstToolset = testEnvironment.toolsetManager.getCurrentToolset();
       expect(firstToolset).not.toBeNull();
-      
+
       // Switch to second persona (should handle toolset overlap)
       await testEnvironment.personaManager.activatePersona(smallPersona2!.name);
-      
+
       const secondToolset = testEnvironment.toolsetManager.getCurrentToolset();
       expect(secondToolset).not.toBeNull();
       expect(secondToolset).not.toEqual(firstToolset);
-      
+
       // Verify only one persona is active
       const activeState = testEnvironment.personaManager.getActivePersona();
       expect(activeState!.persona.config.name).toBe(smallPersona2!.name);
-      
+
       await testEnvironment.personaManager.deactivatePersona();
     }, testTimeout);
 
     it('should handle concurrent persona operations safely', async () => {
       await testEnvironment.personaManager.refreshDiscovery();
       const personas = await testEnvironment.personaManager.listPersonas();
-      
+
       // Test concurrent discovery operations
       const concurrentDiscoveries = Array(5).fill(null).map(() =>
         testEnvironment.personaManager.refreshDiscovery()
       );
-      
+
       const discoveryResults = await Promise.allSettled(concurrentDiscoveries);
       const failedDiscoveries = discoveryResults.filter(r => r.status === 'rejected');
       expect(failedDiscoveries.length).toBe(0);
-      
+
       // Test concurrent listing operations
       const concurrentLists = Array(10).fill(null).map(() =>
         testEnvironment.personaManager.listPersonas()
       );
-      
+
       const listResults = await Promise.allSettled(concurrentLists);
       const failedLists = listResults.filter(r => r.status === 'rejected');
       expect(failedLists.length).toBe(0);
-      
+
       // Verify all results are consistent
       const successfulLists = listResults
         .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
         .map(r => r.value);
-      
+
       const firstListLength = successfulLists[0].length;
       expect(successfulLists.every(list => list.length === firstListLength)).toBe(true);
-      
+
       // Test that activation operations are properly serialized
       const targetPersonas = personas.slice(0, 3);
       let successfulActivations = 0;
-      
+
       const concurrentActivations = targetPersonas.map(async (persona, index) => {
         try {
           const result = await testEnvironment.personaManager.activatePersona(persona.name);
@@ -1003,9 +1003,9 @@ describe('Persona E2E Workflows', () => {
           return { success: false, personaName: persona.name, errors: [String(error)] };
         }
       });
-      
+
       const activationResults = await Promise.allSettled(concurrentActivations);
-      
+
       // Should handle concurrent activations gracefully
       // Only one should be active at a time, but all should complete without errors
       expect(activationResults.filter(r => r.status === 'rejected').length).toBe(0);
@@ -1017,31 +1017,31 @@ describe('Persona E2E Workflows', () => {
     it('should recover from component failures gracefully', async () => {
       await testEnvironment.personaManager.refreshDiscovery();
       const personas = await testEnvironment.personaManager.listPersonas();
-      
+
       const targetPersona = personas.find(p => p.name.startsWith('small-persona-'));
       expect(targetPersona).toBeDefined();
-      
+
       // Set intermittent failure mode
       testEnvironment.discoveryEngine.setFailureMode('intermittent');
       testEnvironment.toolsetManager.setFailureMode('intermittent');
       testEnvironment.mcpHandlers.setFailureMode('intermittent');
-      
+
       let successfulOperations = 0;
       const totalAttempts = 10;
-      
+
       // Attempt multiple operations with intermittent failures
       for (let i = 0; i < totalAttempts; i++) {
         try {
           // Try discovery refresh
           await testEnvironment.personaManager.refreshDiscovery();
-          
+
           // Try activation
           const result = await testEnvironment.personaManager.activatePersona(targetPersona!.name);
           if (result.success) {
             successfulOperations++;
             await testEnvironment.personaManager.deactivatePersona();
           }
-          
+
           // Small delay between attempts
           await new Promise(resolve => setTimeout(resolve, 10));
         } catch (error) {
@@ -1049,86 +1049,86 @@ describe('Persona E2E Workflows', () => {
           expect(error).toBeInstanceOf(Error);
         }
       }
-      
+
       // Should have some successful operations despite failures
       expect(successfulOperations).toBeGreaterThan(0);
       expect(successfulOperations).toBeLessThan(totalAttempts); // Some failures expected
-      
+
       // Reset failure modes
       testEnvironment.discoveryEngine.setFailureMode('none');
       testEnvironment.toolsetManager.setFailureMode('none');
       testEnvironment.mcpHandlers.setFailureMode('none');
-      
+
       // Verify recovery - should work normally now
       const recoveryResult = await testEnvironment.personaManager.activatePersona(targetPersona!.name);
       expect(recoveryResult.success).toBe(true);
-      
+
       await testEnvironment.personaManager.deactivatePersona();
     }, testTimeout);
 
     it('should handle invalid persona activation gracefully', async () => {
       await testEnvironment.personaManager.refreshDiscovery();
-      
+
       // Try to activate non-existent persona
       const nonExistentResult = await testEnvironment.personaManager.activatePersona('non-existent-persona');
       expect(nonExistentResult.success).toBe(false);
       expect(nonExistentResult.errors).toBeDefined();
       expect(nonExistentResult.errors!.length).toBeGreaterThan(0);
-      
+
       // Verify manager is still functional
       expect(testEnvironment.personaManager.getActivePersona()).toBeNull();
-      
+
       // Try to activate invalid persona (should be filtered out or fail validation)
       const invalidResult = await testEnvironment.personaManager.activatePersona('invalid-missing-name');
       expect(invalidResult.success).toBe(false);
-      
+
       // Verify system is still stable
       const personas = await testEnvironment.personaManager.listPersonas();
       expect(personas.length).toBeGreaterThan(0);
-      
+
       // Should still be able to activate valid persona
       const validPersona = personas.find(p => p.name.startsWith('small-persona-') && p.isValid);
       expect(validPersona).toBeDefined();
-      
+
       const validResult = await testEnvironment.personaManager.activatePersona(validPersona!.name);
       expect(validResult.success).toBe(true);
-      
+
       await testEnvironment.personaManager.deactivatePersona();
     }, testTimeout);
 
     it('should handle resource cleanup after failures', async () => {
       await testEnvironment.personaManager.refreshDiscovery();
       const personas = await testEnvironment.personaManager.listPersonas();
-      
+
       const targetPersona = personas.find(p => p.name.startsWith('large-persona-'));
       expect(targetPersona).toBeDefined();
-      
+
       // Set failure mode after activation starts
       const activationPromise = testEnvironment.personaManager.activatePersona(targetPersona!.name);
-      
+
       // Introduce failure during activation
       setTimeout(() => {
         testEnvironment.toolsetManager.setFailureMode('permanent');
       }, 100);
-      
+
       const result = await activationPromise;
       expect(result.success).toBe(false);
-      
+
       // Verify cleanup occurred despite failure
       expect(testEnvironment.personaManager.getActivePersona()).toBeNull();
-      
+
       // Reset failure mode
       testEnvironment.toolsetManager.setFailureMode('none');
-      
+
       // Verify no resource leaks - should be able to perform new operations
       const stats = testEnvironment.personaManager.getStats();
       expect(stats.cache.size).toBeGreaterThanOrEqual(0);
-      
+
       // Should be able to activate a different persona
       const smallPersona = personas.find(p => p.name.startsWith('small-persona-'));
       const recoveryResult = await testEnvironment.personaManager.activatePersona(smallPersona!.name);
       expect(recoveryResult.success).toBe(true);
-      
+
       await testEnvironment.personaManager.deactivatePersona();
     }, testTimeout);
   });
@@ -1137,14 +1137,14 @@ describe('Persona E2E Workflows', () => {
     it('should maintain responsiveness during high-frequency operations', async () => {
       await testEnvironment.personaManager.refreshDiscovery();
       const personas = await testEnvironment.personaManager.listPersonas();
-      
+
       const targetPersonas = personas.slice(0, 5);
       const operationTimes: number[] = [];
-      
+
       // Perform rapid sequential operations
       for (let i = 0; i < 20; i++) {
         const startTime = Date.now();
-        
+
         // Alternate between different operations
         if (i % 4 === 0) {
           await testEnvironment.personaManager.refreshDiscovery();
@@ -1161,21 +1161,21 @@ describe('Persona E2E Workflows', () => {
             await testEnvironment.personaManager.deactivatePersona();
           }
         }
-        
+
         const operationTime = Date.now() - startTime;
         operationTimes.push(operationTime);
-        
+
         // No operation should take too long
         expect(operationTime).toBeLessThan(2000);
       }
-      
+
       // Calculate performance statistics
       const avgTime = operationTimes.reduce((a, b) => a + b, 0) / operationTimes.length;
       const maxTime = Math.max(...operationTimes);
-      
+
       expect(avgTime).toBeLessThan(500); // Average under 500ms
       expect(maxTime).toBeLessThan(2000); // No single operation over 2s
-      
+
       // System should still be responsive
       const finalStats = testEnvironment.personaManager.getStats();
       expect(finalStats.discoveredCount).toBeGreaterThan(0);
@@ -1188,7 +1188,7 @@ describe('Persona E2E Workflows', () => {
         includeInvalid: true,
         includeLarge: true
       });
-      
+
       // Override cache config with very small limits
       const limitedManager = new PersonaManager({
         toolDiscoveryEngine: limitedEnv.discoveryEngine,
@@ -1206,13 +1206,13 @@ describe('Persona E2E Workflows', () => {
           cacheTtl: 100,
         },
       });
-      
+
       await limitedManager.initialize();
-      
+
       try {
         // Load many personas to trigger cache pressure
         const personas = await limitedManager.listPersonas();
-        
+
         // Activate multiple personas in sequence to stress cache
         let successfulActivations = 0;
         for (const persona of personas.slice(0, 10)) {
@@ -1226,17 +1226,17 @@ describe('Persona E2E Workflows', () => {
             // Some failures expected due to memory pressure
           }
         }
-        
+
         expect(successfulActivations).toBeGreaterThan(0);
-        
+
         // Verify cache is working within limits
         const stats = limitedManager.getStats();
         expect(stats.cache.size).toBeLessThanOrEqual(2);
-        
+
         // System should still be functional
         const finalPersonas = await limitedManager.listPersonas();
         expect(finalPersonas.length).toBeGreaterThan(0);
-        
+
       } finally {
         await limitedManager.dispose();
         await limitedEnv.cleanup();
@@ -1248,70 +1248,70 @@ describe('Persona E2E Workflows', () => {
     it('should meet discovery performance targets', async () => {
       // Clear any existing cache
       await testEnvironment.personaManager.refreshDiscovery();
-      
+
       const iterations = 5;
       const discoveryTimes: number[] = [];
-      
+
       for (let i = 0; i < iterations; i++) {
         const startTime = Date.now();
         const result = await testEnvironment.personaManager.refreshDiscovery();
         const discoveryTime = Date.now() - startTime;
-        
+
         discoveryTimes.push(discoveryTime);
-        
+
         expect(result.personas.length).toBeGreaterThan(15);
       }
-      
+
       const avgDiscoveryTime = discoveryTimes.reduce((a, b) => a + b, 0) / discoveryTimes.length;
       const maxDiscoveryTime = Math.max(...discoveryTimes);
-      
+
       // Benchmark targets
       expect(avgDiscoveryTime).toBeLessThan(2000); // Average under 2s
       expect(maxDiscoveryTime).toBeLessThan(5000); // Max under 5s
-      
+
       console.log(`Discovery Performance: avg=${avgDiscoveryTime}ms, max=${maxDiscoveryTime}ms`);
     }, testTimeout);
 
     it('should meet activation performance targets', async () => {
       await testEnvironment.personaManager.refreshDiscovery();
       const personas = await testEnvironment.personaManager.listPersonas();
-      
+
       const smallPersonas = personas.filter(p => p.name.startsWith('small-persona-'));
       const largePersonas = personas.filter(p => p.name.startsWith('large-persona-'));
-      
+
       // Test small persona activation
       const smallActivationTimes: number[] = [];
       for (const persona of smallPersonas.slice(0, 5)) {
         const startTime = Date.now();
         const result = await testEnvironment.personaManager.activatePersona(persona.name);
         const activationTime = Date.now() - startTime;
-        
+
         if (result.success) {
           smallActivationTimes.push(activationTime);
           await testEnvironment.personaManager.deactivatePersona();
         }
       }
-      
+
       // Test large persona activation
       const largeActivationTimes: number[] = [];
       for (const persona of largePersonas.slice(0, 3)) {
         const startTime = Date.now();
         const result = await testEnvironment.personaManager.activatePersona(persona.name);
         const activationTime = Date.now() - startTime;
-        
+
         if (result.success) {
           largeActivationTimes.push(activationTime);
           await testEnvironment.personaManager.deactivatePersona();
         }
       }
-      
+
       // Performance targets
       const avgSmallActivation = smallActivationTimes.reduce((a, b) => a + b, 0) / smallActivationTimes.length;
       const avgLargeActivation = largeActivationTimes.reduce((a, b) => a + b, 0) / largeActivationTimes.length;
-      
+
       expect(avgSmallActivation).toBeLessThan(500);  // Small personas under 500ms
       expect(avgLargeActivation).toBeLessThan(1000); // Large personas under 1s
-      
+
       console.log(`Activation Performance: small=${avgSmallActivation}ms, large=${avgLargeActivation}ms`);
     }, testTimeout);
   });

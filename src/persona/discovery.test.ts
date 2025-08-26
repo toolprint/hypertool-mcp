@@ -6,7 +6,16 @@
  * and integration with scanner and parser modules.
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  beforeAll,
+  afterAll,
+} from "vitest";
 import { promises as fs } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
@@ -91,7 +100,7 @@ description: Short
 
       "archive-persona.htp": "mock archive content",
 
-      "nested": {
+      nested: {
         "deep-persona": {
           "persona.yaml": `
 name: deep-persona
@@ -155,12 +164,14 @@ description: Second persona with duplicate name
         expect(result.searchPaths).toContain(tempDir);
 
         // Check specific personas
-        const personaNames = result.personas.map(p => p.name);
+        const personaNames = result.personas.map((p) => p.name);
         expect(personaNames).toContain("valid-persona");
         expect(personaNames).toContain("minimal-persona");
 
         // Verify persona properties
-        const validPersona = result.personas.find(p => p.name === "valid-persona");
+        const validPersona = result.personas.find(
+          (p) => p.name === "valid-persona"
+        );
         expect(validPersona).toBeDefined();
         expect(validPersona?.isValid).toBe(true);
         expect(validPersona?.description).toContain("valid persona");
@@ -173,7 +184,9 @@ description: Second persona with duplicate name
         };
 
         const result = await discovery.discoverPersonas(config);
-        const archivePersona = result.personas.find(p => p.name === "archive-persona");
+        const archivePersona = result.personas.find(
+          (p) => p.name === "archive-persona"
+        );
 
         expect(archivePersona).toBeDefined();
         expect(archivePersona?.isArchive).toBe(true);
@@ -187,24 +200,44 @@ description: Second persona with duplicate name
         const result = await discovery.discoverPersonas(config);
 
         // Invalid YAML should be marked invalid but still discovered
-        const invalidYamlPersona = result.personas.find(p => p.name === "invalid-yaml-persona");
+        const invalidYamlPersona = result.personas.find(
+          (p) => p.name === "invalid-yaml-persona"
+        );
         expect(invalidYamlPersona?.isValid).toBe(false);
         expect(invalidYamlPersona?.issues).toContain("Invalid YAML syntax");
 
         // Missing name should be invalid
-        const missingNamePersona = result.personas.find(p => p.name === "missing-name-persona");
+        const missingNamePersona = result.personas.find(
+          (p) => p.name === "missing-name-persona"
+        );
         expect(missingNamePersona?.isValid).toBe(false);
-        expect(missingNamePersona?.issues?.some(i => i.includes("Missing required 'name' field"))).toBe(true);
+        expect(
+          missingNamePersona?.issues?.some((i) =>
+            i.includes("Missing required 'name' field")
+          )
+        ).toBe(true);
 
-        // Mismatched name should be invalid  
-        const mismatchPersona = result.personas.find(p => p.name === "mismatch-name-persona");
+        // Mismatched name should be invalid
+        const mismatchPersona = result.personas.find(
+          (p) => p.name === "mismatch-name-persona"
+        );
         expect(mismatchPersona?.isValid).toBe(false);
-        expect(mismatchPersona?.issues?.some(i => i.includes("doesn't match folder name"))).toBe(true);
+        expect(
+          mismatchPersona?.issues?.some((i) =>
+            i.includes("doesn't match folder name")
+          )
+        ).toBe(true);
 
         // Short description should be invalid
-        const shortDescPersona = result.personas.find(p => p.name === "short-description-persona");
+        const shortDescPersona = result.personas.find(
+          (p) => p.name === "short-description-persona"
+        );
         expect(shortDescPersona?.isValid).toBe(false);
-        expect(shortDescPersona?.issues?.some(i => i.includes("at least 10 characters"))).toBe(true);
+        expect(
+          shortDescPersona?.issues?.some((i) =>
+            i.includes("at least 10 characters")
+          )
+        ).toBe(true);
       });
 
       it("should detect duplicate persona names", async () => {
@@ -214,9 +247,13 @@ description: Second persona with duplicate name
 
         const result = await discovery.discoverPersonas(config);
 
-        expect(result.warnings.some(w => 
-          w.includes("Duplicate persona name") && w.includes("test-duplicate")
-        )).toBe(true);
+        expect(
+          result.warnings.some(
+            (w) =>
+              w.includes("Duplicate persona name") &&
+              w.includes("test-duplicate")
+          )
+        ).toBe(true);
       });
 
       it("should handle discovery errors gracefully", async () => {
@@ -259,7 +296,7 @@ description: Second persona with duplicate name
         await discovery.discoverPersonas(config);
 
         // Wait for TTL expiration
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise((resolve) => setTimeout(resolve, 150));
 
         // Second discovery should be cache miss
         await discovery.discoverPersonas(config);
@@ -418,15 +455,18 @@ description: Second persona with duplicate name
     describe("Utility Methods", () => {
       it("should provide standard search paths", () => {
         const paths = discovery.getStandardSearchPaths();
-        expect(paths).toHaveLength(3);
-        expect(paths.some(p => p.includes(".toolprint"))).toBe(true);
+        expect(paths).toHaveLength(1); // Changed from 3 to 1
+        expect(paths[0]).toContain(".toolprint");
+        expect(paths[0]).toContain("hypertool-mcp");
+        expect(paths[0]).toContain("personas");
       });
 
       it("should validate search paths", async () => {
         const validPath = await discovery.validateSearchPath(tempDir);
         expect(validPath).toBe(true);
 
-        const invalidPath = await discovery.validateSearchPath("/non/existent/path");
+        const invalidPath =
+          await discovery.validateSearchPath("/non/existent/path");
         expect(invalidPath).toBe(false);
       });
 
@@ -450,15 +490,19 @@ description: Second persona with duplicate name
     describe("Resource Management", () => {
       it("should dispose resources properly", () => {
         const testDiscovery = new PersonaDiscovery();
-        
+
         // Add some listeners to verify cleanup
         testDiscovery.on(PersonaEvents.PERSONA_DISCOVERED, () => {});
 
-        expect(testDiscovery.listenerCount(PersonaEvents.PERSONA_DISCOVERED)).toBe(1);
+        expect(
+          testDiscovery.listenerCount(PersonaEvents.PERSONA_DISCOVERED)
+        ).toBe(1);
 
         testDiscovery.dispose();
-        
-        expect(testDiscovery.listenerCount(PersonaEvents.PERSONA_DISCOVERED)).toBe(0);
+
+        expect(
+          testDiscovery.listenerCount(PersonaEvents.PERSONA_DISCOVERED)
+        ).toBe(0);
         expect(testDiscovery.getCacheStats().size).toBe(0);
       });
 
@@ -577,8 +621,10 @@ description: Second persona with duplicate name
   describe("Error Handling", () => {
     it("should handle scanner errors gracefully", async () => {
       // Mock scanner to throw an error
-      const mockScanner = vi.fn().mockRejectedValue(new Error("Scanner failure"));
-      
+      const mockScanner = vi
+        .fn()
+        .mockRejectedValue(new Error("Scanner failure"));
+
       // This would require dependency injection or module mocking
       // For now, we'll test with invalid paths which naturally cause errors
       const config: PersonaDiscoveryConfig = {
@@ -601,9 +647,11 @@ description: Second persona with duplicate name
 
       // Should still discover personas even if some have validation issues
       expect(result.personas.length).toBeGreaterThan(0);
-      
+
       // Some personas should have issues
-      const personasWithIssues = result.personas.filter(p => p.issues && p.issues.length > 0);
+      const personasWithIssues = result.personas.filter(
+        (p) => p.issues && p.issues.length > 0
+      );
       expect(personasWithIssues.length).toBeGreaterThan(0);
     });
   });
@@ -689,7 +737,7 @@ description: Second persona with duplicate name
       const result = await discovery.discoverPersonas(config);
 
       expect(result.personas.length).toBe(50);
-      expect(result.personas.every(p => p.isValid)).toBe(true);
+      expect(result.personas.every((p) => p.isValid)).toBe(true);
     });
   });
 });

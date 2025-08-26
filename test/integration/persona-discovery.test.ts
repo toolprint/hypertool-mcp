@@ -1,6 +1,6 @@
 /**
  * Integration tests for Persona + Discovery Engine system interaction
- * 
+ *
  * This test suite verifies that persona discovery correctly integrates with
  * the file system and caching infrastructure, testing real file operations,
  * caching behavior, performance characteristics, and event emission.
@@ -111,11 +111,11 @@ describe('Persona + Discovery Engine Integration Tests', () => {
       // First try to refresh discovery to ensure personas are found
       await personaManager.refreshDiscovery();
       const personas = await personaManager.listPersonas();
-      
+
       // Should find personas from both directories
       // Note: In CI/test environment, discovery might find different numbers
       expect(personas.length).toBeGreaterThanOrEqual(0);
-      
+
       // If we found personas, verify expected ones are there
       if (personas.length > 0) {
         const personaNames = personas.map(p => p.name);
@@ -132,7 +132,7 @@ describe('Persona + Discovery Engine Integration Tests', () => {
 
       const personas = await personaManager.listPersonas();
       const nestedPersona = personas.find(p => p.name === 'nested-persona');
-      
+
       if (nestedPersona) {
         expect(nestedPersona.isValid).toBe(true);
         expect(nestedPersona.path).toContain('team/nested-persona');
@@ -159,10 +159,10 @@ defaultToolset: dynamic
       });
 
       await personaManager.initialize();
-      
+
       // Refresh discovery to pick up new persona
       const discoveryResult = await personaManager.refreshDiscovery();
-      
+
       expect(discoveryResult.personas.length).toBeGreaterThanOrEqual(5);
       expect(discoveryResult.personas.some(p => p.name === 'dynamic-persona')).toBe(true);
 
@@ -185,7 +185,7 @@ version: "1.0"
       await personaManager.initialize();
 
       const personas = await personaManager.listPersonas({ includeInvalid: true });
-      
+
       // Should discover invalid personas but mark them as invalid
       const corruptedPersona = personas.find(p => p.name === 'corrupted-persona');
       const emptyPersona = personas.find(p => p.name === 'empty-persona');
@@ -276,7 +276,7 @@ version: "1.0"
 
       // Second discovery (should use cache)
       const secondDiscovery = await personaManager.listPersonas();
-      
+
       // File system calls should not increase significantly
       expect(readFileSpy.mock.calls.length).toBeLessThanOrEqual(initialReadCalls + 5);
       expect(statSyncSpy.mock.calls.length).toBeLessThanOrEqual(initialStatCalls + 5);
@@ -293,7 +293,7 @@ version: "1.0"
 
       // Initial discovery
       const initialPersonas = await personaManager.listPersonas();
-      
+
       // Add new persona
       await env.createAppStructure('personas', {
         'cache-test-persona/persona.yaml': `
@@ -366,7 +366,7 @@ version: "1.0"
 
       // Load and activate a persona
       await personaManager.activatePersona('main-persona');
-      
+
       let stats = personaManager.getStats();
       expect(stats.cache.size).toBeGreaterThan(0);
 
@@ -471,7 +471,7 @@ version: "1.0"
   describe('Event Emission and Monitoring', () => {
     it('should emit discovery events with correct data', async () => {
       const discoveryEvents: any[] = [];
-      
+
       personaManager.on(PersonaEvents.PERSONA_DISCOVERED, (event) => {
         discoveryEvents.push(event);
       });
@@ -488,7 +488,7 @@ version: "1.0"
 
     it('should differentiate between cached and fresh discovery events', async () => {
       const discoveryEvents: any[] = [];
-      
+
       personaManager.on(PersonaEvents.PERSONA_DISCOVERED, (event) => {
         discoveryEvents.push(event);
       });

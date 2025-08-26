@@ -65,7 +65,7 @@ private configToolsMenuEnabled: boolean = true;
 private async initializeConfigurationMode(dependencies: ToolDependencies): Promise<void> {
   // Check if configuration tools menu is enabled via feature flag
   this.configToolsMenuEnabled = await isConfigToolsMenuEnabledViaService();
-  
+
   if (!this.configToolsMenuEnabled) {
     logger.info('Configuration tools menu disabled - running in legacy mode');
     // Legacy mode: all tools exposed together

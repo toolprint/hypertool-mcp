@@ -9,7 +9,7 @@ CLI commands like `hypertool persona list` would complete successfully but the p
 Background `setInterval` timers in three components were keeping the Node.js event loop active:
 
 1. **PersonaDiscovery**: 2-minute cache cleanup interval
-2. **PersonaCache**: 30-second TTL cleanup + 60-second metrics update intervals  
+2. **PersonaCache**: 30-second TTL cleanup + 60-second metrics update intervals
 3. **ToolDiscoveryEngine**: Configurable refresh interval (default 30 seconds)
 
 In Node.js, active timers prevent process exit even when all other work is complete.

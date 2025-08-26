@@ -307,16 +307,16 @@ export function createAddCommand(): Command {
 ${theme.label("Examples:")}
   ${theme.muted("# Install from folder")}
   ${theme.muted("hypertool persona add ./my-persona-folder")}
-  
+
   ${theme.muted("# Install from archive")}
   ${theme.muted("hypertool persona add ./awesome-persona.htp")}
-  
+
   ${theme.muted("# Force overwrite existing persona")}
   ${theme.muted("hypertool persona add ./updated-persona.htp --force")}
-  
+
   ${theme.muted("# Create backup before overwriting")}
   ${theme.muted("hypertool persona add ./updated-persona.htp --force --backup")}
-  
+
   ${theme.muted("# Install to custom directory")}
   ${theme.muted("hypertool persona add ./persona --install-dir /custom/path")}
 

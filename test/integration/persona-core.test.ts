@@ -1,6 +1,6 @@
 /**
  * Core Integration tests for the persona system
- * 
+ *
  * This test suite focuses on essential persona system integration points
  * with simplified scenarios that are reliable in CI/test environments.
  */
@@ -161,7 +161,7 @@ describe('Core Persona System Integration Tests', () => {
 
       // Verify manager is initialized
       expect(personaManager.getActivePersona()).toBeNull();
-      
+
       const stats = personaManager.getStats();
       expect(stats.activePersona).toBeNull();
       expect(stats.discoveredCount).toBeGreaterThanOrEqual(0);
@@ -315,7 +315,7 @@ describe('Core Persona System Integration Tests', () => {
 
       // Should initialize without throwing
       expect(personaManager.getActivePersona()).toBeNull();
-      
+
       const stats = personaManager.getStats();
       expect(stats.activePersona).toBeNull();
     });
@@ -409,7 +409,7 @@ describe('Core Persona System Integration Tests', () => {
 
       // Should still provide basic functionality
       expect(personaManager.getActivePersona()).toBeNull();
-      
+
       const stats = personaManager.getStats();
       expect(stats).toBeDefined();
       expect(stats.activePersona).toBeNull();
@@ -438,7 +438,7 @@ describe('Core Persona System Integration Tests', () => {
       expect(stats.cache).toBeDefined();
       // Cache maxSize might not be directly exposed in stats
       expect(stats.cache.size).toBeGreaterThanOrEqual(0);
-      
+
       // Operations should still work
       const personas = await personaManager.listPersonas();
       expect(Array.isArray(personas)).toBe(true);

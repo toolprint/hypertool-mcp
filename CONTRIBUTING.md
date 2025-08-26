@@ -135,6 +135,7 @@ When adding or modifying configuration transformers:
 5. **Test edge cases**: Handle missing fields, invalid data, and error scenarios
 
 Example test structure:
+
 ```typescript
 describe("MyTransformer", () => {
   describe("toStandard", () => {
@@ -174,12 +175,14 @@ We use [Changesets](https://github.com/changesets/changesets) for version manage
 ### When to Add a Changeset
 
 **Always add a changeset when your PR includes:**
+
 - 🐛 Bug fixes → **patch**
 - ✨ New features → **minor**
 - 💥 Breaking changes → **major**
 - 🔧 Internal improvements that affect users
 
 **Skip changeset when your PR is:**
+
 - 📖 Documentation only
 - 🧪 Test improvements only
 - 🔧 Internal tooling that doesn't affect users
@@ -188,6 +191,7 @@ We use [Changesets](https://github.com/changesets/changesets) for version manage
 ### How to Add a Changeset
 
 1. **Run the changeset command:**
+
    ```bash
    npx changeset
    # or
@@ -200,6 +204,7 @@ We use [Changesets](https://github.com/changesets/changesets) for version manage
    - **major** (1.0.0 → 2.0.0) - Breaking changes
 
 3. **Write a clear description:**
+
    ```bash
    # Good examples:
    "Add support for custom toolset configurations"
@@ -213,6 +218,7 @@ We use [Changesets](https://github.com/changesets/changesets) for version manage
    ```
 
 4. **Commit the changeset file:**
+
    ```bash
    git add .changeset/*.md
    git commit -m "add changeset for [your feature]"
@@ -237,6 +243,7 @@ just changeset-version
 ### PR Automation
 
 Our GitHub Actions bot will:
+
 - ✅ Check if your PR includes a changeset
 - 💬 Comment with helpful guidance if missing
 - 📝 Show changeset details in PR comments

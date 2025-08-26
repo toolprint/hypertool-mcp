@@ -188,7 +188,9 @@ describe("PersonaTypes", () => {
       expect(loadedPersona.config.name).toBe("test-persona");
       expect(loadedPersona.assets.configFile).toBe("/path/to/persona.yaml");
       expect(loadedPersona.validation.isValid).toBe(true);
-      expect(loadedPersona.loadedAt.toISOString()).toBe("2024-01-01T00:00:00.000Z");
+      expect(loadedPersona.loadedAt.toISOString()).toBe(
+        "2024-01-01T00:00:00.000Z"
+      );
       expect(loadedPersona.sourcePath).toBe("/path/to/persona");
     });
 
@@ -373,7 +375,7 @@ describe("PersonaTypes", () => {
         message: "Schema validation failed",
         severity: "error",
       };
-      
+
       const businessError: PersonaValidationErrorInfo = {
         type: "business",
         message: "Business rule violation",
@@ -527,7 +529,9 @@ describe("PersonaTypes", () => {
       ];
 
       expectedCodes.forEach((code) => {
-        expect(PersonaErrorCode[code as keyof typeof PersonaErrorCode]).toBe(code);
+        expect(PersonaErrorCode[code as keyof typeof PersonaErrorCode]).toBe(
+          code
+        );
       });
     });
 
@@ -561,7 +565,9 @@ describe("PersonaTypes", () => {
           (key) => PersonaEvents[key as keyof typeof PersonaEvents] === event
         );
         expect(enumKey).toBeDefined();
-        expect(PersonaEvents[enumKey as keyof typeof PersonaEvents]).toBe(event);
+        expect(PersonaEvents[enumKey as keyof typeof PersonaEvents]).toBe(
+          event
+        );
       });
     });
 

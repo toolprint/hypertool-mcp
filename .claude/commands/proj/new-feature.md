@@ -7,21 +7,25 @@ allowed-tools: Read, Write, Edit, Bash(git log*), Bash(git branch*), LS, Grep
 # Create a New Feature PRD
 
 ## Purpose
+
 Collaboratively author a Product Requirements Document (PRD) for a new feature in the hypertool-mcp project.
 
 ## Command Flow
 
 ### Step 1: Context Gathering
+
 1. Read `@CLAUDE.md` to understand project development standards
 2. Read `@README.md` to understand the project's purpose and architecture
 3. Review existing PRDs in `@docs/features/` for reference
 
 ### Step 2: Initial Discussion
+
 1. Ask the user to describe the feature they want to implement
 2. Understand the problem being solved
 3. Discuss high-level approach and goals
 
 ### Step 3: Clarification Questions
+
 1. Based on the initial description, prepare clarifying questions about:
    - Specific behavior and edge cases
    - User experience considerations
@@ -33,6 +37,7 @@ Collaboratively author a Product Requirements Document (PRD) for a new feature i
 2. Ask these questions to ensure complete understanding before drafting
 
 ### Step 4: PRD Creation
+
 1. Use `@docs/prd-template.md` as the base template
 2. Fill in all sections with the gathered information:
    - Metadata (get commit hash with `git log -1 --format="%H"`)
@@ -52,6 +57,7 @@ Collaboratively author a Product Requirements Document (PRD) for a new feature i
    - General PRDs: `docs/[prd-name].md`
 
 ### Step 5: Review & Refinement
+
 1. Present the draft PRD to the user
 2. Iterate based on feedback
 3. Ensure all open questions are addressed
@@ -59,14 +65,16 @@ Collaboratively author a Product Requirements Document (PRD) for a new feature i
 
 ## Best Practices
 
-### For Effective PRD Creation:
+### For Effective PRD Creation
+
 - **Be Specific**: Include concrete examples and clear requirements
 - **Consider Edge Cases**: Think through unusual scenarios and error conditions
 - **Architecture First**: Include diagrams to visualize component relationships
 - **Backwards Compatibility**: Always consider impact on existing users
 - **Testability**: Define clear success criteria and testing strategies
 
-### For Clear Communication:
+### For Clear Communication
+
 - **Ask First, Draft Second**: Gather all information before creating the PRD
 - **Iterative Refinement**: Don't hesitate to revise based on new insights
 - **Visual Aids**: Use diagrams, flowcharts, and examples to clarify complex concepts
@@ -101,6 +109,7 @@ Claude: Based on our discussion, I'll now create a comprehensive PRD for the con
 ## Command Integration
 
 This command follows the flow we demonstrated in creating the configuration mode PRD:
+
 1. Gather project context
 2. Understand the feature requirements
 3. Ask clarifying questions to resolve ambiguities
