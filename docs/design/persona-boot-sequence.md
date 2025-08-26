@@ -2,8 +2,8 @@ Restructuring Shared Objects and Boot Sequence
 
     Architecture Philosophy
 
-    Create once, update state, never recreate. All major services should be 
-    singleton-like instances that update their configuration rather than being 
+    Create once, update state, never recreate. All major services should be
+    singleton-like instances that update their configuration rather than being
     recreated.
 
     Shared Object Structure
@@ -11,10 +11,10 @@ Restructuring Shared Objects and Boot Sequence
     class EnhancedMetaMCPServer {
       // Core services - created once, never recreated
       private personaManager?: PersonaManager;
-      private connectionManager?: ConnectionManager; 
+      private connectionManager?: ConnectionManager;
       private discoveryEngine?: ToolDiscoveryEngine;
       private toolsetManager: ToolsetManager; // Created in constructor
-      
+
       // Getter functions for safe access
       private getPersonaManager = () => this.personaManager;
       private getConnectionManager = () => this.connectionManager;
@@ -29,13 +29,13 @@ Restructuring Shared Objects and Boot Sequence
     private async initializeCore() {
       // 1. Database MUST be first
       await this.initDatabase();
-      
+
       // 2. Create PersonaManager immediately after database
       this.personaManager = new PersonaManager({
         getToolDiscoveryEngine: this.getDiscoveryEngine, // Getter, not direct ref
         getToolsetManager: this.getToolsetManager,
         // Disable MCP config handlers initially
-        mcpConfigHandlers: null, 
+        mcpConfigHandlers: null,
       });
       await this.personaManager.initialize();
     }
@@ -44,7 +44,7 @@ Restructuring Shared Objects and Boot Sequence
 
     private async collectAllMcpConfigs() {
       let allServers = {};
-      
+
       // 3. If --persona flag, activate and get its MCP servers
       if (this.runtimeOptions?.persona) {
         const result = await this.personaManager.activatePersona(personaName);
@@ -52,18 +52,18 @@ Restructuring Shared Objects and Boot Sequence
           allServers = { ...allServers, ...result.mcpServers };
         }
       }
-      
+
       // 4. Load regular MCP config (file or database)
       const fileServers = await this.loadMcpConfigOrExit(options);
       allServers = { ...allServers, ...fileServers };
-      
+
       // 5. Add extension servers if DXT enabled
       if (this.extensionManager) {
-        const extServers = 
+        const extServers =
     this.extensionManager.getEnabledExtensionsAsServerConfigs();
         allServers = { ...allServers, ...extServers };
       }
-      
+
       // 6. Filter self-referencing servers
       return this.filterSelfReferencingServers(allServers);
     }
@@ -74,7 +74,7 @@ Restructuring Shared Objects and Boot Sequence
       // 7. Create ConnectionManager ONCE
       this.connectionManager = new ConnectionManager(poolConfig);
       await this.connectionManager.initialize(allServers);
-      
+
       // 8. Start all connections with timeout
       await this.connectionManager.start();
       // Log connection status for each server
@@ -87,10 +87,10 @@ Restructuring Shared Objects and Boot Sequence
       this.discoveryEngine = new ToolDiscoveryEngine(this.getConnectionManager());
       await this.discoveryEngine.initialize({ autoDiscovery: true });
       await this.discoveryEngine.start();
-      
+
       // 10. Wire up toolset manager
       this.toolsetManager.setDiscoveryEngine(this.getDiscoveryEngine);
-      
+
       // 11. Set up event listeners
       this.discoveryEngine.on('toolsChanged', this.handleToolsChanged);
     }
@@ -101,7 +101,7 @@ Restructuring Shared Objects and Boot Sequence
       // 12. NOW set the MCP handlers that can update connections
       this.personaManager.setMcpHandlers({
         getCurrentConfig: () => this.getAllCurrentServers(),
-        
+
         addServers: async (servers) => {
           // Use ConnectionManager.addServer() for each
           for (const [name, config] of Object.entries(servers)) {
@@ -110,7 +110,7 @@ Restructuring Shared Objects and Boot Sequence
           // Refresh discovery
           await this.discoveryEngine.refreshCache();
         },
-        
+
         removeServers: async (serverNames) => {
           for (const name of serverNames) {
             await this.connectionManager.removeServer(name);

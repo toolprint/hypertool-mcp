@@ -105,7 +105,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       toolsetManager: this.toolsetManager,
       autoDiscover: true,
       validateOnActivation: true,
-      persistState: true,
+      persistState: false, // Disabled during early boot, will be enabled later
       stateKey: "hypertool-persona-runtime-state",
       bridgeOptions: {
         allowPartialToolsets: true,
@@ -243,6 +243,20 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     // Update the handlers in the PersonaManager
     // Note: We'll need to add a method to PersonaManager to update these handlers
     (this.personaManager as any).updateMcpConfigHandlers?.(mcpConfigHandlers);
+
+    // Now that all systems are initialized, enable persona state persistence and restore any persisted state
+    if ((this.personaManager as any).config) {
+      (this.personaManager as any).config.persistState = true;
+      logger.debug("Enabled persona state persistence after boot sequence");
+
+      // Restore any persisted persona state now that all dependencies are available
+      try {
+        await (this.personaManager as any).restorePersistedState?.();
+        logger.debug("Restored persisted persona state after boot sequence");
+      } catch (error) {
+        logger.warn("Failed to restore persisted persona state:", error);
+      }
+    }
 
     logger.debug("PersonaManager MCP configuration handlers updated");
   }
@@ -590,6 +604,8 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
     if (Object.keys(filteredConfigs).length === 0) {
       mainSpinner.succeed("No MCP servers configured");
+      // Still initialize the connection manager with empty configs so the server can start
+      await this.connectionManager.initialize({});
       return;
     }
 
