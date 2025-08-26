@@ -697,46 +697,19 @@ export class PersonaManager extends EventEmitter {
       }
     }
 
-    // Apply MCP configuration if present
-    let mcpConfigApplied = false;
-    let mcpConfigWarnings: string[] = [];
-
-    if (personaHasMcpConfig(persona.assets)) {
-      try {
-        const mcpResult = await this.mcpIntegration.applyPersonaConfig(
-          persona.assets.mcpConfigFile!,
-          this.config.mcpMergeOptions
-        );
-
-        mcpConfigApplied = mcpResult.success;
-
-        if (mcpResult.warnings.length > 0) {
-          mcpConfigWarnings.push(...mcpResult.warnings);
-          warnings.push(...mcpResult.warnings);
-        }
-
-        if (mcpResult.errors.length > 0) {
-          warnings.push(...mcpResult.errors);
-        }
-
-        if (mcpResult.conflicts.length > 0) {
-          warnings.push(
-            `MCP config conflicts resolved: ${mcpResult.conflicts.length}`
-          );
-        }
-      } catch (error) {
-        const errorMessage = `MCP config application failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`;
-        warnings.push(errorMessage);
-        mcpConfigWarnings.push(errorMessage);
-      }
+    // Note: MCP configuration is now handled during boot sequence phase 2
+    // This ensures all MCP servers are collected and connected in a single pass
+    let mcpConfigPresent = personaHasMcpConfig(persona.assets);
+    if (mcpConfigPresent) {
+      this.logger.info(
+        `Persona "${persona.config.name}" has MCP configuration - servers were loaded during boot sequence`
+      );
     }
 
-    // Now that MCP config is applied and servers may have started,
-    // validate tool availability if we have a discovery engine
+    // Validate tool availability if we have a discovery engine and persona has MCP config
+    // Note: MCP servers should already be connected via boot sequence if present
     const discoveryEngine = this.config.getToolDiscoveryEngine?.();
-    if (mcpConfigApplied && discoveryEngine) {
+    if (mcpConfigPresent && discoveryEngine) {
       try {
         this.logger.info(
           "MCP config applied, waiting for servers to connect before validating tools..."
@@ -885,8 +858,10 @@ export class PersonaManager extends EventEmitter {
         validationPassed: persona.validation.isValid,
         toolsResolved,
         warnings,
-        mcpConfigApplied,
-        mcpConfigWarnings,
+        mcpConfigApplied: mcpConfigPresent, // MCP config was applied via boot sequence
+        mcpConfigWarnings: mcpConfigPresent
+          ? ["MCP config applied during boot sequence"]
+          : undefined,
       },
     };
 
@@ -1208,6 +1183,96 @@ export class PersonaManager extends EventEmitter {
     }
 
     return parts.join(", ");
+  }
+
+  /**
+   * Get MCP server configurations for a persona without applying them
+   * This method loads a persona and extracts its MCP server configs for inclusion
+   * in the unified boot sequence, rather than applying them directly.
+   */
+  public async getPersonaMcpServers(personaName: string): Promise<{
+    success: boolean;
+    serverConfigs?: Record<string, any>;
+    error?: string;
+  }> {
+    try {
+      await this.initialize();
+
+      // Find and load the persona
+      const persona = await this.findAndLoadPersona(personaName);
+      if (!persona) {
+        return {
+          success: false,
+          error: `Persona "${personaName}" not found in discovered personas`,
+        };
+      }
+
+      // Check if persona has MCP config
+      if (!personaHasMcpConfig(persona.assets)) {
+        return {
+          success: true,
+          serverConfigs: {}, // Empty config is valid
+        };
+      }
+
+      // Load the MCP config file directly without applying it
+      const mcpConfigFile = persona.assets.mcpConfigFile!;
+
+      try {
+        // Use the MCP config parser to load the config
+        const configContent = await fs.readFile(mcpConfigFile, "utf-8");
+        const mcpConfig = JSON.parse(configContent);
+
+        // Validate basic structure
+        if (!mcpConfig.mcpServers || typeof mcpConfig.mcpServers !== "object") {
+          return {
+            success: false,
+            error: "Invalid MCP config: missing 'mcpServers' field",
+          };
+        }
+
+        // Transform the config format from persona format to internal format
+        const serverConfigs: Record<string, any> = {};
+        for (const [serverName, serverConfig] of Object.entries(
+          mcpConfig.mcpServers
+        )) {
+          const config = serverConfig as any;
+
+          // Transform 'transport' field to 'type' if present
+          if (config.transport) {
+            config.type = config.transport;
+            delete config.transport;
+          }
+
+          // Set default type to 'stdio' if command is present but no type specified
+          if (!config.type && config.command) {
+            config.type = "stdio";
+          }
+
+          serverConfigs[serverName] = config;
+        }
+
+        const serverNames = Object.keys(serverConfigs);
+        this.logger.info(
+          `Extracted ${serverNames.length} MCP server${serverNames.length !== 1 ? "s" : ""} from persona "${personaName}": ${serverNames.join(", ")}`
+        );
+
+        return {
+          success: true,
+          serverConfigs,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: `Failed to parse MCP config: ${error instanceof Error ? error.message : String(error)}`,
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: `Failed to load persona: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
   }
 }
 

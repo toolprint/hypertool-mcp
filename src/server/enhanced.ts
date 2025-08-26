@@ -39,6 +39,7 @@ function createSpinner(text: string, isStdio: boolean) {
   return ora(text).start();
 }
 import { createChildLogger } from "../utils/logging.js";
+import { PersonaManager } from "../persona/manager.js";
 
 const logger = createChildLogger({ module: "server/enhanced" });
 // Note: All mcp-tools functionality now handled by ToolsetManager
@@ -63,6 +64,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   private connectionManager?: IConnectionManager;
   private extensionManager?: ExtensionManager;
   private toolsetManager: ToolsetManager;
+  private personaManager?: PersonaManager;
   private configToolsManager?: ConfigToolsManager;
   private configurationMode: boolean = false;
   private enterConfigurationModeTool?: ToolModule;
@@ -74,6 +76,269 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   constructor(config: MetaMCPServerConfig) {
     super(config);
     this.toolsetManager = new ToolsetManager();
+  }
+
+  /**
+   * Getter methods for safe access to shared objects
+   */
+  getPersonaManager(): PersonaManager | undefined {
+    return this.personaManager;
+  }
+
+  getConnectionManager(): IConnectionManager | undefined {
+    return this.connectionManager;
+  }
+
+  getDiscoveryEngine(): IToolDiscoveryEngine | undefined {
+    return this.discoveryEngine;
+  }
+
+  /**
+   * Initialize PersonaManager early in boot sequence
+   */
+  private async initializePersonaManager(): Promise<void> {
+    logger.debug("Initializing PersonaManager...");
+
+    // Create persona manager with placeholder handlers that will be updated later
+    this.personaManager = new PersonaManager({
+      getToolDiscoveryEngine: () => this.discoveryEngine,
+      toolsetManager: this.toolsetManager,
+      autoDiscover: true,
+      validateOnActivation: true,
+      persistState: true,
+      stateKey: "hypertool-persona-runtime-state",
+      bridgeOptions: {
+        allowPartialToolsets: true,
+      },
+      defaultLoadOptions: {
+        validateOnLoad: true,
+        validationOptions: {
+          // Skip tool availability checking during initial load since persona
+          // may define its own MCP servers that aren't running yet
+          checkToolAvailability: false,
+          validateMcpConfig: true,
+          includeWarnings: true,
+        },
+      },
+      // Placeholder MCP configuration handlers - will be updated later
+      mcpConfigHandlers: {
+        getCurrentConfig: async () => null,
+        setCurrentConfig: async () => {},
+        restartConnections: async () => {},
+      },
+    });
+
+    // Initialize the persona manager
+    await this.personaManager.initialize();
+    logger.debug("PersonaManager initialized successfully");
+  }
+
+  /**
+   * Update PersonaManager MCP configuration handlers with actual implementations
+   */
+  private async updatePersonaMcpHandlers(): Promise<void> {
+    if (!this.personaManager) {
+      return;
+    }
+
+    logger.debug("Updating PersonaManager MCP configuration handlers...");
+
+    // Update the MCP configuration handlers with the actual implementations
+    const mcpConfigHandlers = {
+      getCurrentConfig: async () => {
+        // Return current MCP configuration in the expected format
+        if (Object.keys(this.currentServerConfigs).length > 0) {
+          return { mcpServers: this.currentServerConfigs };
+        }
+        return null;
+      },
+
+      setCurrentConfig: async (config: any) => {
+        if (!config.mcpServers) {
+          return;
+        }
+
+        const serverNames = Object.keys(config.mcpServers);
+        logger.info(
+          `Applying persona MCP configuration with ${serverNames.length} server${serverNames.length !== 1 ? "s" : ""}: ${serverNames.join(", ")}`
+        );
+
+        // Stop existing connections
+        if (this.connectionManager) {
+          logger.info("Stopping existing MCP server connections...");
+          await this.connectionManager.stop();
+        }
+
+        // Filter self-referencing servers and convert ServerEntry to ServerConfig
+        const serverConfigs: Record<string, ServerConfig> = {};
+        for (const [name, entry] of Object.entries(config.mcpServers)) {
+          // Only include actual ServerConfig entries, skip extensions
+          if (typeof entry === "object" && entry !== null) {
+            const entryObj = entry as Record<string, any>;
+            if (
+              "type" in entryObj ||
+              "command" in entryObj ||
+              "url" in entryObj
+            ) {
+              serverConfigs[name] = entryObj as ServerConfig;
+            }
+          }
+        }
+
+        const filteredConfigs =
+          this.filterSelfReferencingServers(serverConfigs);
+        const filteredNames = Object.keys(filteredConfigs);
+
+        if (filteredNames.length < serverNames.length) {
+          const excludedNames = serverNames.filter(
+            (name) => !filteredNames.includes(name)
+          );
+          logger.info(
+            `Excluded ${excludedNames.length} server${excludedNames.length !== 1 ? "s" : ""} (self-referencing or invalid): ${excludedNames.join(", ")}`
+          );
+        }
+
+        // Update stored configurations
+        this.currentServerConfigs = filteredConfigs;
+
+        // Initialize new connection manager with new configs
+        if (Object.keys(filteredConfigs).length > 0) {
+          logger.info(
+            `Starting connections to ${filteredNames.length} MCP server${filteredNames.length !== 1 ? "s" : ""}...`
+          );
+          await this.connectToDownstreamServers(
+            filteredConfigs,
+            this.serverInitOptions || { transport: { type: "stdio" } }
+          );
+
+          // Note: Discovery engine recreation removed - MCP configs are now handled
+          // during boot sequence phases. The discovery engine maintains its connection
+          // to the ConnectionManager which handles the actual server connections.
+          logger.debug(
+            "MCP configuration applied via boot sequence - discovery engine remains intact"
+          );
+        }
+      },
+
+      restartConnections: async () => {
+        if (this.connectionManager) {
+          // Stop and restart connections with current configs
+          await this.connectionManager.stop();
+          if (Object.keys(this.currentServerConfigs).length > 0) {
+            await this.connectToDownstreamServers(
+              this.currentServerConfigs,
+              this.serverInitOptions || { transport: { type: "stdio" } }
+            );
+
+            // Note: Discovery engine restart removed - the discovery engine maintains
+            // its connection to the ConnectionManager which handles server state
+            logger.debug(
+              "Connections restarted - discovery engine automatically detects changes"
+            );
+          }
+        }
+      },
+    };
+
+    // Update the handlers in the PersonaManager
+    // Note: We'll need to add a method to PersonaManager to update these handlers
+    (this.personaManager as any).updateMcpConfigHandlers?.(mcpConfigHandlers);
+
+    logger.debug("PersonaManager MCP configuration handlers updated");
+  }
+
+  /**
+   * Phase 2: Collect ALL MCP configurations (persona + file + extensions)
+   */
+  private async collectAllMcpConfigs(
+    options: ServerInitOptions
+  ): Promise<Record<string, ServerConfig>> {
+    logger.debug("Phase 2: Collecting all MCP configurations...");
+
+    let allServerConfigs: Record<string, ServerConfig> = {};
+
+    // First, load persona MCP config if persona is specified
+    if (this.runtimeOptions?.persona && this.personaManager) {
+      const result = await this.personaManager.getPersonaMcpServers(
+        this.runtimeOptions.persona
+      );
+      if (result.success && result.serverConfigs) {
+        allServerConfigs = { ...allServerConfigs, ...result.serverConfigs };
+        const serverCount = Object.keys(result.serverConfigs).length;
+        if (serverCount > 0) {
+          logger.info(
+            `Collected ${serverCount} MCP server${serverCount !== 1 ? "s" : ""} from persona configuration`
+          );
+        }
+      } else if (!result.success) {
+        logger.warn(`Failed to load persona MCP config: ${result.error}`);
+      }
+    }
+
+    // Second, load regular MCP config from file/database (if not in persona-only mode)
+    if (!this.runtimeOptions?.persona || options.configPath) {
+      const fileServerConfigs = await this.loadMcpConfigOrExit(options);
+      allServerConfigs = { ...allServerConfigs, ...fileServerConfigs };
+      const serverCount = Object.keys(fileServerConfigs).length;
+      if (serverCount > 0) {
+        logger.info(
+          `Collected ${serverCount} MCP server${serverCount !== 1 ? "s" : ""} from file/database configuration`
+        );
+      }
+    }
+
+    // Third, handle group loading (if group is specified, replace with group servers)
+    if (this.runtimeOptions?.group) {
+      logger.info(`Loading servers from group: ${this.runtimeOptions.group}`);
+      try {
+        const { ServerSyncManager } = await import(
+          "../config-manager/serverSync.js"
+        );
+        const { getCompositeDatabaseService } = await import(
+          "../db/compositeDatabaseService.js"
+        );
+        const dbService = getCompositeDatabaseService();
+        const syncManager = new ServerSyncManager(dbService);
+
+        const groupServers = await syncManager.getServersForGroup(
+          this.runtimeOptions.group
+        );
+        allServerConfigs = {};
+        for (const server of groupServers) {
+          allServerConfigs[server.name] = server.config;
+        }
+        const isStdioTransport = options.transport.type === "stdio";
+        if (!isStdioTransport) {
+          console.log(
+            `Loaded ${groupServers.length} servers from group "${this.runtimeOptions.group}"`
+          );
+        }
+      } catch (error) {
+        const errorMsg = `Failed to load group "${this.runtimeOptions.group}": ${(error as Error).message}`;
+        logger.error(errorMsg);
+        process.exit(1);
+      }
+    }
+
+    // Fourth, load extension configs and merge with existing configs (only if DXT is enabled)
+    if ((await isDxtEnabledViaService()) && this.extensionManager) {
+      const extensionConfigs =
+        this.extensionManager.getEnabledExtensionsAsServerConfigs();
+      allServerConfigs = { ...allServerConfigs, ...extensionConfigs };
+      const extensionCount = Object.keys(extensionConfigs).length;
+      if (extensionCount > 0) {
+        logger.info(
+          `Collected ${extensionCount} extension server${extensionCount !== 1 ? "s" : ""}: ${Object.keys(extensionConfigs).join(", ")}`
+        );
+      }
+    }
+
+    const totalCount = Object.keys(allServerConfigs).length;
+    logger.info(
+      `Phase 2 complete: Collected ${totalCount} total MCP server configuration${totalCount !== 1 ? "s" : ""}`
+    );
+
+    return allServerConfigs;
   }
 
   /**
@@ -395,6 +660,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       await dbService.init();
       logger.debug("Database initialized successfully");
 
+      // Initialize PersonaManager early in boot sequence (after database, before MCP config load)
+      await this.initializePersonaManager();
+
       // Initialize extension manager (only if DXT is enabled)
       if (await isDxtEnabledViaService()) {
         this.extensionManager = new ExtensionManager();
@@ -404,62 +672,18 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         logger.debug("Extension manager disabled via feature flag");
       }
 
-      // Load server configs from MCP config.
-      let serverConfigs: Record<string, ServerConfig> =
-        await this.loadMcpConfigOrExit(options);
+      // Phase 2: Collect ALL MCP configurations (persona + file + extensions)
+      const mergedConfigs = await this.collectAllMcpConfigs(options);
 
-      // Sync servers with database
-      const { ServerSyncManager } = await import(
-        "../config-manager/serverSync.js"
-      );
-      const syncManager = new ServerSyncManager(dbService);
-      await syncManager.syncServers(serverConfigs);
-      logger.debug("Server configurations synced with database");
-
-      // If group is specified, load servers from the group instead
-      if (this.runtimeOptions?.group) {
-        logger.debug(
-          `Loading servers from group: ${this.runtimeOptions.group}`
+      // Sync all collected servers with database
+      if (Object.keys(mergedConfigs).length > 0) {
+        const { ServerSyncManager } = await import(
+          "../config-manager/serverSync.js"
         );
-        try {
-          const groupServers = await syncManager.getServersForGroup(
-            this.runtimeOptions.group
-          );
-          serverConfigs = {};
-          for (const server of groupServers) {
-            serverConfigs[server.name] = server.config;
-          }
-          const isStdioTransport = options.transport.type === "stdio";
-          if (!isStdioTransport) {
-            console.log(
-              theme.info(
-                `Loaded ${groupServers.length} servers from group "${this.runtimeOptions.group}"`
-              )
-            );
-          }
-        } catch (error) {
-          console.error(
-            semantic.messageError(
-              `❌ Failed to load group "${this.runtimeOptions.group}": ${(error as Error).message}`
-            )
-          );
-          process.exit(1);
-        }
+        const syncManager = new ServerSyncManager(dbService);
+        await syncManager.syncServers(mergedConfigs);
+        logger.debug("All server configurations synced with database");
       }
-
-      // Load extension configs and merge with regular configs (only if DXT is enabled)
-      let extensionConfigs: Record<string, ServerConfig> = {};
-      if ((await isDxtEnabledViaService()) && this.extensionManager) {
-        extensionConfigs =
-          this.extensionManager.getEnabledExtensionsAsServerConfigs();
-        const extensionCount = Object.keys(extensionConfigs).length;
-        if (extensionCount > 0) {
-          logger.debug(
-            `Loaded ${extensionCount} extension servers: ${Object.keys(extensionConfigs).join(", ")}`
-          );
-        }
-      }
-      const mergedConfigs = { ...serverConfigs, ...extensionConfigs };
 
       // Detect external MCPs
       const externalMCPs = await detectExternalMCPs();
@@ -473,10 +697,12 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       // Store current configurations for persona MCP integration
       this.currentServerConfigs = mergedConfigs;
 
-      // Initialize connection manager with merged configs (including extensions)
+      // Phase 3: Single connection attempt to all servers
+      logger.debug("Phase 3: Connecting to all MCP servers...");
       await this.connectToDownstreamServers(mergedConfigs, options);
 
-      // Initialize discovery engine with progress
+      // Phase 4: Discovery engine initialization
+      logger.debug("Phase 4: Initializing tool discovery engine...");
       const isStdio = options.transport.type === "stdio";
       let mainSpinner = createSpinner(
         "Initializing tool discovery engine...",
@@ -490,6 +716,12 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
       // Set discovery engine reference in toolset manager
       this.toolsetManager.setDiscoveryEngine(this.discoveryEngine);
+
+      // Phase 5: Update PersonaManager handlers with actual implementations
+      logger.debug(
+        "Phase 5: Updating PersonaManager MCP configuration handlers..."
+      );
+      await this.updatePersonaMcpHandlers();
 
       // Listen for toolset changes and notify clients
       this.toolsetManager.on(
@@ -620,147 +852,19 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     dependencies: ToolDependencies
   ): Promise<void> {
     try {
-      logger.info(`Initializing persona: ${personaName}`);
+      logger.info(`Activating persona: ${personaName}`);
 
-      // Import PersonaManager class
-      const { PersonaManager } = await import("../persona/manager.js");
+      if (!this.personaManager) {
+        throw new Error(
+          "PersonaManager not initialized. Call initializePersonaManager() first."
+        );
+      }
 
-      // Create persona manager with proper configuration and MCP handlers
-      const personaManager = new PersonaManager({
-        getToolDiscoveryEngine: () => this.discoveryEngine,
-        toolsetManager: this.toolsetManager,
-        autoDiscover: true,
-        validateOnActivation: true,
-        persistState: true,
-        stateKey: "hypertool-persona-runtime-state",
-        bridgeOptions: {
-          allowPartialToolsets: true,
-        },
-        defaultLoadOptions: {
-          validateOnLoad: true,
-          validationOptions: {
-            // Skip tool availability checking during initial load since persona
-            // may define its own MCP servers that aren't running yet
-            checkToolAvailability: false,
-            validateMcpConfig: true,
-            includeWarnings: true,
-          },
-        },
-        // Provide MCP configuration handlers for persona integration
-        mcpConfigHandlers: {
-          getCurrentConfig: async () => {
-            // Return current MCP configuration in the expected format
-            if (Object.keys(this.currentServerConfigs).length > 0) {
-              return { mcpServers: this.currentServerConfigs };
-            }
-            return null;
-          },
-
-          setCurrentConfig: async (config) => {
-            if (!config.mcpServers) {
-              return;
-            }
-
-            const serverNames = Object.keys(config.mcpServers);
-            logger.info(
-              `Applying persona MCP configuration with ${serverNames.length} server${serverNames.length !== 1 ? "s" : ""}: ${serverNames.join(", ")}`
-            );
-
-            // Stop existing connections
-            if (this.connectionManager) {
-              logger.info("Stopping existing MCP server connections...");
-              await this.connectionManager.stop();
-            }
-
-            // Filter self-referencing servers and convert ServerEntry to ServerConfig
-            const serverConfigs: Record<string, ServerConfig> = {};
-            for (const [name, entry] of Object.entries(config.mcpServers)) {
-              // Only include actual ServerConfig entries, skip extensions
-              if ("type" in entry || "command" in entry || "url" in entry) {
-                serverConfigs[name] = entry as ServerConfig;
-              }
-            }
-
-            const filteredConfigs =
-              this.filterSelfReferencingServers(serverConfigs);
-            const filteredNames = Object.keys(filteredConfigs);
-
-            if (filteredNames.length < serverNames.length) {
-              const excludedNames = serverNames.filter(
-                (name) => !filteredNames.includes(name)
-              );
-              logger.info(
-                `Excluded ${excludedNames.length} server${excludedNames.length !== 1 ? "s" : ""} (self-referencing or invalid): ${excludedNames.join(", ")}`
-              );
-            }
-
-            // Update stored configurations
-            this.currentServerConfigs = filteredConfigs;
-
-            // Initialize new connection manager with new configs
-            if (Object.keys(filteredConfigs).length > 0) {
-              logger.info(
-                `Starting connections to ${filteredNames.length} MCP server${filteredNames.length !== 1 ? "s" : ""}...`
-              );
-              await this.connectToDownstreamServers(
-                filteredConfigs,
-                this.serverInitOptions || { transport: { type: "stdio" } }
-              );
-
-              // Restart discovery engine with new connections
-              if (this.discoveryEngine && this.connectionManager) {
-                await this.discoveryEngine.stop();
-                this.discoveryEngine = new (
-                  await import("../discovery/index.js")
-                ).ToolDiscoveryEngine(this.connectionManager);
-                await this.discoveryEngine.initialize({
-                  autoDiscovery: true,
-                  enableMetrics: true,
-                });
-                await this.discoveryEngine.start();
-
-                // Force immediate discovery after engine restart to ensure tools are available
-                logger.debug(
-                  "Forcing immediate tool discovery after engine restart"
-                );
-                await this.discoveryEngine.discoverTools();
-
-                // Update toolset manager with new discovery engine
-                this.toolsetManager.setDiscoveryEngine(this.discoveryEngine);
-
-                // Notify clients of tool changes
-                await this.notifyToolsChanged();
-              }
-            }
-          },
-
-          restartConnections: async () => {
-            if (this.connectionManager) {
-              // Stop and restart connections with current configs
-              await this.connectionManager.stop();
-              if (Object.keys(this.currentServerConfigs).length > 0) {
-                await this.connectToDownstreamServers(
-                  this.currentServerConfigs,
-                  this.serverInitOptions || { transport: { type: "stdio" } }
-                );
-
-                // Restart discovery after connection restart
-                if (this.discoveryEngine) {
-                  await this.discoveryEngine.stop();
-                  await this.discoveryEngine.start();
-                  await this.notifyToolsChanged();
-                }
-              }
-            }
-          },
-        },
-      });
-
-      // Initialize the persona manager
-      await personaManager.initialize();
+      // Update MCP configuration handlers now that we have the actual dependencies
+      await this.updatePersonaMcpHandlers();
 
       // Activate the specified persona
-      const result = await personaManager.activatePersona(personaName);
+      const result = await this.personaManager.activatePersona(personaName);
 
       if (result.success) {
         logger.info(`Successfully activated persona: ${personaName}`);
