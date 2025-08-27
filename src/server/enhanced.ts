@@ -1148,13 +1148,36 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   }
 
   /**
+   * Check if a tool is an internal tool that should be handled directly
+   */
+  private async isInternalTool(toolName: string): Promise<boolean> {
+    // Import the CONFIG_TOOL_NAMES to get the list of internal tools
+    const { CONFIG_TOOL_NAMES } = await import(
+      "./tools/config-tools/registry.js"
+    );
+    const internalTools = new Set([
+      ...CONFIG_TOOL_NAMES,
+      "enter-configuration-mode",
+    ]);
+    return internalTools.has(toolName);
+  }
+
+  /**
    * Handle tool call requests with mode-based routing
    */
   protected async handleToolCall(name: string, args?: any): Promise<any> {
     try {
-      // Legacy mode: try config tools first, then toolset/router
-      if (!this.configToolsMenuEnabled) {
-        // Try configuration tools first
+      // FIRST: Check if this is an internal tool - handle directly, regardless of mode
+      if (await this.isInternalTool(name)) {
+        // Handle enter-configuration-mode tool
+        if (
+          name === "enter-configuration-mode" &&
+          this.enterConfigurationModeTool
+        ) {
+          return await this.enterConfigurationModeTool.handler(args);
+        }
+
+        // Handle configuration tools
         if (this.configToolsManager) {
           const configTools = this.configToolsManager.getMcpTools();
           const isConfigTool = configTools.some((tool) => tool.name === name);
@@ -1163,7 +1186,15 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           }
         }
 
-        // Fall through to router for toolset/discovered tools
+        // If we get here, it's an internal tool but no handler is available
+        throw new Error(
+          `Internal tool "${name}" is not available or not properly initialized`
+        );
+      }
+
+      // SECOND: Handle external tools based on mode
+      // Legacy mode: route external tools through router
+      if (!this.configToolsMenuEnabled) {
         const originalToolName = this.toolsetManager.getOriginalToolName(name);
         const toolNameForRouter = originalToolName || name;
 
@@ -1181,30 +1212,16 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         return response;
       }
 
-      // Configuration mode routing
+      // Configuration mode: only internal tools should be available
       if (this.configurationMode) {
-        // Configuration mode: route to ConfigToolsManager
-        if (this.configToolsManager) {
-          return await this.configToolsManager.handleToolCall(name, args);
-        } else {
-          throw new Error("Configuration tools manager not available");
-        }
+        throw new Error(
+          `Tool "${name}" is not available in configuration mode. Only configuration tools are allowed.`
+        );
       } else {
-        // Normal mode: check enter-configuration-mode, then toolset/router
-
-        // Check if this is enter-configuration-mode tool
-        if (
-          name === "enter-configuration-mode" &&
-          this.enterConfigurationModeTool
-        ) {
-          return await this.enterConfigurationModeTool.handler(args);
-        }
-
-        // Check if this is a flattened tool name from active toolset
+        // Normal mode: route external tools
         const originalToolName = this.toolsetManager.getOriginalToolName(name);
         const toolNameForRouter = originalToolName || name;
 
-        // Handle non-toolset tools via request router
         if (!this.requestRouter) {
           throw new Error(
             "Request router is not available. Server may not be fully initialized."
