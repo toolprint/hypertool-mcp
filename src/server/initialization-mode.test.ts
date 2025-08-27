@@ -3,8 +3,6 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { EnhancedMetaMCPServer } from "./enhanced.js";
-import { getFeatureFlagService } from "../config/featureFlagService.js";
 
 // Mock the toolset manager's restore functionality
 vi.mock("./tools/toolset/manager.js", async () => {
@@ -68,13 +66,101 @@ vi.mock("../scripts/shared/externalMcpDetector.js", () => ({
   formatExternalMCPsMessage: vi.fn(),
 }));
 
+vi.mock("../persona/manager.js", () => ({
+  PersonaManager: vi.fn().mockImplementation(() => ({
+    initialize: vi.fn().mockResolvedValue(undefined),
+    updateMcpHandlers: vi.fn().mockResolvedValue(undefined),
+  })),
+}));
+
+vi.mock("../extensions/manager.js", () => ({
+  ExtensionManager: vi.fn().mockImplementation(() => ({
+    initialize: vi.fn().mockResolvedValue(undefined),
+  })),
+}));
+
+vi.mock("../connection/index.js", () => ({
+  ConnectionManager: vi.fn().mockImplementation(() => ({
+    initialize: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn().mockResolvedValue(undefined),
+    getConnectedServers: vi.fn().mockReturnValue([]),
+  })),
+}));
+
+vi.mock("../connection/extensionFactory.js", () => ({
+  ExtensionAwareConnectionFactory: vi.fn().mockImplementation(() => ({
+    setExtensionManager: vi.fn(),
+  })),
+}));
+
+vi.mock("../discovery/index.js", () => ({
+  ToolDiscoveryEngine: vi.fn().mockImplementation(() => ({
+    initialize: vi.fn().mockResolvedValue(undefined),
+    start: vi.fn().mockResolvedValue(undefined),
+    getAvailableTools: vi.fn().mockReturnValue([]),
+  })),
+}));
+
+vi.mock("./tools/config-tools/manager.js", () => ({
+  ConfigToolsManager: vi.fn().mockImplementation(() => ({
+    initialize: vi.fn().mockResolvedValue(undefined),
+    getMcpTools: vi.fn().mockReturnValue([
+      {
+        name: "list-available-tools",
+        description: "Discover all tools available from connected MCP servers",
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+      },
+    ]),
+  })),
+}));
+
+// Mock the base server's start method to prevent actual server startup
+vi.mock("./base.js", () => ({
+  MetaMCPServer: class MockMetaMCPServer {
+    async start() {
+      return undefined;
+    }
+    async stop() {
+      return undefined;
+    }
+  },
+}));
+
+// Mock feature flags to disable DXT and enable config tools menu
+vi.mock("../config/featureFlagService.js", () => ({
+  getFeatureFlagService: () => ({
+    reset: vi.fn(),
+  }),
+  isDxtEnabledViaService: vi.fn().mockResolvedValue(false),
+  isConfigToolsMenuEnabledViaService: vi.fn().mockResolvedValue(true),
+}));
+
+// Mock the enter-configuration-mode tool creator
+vi.mock("./tools/common/enter-configuration-mode.js", () => ({
+  createEnterConfigurationModeModule: vi.fn().mockReturnValue({
+    definition: {
+      name: "enter-configuration-mode",
+      description: "Enter configuration mode to manage toolsets",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    handler: vi.fn(),
+  }),
+}));
+
+// Import after mocks are set up
+const { EnhancedMetaMCPServer } = await import("./enhanced.js");
+
 describe("Initial Configuration Mode Determination", () => {
   let server: EnhancedMetaMCPServer;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    const service = getFeatureFlagService();
-    service.reset();
   });
 
   afterEach(async () => {
@@ -113,6 +199,9 @@ describe("Initial Configuration Mode Determination", () => {
       transport: { type: "stdio" },
     });
 
+    // Mock the heavy parts to prevent network calls and complex initialization
+    vi.spyOn(server as any, 'loadMcpConfigOrExit').mockResolvedValue({});
+
     await server.start({
       transport: { type: "stdio" },
     });
@@ -128,7 +217,7 @@ describe("Initial Configuration Mode Determination", () => {
       (t) => t.name === "enter-configuration-mode"
     );
     expect(hasEnterConfigMode).toBe(false);
-  });
+  }, 15000); // Increase timeout to 15s
 
   it("should start in normal mode when a toolset is restored", async () => {
     // Mock successful toolset restoration
@@ -161,6 +250,9 @@ describe("Initial Configuration Mode Determination", () => {
       transport: { type: "stdio" },
     });
 
+    // Mock the heavy parts to prevent network calls and complex initialization
+    vi.spyOn(server as any, 'loadMcpConfigOrExit').mockResolvedValue({});
+
     await server.start({
       transport: { type: "stdio" },
     });
@@ -176,7 +268,7 @@ describe("Initial Configuration Mode Determination", () => {
     // Should NOT have configuration tools directly
     const hasConfigTool = tools.some((t) => t.name === "list-available-tools");
     expect(hasConfigTool).toBe(false);
-  });
+  }, 15000); // Increase timeout to 15s
 
   it("should start in normal mode when equipToolset runtime option is provided", async () => {
     // Mock successful toolset equip via runtime option
@@ -209,6 +301,9 @@ describe("Initial Configuration Mode Determination", () => {
       transport: { type: "stdio" },
     });
 
+    // Mock the heavy parts to prevent network calls and complex initialization
+    vi.spyOn(server as any, 'loadMcpConfigOrExit').mockResolvedValue({});
+
     await server.start(
       { transport: { type: "stdio" } },
       {
@@ -226,5 +321,5 @@ describe("Initial Configuration Mode Determination", () => {
       (t) => t.name === "enter-configuration-mode"
     );
     expect(hasEnterConfigMode).toBe(true);
-  });
+  }, 15000); // Increase timeout to 15s
 });

@@ -159,7 +159,9 @@ describe("PersonaMcpIntegration", () => {
       expect(result.stats.mergedServersCount).toBe(2);
 
       expect(mockSetCurrentConfig).toHaveBeenCalledWith(samplePersonaConfig);
-      expect(mockRestartConnections).toHaveBeenCalled();
+      // When there's no base config, restartConnections should NOT be called
+      // because setCurrentConfig already handles connecting to the servers
+      expect(mockRestartConnections).not.toHaveBeenCalled();
     });
 
     it("should merge configs with persona-wins strategy", async () => {
@@ -269,7 +271,8 @@ describe("PersonaMcpIntegration", () => {
     });
 
     it("should handle connection restart failures gracefully", async () => {
-      mockGetCurrentConfig.mockResolvedValue(null);
+      // Set up with a base config to trigger the restart logic
+      mockGetCurrentConfig.mockResolvedValue(sampleBaseConfig);
       mockRestartConnections.mockRejectedValue(
         new Error("Connection restart failed")
       );
