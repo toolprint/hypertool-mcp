@@ -1067,7 +1067,7 @@ export class PersonaManager extends EventEmitter {
       const stateJson = await fs.readFile(stateFilePath, "utf8");
       const stateData = JSON.parse(stateJson);
 
-      this.logger.info(`Restoring persisted persona: ${stateData.personaName}`);
+      this.logger.debug(`Restoring persisted persona: ${stateData.personaName}`);
 
       // Try to restore the persona
       await this.activatePersona(stateData.personaName, {

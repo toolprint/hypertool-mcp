@@ -274,6 +274,10 @@ inspect *args:
 build:
     npm run build
 
+[group('build')]
+rebuild: clean install build
+    @echo "✅ Rebuild complete!"
+
 # Type check the project
 [group('build')]
 typecheck:
@@ -830,6 +834,23 @@ persona-quick-test-with-setup: persona-setup-directories
     node dist/bin.js persona activate valid-persona
     echo ""
     node dist/bin.js persona status
+
+# Test the cleaned up complex-persona installation flow with environment variables
+[group('persona')]
+persona-test-complex-clean: _persona-ensure-build
+    #!/usr/bin/env bash
+    echo "🧪 Testing clean complex-persona installation flow..."
+    echo ""
+    echo "🧹 Cleaning up any existing installation..."
+    rm -rf ~/.toolprint/hypertool-mcp/personas/complex-persona 2>/dev/null || true
+    echo ""
+    echo "📦 Installing complex-persona with clean output..."
+    node dist/bin.js persona add personas/complex-persona --force
+    echo ""
+    echo "🔍 Inspecting installed persona..."
+    node dist/bin.js persona inspect complex-persona
+    echo ""
+    echo "✅ Complex persona test complete!"
 
 # Convenient aliases for common persona operations
 [group('persona')]
