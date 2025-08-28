@@ -10,6 +10,7 @@
 import { Command } from "commander";
 import { resolve } from "path";
 import { promises as fs } from "fs";
+import inquirer from "inquirer";
 import { theme, semantic } from "../../utils/theme.js";
 import { createChildLogger } from "../../utils/logging.js";
 import {
@@ -88,7 +89,79 @@ async function checkEnvironmentVariables(installPath: string): Promise<{
 }
 
 /**
- * Display installation progress and results
+ * Interactive environment variable configuration using inquirer (simplified)
+ */
+async function interactiveEnvVarConfig(
+  envCheck: {
+    hasEnvVars: boolean;
+    envVars: Array<{server: string; vars: string[]}>;
+    configPath: string;
+  },
+  personaName: string
+): Promise<void> {
+  const { shouldConfigure } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'shouldConfigure',
+      message: 'Configure now?',
+      default: true,
+    },
+  ]);
+
+  if (!shouldConfigure) {
+    console.log(theme.warning(`⏭️  Configure later with: ${theme.info('hypertool persona inspect ' + personaName)}`));
+    return;
+  }
+
+  const envValues: Record<string, string> = {};
+
+  // Collect values for all environment variables
+  for (const serverEnv of envCheck.envVars) {
+    for (const envVar of serverEnv.vars) {
+      const { value } = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'value',
+          message: `${serverEnv.server}.${envVar}:`,
+          validate: (input: string) => input.trim() ? true : 'Required',
+        },
+      ]);
+      envValues[envVar] = value;
+    }
+  }
+
+  // Update the MCP config file with the new values
+  try {
+    const configContent = await fs.readFile(envCheck.configPath, "utf-8");
+    const config = JSON.parse(configContent);
+
+    // Update environment variables in the config
+    for (const [serverName, serverConfig] of Object.entries(config.mcpServers)) {
+      if (typeof serverConfig === 'object' && serverConfig !== null && 'env' in serverConfig) {
+        const env = (serverConfig as any).env;
+        if (env && typeof env === 'object') {
+          for (const [envVar, currentValue] of Object.entries(env)) {
+            if (envValues[envVar]) {
+              env[envVar] = envValues[envVar];
+            }
+          }
+        }
+      }
+    }
+
+    // Write the updated config back to file
+    await fs.writeFile(envCheck.configPath, JSON.stringify(config, null, 2));
+
+    console.log(theme.success(`✅ Configured! Run: ${theme.warning(`hypertool persona activate ${personaName}`)}`));
+    console.log(`   ${theme.muted("Config:")} ${envCheck.configPath}`);
+
+  } catch (error) {
+    console.error(theme.error(`❌ Config failed. Edit manually: ${envCheck.configPath}`));
+  }
+}
+
+/**
+ * Display installation progress and results (simplified and compact)
  */
 async function displayInstallationResult(
   sourcePath: string,
@@ -96,90 +169,33 @@ async function displayInstallationResult(
   sourceType: SourceType
 ): Promise<void> {
   if (result.success) {
-    console.log(theme.success("✅ Successfully installed persona"));
-    console.log();
-
-    console.log(theme.info("📊 Installation Details:"));
-    console.log(`   ${theme.label("Name:")} ${result.personaName}`);
-    console.log(`   ${theme.label("Source:")} ${sourcePath} (${sourceType})`);
-    console.log(`   ${theme.label("Location:")} ${result.installPath}`);
-
-    if (result.wasOverwrite) {
-      console.log(`   ${theme.label("Action:")} ${theme.warning("Overwrite")}`);
-
-      if (result.backupPath) {
-        console.log(`   ${theme.label("Backup:")} ${result.backupPath}`);
-      }
-    } else {
-      console.log(
-        `   ${theme.label("Action:")} ${theme.success("New Installation")}`
-      );
-    }
-
-    if (result.warnings && result.warnings.length > 0) {
-      console.log();
-      console.log(theme.warning("⚠️  Warnings:"));
-      for (const warning of result.warnings) {
-        console.log(`   • ${theme.warning(warning)}`);
-      }
-    }
-
+    console.log(theme.success(`✅ Installed "${result.personaName}"`));
+    console.log(`   ${theme.muted("Location:")} ${result.installPath}`);
+    
     // Check for environment variables that need configuration
     const envCheck = await checkEnvironmentVariables(result.installPath);
     if (envCheck.hasEnvVars) {
       console.log();
-      console.log(theme.warning("🔧 Environment Variables Required"));
-      console.log(theme.info("   This persona requires these environment variables to be configured:"));
-      console.log();
+      console.log(theme.warning("⚙️  Configuration needed:"));
       
       for (const serverEnv of envCheck.envVars) {
-        console.log(`   ${theme.info(`📦 ${serverEnv.server}`)}`);
-        for (const envVar of serverEnv.vars) {
-          console.log(`     ${theme.warning("•")} ${theme.info(envVar)} ${theme.muted("(set this environment variable)")}`);
-        }
+        const vars = serverEnv.vars.join(", ");
+        console.log(`   ${theme.info(serverEnv.server)}: ${theme.warning(vars)}`);
       }
-      
-      console.log();
-      console.log(theme.info("📝 Configuration Options:"));
-      console.log(`   ${theme.warning("Option 1:")} ${theme.muted("Set environment variables in your shell:")}`);
-      for (const serverEnv of envCheck.envVars) {
-        for (const envVar of serverEnv.vars) {
-          console.log(`   ${theme.muted(`export ${envVar}="your-value-here"`)}`);
-        }
-      }
-      console.log();
-      console.log(`   ${theme.warning("Option 2:")} ${theme.muted("Edit the MCP config file directly:")}`);
-      console.log(`   ${theme.muted(envCheck.configPath)}`);
-    }
 
-    console.log();
-    console.log(theme.success("🎯 What's Next:"));
-    console.log(`   ${theme.info("•")} ${theme.warning(`hypertool persona inspect ${result.personaName}`)} ${theme.muted("- View detailed info & MCP config")}`);
-    console.log(`   ${theme.info("•")} ${theme.warning(`hypertool persona activate ${result.personaName}`)} ${theme.muted("- Start using this persona")}`);
-    console.log(`   ${theme.info("•")} ${theme.warning(`hypertool persona list`)} ${theme.muted("- See all available personas")}`);
-
-    if (envCheck.hasEnvVars) {
+      // Offer interactive configuration
+      await interactiveEnvVarConfig(envCheck, result.personaName);
+    } else {
       console.log();
-      console.log(theme.warning("⚠️  Remember to configure environment variables before activation!"));
+      console.log(theme.success(`🚀 Ready to use! Run: ${theme.warning(`hypertool persona activate ${result.personaName}`)}`));
     }
   } else {
-    console.error(semantic.messageError("❌ Failed to install persona"));
-    console.log();
-
+    console.error(semantic.messageError("❌ Installation failed"));
     if (result.errors && result.errors.length > 0) {
-      console.error(theme.error("Errors:"));
       for (const error of result.errors) {
-        console.error(`   • ${theme.error(error)}`);
+        console.error(`   ${theme.error(error)}`);
       }
     }
-
-    console.log();
-    console.error(
-      theme.info(
-        "💡 Use 'hypertool persona validate <path>' to check persona structure"
-      )
-    );
-    console.error(theme.info("💡 Use --force to overwrite existing personas"));
   }
 }
 
@@ -290,10 +306,7 @@ export function createAddCommand(): Command {
       try {
         const resolvedSourcePath = resolve(sourcePath);
 
-        console.log(theme.info(`🔍 Analyzing source: ${resolvedSourcePath}`));
-        console.log();
-
-        // Analyze the source to understand what we're installing
+        // Analyze the source to understand what we're installing  
         const sourceInfo = await analyzeSource(resolvedSourcePath);
 
         if (!sourceInfo.accessible) {
@@ -301,19 +314,6 @@ export function createAddCommand(): Command {
             `Source path is not accessible: ${resolvedSourcePath}`
           );
         }
-
-        console.log(theme.info("📋 Source Analysis:"));
-        console.log(`   ${theme.label("Path:")} ${sourceInfo.path}`);
-        console.log(
-          `   ${theme.label("Type:")} ${sourceInfo.type === SourceType.FOLDER ? theme.info("Folder") : theme.info("Archive")}`
-        );
-
-        if (sourceInfo.personaName) {
-          console.log(
-            `   ${theme.label("Persona Name:")} ${sourceInfo.personaName}`
-          );
-        }
-        console.log();
 
         // Check if persona already exists
         const installDir = options.installDir || getStandardPersonasDir();
@@ -361,9 +361,6 @@ export function createAddCommand(): Command {
           skipValidation: options.skipValidation,
           installDir: options.installDir,
         };
-
-        console.log(theme.info("🚀 Starting installation..."));
-        console.log();
 
         // Install the persona
         const result = await installPersona(resolvedSourcePath, installOptions);

@@ -183,7 +183,7 @@ async function createPersonaBackup(personaPath: string): Promise<string> {
 
   try {
     await copyDirectory(personaPath, backupPath);
-    logger.info(`Created backup: ${backupPath}`);
+    logger.debug(`Created backup: ${backupPath}`);
     return backupPath;
   } catch (error) {
     throw createFileSystemError("create backup", personaPath, error as Error);
@@ -213,7 +213,7 @@ async function installFromFolder(
 
     // Copy the entire directory structure
     await copyDirectory(sourcePath, installPath);
-    logger.info(
+    logger.debug(
       `Successfully copied persona folder: ${sourcePath} -> ${installPath}`
     );
   } catch (error) {
@@ -262,7 +262,7 @@ async function installFromArchive(
       }
     }
 
-    logger.info(
+    logger.debug(
       `Successfully extracted persona archive: ${archivePath} -> ${installPath}`
     );
   } catch (error) {
@@ -299,7 +299,7 @@ export async function installPersona(
   };
 
   try {
-    logger.info(`Starting persona installation from: ${sourcePath}`);
+    logger.debug(`Starting persona installation from: ${sourcePath}`);
 
     // Analyze the source
     const sourceInfo = await analyzeSource(sourcePath);
@@ -376,7 +376,7 @@ export async function installPersona(
     result.installPath = installPath;
     result.backupPath = backupPath;
 
-    logger.info(
+    logger.debug(
       `Successfully installed persona '${sourceInfo.personaName}' to: ${installPath}`
     );
   } catch (error) {
@@ -451,7 +451,7 @@ export async function uninstallPersona(
     result.installPath = installPath;
     result.backupPath = backupPath;
 
-    logger.info(
+    logger.debug(
       `Successfully uninstalled persona '${personaName}' from: ${installPath}`
     );
   } catch (error) {
