@@ -9,6 +9,7 @@
 
 import { Command } from "commander";
 import { resolve } from "path";
+import { promises as fs } from "fs";
 import { theme, semantic } from "../../utils/theme.js";
 import { createChildLogger } from "../../utils/logging.js";
 import {
@@ -39,13 +40,61 @@ interface AddCommandOptions {
 }
 
 /**
+ * Check for environment variables in MCP config that need configuration
+ */
+async function checkEnvironmentVariables(installPath: string): Promise<{
+  hasEnvVars: boolean;
+  envVars: Array<{server: string; vars: string[]}>;
+  configPath: string;
+}> {
+  const mcpConfigPath = `${installPath}/mcp.json`;
+  
+  try {
+    const configContent = await fs.readFile(mcpConfigPath, "utf-8");
+    const config = JSON.parse(configContent);
+    
+    const envVars: Array<{server: string; vars: string[]}> = [];
+    
+    if (config.mcpServers) {
+      for (const [serverName, serverConfig] of Object.entries(config.mcpServers)) {
+        if (typeof serverConfig === 'object' && serverConfig !== null && 'env' in serverConfig) {
+          const env = (serverConfig as any).env;
+          if (env && typeof env === 'object') {
+            const vars = Object.keys(env);
+            if (vars.length > 0) {
+              envVars.push({
+                server: serverName,
+                vars: vars
+              });
+            }
+          }
+        }
+      }
+    }
+    
+    return {
+      hasEnvVars: envVars.length > 0,
+      envVars,
+      configPath: mcpConfigPath
+    };
+  } catch (error) {
+    // If we can't read the MCP config, that's okay
+    return {
+      hasEnvVars: false,
+      envVars: [],
+      configPath: mcpConfigPath
+    };
+  }
+}
+
+/**
  * Display installation progress and results
  */
-function displayInstallationResult(
+async function displayInstallationResult(
   sourcePath: string,
   result: any,
   sourceType: SourceType
-): void {
+): Promise<void> {
   if (result.success) {
     console.log(theme.success("✅ Successfully installed persona"));
     console.log();
@@ -75,17 +124,44 @@ function displayInstallationResult(
       }
     }
 
+    // Check for environment variables that need configuration
+    const envCheck = await checkEnvironmentVariables(result.installPath);
+    if (envCheck.hasEnvVars) {
+      console.log();
+      console.log(theme.warning("🔧 Environment Variables Required"));
+      console.log(theme.info("   This persona requires these environment variables to be configured:"));
+      console.log();
+      
+      for (const serverEnv of envCheck.envVars) {
+        console.log(`   ${theme.info(`📦 ${serverEnv.server}`)}`);
+        for (const envVar of serverEnv.vars) {
+          console.log(`     ${theme.warning("•")} ${theme.info(envVar)} ${theme.muted("(set this environment variable)")}`);
+        }
+      }
+      
+      console.log();
+      console.log(theme.info("📝 Configuration Options:"));
+      console.log(`   ${theme.warning("Option 1:")} ${theme.muted("Set environment variables in your shell:")}`);
+      for (const serverEnv of envCheck.envVars) {
+        for (const envVar of serverEnv.vars) {
+          console.log(`   ${theme.muted(`export ${envVar}="your-value-here"`)}`);
+        }
+      }
+      console.log();
+      console.log(`   ${theme.warning("Option 2:")} ${theme.muted("Edit the MCP config file directly:")}`);
+      console.log(`   ${theme.muted(envCheck.configPath)}`);
+    }
+
     console.log();
-    console.log(
-      theme.info(
-        "💡 Use 'hypertool persona list' to see all available personas"
-      )
-    );
-    console.log(
-      theme.info(
-        `💡 Use 'hypertool persona activate ${result.personaName}' to activate this persona`
-      )
-    );
+    console.log(theme.success("🎯 What's Next:"));
+    console.log(`   ${theme.info("•")} ${theme.warning(`hypertool persona inspect ${result.personaName}`)} ${theme.muted("- View detailed info & MCP config")}`);
+    console.log(`   ${theme.info("•")} ${theme.warning(`hypertool persona activate ${result.personaName}`)} ${theme.muted("- Start using this persona")}`);
+    console.log(`   ${theme.info("•")} ${theme.warning(`hypertool persona list`)} ${theme.muted("- See all available personas")}`);
+
+    if (envCheck.hasEnvVars) {
+      console.log();
+      console.log(theme.warning("⚠️  Remember to configure environment variables before activation!"));
+    }
   } else {
     console.error(semantic.messageError("❌ Failed to install persona"));
     console.log();
@@ -293,7 +369,7 @@ export function createAddCommand(): Command {
         const result = await installPersona(resolvedSourcePath, installOptions);
 
         // Display results
-        displayInstallationResult(resolvedSourcePath, result, sourceInfo.type);
+        await displayInstallationResult(resolvedSourcePath, result, sourceInfo.type);
 
         // Exit with appropriate code
         process.exit(result.success ? 0 : 1);

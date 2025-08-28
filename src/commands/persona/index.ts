@@ -738,32 +738,37 @@ export function createPersonaCommand(): Command {
     .addHelpText(
       "after",
       `
-${theme.label("Persona Directory:")}
-  ${theme.muted("Personas are stored in:")}
-  ${theme.muted("  1. $HYPERTOOL_PERSONA_DIR (environment variable)")}
-  ${theme.muted("  2. ~/.toolprint/hypertool-mcp/personas (default)")}
-  ${theme.muted("  3. config.json personaDir setting")}
+${theme.success("🎭 PERSONAS - Pre-configured MCP Server Bundles")}
 
-${theme.label("Available Commands:")}
-  ${theme.muted("list       List all available personas with details")}
-  ${theme.muted("inspect    Show detailed information about a specific persona")}
-  ${theme.muted("add        Install persona from folder or .htp archive")}
-  ${theme.muted("activate   Activate a persona and optionally a toolset")}
-  ${theme.muted("validate   Validate persona structure and configuration")}
-  ${theme.muted("status     Show currently active persona information")}
-  ${theme.muted("deactivate Deactivate the current persona")}
+${theme.info("What are personas?")}
+  ${theme.muted("Personas are ready-to-use collections of MCP servers and tools that you can")}
+  ${theme.muted("install and activate instantly. Think of them as app bundles for AI development.")}
 
-${theme.label("Examples:")}
-  ${theme.muted("hypertool persona list                    # List all available personas")}
-  ${theme.muted("hypertool persona list --include-invalid  # Include invalid personas")}
-  ${theme.muted("hypertool persona inspect frontend        # Show detailed info about persona")}
-  ${theme.muted("hypertool persona add ./my-persona        # Install persona from folder")}
-  ${theme.muted("hypertool persona add ./persona.htp       # Install persona from archive")}
-  ${theme.muted("hypertool persona activate frontend       # Activate 'frontend' persona")}
-  ${theme.muted("hypertool persona activate backend --toolset api  # Activate with specific toolset")}
-  ${theme.muted("hypertool persona validate ./my-persona   # Validate persona at path")}
-  ${theme.muted("hypertool persona status                  # Show current active persona")}
-  ${theme.muted("hypertool persona deactivate              # Deactivate current persona")}`
+${theme.success("⚡ First Time Setup (3 steps):")}
+  ${theme.info("1.")} ${theme.muted("Clone the persona collection:")}
+     ${theme.warning("git clone https://github.com/toolprint/awesome-mcp-personas")}
+  
+  ${theme.info("2.")} ${theme.muted("Add a persona (replace <persona-name> with actual name):")}
+     ${theme.warning("hypertool persona add awesome-mcp-personas/personas/<persona-name>")}
+  
+  ${theme.info("3.")} ${theme.muted("Activate it and start using:")}
+     ${theme.warning("hypertool persona activate <persona-name>")}
+
+${theme.success("📋 Common Commands:")}
+  ${theme.info("list")}       ${theme.muted("See all available personas")}
+  ${theme.info("add")}        ${theme.muted("Install a persona from a folder")}
+  ${theme.info("activate")}   ${theme.muted("Switch to a persona")}
+  ${theme.info("inspect")}    ${theme.muted("View detailed persona info and MCP config")}
+  ${theme.info("status")}     ${theme.muted("See which persona is currently active")}
+  ${theme.info("deactivate")} ${theme.muted("Turn off current persona")}
+
+${theme.success("💡 Quick Examples:")}
+  ${theme.warning("hypertool persona list")}                     ${theme.muted("# Browse available personas")}
+  ${theme.warning("hypertool persona add ./my-persona-folder")}  ${theme.muted("# Install from local folder")}
+  ${theme.warning("hypertool persona activate web-dev")}         ${theme.muted("# Switch to web-dev persona")}
+  ${theme.warning("hypertool persona inspect web-dev")}          ${theme.muted("# View persona details & config")}
+
+${theme.info("📍 Personas are stored at:")} ${theme.muted("~/.toolprint/hypertool-mcp/personas")}`
     );
 
   // Add all subcommands
