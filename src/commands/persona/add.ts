@@ -171,6 +171,7 @@ async function displayInstallationResult(
   if (result.success) {
     console.log(theme.success(`✅ Installed "${result.personaName}"`));
     console.log(`   ${theme.muted("Location:")} ${result.installPath}`);
+    console.log(`   ${theme.muted("Config:")} ${result.installPath}/mcp.json`);
     
     // Check for environment variables that need configuration
     const envCheck = await checkEnvironmentVariables(result.installPath);
