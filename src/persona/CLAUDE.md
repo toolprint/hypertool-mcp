@@ -15,7 +15,7 @@ PersonaManager (Central Orchestrator)
 ├── PersonaLoader (Loading persona configs)
 ├── PersonaValidator (Validating personas)
 ├── PersonaCache (Caching loaded personas)
-├── PersonaToolsetBridge (Integration with ToolsetManager)
+├── PersonaToolsetBridge (Conversion of Persona Toolsets to Generic Toolsets)
 ├── PersonaMcpIntegration (MCP server configuration)
 └── PersonaScanner (File system scanning)
 ```
@@ -436,14 +436,8 @@ PersonaManager.activatePersona() →
 
 ### 4. Toolset Integration Flow
 ```
-ToolsetManager.listSavedToolsets() →
-├── Load regular toolsets from preferences
-├── PersonaManager.getPersonaToolsets()
-│   ├── Get active persona
-│   ├── PersonaToolsetBridge.convertPersonaToolset()
-│   └── Return converted toolsets
-├── Combine with "persona:" prefix
-└── Return unified list
+PersonaManager.listSavedToolsets() →
+├── Delegates to the PersonaManager to render toolsets
 ```
 
 ### 5. MCP Integration Flow

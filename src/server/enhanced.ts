@@ -30,10 +30,10 @@ function createSpinner(text: string, isStdio: boolean) {
   if (isStdio) {
     // Return a mock spinner that does nothing in stdio mode
     return {
-      start: () => ({ succeed: () => {}, fail: () => {}, warn: () => {} }),
-      succeed: () => {},
-      fail: () => {},
-      warn: () => {},
+      start: () => ({ succeed: () => { }, fail: () => { }, warn: () => { } }),
+      succeed: () => { },
+      fail: () => { },
+      warn: () => { },
     };
   }
   return ora(text).start();
@@ -123,8 +123,8 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       // Placeholder MCP configuration handlers - will be updated later
       mcpConfigHandlers: {
         getCurrentConfig: async () => null,
-        setCurrentConfig: async () => {},
-        restartConnections: async () => {},
+        setCurrentConfig: async () => { },
+        restartConnections: async () => { },
       },
     });
 
@@ -348,7 +348,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     }
 
     const totalCount = Object.keys(allServerConfigs).length;
-    logger.info(
+    logger.debug(
       `Phase 2 complete: Collected ${totalCount} total MCP server configuration${totalCount !== 1 ? "s" : ""}`
     );
 
@@ -614,7 +614,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
     // Log individual server connection attempts
     for (const [sName, config] of Object.entries(filteredConfigs)) {
-      logger.info(
+      logger.debug(
         `Attempting to connect to MCP server '${sName}' (${config.type})...`
       );
     }
@@ -751,6 +751,21 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         }
       );
 
+      // Also listen for persona toolset changes and notify clients
+      if (this.personaManager) {
+        this.personaManager.on(
+          "toolset-changed",
+          async (event: any) => {
+            if (options.debug) {
+              logger.info(
+                `Persona toolset changed: ${event.toolsetName} for persona ${event.personaName}`
+              );
+            }
+            await this.notifyToolsChanged();
+          }
+        );
+      }
+
       mainSpinner.succeed("Tool discovery engine initialized");
 
       // Start discovery and show tool count
@@ -798,7 +813,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             if (options.debug) {
               logger.info(
                 `Tools changed while toolset "${activeToolsetInfo.name}" is equipped. ` +
-                  `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
+                `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
               );
             }
           }
@@ -837,40 +852,70 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       personaManager: this.personaManager,
     };
 
-    // Restore toolset BEFORE initializing configuration mode
-    // This ensures we know if a toolset is active when determining initial mode
+    // Initialize persona FIRST if specified
+    // This ensures persona is active before any toolset operations
+    if (this.runtimeOptions?.persona) {
+      await this.initializePersona(this.runtimeOptions.persona, dependencies);
+    }
+
+    // THEN handle toolset equipping (after persona is potentially active)
+    // This ensures toolset operations route to the correct delegate based on persona state
     if (this.runtimeOptions?.equipToolset) {
       // User explicitly specified a toolset to equip
       logger.info(`Equipping toolset: ${this.runtimeOptions!.equipToolset!}`);
-      const result = await this.toolsetManager.equipToolset(
-        this.runtimeOptions!.equipToolset!
-      );
-      if (!result.success) {
-        logger.error(`Failed to equip toolset: ${result.error}`);
+
+      // Route through the appropriate delegate based on persona state
+      // If a persona is active, it should handle the toolset operation
+      const activePersona = this.personaManager?.getActivePersona();
+      if (activePersona && this.personaManager) {
+        // Persona is active - route through PersonaManager delegate
+        logger.info(`✅ Routing toolset equip through PersonaManager for persona: ${activePersona.persona.config.name}`);
+        logger.debug(`Attempting to equip toolset: ${this.runtimeOptions!.equipToolset!}`);
+        const result = await this.personaManager.equipToolset(
+          this.runtimeOptions!.equipToolset!
+        );
+        if (!result.success) {
+          logger.error(`Failed to equip toolset via PersonaManager: ${result.error}`);
+        } else {
+          logger.info(`✅ Successfully equipped toolset "${this.runtimeOptions!.equipToolset!}" via PersonaManager`);
+        }
+      } else {
+        // No persona active - use ToolsetManager directly
+        logger.info(`No persona active - routing toolset equip through ToolsetManager directly`);
+        const result = await this.toolsetManager.equipToolset(
+          this.runtimeOptions!.equipToolset!
+        );
+        if (!result.success) {
+          logger.error(`Failed to equip toolset: ${result.error}`);
+        } else {
+          logger.info(`✅ Successfully equipped toolset "${this.runtimeOptions!.equipToolset!}" via ToolsetManager`);
+        }
       }
     } else {
       // No explicit toolset specified, try to restore the last equipped one
-      const restored = await this.toolsetManager.restoreLastEquippedToolset();
-      if (!restored) {
-        logger.debug("No previously equipped toolset to restore");
+      // Only restore if no persona is active (personas handle their own defaults)
+      const activePersona = this.personaManager?.getActivePersona();
+      if (!activePersona) {
+        const restored = await this.toolsetManager.restoreLastEquippedToolset();
+        if (!restored) {
+          logger.debug("No previously equipped toolset to restore");
+        }
+      } else {
+        logger.debug("Persona active - skipping toolset restoration (persona handles defaults)");
       }
-    }
-
-    // Initialize persona if specified
-    if (this.runtimeOptions?.persona) {
-      await this.initializePersona(this.runtimeOptions.persona, dependencies);
     }
 
     // Initialize configuration mode components
     await this.initializeConfigurationMode(dependencies);
   }
 
+
   /**
    * Initialize and activate a persona
    */
   private async initializePersona(
     personaName: string,
-    dependencies: ToolDependencies
+    _: ToolDependencies
   ): Promise<void> {
     try {
       logger.info(`Activating persona: ${personaName}`);
@@ -909,6 +954,19 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           for (const error of result.errors) {
             logger.error(`Persona activation error: ${error}`);
           }
+        }
+
+        // Check if persona was not found and provide helpful guidance
+        if (result.errors && result.errors.some(e => e.includes("not found"))) {
+          logger.error("");
+          logger.error("💡 To add and manage personas:");
+          logger.error("   hypertool-mcp persona --help     # See persona management guide");
+          logger.error("   hypertool-mcp persona add <path>  # Add a persona from folder or .htp file");
+          logger.error("   hypertool-mcp persona list        # List available personas");
+          logger.error("");
+          logger.error("   Or use regular MCP config instead:");
+          logger.error("   hypertool-mcp --mcp-config <path> # Use standard MCP configuration");
+          logger.error("");
         }
       }
     } catch (error) {
@@ -1033,9 +1091,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const listResult = await this.toolsetManager.listSavedToolsets();
       const storedToolsets = listResult.success
         ? listResult.toolsets.reduce(
-            (acc: any, t: any) => ({ ...acc, [t.name]: t }),
-            {}
-          )
+          (acc: any, t: any) => ({ ...acc, [t.name]: t }),
+          {}
+        )
         : {};
       const hasToolsets = Object.keys(storedToolsets).length > 0;
       const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();

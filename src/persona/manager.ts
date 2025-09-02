@@ -331,9 +331,9 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
       const personaError = isPersonaError(error)
         ? error
         : createActivationFailedError(
-            personaName,
-            error instanceof Error ? error.message : String(error)
-          );
+          personaName,
+          error instanceof Error ? error.message : String(error)
+        );
 
       if (!options.silent) {
         this.emit(PersonaEvents.PERSONA_VALIDATION_FAILED, {
@@ -779,7 +779,7 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
           toolsByServer[serverName].push(tool.namespacedName);
         });
 
-        this.logger.info(
+        this.logger.debug(
           `Available tools after MCP config: ${availableTools.length}`,
           {
             toolsByServer,
@@ -847,9 +847,8 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
         if (error instanceof PersonaError) {
           throw error;
         }
-        const errorMessage = `Tool validation failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`;
+        const errorMessage = `Tool validation failed: ${error instanceof Error ? error.message : String(error)
+          }`;
         warnings.push(errorMessage);
       }
     }
@@ -1289,12 +1288,12 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
    */
   public getPersonaToolsets(personaName: string): PersonaToolset[] {
     const activePersona = this.getActivePersona();
-    
+
     // Only return toolsets if the requested persona is currently active
     if (!activePersona || activePersona.persona.config.name !== personaName) {
       return [];
     }
-    
+
     return activePersona.persona.config.toolsets || [];
   }
 
@@ -1310,7 +1309,7 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
       const toolName = parts.slice(1).join('.');
       return { serverName, toolName };
     }
-    
+
     // Fallback for tools without proper namespacing
     return { serverName: 'unknown', toolName: namespacedName };
   }
@@ -1326,7 +1325,7 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
   async listSavedToolsets(): Promise<ListSavedToolsetsResponse> {
     try {
       const activePersona = this.getActivePersona();
-      
+
       if (!activePersona) {
         // No active persona, return empty list
         return {
@@ -1343,15 +1342,15 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
         try {
           // Use the bridge to convert to ToolsetConfig, then to ToolsetInfo
           const conversionResult = await this.toolsetBridge.convertPersonaToolset(toolset, activePersona.persona.config.name);
-          
+
           if (conversionResult.success && conversionResult.toolsetConfig) {
             const toolsetConfig = conversionResult.toolsetConfig;
-            const createdAt = toolsetConfig.createdAt instanceof Date 
-              ? toolsetConfig.createdAt.toISOString() 
+            const createdAt = toolsetConfig.createdAt instanceof Date
+              ? toolsetConfig.createdAt.toISOString()
               : toolsetConfig.createdAt;
-            
+
             convertedToolsets.push({
-              name: toolsetConfig.name || 'Unknown Toolset',
+              name: toolset.name,
               description: toolsetConfig.description,
               version: toolsetConfig.version,
               createdAt,
@@ -1400,7 +1399,7 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
   async equipToolset(name: string): Promise<EquipToolsetResponse> {
     try {
       const activePersona = this.getActivePersona();
-      
+
       if (!activePersona) {
         return {
           success: false,
@@ -1410,8 +1409,8 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
 
       // Check if the toolset exists for this persona
       const personaToolsets = this.getPersonaToolsets(activePersona.persona.config.name);
-      const targetToolset = personaToolsets.find(ts => ts.name === name || `persona:${activePersona.persona.config.name}:${ts.name}` === name);
-      
+      const targetToolset = personaToolsets.find(ts => ts.name === name);
+
       if (!targetToolset) {
         return {
           success: false,
@@ -1431,15 +1430,15 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
       // Convert to IToolsetInfo format for response
       try {
         const conversionResult = await this.toolsetBridge.convertPersonaToolset(targetToolset, activePersona.persona.config.name);
-        
+
         if (conversionResult.success && conversionResult.toolsetConfig) {
           const toolsetConfig = conversionResult.toolsetConfig;
-          const createdAt = toolsetConfig.createdAt instanceof Date 
-            ? toolsetConfig.createdAt.toISOString() 
+          const createdAt = toolsetConfig.createdAt instanceof Date
+            ? toolsetConfig.createdAt.toISOString()
             : toolsetConfig.createdAt;
-            
+
           const toolsetInfo: ToolsetInfo = {
-            name: toolsetConfig.name || 'Unknown Toolset',
+            name: targetToolset.name,
             description: toolsetConfig.description,
             version: toolsetConfig.version,
             createdAt,
@@ -1497,7 +1496,7 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
   async getActiveToolset(): Promise<GetActiveToolsetResponse> {
     try {
       const activePersona = this.getActivePersona();
-      
+
       if (!activePersona) {
         return {
           equipped: false,
@@ -1513,7 +1512,7 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
       // Get the active toolset (or default toolset if none specified)
       const activeToolsetName = this.activeState!.activeToolset || activePersona.persona.config.defaultToolset;
       const personaToolsets = this.getPersonaToolsets(activePersona.persona.config.name);
-      const activeToolset = activeToolsetName 
+      const activeToolset = activeToolsetName
         ? personaToolsets.find(ts => ts.name === activeToolsetName)
         : personaToolsets[0]; // Use first toolset if no specific one is active
 
@@ -1531,7 +1530,7 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
 
       // Convert to IToolsetInfo format
       const conversionResult = await this.toolsetBridge.convertPersonaToolset(activeToolset, activePersona.persona.config.name);
-      
+
       if (!conversionResult.success || !conversionResult.toolsetConfig) {
         return {
           equipped: false,
@@ -1545,12 +1544,12 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
       }
 
       const toolsetConfig = conversionResult.toolsetConfig;
-      const createdAt = toolsetConfig.createdAt instanceof Date 
-        ? toolsetConfig.createdAt.toISOString() 
+      const createdAt = toolsetConfig.createdAt instanceof Date
+        ? toolsetConfig.createdAt.toISOString()
         : toolsetConfig.createdAt;
-        
+
       const toolsetInfo: ToolsetInfo = {
-        name: toolsetConfig.name || 'Unknown Toolset',
+        name: activeToolset.name,
         description: toolsetConfig.description,
         version: toolsetConfig.version,
         createdAt,
@@ -1578,7 +1577,7 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
       for (const tool of toolsetConfig.tools) {
         const namespacedName = tool.namespacedName || tool.refId || 'unknown';
         const { serverName, toolName } = this.extractToolInfo(namespacedName);
-        
+
         if (!exposedTools[serverName]) {
           exposedTools[serverName] = [];
         }
@@ -1588,7 +1587,7 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
       // Get available tool count from discovery engine
       const discoveryEngine = this.config.getToolDiscoveryEngine?.();
       const allDiscoveredTools = discoveryEngine?.getAvailableTools(true) || [];
-      
+
       return {
         equipped: true,
         toolset: toolsetInfo,

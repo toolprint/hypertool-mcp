@@ -162,7 +162,11 @@ const mcpServerRunOptions = [
   },
   {
     flags: "--equip-toolset <name>",
-    description: theme.info("Toolset name to equip on startup"),
+    description: theme.info("Toolset name to equip on startup") +
+      "\n" +
+      theme.muted("(with --persona: equips persona toolset)") +
+      "\n" +
+      theme.muted("(without --persona: equips regular toolset)"),
   },
   {
     flags: "--mcp-config <path>",
@@ -470,11 +474,13 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
     .description(
       theme.success("🚀 HyperTool MCP: Unified MCP Proxy Server") +
         "\n\n" +
-        theme.info("Two ways to get started:") +
+        theme.info("Commands:") +
         "\n" +
-        theme.success("1. Persona System") + " - " + theme.muted("Curated MCP server bundles with auto-configuration") +
+        theme.success("  mcp run") + " - " + theme.muted("Run the MCP server (with --persona or --mcp-config)") +
         "\n" +
-        theme.success("2. Direct MCP Config") + " - " + theme.muted("Use your existing .mcp.json files")
+        theme.success("  persona") + " - " + theme.muted("Manage persona content packs") +
+        "\n" +
+        theme.success("  setup") + " - " + theme.muted("Interactive setup wizard")
     )
     .version(APP_VERSION);
 
@@ -497,28 +503,24 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   program.addHelpText(
     "after",
     `
-${theme.success("🎭 Option 1: Persona System")} ${theme.muted("(Recommended for beginners)")}
-  ${theme.info("Persona content packs provide curated MCP server bundles with:")}
-  ${theme.muted("• Pre-configured MCP servers for specific workflows")}
-  ${theme.muted("• Interactive environment variable setup")}
-  ${theme.muted("• Ready-to-use toolsets for development, devops, AI, etc.")}
-  
-  ${theme.warning("Quick Start:")}
-    ${theme.info("hypertool-mcp persona --help")}        ${theme.muted("# See 3-step setup guide")}
-    ${theme.info("hypertool-mcp persona list")}          ${theme.muted("# Browse available personas")}
-    ${theme.info("hypertool-mcp --persona frontend-dev")} ${theme.muted("# Start with a persona")}
+${theme.success("🎭 Persona Mode")} ${theme.muted("(Bundled MCP servers + toolsets)")}
+  ${theme.warning("Setup:")}
+    ${theme.info("hypertool-mcp persona add <path>")}     ${theme.muted("# Add a persona")}
+    ${theme.info("hypertool-mcp persona list")}           ${theme.muted("# List available personas")}
+  ${theme.warning("Run:")}
+    ${theme.info("hypertool-mcp mcp run --persona dev")} ${theme.muted("# Start with persona")}
 
-${theme.success("⚙️  Option 2: Direct MCP Config")} ${theme.muted("(For existing MCP users)")}
-  ${theme.info("Use your existing .mcp.json configuration files directly:")}
-  
-  ${theme.warning("Quick Start:")}
-    ${theme.info("hypertool-mcp --mcp-config ./my-config.json")}     ${theme.muted("# Use your config")}
-    ${theme.info("hypertool-mcp --mcp-config ./config.json --debug")} ${theme.muted("# With debug mode")}
-    ${theme.info("hypertool-mcp --linked-app claude-desktop")}        ${theme.muted("# Use app's config")}
+${theme.success("⚙️  Standard Mode")} ${theme.muted("(Your .mcp.json files)")}
+  ${theme.warning("Run:")}
+    ${theme.info("hypertool-mcp mcp run --mcp-config ./config.json")} ${theme.muted("# Start server")}
 
-${theme.label("Need More Options?")}
+${theme.label("Advanced Options:")}
   ${theme.muted("hypertool-mcp mcp run --help")}    ${theme.muted("# See all MCP server options")}
-  ${theme.muted("hypertool-mcp setup")}             ${theme.muted("# Interactive setup wizard")}`
+  ${theme.muted("hypertool-mcp setup")}             ${theme.muted("# Interactive setup wizard")}
+  
+${theme.label("Tool Organization:")}
+  ${theme.muted("By default, configuration tools are in a separate mode.")}
+  ${theme.muted("To show all tools together: export HYPERTOOL_ENABLE_CONFIG_TOOLS_MENU=false")}`
   );
 
   // Add config subcommands
@@ -633,12 +635,8 @@ ${theme.label("Need More Options?")}
     cliArgs.includes("-V") ||
     cliArgs.some((arg) => arg.startsWith("--install"));
 
-  // If we have arguments but no command and no special global options, insert 'mcp run'
-  if (cliArgs.length > 0 && !hasCommand && !hasSpecialGlobalOption) {
-    process.argv.splice(2, 0, "mcp", "run");
-  }
   // If we have 'mcp' command but no subcommand, insert 'run'
-  else if (hasMcpCommand) {
+  if (hasMcpCommand) {
     const mcpIndex = cliArgs.indexOf("mcp");
     const nextArg = cliArgs[mcpIndex + 1];
     // If there's no next arg or it's an option (starts with --), add 'run'
@@ -647,7 +645,7 @@ ${theme.label("Need More Options?")}
       process.argv.splice(2 + mcpIndex + 1, 0, "run");
     }
   }
-  // If no arguments at all, default to 'setup' for first run or 'mcp run'
+  // If no arguments at all, default to 'setup' for first run or show help
   else if (cliArgs.length === 0) {
     if (isFirstRun) {
       // Check feature flag to determine whether to show setup wizard
@@ -663,17 +661,18 @@ ${theme.label("Need More Options?")}
         console.log(theme.muted("   Running: hypertool-mcp setup\n"));
         process.argv.push("setup");
       } else {
-        // Primary onboarding path: --mcp-config focused messaging
+        // Primary onboarding path: show main help
         console.log(theme.success("🚀 Hypertool MCP is ready!"));
-        console.log(theme.info("   To get started, use: --mcp-config <path>"));
-        console.log(
-          theme.muted("   Or run: hypertool-mcp setup (interactive)")
-        );
+        console.log(theme.info("   To get started, use one of:"));
+        console.log(theme.info("   • hypertool-mcp mcp run --mcp-config <path>"));
+        console.log(theme.info("   • hypertool-mcp mcp run --persona <name>"));
+        console.log(theme.info("   • hypertool-mcp setup (interactive)"));
         console.log("");
-        process.argv.push("mcp", "run", "--help");
+        process.argv.push("--help");
       }
     } else {
-      process.argv.push("mcp", "run");
+      // Not first run, just show help
+      process.argv.push("--help");
     }
   }
 
