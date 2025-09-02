@@ -613,7 +613,6 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     mainSpinner.succeed("🔗 Connection manager initialized");
 
     // Log individual server connection attempts
-    const serverNames = Object.keys(filteredConfigs);
     for (const [sName, config] of Object.entries(filteredConfigs)) {
       logger.info(
         `Attempting to connect to MCP server '${sName}' (${config.type})...`
@@ -826,10 +825,16 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    * Initialize tool modules with dependency injection
    */
   private async initializeToolModules(): Promise<void> {
+    // Set PersonaManager reference in toolsetManager
+    if (this.personaManager) {
+      this.toolsetManager.setPersonaManager(this.personaManager);
+    }
+
     const dependencies: ToolDependencies = {
       toolsetManager: this.toolsetManager,
       discoveryEngine: this.discoveryEngine,
       runtimeOptions: this.runtimeOptions,
+      personaManager: this.personaManager,
     };
 
     // Restore toolset BEFORE initializing configuration mode

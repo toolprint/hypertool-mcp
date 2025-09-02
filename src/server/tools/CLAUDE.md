@@ -1,16 +1,16 @@
 # Server Tools Architecture
 
-This document describes the unified architecture for server tools integration, particularly the relationship between PersonaManager, ToolsetManager, and ConfigToolsManager.
+This document describes the unified architecture for server tools integration, particularly the relationship between PersonaManager, ToolsetManager, and ConfigToolsManager using the IToolsetDelegate pattern.
 
 ## Architecture Overview
 
-The server tools system is built around a unified architecture where ToolsetManager serves as the single source of truth for all toolset operations, while PersonaManager provides persona-specific data through a bridge pattern.
+The server tools system is built around a delegate pattern where both PersonaManager and ToolsetManager implement the same IToolsetDelegate interface, allowing ConfigToolsManager to route toolset operations uniformly based on persona activation state.
 
 ```
 Enhanced Server (Orchestrator)
-├── PersonaManager (Independent - Persona Lifecycle)
-├── ToolsetManager (Independent - Unified Toolset Interface) 
-└── ConfigToolsManager (Consumer - Uses both above)
+├── PersonaManager (IToolsetDelegate - Persona Toolsets)
+├── ToolsetManager (IToolsetDelegate - Regular Toolsets) 
+└── ConfigToolsManager (Router - Routes to Active Delegate)
 ```
 
 ## Component Responsibilities
@@ -34,14 +34,25 @@ Enhanced Server (Orchestrator)
 6. getAvailableTools() → toolsetManager.getMcpTools()
 ```
 
-### PersonaManager (Independent Content Pack Manager)
-**Role**: Persona lifecycle and content pack management
+### PersonaManager (IToolsetDelegate Implementation)
+**Role**: Persona lifecycle and content pack management + Toolset delegate for persona toolsets
 
 **Key Capabilities**:
 - Manages persona discovery, loading, activation/deactivation
 - Provides MCP server configurations to Enhanced Server
+- **Implements IToolsetDelegate interface** for persona toolsets
 - Converts persona toolsets via PersonaToolsetBridge
-- Notifies but doesn't directly control ToolsetManager
+- Routes toolset operations when persona is active
+
+**IToolsetDelegate Interface**:
+```typescript
+// Persona toolset operations
+async listSavedToolsets() → ListSavedToolsetsResponse
+async equipToolset(name: string) → EquipToolsetResponse  
+async getActiveToolset() → GetActiveToolsetResponse
+hasActiveToolset() → boolean
+getDelegateType() → 'persona'
+```
 
 **Public Interface for Integration**:
 ```typescript
@@ -51,34 +62,69 @@ activatePersona(name) → ActivationResult
 getPersonaMcpServers(name) → ServerConfigs
 ```
 
-### ToolsetManager (Unified Toolset Interface)
-**Role**: Single source of truth for all toolset operations
+### ToolsetManager (IToolsetDelegate Implementation)
+**Role**: Regular toolset management + Toolset delegate for regular toolsets
 
-**Enhanced Responsibilities**:
-- Manages both regular and persona toolsets through unified interface
-- Handles toolset equipping, listing, validation, tool filtering
-- Uses PersonaManager as data source (via bridge) when needed
+**Key Capabilities**:
+- Manages regular toolset operations (create, equip, delete, list)
+- Handles toolset validation and tool filtering
+- **Implements IToolsetDelegate interface** for regular toolsets
 - Provides filtered tools to Enhanced Server
+- Maintains persona manager reference for cross-cutting operations
 
-**Unified Interface**:
+**IToolsetDelegate Interface**:
 ```typescript
-// Core operations
-listSavedToolsets() → regular + persona toolsets ✅
-equipToolset(name) → handles both regular + persona (enhanced)
-deleteToolset(name) → prevents persona deletion (enhanced)
+// Regular toolset operations
+async listSavedToolsets() → ListSavedToolsetsResponse
+async equipToolset(name: string) → EquipToolsetResponse
+async getActiveToolset() → GetActiveToolsetResponse
+hasActiveToolset() → boolean
+getDelegateType() → 'regular'
+```
+
+**Core Operations**:
+```typescript
+// Tool provider interface
 getMcpTools() → filtered tools based on active toolset ✅
+
+// Configuration management
+buildToolset() → create new toolsets
+deleteToolset() → delete regular toolsets
+getActiveToolsetConfig() → ToolsetConfig | null
 
 // Persona integration
 setPersonaManager(pm) ✅
-getPersonaToolsets() → converts via bridge ✅
+loadPersonaToolset(name) → converts via bridge ✅
 ```
 
-### ConfigToolsManager (Consumer)
-**Role**: MCP tool interface for configuration operations
+### ConfigToolsManager (Intelligent Router)
+**Role**: MCP tool interface and intelligent routing for configuration operations
 
-- Consumes ToolsetManager's unified interface
-- Provides MCP tools for client interactions
-- No direct persona knowledge - relies on ToolsetManager
+**Key Capabilities**:
+- **Routes to appropriate delegate** based on persona activation state
+- Provides MCP tools for client interactions (list-saved-toolsets, equip-toolset, etc.)
+- **Context-aware routing** - no direct persona or toolset knowledge needed
+- Restricts certain operations (delete-toolset, build-toolset) in persona mode
+
+**Routing Logic**:
+```typescript
+private getActiveToolsetDelegate(): IToolsetDelegate {
+  const activePersona = this.dependencies.personaManager?.getActivePersona();
+  
+  if (activePersona) {
+    // Route to PersonaManager for persona toolsets
+    return this.dependencies.personaManager as IToolsetDelegate;
+  } else {
+    // Route to ToolsetManager for regular toolsets
+    return this.dependencies.toolsetManager as IToolsetDelegate;
+  }
+}
+
+// All toolset operations route through the active delegate
+handleToolCall('list-saved-toolsets') → delegate.listSavedToolsets()
+handleToolCall('equip-toolset') → delegate.equipToolset(name)
+handleToolCall('get-active-toolset') → delegate.getActiveToolset()
+```
 
 ## Data Flow Patterns
 

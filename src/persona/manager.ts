@@ -46,6 +46,13 @@ import {
   personaHasMcpConfig,
 } from "./mcp-integration.js";
 import type { MCPConfig } from "../types/config.js";
+import { IToolsetDelegate } from "../server/tools/interfaces/toolset-delegate.js";
+import type {
+  ListSavedToolsetsResponse,
+  EquipToolsetResponse,
+  GetActiveToolsetResponse,
+  ToolsetInfo
+} from "../server/tools/schemas.js";
 
 /**
  * Persona manager configuration options
@@ -176,7 +183,7 @@ export interface PersonaActivationOptions {
  * Ensures only one persona is active at a time and provides comprehensive
  * state management with cleanup and restoration capabilities.
  */
-export class PersonaManager extends EventEmitter {
+export class PersonaManager extends EventEmitter implements IToolsetDelegate {
   private readonly logger = createChildLogger({ module: "persona/manager" });
   private readonly loader: PersonaLoader;
   private readonly cache: PersonaCache;
@@ -1273,6 +1280,359 @@ export class PersonaManager extends EventEmitter {
         error: `Failed to load persona: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
+  }
+
+  /**
+   * Get toolsets for a specific persona
+   * @param personaName - Name of the persona to get toolsets for
+   * @returns Array of persona toolsets
+   */
+  public getPersonaToolsets(personaName: string): PersonaToolset[] {
+    const activePersona = this.getActivePersona();
+    
+    // Only return toolsets if the requested persona is currently active
+    if (!activePersona || activePersona.persona.config.name !== personaName) {
+      return [];
+    }
+    
+    return activePersona.persona.config.toolsets || [];
+  }
+
+  /**
+   * Helper function to extract server and tool names from namespacedName
+   * @param namespacedName - Tool name in format {server_name}.{tool_name}
+   * @returns Object with serverName and toolName
+   */
+  private extractToolInfo(namespacedName: string): { serverName: string; toolName: string } {
+    if (namespacedName.includes('.')) {
+      const parts = namespacedName.split('.');
+      const serverName = parts[0];
+      const toolName = parts.slice(1).join('.');
+      return { serverName, toolName };
+    }
+    
+    // Fallback for tools without proper namespacing
+    return { serverName: 'unknown', toolName: namespacedName };
+  }
+
+  // =============================================================================
+  // IToolsetDelegate Implementation
+  // =============================================================================
+
+  /**
+   * List available toolsets for the active persona
+   * Returns persona toolsets when a persona is active, empty array otherwise
+   */
+  async listSavedToolsets(): Promise<ListSavedToolsetsResponse> {
+    try {
+      const activePersona = this.getActivePersona();
+      
+      if (!activePersona) {
+        // No active persona, return empty list
+        return {
+          success: true,
+          toolsets: [],
+        };
+      }
+
+      // Get persona toolsets and convert them to ToolsetInfo format
+      const personaToolsets = this.getPersonaToolsets(activePersona.persona.config.name);
+      const convertedToolsets: ToolsetInfo[] = [];
+
+      for (const toolset of personaToolsets) {
+        try {
+          // Use the bridge to convert to ToolsetConfig, then to ToolsetInfo
+          const conversionResult = await this.toolsetBridge.convertPersonaToolset(toolset, activePersona.persona.config.name);
+          
+          if (conversionResult.success && conversionResult.toolsetConfig) {
+            const toolsetConfig = conversionResult.toolsetConfig;
+            const createdAt = toolsetConfig.createdAt instanceof Date 
+              ? toolsetConfig.createdAt.toISOString() 
+              : toolsetConfig.createdAt;
+            
+            convertedToolsets.push({
+              name: toolsetConfig.name || 'Unknown Toolset',
+              description: toolsetConfig.description,
+              version: toolsetConfig.version,
+              createdAt,
+              location: activePersona.persona.sourcePath,
+              toolCount: toolsetConfig.tools.length,
+              active: true, // Persona toolsets are active when persona is active
+              totalServers: 0, // Personas don't track servers this way
+              enabledServers: 0,
+              totalTools: toolsetConfig.tools.length,
+              servers: [], // Personas don't have server breakdown
+              tools: toolsetConfig.tools.map(tool => {
+                const namespacedName = tool.namespacedName || tool.refId || 'unknown';
+                const { serverName } = this.extractToolInfo(namespacedName);
+                return {
+                  namespacedName,
+                  refId: namespacedName, // Use namespacedName as refId for persona toolsets
+                  server: serverName,
+                  active: true, // All tools in persona toolsets are considered active
+                };
+              }),
+            });
+          }
+        } catch (error) {
+          this.logger.warn(`Failed to convert persona toolset ${toolset.name}:`, error);
+          // Continue with other toolsets even if one fails
+        }
+      }
+
+      return {
+        success: true,
+        toolsets: convertedToolsets,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        toolsets: [],
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * Equip a persona toolset by name
+   * This activates the specified toolset within the currently active persona
+   */
+  async equipToolset(name: string): Promise<EquipToolsetResponse> {
+    try {
+      const activePersona = this.getActivePersona();
+      
+      if (!activePersona) {
+        return {
+          success: false,
+          error: "No persona is currently active. Cannot equip persona toolset.",
+        };
+      }
+
+      // Check if the toolset exists for this persona
+      const personaToolsets = this.getPersonaToolsets(activePersona.persona.config.name);
+      const targetToolset = personaToolsets.find(ts => ts.name === name || `persona:${activePersona.persona.config.name}:${ts.name}` === name);
+      
+      if (!targetToolset) {
+        return {
+          success: false,
+          error: `Toolset "${name}" not found in active persona "${activePersona.persona.config.name}".`,
+        };
+      }
+
+      // Update the active toolset in the persona state
+      this.activeState!.activeToolset = targetToolset.name;
+      this.activeState!.metadata.toolsResolved = targetToolset.toolIds.length;
+
+      // Persist the state if configured
+      if (this.config.persistState) {
+        await this.persistActiveState();
+      }
+
+      // Convert to IToolsetInfo format for response
+      try {
+        const conversionResult = await this.toolsetBridge.convertPersonaToolset(targetToolset, activePersona.persona.config.name);
+        
+        if (conversionResult.success && conversionResult.toolsetConfig) {
+          const toolsetConfig = conversionResult.toolsetConfig;
+          const createdAt = toolsetConfig.createdAt instanceof Date 
+            ? toolsetConfig.createdAt.toISOString() 
+            : toolsetConfig.createdAt;
+            
+          const toolsetInfo: ToolsetInfo = {
+            name: toolsetConfig.name || 'Unknown Toolset',
+            description: toolsetConfig.description,
+            version: toolsetConfig.version,
+            createdAt,
+            location: activePersona.persona.sourcePath,
+            toolCount: toolsetConfig.tools.length,
+            active: true,
+            totalServers: 0,
+            enabledServers: 0,
+            totalTools: toolsetConfig.tools.length,
+            servers: [],
+            tools: toolsetConfig.tools.map(tool => {
+              const namespacedName = tool.namespacedName || tool.refId || 'unknown';
+              const { serverName } = this.extractToolInfo(namespacedName);
+              return {
+                namespacedName,
+                refId: namespacedName, // Use namespacedName as refId for persona toolsets
+                server: serverName,
+                active: true,
+              };
+            }),
+          };
+
+          // Emit toolset change event (check if the event exists)
+          this.emit('toolset-changed', {
+            personaName: activePersona.persona.config.name,
+            toolsetName: targetToolset.name,
+            toolCount: targetToolset.toolIds.length,
+          });
+
+          return {
+            success: true,
+            toolset: toolsetInfo,
+          };
+        }
+      } catch (conversionError) {
+        this.logger.warn(`Failed to convert equipped toolset for response:`, conversionError);
+      }
+
+      // Fallback response if conversion fails
+      return {
+        success: true,
+        toolset: undefined, // Equipped but couldn't convert for response
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * Get information about the currently active persona toolset
+   */
+  async getActiveToolset(): Promise<GetActiveToolsetResponse> {
+    try {
+      const activePersona = this.getActivePersona();
+      
+      if (!activePersona) {
+        return {
+          equipped: false,
+          toolset: undefined,
+          serverStatus: undefined,
+          toolSummary: undefined,
+          exposedTools: {},
+          unavailableServers: [],
+          warnings: [],
+        };
+      }
+
+      // Get the active toolset (or default toolset if none specified)
+      const activeToolsetName = this.activeState!.activeToolset || activePersona.persona.config.defaultToolset;
+      const personaToolsets = this.getPersonaToolsets(activePersona.persona.config.name);
+      const activeToolset = activeToolsetName 
+        ? personaToolsets.find(ts => ts.name === activeToolsetName)
+        : personaToolsets[0]; // Use first toolset if no specific one is active
+
+      if (!activeToolset) {
+        return {
+          equipped: false,
+          toolset: undefined,
+          serverStatus: undefined,
+          toolSummary: undefined,
+          exposedTools: {},
+          unavailableServers: [],
+          warnings: ["No toolsets available in active persona"],
+        };
+      }
+
+      // Convert to IToolsetInfo format
+      const conversionResult = await this.toolsetBridge.convertPersonaToolset(activeToolset, activePersona.persona.config.name);
+      
+      if (!conversionResult.success || !conversionResult.toolsetConfig) {
+        return {
+          equipped: false,
+          toolset: undefined,
+          serverStatus: undefined,
+          toolSummary: undefined,
+          exposedTools: {},
+          unavailableServers: [],
+          warnings: ["Failed to convert active persona toolset"],
+        };
+      }
+
+      const toolsetConfig = conversionResult.toolsetConfig;
+      const createdAt = toolsetConfig.createdAt instanceof Date 
+        ? toolsetConfig.createdAt.toISOString() 
+        : toolsetConfig.createdAt;
+        
+      const toolsetInfo: ToolsetInfo = {
+        name: toolsetConfig.name || 'Unknown Toolset',
+        description: toolsetConfig.description,
+        version: toolsetConfig.version,
+        createdAt,
+        location: activePersona.persona.sourcePath,
+        toolCount: toolsetConfig.tools.length,
+        active: true,
+        totalServers: 0, // Personas don't track individual servers
+        enabledServers: 0,
+        totalTools: toolsetConfig.tools.length,
+        servers: [],
+        tools: toolsetConfig.tools.map(tool => {
+          const namespacedName = tool.namespacedName || tool.refId || 'unknown';
+          const { serverName } = this.extractToolInfo(namespacedName);
+          return {
+            namespacedName,
+            refId: namespacedName, // Use namespacedName as refId for persona toolsets
+            server: serverName,
+            active: true,
+          };
+        }),
+      };
+
+      // Group tools by server for exposedTools
+      const exposedTools: Record<string, string[]> = {};
+      for (const tool of toolsetConfig.tools) {
+        const namespacedName = tool.namespacedName || tool.refId || 'unknown';
+        const { serverName, toolName } = this.extractToolInfo(namespacedName);
+        
+        if (!exposedTools[serverName]) {
+          exposedTools[serverName] = [];
+        }
+        exposedTools[serverName].push(toolName);
+      }
+
+      // Get available tool count from discovery engine
+      const discoveryEngine = this.config.getToolDiscoveryEngine?.();
+      const allDiscoveredTools = discoveryEngine?.getAvailableTools(true) || [];
+      
+      return {
+        equipped: true,
+        toolset: toolsetInfo,
+        serverStatus: {
+          totalConfigured: 1, // Simplified for personas
+          enabled: 1,
+          available: 1,
+          unavailable: 0,
+          disabled: 0,
+        },
+        toolSummary: {
+          currentlyExposed: toolsetConfig.tools.length,
+          totalDiscovered: allDiscoveredTools.length,
+          filteredOut: Math.max(0, allDiscoveredTools.length - toolsetConfig.tools.length),
+        },
+        exposedTools,
+        unavailableServers: [],
+        warnings: this.activeState!.metadata.warnings,
+      };
+    } catch (error) {
+      return {
+        equipped: false,
+        toolset: undefined,
+        serverStatus: undefined,
+        toolSummary: undefined,
+        exposedTools: {},
+        unavailableServers: [],
+        warnings: [error instanceof Error ? error.message : String(error)],
+      };
+    }
+  }
+
+  /**
+   * Check if a persona toolset is currently active
+   */
+  hasActiveToolset(): boolean {
+    return this.activeState !== null;
+  }
+
+  /**
+   * Get the delegate type for routing context
+   */
+  getDelegateType(): 'regular' | 'persona' {
+    return 'persona';
   }
 }
 

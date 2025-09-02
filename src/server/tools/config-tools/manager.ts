@@ -11,6 +11,7 @@ import { ToolsProvider } from "../../types.js";
 import { ToolModule, ToolDependencies } from "../types.js";
 import { createChildLogger } from "../../../utils/logging.js";
 import { CONFIG_TOOL_FACTORIES } from "./registry.js";
+import { IToolsetDelegate } from "../interfaces/toolset-delegate.js";
 
 const logger = createChildLogger({ module: "config-tools" });
 
@@ -65,9 +66,71 @@ export class ConfigToolsManager implements ToolsProvider {
   }
 
   /**
-   * Handle tool call - route to appropriate handler
+   * Determine which toolset delegate to use based on persona activation state
+   */
+  private getActiveToolsetDelegate(): IToolsetDelegate {
+    const activePersona = this.dependencies.personaManager?.getActivePersona();
+    
+    if (activePersona) {
+      // PersonaManager will need to implement IToolsetDelegate interface
+      return this.dependencies.personaManager as IToolsetDelegate;
+    } else {
+      // ToolsetManager will need to implement IToolsetDelegate interface
+      return this.dependencies.toolsetManager as IToolsetDelegate;
+    }
+  }
+
+  /**
+   * Handle tool call - route to appropriate handler or delegate
    */
   public async handleToolCall(name: string, args: any): Promise<any> {
+    // Check if this is a toolset operation that needs routing
+    const toolsetOperations = ['list-saved-toolsets', 'equip-toolset', 'get-active-toolset'];
+    const restrictedOperations = ['delete-toolset', 'build-toolset'];
+    
+    if (toolsetOperations.includes(name)) {
+      // Route to appropriate delegate based on persona activation state
+      const delegate = this.getActiveToolsetDelegate();
+      const delegateType = delegate.getDelegateType();
+      
+      logger.debug(`Routing ${name} to ${delegateType} delegate`);
+      
+      switch (name) {
+        case 'list-saved-toolsets':
+          return delegate.listSavedToolsets();
+        case 'equip-toolset':
+          return delegate.equipToolset(args?.name);
+        case 'get-active-toolset':
+          return delegate.getActiveToolset();
+        default:
+          throw new Error(`Unhandled toolset operation: ${name}`);
+      }
+    }
+    
+    if (restrictedOperations.includes(name)) {
+      // Check if we're in persona mode
+      const activePersona = this.dependencies.personaManager?.getActivePersona();
+      
+      if (activePersona) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              success: false,
+              error: `Tool "${name}" is not available when a persona is active. Persona toolsets are managed automatically by the persona system.`,
+            }),
+          }],
+          structuredContent: {
+            success: false,
+            error: `Tool "${name}" is not available when a persona is active.`,
+          },
+        };
+      }
+      
+      // Fall through to normal handling for regular mode
+    }
+
+    // Handle regular configuration tools
     const module = this.toolModules.get(name);
 
     if (!module) {

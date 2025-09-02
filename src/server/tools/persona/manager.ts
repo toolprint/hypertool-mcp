@@ -14,7 +14,7 @@ import { PERSONA_TOOL_FACTORIES } from "./registry.js";
 
 const logger = createChildLogger({ module: "persona-tools" });
 
-/**
+/**rev
  * Manager for persona tools in HyperTool MCP
  * Implements ToolsProvider interface for polymorphic tool handling
  */
