@@ -209,11 +209,35 @@ The PersonaToolsetBridge is a critical component that converts between persona a
 - Enhanced toolset listing (includes persona toolsets)
 - Basic architecture and dependency injection
 - PersonaToolsetBridge conversion system
+- Tool hiding in persona mode (list-personas, build-toolset, delete-toolset)
+- Comprehensive test infrastructure for configuration tools
 
 ### 🎯 Next Steps
 - Enhance `equipToolset()` to handle persona toolsets
 - Enhance `deleteToolset()` to prevent persona toolset deletion  
 - Test end-to-end persona toolset operations
+
+## Testing
+
+### Configuration Tools Behavior Testing
+
+To test the configuration tools behavior in both standard and persona modes:
+
+```bash
+# Run the full test suite (tests both standard and persona modes)
+bash src/test-utils/test-config-tools.sh
+
+# Run focused test for persona mode only
+bash src/test-utils/test-persona-only.sh
+```
+
+**Test Coverage**:
+- **Standard Mode**: Verifies all configuration tools are available
+- **Persona Mode**: Verifies restricted tools are hidden (list-personas, build-toolset, delete-toolset)
+- **Tool Routing**: Validates proper delegation to PersonaManager vs ToolsetManager
+- **Session Management**: Tests HTTP/SSE transport with proper MCP session handling
+
+**Test Documentation**: See `src/test-utils/CLAUDE.md` for detailed test infrastructure documentation
 
 ## Usage Guidelines
 
