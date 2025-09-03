@@ -229,6 +229,9 @@ bash src/test-utils/test-config-tools.sh
 
 # Run focused test for persona mode only
 bash src/test-utils/test-persona-only.sh
+
+# Test persona toolset activation and tool routing
+bash src/test-utils/test-persona-toolset-activation.sh
 ```
 
 **Test Coverage**:
@@ -236,6 +239,7 @@ bash src/test-utils/test-persona-only.sh
 - **Persona Mode**: Verifies restricted tools are hidden (list-personas, build-toolset, delete-toolset)
 - **Tool Routing**: Validates proper delegation to PersonaManager vs ToolsetManager
 - **Session Management**: Tests HTTP/SSE transport with proper MCP session handling
+- **Toolset Activation**: Tests persona toolset switching and PersonaManager.getMcpTools() filtering
 
 **Test Documentation**: See `src/test-utils/CLAUDE.md` for detailed test infrastructure documentation
 

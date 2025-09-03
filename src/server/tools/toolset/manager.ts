@@ -61,18 +61,11 @@ export class ToolsetManager extends EventEmitter implements ToolsProvider, ITool
   private currentToolset?: ToolsetConfig;
   private configPath?: string;
   private discoveryEngine?: IToolDiscoveryEngine;
-  private personaManager?: any; // PersonaManager - keeping as any to avoid circular imports
 
   constructor() {
     super();
   }
 
-  /**
-   * Set persona manager reference for access to persona toolsets
-   */
-  setPersonaManager(personaManager: any): void {
-    this.personaManager = personaManager;
-  }
   /**
    * Load toolset configuration from file
    */
@@ -588,70 +581,7 @@ export class ToolsetManager extends EventEmitter implements ToolsProvider, ITool
   }
 
   /**
-   * Get toolsets from active persona
-   */
-  private async getPersonaToolsets(): Promise<ToolsetInfo[]> {
-    const personaToolsets: ToolsetInfo[] = [];
-
-    if (!this.personaManager) {
-      return personaToolsets;
-    }
-
-    try {
-      // Get the active persona
-      const activePersona = this.personaManager.getActivePersona();
-      if (!activePersona || !activePersona.persona.config.toolsets) {
-        return personaToolsets;
-      }
-
-      // Convert persona toolsets to ToolsetInfo format
-      for (const personaToolset of activePersona.persona.config.toolsets) {
-        const toolsetInfo: ToolsetInfo = {
-          name: `persona:${personaToolset.name}`,
-          description: personaToolset.description || `Toolset from persona: ${activePersona.persona.config.name}`,
-          version: activePersona.persona.config.version || "1.0.0",
-          createdAt: activePersona.persona.config.created || new Date().toISOString(),
-          toolCount: personaToolset.toolIds.length,
-          active: activePersona.activeToolsetName === personaToolset.name,
-          location: `Persona: ${activePersona.persona.config.name}`,
-          totalServers: 0, // Will be calculated based on tools
-          enabledServers: 0,
-          totalTools: personaToolset.toolIds.length,
-          servers: [],
-          tools: personaToolset.toolIds.map((toolId: string) => ({
-            namespacedName: toolId,
-            refId: toolId, // Use toolId as refId for persona tools
-            server: "persona", // Generic server name for persona tools
-            active: true,
-          })),
-        };
-
-        // Calculate server information by grouping tools by their server prefix
-        const serverCounts: Record<string, number> = {};
-        for (const toolId of personaToolset.toolIds) {
-          const serverName = toolId.includes('.') ? toolId.split('.')[0] : 'default';
-          serverCounts[serverName] = (serverCounts[serverName] || 0) + 1;
-        }
-
-        toolsetInfo.servers = Object.entries(serverCounts).map(([name, toolCount]) => ({
-          name,
-          enabled: true,
-          toolCount,
-        }));
-        toolsetInfo.totalServers = Object.keys(serverCounts).length;
-        toolsetInfo.enabledServers = Object.keys(serverCounts).length;
-
-        personaToolsets.push(toolsetInfo);
-      }
-    } catch (error) {
-      logger.warn("Failed to get persona toolsets", error);
-    }
-
-    return personaToolsets;
-  }
-
-  /**
-   * List all saved toolsets (including persona toolsets)
+   * List all saved toolsets
    */
   async listSavedToolsets(): Promise<ListSavedToolsetsResponse> {
     try {
@@ -664,15 +594,9 @@ export class ToolsetManager extends EventEmitter implements ToolsProvider, ITool
         Object.values(stored).map((config) => this.generateToolsetInfo(config))
       );
 
-      // Get toolsets from active persona
-      const personaToolsets = await this.getPersonaToolsets();
-
-      // Combine both types of toolsets
-      const allToolsets = [...savedToolsets, ...personaToolsets];
-
       return {
         success: true,
-        toolsets: allToolsets,
+        toolsets: savedToolsets,
       };
     } catch (error) {
       return {

@@ -53,6 +53,8 @@ import type {
   GetActiveToolsetResponse,
   ToolsetInfo
 } from "../server/tools/schemas.js";
+import { ToolsProvider } from "../server/types.js";
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 /**
  * Persona manager configuration options
@@ -183,7 +185,7 @@ export interface PersonaActivationOptions {
  * Ensures only one persona is active at a time and provides comprehensive
  * state management with cleanup and restoration capabilities.
  */
-export class PersonaManager extends EventEmitter implements IToolsetDelegate {
+export class PersonaManager extends EventEmitter implements ToolsProvider, IToolsetDelegate {
   private readonly logger = createChildLogger({ module: "persona/manager" });
   private readonly loader: PersonaLoader;
   private readonly cache: PersonaCache;
@@ -265,6 +267,65 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
 
     this.initializationPromise = this.performInitialization();
     return this.initializationPromise;
+  }
+
+  /**
+   * Get MCP tools from the active persona's active toolset
+   * This makes PersonaManager a ToolsProvider like ToolsetManager
+   */
+  public getMcpTools(): Tool[] {
+    // If no persona is active, return empty array
+    if (!this.activeState) {
+      return [];
+    }
+
+    // Get discovery engine to resolve tools
+    const discoveryEngine = this.config.getToolDiscoveryEngine?.();
+    if (!discoveryEngine) {
+      return [];
+    }
+
+    // Get the active toolset name (or default toolset if none specified)
+    const activePersona = this.activeState.persona;
+    const activeToolsetName = this.activeState.activeToolset || activePersona.config.defaultToolset;
+    
+    // If no toolset is active, return empty array
+    if (!activeToolsetName) {
+      return [];
+    }
+
+    // Find the active toolset in the persona's toolsets
+    const personaToolsets = activePersona.config.toolsets || [];
+    const activeToolset = personaToolsets.find((ts: PersonaToolset) => ts.name === activeToolsetName);
+    
+    if (!activeToolset) {
+      return [];
+    }
+
+    // Resolve tool IDs to actual Tool objects
+    const tools: Tool[] = [];
+    for (const toolId of activeToolset.toolIds) {
+      // Parse the namespacedName format (e.g., "git.status")
+      const parts = toolId.split('.');
+      if (parts.length < 2) {
+        continue; // Skip invalid tool IDs
+      }
+      
+      const serverName = parts[0];
+      const toolName = parts.slice(1).join('.'); // Handle tools with dots in their names
+      
+      // Try to find the tool in the discovery engine
+      const discoveredTool = discoveryEngine.getAvailableTools().find(dt => 
+        dt.serverName === serverName && dt.tool.name === toolName
+      );
+      
+      if (discoveredTool) {
+        // Return the tool in MCP format
+        tools.push(discoveredTool.tool);
+      }
+    }
+
+    return tools;
   }
 
   /**

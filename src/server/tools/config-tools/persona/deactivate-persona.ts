@@ -3,12 +3,12 @@
  */
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolModuleFactory, ToolModule } from "../types.js";
-import { PersonaManager } from "../../../persona/manager.js";
-import { ActivationResult } from "../../../persona/types.js";
+import { ToolModuleFactory, ToolModule } from "../../types.js";
+import { PersonaManager } from "../../../../persona/manager.js";
+import { ActivationResult } from "../../../../persona/types.js";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { createChildLogger } from "../../../utils/logging.js";
+import { createChildLogger } from "../../../../utils/logging.js";
 
 const logger = createChildLogger({ module: "deactivate-persona-tool" });
 

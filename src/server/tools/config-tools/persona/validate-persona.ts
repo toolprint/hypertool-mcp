@@ -3,15 +3,15 @@
  */
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolModuleFactory, ToolModule } from "../types.js";
+import { ToolModuleFactory, ToolModule } from "../../types.js";
 import {
   validatePersona,
   ValidationOptions,
-} from "../../../persona/validator.js";
+} from "../../../../persona/validator.js";
 import {
   ValidationResult,
   PersonaValidationErrorInfo,
-} from "../../../persona/types.js";
+} from "../../../../persona/types.js";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { stat } from "fs/promises";

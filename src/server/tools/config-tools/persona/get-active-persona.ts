@@ -3,8 +3,8 @@
  */
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolModuleFactory, ToolModule } from "../types.js";
-import { defaultPersonaManager } from "../../../persona/manager.js";
+import { ToolModuleFactory, ToolModule } from "../../types.js";
+import { defaultPersonaManager } from "../../../../persona/manager.js";
 
 export const getActivePersonaDefinition: Tool = {
   name: "get-active-persona",

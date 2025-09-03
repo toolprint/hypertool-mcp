@@ -72,6 +72,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   private configToolsMenuEnabled: boolean = true;
   private serverInitOptions?: ServerInitOptions;
   private currentServerConfigs: Record<string, ServerConfig> = {};
+  private isPersonaMode: boolean = false;
 
   constructor(config: MetaMCPServerConfig) {
     super(config);
@@ -83,6 +84,13 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    */
   getPersonaManager(): PersonaManager | undefined {
     return this.personaManager;
+  }
+
+  /**
+   * Check if server is in persona mode
+   */
+  getIsPersonaMode(): boolean {
+    return this.isPersonaMode;
   }
 
   getConnectionManager(): IConnectionManager | undefined {
@@ -856,11 +864,6 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
    * Initialize tool modules with dependency injection
    */
   private async initializeToolModules(): Promise<void> {
-    // Set PersonaManager reference in toolsetManager
-    if (this.personaManager) {
-      this.toolsetManager.setPersonaManager(this.personaManager);
-    }
-
     const dependencies: ToolDependencies = {
       toolsetManager: this.toolsetManager,
       discoveryEngine: this.discoveryEngine,
@@ -872,6 +875,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     // This ensures persona is active before any toolset operations
     if (this.runtimeOptions?.persona) {
       await this.initializePersona(this.runtimeOptions.persona, dependencies);
+      // Persona mode is set within initializePersona when successful
     }
 
     // THEN handle toolset equipping (after persona is potentially active)
@@ -949,6 +953,8 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const result = await this.personaManager.activatePersona(personaName);
 
       if (result.success) {
+        // Set persona mode flag
+        this.isPersonaMode = true;
         logger.info(`Successfully activated persona: ${personaName}`);
 
         // If persona has a default toolset and no explicit toolset was provided,
@@ -1175,7 +1181,10 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
       // Add all toolset tools
       try {
-        const mcpTools = this.toolsetManager.getMcpTools();
+        // Use PersonaManager for tools when in persona mode
+        const mcpTools = this.isPersonaMode && this.personaManager 
+          ? this.personaManager.getMcpTools()
+          : this.toolsetManager.getMcpTools();
         tools.push(...mcpTools);
         logger.debug(`All tools mode: added ${mcpTools.length} toolset tools`);
       } catch (error) {
@@ -1203,12 +1212,16 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     } else {
       // Normal mode: show toolset tools + enter-configuration-mode
 
-      // Add tools from toolset manager (handles filtering and formatting)
+      // Add tools from appropriate manager based on persona mode
       try {
-        const mcpTools = this.toolsetManager.getMcpTools();
+        // Use PersonaManager for tools when in persona mode
+        const mcpTools = this.isPersonaMode && this.personaManager 
+          ? this.personaManager.getMcpTools()
+          : this.toolsetManager.getMcpTools();
+        const source = this.isPersonaMode ? "persona manager" : "toolset manager";
         tools.push(...mcpTools);
         logger.debug(
-          `Normal mode: got ${mcpTools.length} tools from toolset manager`
+          `Normal mode: got ${mcpTools.length} tools from ${source}`
         );
       } catch (error) {
         logger.error("Failed to get toolset tools:", error);

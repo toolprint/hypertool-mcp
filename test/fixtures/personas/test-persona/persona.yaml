@@ -6,7 +6,6 @@ toolsets:
     toolIds:
       - everything.echo
       - everything.add
-      - everything.get_request_info
       - filesystem.read_file
       - filesystem.write_file
       - filesystem.list_directory
@@ -19,7 +18,6 @@ toolsets:
     toolIds:
       - everything.echo
       - everything.add
-      - everything.get_request_info
       - filesystem.read_file
       - filesystem.write_file
       - filesystem.list_directory
