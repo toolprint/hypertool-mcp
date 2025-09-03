@@ -44,7 +44,7 @@ Replace your `.mcp.json` with:
   "mcpServers": {
     "hypertool": {
       "command": "npx",
-      "args": ["-y", "@toolprint/hypertool-mcp", "--mcp-config", ".mcp.hypertool.json"]
+      "args": ["-y", "@toolprint/hypertool-mcp", "mcp", "run", "--mcp-config", ".mcp.hypertool.json"]
     }
   }
 }
@@ -67,6 +67,59 @@ AI: "Equipped! I now have just the tools needed for development"
 💡 **Want automated setup?** Try our interactive `setup` command - see [Advanced Guide](guides/ADVANCED.md#setup-command) for details.
 
 📚 **Configuration Mode:** HyperTool uses a smart Configuration Mode to keep toolset management separate from your operational tools. Learn more in the [Configuration Mode Guide](guides/CONFIGURATION_MODE.md).
+
+## 🎭 Personas: Pre-configured Tool Bundles (NEW!)
+
+Don't want to configure from scratch? Use personas - ready-to-use MCP server bundles with pre-built toolsets.
+
+### What are Personas?
+
+Think of personas as "app bundles" for your AI - they come with:
+- ✅ Pre-configured MCP servers
+- ✅ Curated toolsets for specific workflows  
+- ✅ Everything you need to get started instantly
+
+### Quick Start with Personas
+
+```bash
+# 1. Clone the persona collection
+git clone https://github.com/toolprint/awesome-mcp-personas
+
+# 2. Add a persona (e.g., web-dev persona)
+hypertool-mcp persona add awesome-mcp-personas/personas/web-dev
+
+# 3. Run with the persona
+npx -y @toolprint/hypertool-mcp mcp run --persona web-dev
+```
+
+That's it! No server configuration needed. The persona brings its own servers and toolsets.
+
+### Available Personas
+
+| Persona | Included Servers | Best For |
+|---------|-----------------|----------|
+| **web-dev** | Git, Docker, Filesystem, Browser, Testing | Full-stack web development |
+| **data-scientist** | Python, Jupyter, Database, Filesystem, Plotting | Data analysis & ML workflows |
+| **devops** | Docker, Kubernetes, AWS, Terraform, Monitoring | Infrastructure & deployment |
+| **content-creator** | Notion, Slack, Grammar, SEO, Social | Writing & content management |
+| **researcher** | Perplexity, Arxiv, Wikipedia, Filesystem | Research & knowledge work |
+
+### Persona vs Standard Mode
+
+```bash
+# Standard Mode (use your existing MCP servers):
+npx -y @toolprint/hypertool-mcp mcp run --mcp-config .mcp.hypertool.json
+
+# Persona Mode (bundled servers + pre-built toolsets):  
+npx -y @toolprint/hypertool-mcp mcp run --persona web-dev
+
+# Persona Mode with specific toolset:
+npx -y @toolprint/hypertool-mcp mcp run --persona web-dev --equip-toolset frontend
+```
+
+💡 **Pro tip**: Personas can be mixed with your existing servers! Add `--mcp-config` to include your custom servers alongside the persona's servers.
+
+📚 **Learn more**: See the complete [Personas Guide](guides/PERSONAS.md) for detailed instructions, creating custom personas, and troubleshooting.
 
 ## 🎬 Demo
 
@@ -215,11 +268,18 @@ AI: "Switching to writing toolset"
 **Q: How is this different from just using MCP servers directly?**
 A: HyperTool lets you use unlimited MCP servers without hitting the 100-tool limit, and dynamically switches between focused toolsets for better AI performance.
 
+**Q: What's the difference between Personas and Standard Mode?**
+A: Standard Mode uses your existing MCP server configurations. Personas are pre-packaged bundles that include both MCP servers AND curated toolsets - perfect for getting started quickly or trying new workflows.
+
 **Q: Can I use multiple toolsets at once?**
 A: In stdio mode (default), use `--equip-toolset <name>` when launching. HTTP mode supports one active toolset but you can switch anytime.
 
-**Q: Where are my toolsets stored?**
-A: Locally in `~/.toolprint/hypertool-mcp/`. Explore the directory to see your configurations.
+**Q: Where are my toolsets and configurations stored?**
+A: Everything is stored locally in `~/.toolprint/hypertool-mcp/`:
+- Personas: `~/.toolprint/hypertool-mcp/personas/`
+- Toolsets: `~/.toolprint/hypertool-mcp/toolsets/`
+- Preferences: `~/.toolprint/hypertool-mcp/config/`
+You can directly edit these files when HyperTool is not running.
 
 ### Setup & Compatibility
 
@@ -256,6 +316,7 @@ A: Yes! For enterprise support, [contact us](mailto:support@onegrep.dev?subject=
 
 📚 **Learn More**
 
+- 🎭 [Personas Guide](guides/PERSONAS.md) - Complete guide to using and creating personas
 - 🔬 [Research & Performance](guides/RESEARCH.md) - Why focused toolsets work
 - 🚀 [Advanced Features](guides/ADVANCED.md) - Tool annotations, HTTP mode, CLI
 - 🔧 [Troubleshooting](guides/TROUBLESHOOTING.md) - Common issues and solutions
