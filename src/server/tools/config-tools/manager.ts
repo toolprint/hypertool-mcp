@@ -70,11 +70,11 @@ export class ConfigToolsManager implements ToolsProvider {
         continue;
       }
       
-      // Only show list-personas tool when NO persona is active
-      // (personas are listed for activation, not when already active)
+      // Only show list-personas tool when persona IS active
+      // (to see available personas for switching/viewing)
       if (toolName === 'list-personas') {
-        if (activePersona) {
-          logger.debug(`Skipping list-personas tool - persona already active: ${activePersona.persona.config.name}`);
+        if (!activePersona) {
+          logger.debug(`Skipping list-personas tool - no persona active, persona system not in use`);
           continue;
         }
       }

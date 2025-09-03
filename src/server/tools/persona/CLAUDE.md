@@ -133,14 +133,19 @@ async listSavedToolsets(): Promise<ListToolsetsResponse>
 
 ### Configuration Tools Impact
 
-#### Tool Visibility in Persona Mode
-When a persona is active, certain tools are automatically hidden:
-- `list-personas` - Not shown (persona already active)
-- `build-toolset` - Not shown (persona toolsets are read-only)
-- `delete-toolset` - Not shown (cannot delete persona toolsets)
+#### Tool Visibility Based on Mode
+
+**In Standard Mode (no persona active):**
+- `list-personas` - Not shown (persona system not in use)
+- All other configuration tools are available
+
+**In Persona Mode (persona active):**
+- `build-toolset` - Hidden (persona toolsets are read-only)
+- `delete-toolset` - Hidden (cannot delete persona toolsets)
 
 #### Available Tools in Persona Mode
 These tools remain available and work with persona toolsets:
+- `list-personas` - Shows available personas (for switching/viewing)
 - `list-saved-toolsets` - Shows persona toolsets with "persona:" prefix
 - `equip-toolset` - Works with persona toolset names
 - `get-active-toolset` - Shows active persona toolset

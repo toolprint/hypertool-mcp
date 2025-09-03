@@ -35,7 +35,6 @@ The `test-config-tools.sh` script tests how configuration tools behave different
 When running with `--mcp-config` flag and no persona:
 
 **Available Tools**:
-- ✅ `list-personas` - Show available personas for activation
 - ✅ `build-toolset` - Create new toolsets
 - ✅ `delete-toolset` - Delete existing toolsets
 - ✅ `list-saved-toolsets` - Lists regular toolsets
@@ -45,16 +44,19 @@ When running with `--mcp-config` flag and no persona:
 - ✅ `add-tool-annotation` - Add notes to tools
 - ✅ `list-available-tools` - Show all available tools
 
+**Hidden Tools**:
+- ❌ `list-personas` - Not shown when persona system is not in use
+
 ### Persona Mode
 
 When running with `--persona` flag:
 
 **Hidden Tools** (Not shown in tools/list):
-- ❌ `list-personas` - Not needed when persona is active
 - ❌ `build-toolset` - Cannot create toolsets in persona mode
 - ❌ `delete-toolset` - Cannot delete persona toolsets
 
 **Available Tools**:
+- ✅ `list-personas` - Show available personas for switching/viewing
 - ✅ `list-saved-toolsets` - Shows persona toolsets with "persona:" prefix
 - ✅ `equip-toolset` - Equip persona toolsets
 - ✅ `unequip-toolset` - Unequip current persona toolset

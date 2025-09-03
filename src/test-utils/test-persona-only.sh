@@ -79,12 +79,12 @@ tool_names=$(echo "$response" | grep "^data:" | sed 's/^data: //' | jq -r '.resu
 echo "Available tools:"
 echo "$tool_names"
 
-# Check for restricted tools
-echo -e "\n${YELLOW}Checking for restricted tools...${NC}"
+# Check for tool availability
+echo -e "\n${YELLOW}Checking tool availability...${NC}"
 if echo "$tool_names" | grep -q "^list-personas$"; then
-    echo -e "${RED}✗ FAIL - list-personas should NOT be available in persona mode${NC}"
+    echo -e "${GREEN}✓ PASS - list-personas is correctly shown in persona mode${NC}"
 else
-    echo -e "${GREEN}✓ PASS - list-personas is correctly hidden${NC}"
+    echo -e "${RED}✗ FAIL - list-personas should be available in persona mode${NC}"
 fi
 
 if echo "$tool_names" | grep -q "^build-toolset$"; then

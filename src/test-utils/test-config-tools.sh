@@ -263,7 +263,7 @@ main() {
     list_tools
     
     # Check tool availability in standard mode
-    check_tool_availability "list-personas" "true"  # Should be available when no persona
+    check_tool_availability "list-personas" "false"  # Should NOT be available when no persona
     check_tool_availability "build-toolset" "true"  # Should be available
     check_tool_availability "delete-toolset" "true" # Should be available
     
@@ -321,7 +321,7 @@ main() {
         list_tools
         
         # Check tool availability in persona mode
-        check_tool_availability "list-personas" "false"  # Should NOT be available when persona is active
+        check_tool_availability "list-personas" "true"  # Should be available when persona is active
         check_tool_availability "build-toolset" "false"  # Should NOT be available in persona mode
         check_tool_availability "delete-toolset" "false" # Should NOT be available in persona mode
         

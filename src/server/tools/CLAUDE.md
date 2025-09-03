@@ -110,7 +110,7 @@ loadPersonaToolset(name) → converts via bridge ✅
 ```typescript
 getMcpTools(): Tool[] {
   // Hide tools based on persona activation state:
-  // - list-personas: hidden when persona is active
+  // - list-personas: shown ONLY when persona is active (to see available personas)
   // - build-toolset: hidden when persona is active
   // - delete-toolset: hidden when persona is active
   // All other tools remain available but route appropriately
