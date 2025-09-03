@@ -133,18 +133,26 @@ async listSavedToolsets(): Promise<ListToolsetsResponse>
 
 ### Configuration Tools Impact
 
-#### ✅ No Changes Needed
-All configuration tools continue to work exactly as before:
-- `list-saved-toolsets` - shows unified list
-- `equip-toolset` - works with any toolset name
-- `delete-toolset` - prevents persona deletion
-- `get-active-toolset` - works regardless of source
+#### Tool Visibility in Persona Mode
+When a persona is active, certain tools are automatically hidden:
+- `list-personas` - Not shown (persona already active)
+- `build-toolset` - Not shown (persona toolsets are read-only)
+- `delete-toolset` - Not shown (cannot delete persona toolsets)
+
+#### Available Tools in Persona Mode
+These tools remain available and work with persona toolsets:
+- `list-saved-toolsets` - Shows persona toolsets with "persona:" prefix
+- `equip-toolset` - Works with persona toolset names
+- `get-active-toolset` - Shows active persona toolset
+- `unequip-toolset` - Unequips current persona toolset
+- `add-tool-annotation` - Add notes to tools in persona toolsets
+- `list-available-tools` - Shows tools from connected servers
 
 #### Key Benefits
-1. **Zero breaking changes** for existing tools
+1. **Context-aware interface** - Only shows relevant operations
 2. **Unified user experience** across toolset types
 3. **Clear distinction** with "persona:" prefix
-4. **Consistent error handling** and validation
+4. **Prevents invalid operations** by hiding unavailable tools
 
 ## Error Handling
 

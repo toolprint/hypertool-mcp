@@ -263,6 +263,14 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         }
       } else {
         logger.debug("Skipping persona state restoration (no persona requested)");
+        // Clear any persisted state from previous runs since we're not using a persona
+        try {
+          await (this.personaManager as any).clearPersistedState?.();
+          logger.debug("Cleared persisted persona state (no persona requested)");
+        } catch (error) {
+          // Ignore errors when clearing state
+          logger.debug("Could not clear persisted persona state:", error);
+        }
       }
     }
 

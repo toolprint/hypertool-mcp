@@ -104,7 +104,18 @@ loadPersonaToolset(name) → converts via bridge ✅
 - **Routes to appropriate delegate** based on persona activation state
 - Provides MCP tools for client interactions (list-saved-toolsets, equip-toolset, etc.)
 - **Context-aware routing** - no direct persona or toolset knowledge needed
-- Restricts certain operations (delete-toolset, build-toolset) in persona mode
+- **Hides restricted tools** (delete-toolset, build-toolset, list-personas) in persona mode
+
+**Tool Visibility Logic**:
+```typescript
+getMcpTools(): Tool[] {
+  // Hide tools based on persona activation state:
+  // - list-personas: hidden when persona is active
+  // - build-toolset: hidden when persona is active
+  // - delete-toolset: hidden when persona is active
+  // All other tools remain available but route appropriately
+}
+```
 
 **Routing Logic**:
 ```typescript

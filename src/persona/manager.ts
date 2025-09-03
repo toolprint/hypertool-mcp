@@ -1095,7 +1095,7 @@ export class PersonaManager extends EventEmitter implements IToolsetDelegate {
   /**
    * Clear persisted state
    */
-  private async clearPersistedState(): Promise<void> {
+  public async clearPersistedState(): Promise<void> {
     try {
       const stateFilePath = this.getStateFilePath();
       await fs.unlink(stateFilePath);

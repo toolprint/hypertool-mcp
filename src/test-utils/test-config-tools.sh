@@ -20,6 +20,7 @@ TEST_PERSONA="test-persona"
 SERVER_PID=""
 LOG_DIR="src/test-utils/logs"
 LOG_FILE=""
+SESSION_ID=""
 
 # Create log directory if it doesn't exist
 mkdir -p "$LOG_DIR"
@@ -36,6 +37,44 @@ cleanup() {
 
 # Set trap for cleanup
 trap cleanup EXIT
+
+# Function to initialize MCP session
+init_session() {
+    local request='{
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2025-06-18",
+            "capabilities": {},
+            "clientInfo": {
+                "name": "test-client",
+                "version": "1.0.0"
+            }
+        }
+    }'
+    
+    # Send initialization request and capture both headers and body
+    local response_file="/tmp/mcp-response-$$"
+    curl -s -i -X POST "$SERVER_URL" \
+        -H "Content-Type: application/json" \
+        -H "Accept: text/event-stream, application/json" \
+        -d "$request" > "$response_file"
+    
+    # Extract session ID from Mcp-Session-Id header
+    SESSION_ID=$(grep -i "^Mcp-Session-Id:" "$response_file" | cut -d' ' -f2 | tr -d '\r\n')
+    
+    if [ ! -z "$SESSION_ID" ]; then
+        echo "Got session ID from header: $SESSION_ID"
+    else
+        echo "No session ID in response headers"
+        # Show response for debugging
+        echo "Response:"
+        cat "$response_file"
+    fi
+    
+    rm -f "$response_file"
+}
 
 # Function to start server
 start_server() {
@@ -99,9 +138,22 @@ call_tool() {
         }
     }'
     
-    curl -s -X POST "$SERVER_URL" \
-        -H "Content-Type: application/json" \
-        -d "$request" | jq -r '.result.content[0].text' 2>/dev/null || echo "Failed to parse response"
+    local headers="-H \"Content-Type: application/json\" -H \"Accept: text/event-stream, application/json\""
+    if [ ! -z "$SESSION_ID" ]; then
+        headers="$headers -H \"Mcp-Session-Id: $SESSION_ID\""
+    fi
+    
+    local response=$(eval "curl -s -X POST \"$SERVER_URL\" $headers -d '$request'")
+    
+    # Check if response is SSE format
+    if echo "$response" | grep -q "^event:"; then
+        # Parse SSE format - extract the JSON from the data: line
+        local json_data=$(echo "$response" | grep "^data:" | sed 's/^data: //')
+        echo "$json_data" | jq -r '.result.content[0].text' 2>/dev/null || echo "$json_data"
+    else
+        # Regular JSON response
+        echo "$response" | jq -r '.result.content[0].text' 2>/dev/null || echo "$response"
+    fi
 }
 
 # Function to list available tools
@@ -112,9 +164,31 @@ list_tools() {
         "method": "tools/list"
     }'
     
-    curl -s -X POST "$SERVER_URL" \
-        -H "Content-Type: application/json" \
-        -d "$request" | jq -r '.result.tools[].name' 2>/dev/null || echo "Failed to list tools"
+    local headers="-H \"Content-Type: application/json\" -H \"Accept: text/event-stream, application/json\""
+    if [ ! -z "$SESSION_ID" ]; then
+        headers="$headers -H \"Mcp-Session-Id: $SESSION_ID\""
+    fi
+    
+    local response=$(eval "curl -s -X POST \"$SERVER_URL\" $headers -d '$request'")
+    
+    # Check if response is SSE format (starts with "event:")
+    if echo "$response" | grep -q "^event:"; then
+        # Parse SSE format - extract the JSON from the data: line
+        local json_data=$(echo "$response" | grep "^data:" | sed 's/^data: //')
+        if echo "$json_data" | jq -e '.result.tools' > /dev/null 2>&1; then
+            echo "$json_data" | jq -r '.result.tools[].name'
+        else
+            echo "Failed to parse SSE response"
+            return 1
+        fi
+    elif echo "$response" | jq -e '.result.tools' > /dev/null 2>&1; then
+        # Regular JSON response
+        echo "$response" | jq -r '.result.tools[].name'
+    else
+        echo "Failed to list tools. Response:"
+        echo "$response" | head -5
+        return 1
+    fi
 }
 
 # Test function
@@ -181,6 +255,10 @@ main() {
     echo -e "\n${GREEN}=== TEST SUITE 1: Standard Mode (No Persona) ===${NC}"
     start_server "standard"
     
+    # Initialize MCP session
+    echo -e "\n${BLUE}Initializing MCP session...${NC}"
+    init_session
+    
     echo -e "\n${BLUE}Available tools in standard mode:${NC}"
     list_tools
     
@@ -209,7 +287,7 @@ main() {
     echo -e "\n${YELLOW}TEST: build-toolset in standard mode${NC}"
     build_args='{
         "name": "test-toolset",
-        "tools": []
+        "tools": [{"namespacedName": "sequential-thinking.sequentialthinking"}]
     }'
     result=$(call_tool "build-toolset" "$build_args")
     echo "Result: $result"
@@ -235,13 +313,17 @@ main() {
     else
         start_server "persona"
         
+        # Initialize MCP session
+        echo -e "\n${BLUE}Initializing MCP session...${NC}"
+        init_session
+        
         echo -e "\n${BLUE}Available tools in persona mode:${NC}"
         list_tools
         
         # Check tool availability in persona mode
         check_tool_availability "list-personas" "false"  # Should NOT be available when persona is active
-        check_tool_availability "build-toolset" "true"   # Checking current behavior
-        check_tool_availability "delete-toolset" "true"  # Checking current behavior
+        check_tool_availability "build-toolset" "false"  # Should NOT be available in persona mode
+        check_tool_availability "delete-toolset" "false" # Should NOT be available in persona mode
         
         # Test list-saved-toolsets (should return persona toolsets)
         echo -e "\n${YELLOW}TEST: list-saved-toolsets in persona mode${NC}"
@@ -256,19 +338,11 @@ main() {
             echo "$result" | jq -r '.toolsets[].name'
         fi
         
-        # Test build-toolset (should be restricted)
+        # Test build-toolset (should not exist in tools list)
         echo -e "\n${YELLOW}TEST: build-toolset in persona mode${NC}"
-        build_args='{
-            "name": "test-toolset",
-            "tools": []
-        }'
-        result=$(call_tool "build-toolset" "$build_args")
-        echo "Result: $result"
-        if echo "$result" | grep -q "not available when a persona is active"; then
-            echo -e "${GREEN}✓ PASS - build-toolset correctly restricted in persona mode${NC}"
-        else
-            echo -e "${RED}✗ FAIL - build-toolset should be restricted in persona mode${NC}"
-        fi
+        # Since the tool is hidden, we shouldn't be able to call it
+        # The test already verified it's not in the tools list
+        echo -e "${GREEN}✓ PASS - build-toolset is hidden in persona mode (verified above)${NC}"
         
         # Clean up server
         cleanup

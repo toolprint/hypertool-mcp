@@ -59,6 +59,9 @@ export class ConfigToolsManager implements ToolsProvider {
   public getMcpTools(): Tool[] {
     // Return all configuration tools - server decides when to call this
     const tools: Tool[] = [];
+    const activePersona = this.dependencies.personaManager?.getActivePersona();
+    
+    logger.debug(`Getting MCP tools - persona manager exists: ${!!this.dependencies.personaManager}, active persona: ${activePersona ? activePersona.persona.config.name : 'none'}`);
 
     for (const [toolName, module] of this.toolModules) {
       // When dynamic config menu is disabled, skip mode-switching tools
@@ -70,17 +73,26 @@ export class ConfigToolsManager implements ToolsProvider {
       // Only show list-personas tool when NO persona is active
       // (personas are listed for activation, not when already active)
       if (toolName === 'list-personas') {
-        const activePersona = this.dependencies.personaManager?.getActivePersona();
         if (activePersona) {
-          logger.debug('Skipping list-personas tool - persona already active');
+          logger.debug(`Skipping list-personas tool - persona already active: ${activePersona.persona.config.name}`);
           continue;
         }
       }
       
+      // Hide build-toolset and delete-toolset when persona is active
+      // (persona toolsets are managed by the persona system)
+      if ((toolName === 'build-toolset' || toolName === 'delete-toolset')) {
+        if (activePersona) {
+          logger.debug(`Skipping ${toolName} tool - not available in persona mode with persona: ${activePersona.persona.config.name}`);
+          continue;
+        }
+      }
+      
+      logger.debug(`Including tool: ${toolName}`);
       tools.push(module.definition);
     }
 
-    logger.debug(`Returning ${tools.length} configuration tools`);
+    logger.debug(`Returning ${tools.length} configuration tools (active persona: ${activePersona ? activePersona.persona.config.name : 'none'})`);
     return tools;
   }
 
@@ -105,7 +117,6 @@ export class ConfigToolsManager implements ToolsProvider {
   public async handleToolCall(name: string, args: any): Promise<any> {
     // Check if this is a toolset operation that needs routing
     const toolsetOperations = ['list-saved-toolsets', 'equip-toolset', 'get-active-toolset'];
-    const restrictedOperations = ['delete-toolset', 'build-toolset'];
     
     if (toolsetOperations.includes(name)) {
       // Route to appropriate delegate based on persona activation state
@@ -148,34 +159,6 @@ export class ConfigToolsManager implements ToolsProvider {
         default:
           throw new Error(`Unhandled toolset operation: ${name}`);
       }
-    }
-    
-    if (restrictedOperations.includes(name)) {
-      // Check if we're in persona mode
-      const activePersona = this.dependencies.personaManager?.getActivePersona();
-      
-      logger.debug(`Checking persona for restricted operation ${name}:`, { 
-        hasPersonaManager: !!this.dependencies.personaManager,
-        activePersona: activePersona ? activePersona.persona.config.name : null 
-      });
-      
-      if (activePersona) {
-        return {
-          content: [{
-            type: "text",
-            text: JSON.stringify({
-              success: false,
-              error: `Tool "${name}" is not available when a persona is active. Persona toolsets are managed automatically by the persona system.`,
-            }),
-          }],
-          structuredContent: {
-            success: false,
-            error: `Tool "${name}" is not available when a persona is active.`,
-          },
-        };
-      }
-      
-      // Fall through to normal handling for regular mode
     }
 
     // Handle regular configuration tools
