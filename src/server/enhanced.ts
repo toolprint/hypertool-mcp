@@ -244,17 +244,25 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     // Note: We'll need to add a method to PersonaManager to update these handlers
     (this.personaManager as any).updateMcpConfigHandlers?.(mcpConfigHandlers);
 
-    // Now that all systems are initialized, enable persona state persistence and restore any persisted state
+    // Only enable persona state persistence if a persona was requested
+    // Otherwise, we should not restore any previous persona state
     if ((this.personaManager as any).config) {
-      (this.personaManager as any).config.persistState = true;
-      logger.debug("Enabled persona state persistence after boot sequence");
+      // Check if persona was requested in the command line options
+      const personaRequested = this.runtimeOptions?.persona;
+      
+      if (personaRequested) {
+        (this.personaManager as any).config.persistState = true;
+        logger.debug("Enabled persona state persistence after boot sequence (persona requested)");
 
-      // Restore any persisted persona state now that all dependencies are available
-      try {
-        await (this.personaManager as any).restorePersistedState?.();
-        logger.debug("Restored persisted persona state after boot sequence");
-      } catch (error) {
-        logger.warn("Failed to restore persisted persona state:", error);
+        // Restore any persisted persona state now that all dependencies are available
+        try {
+          await (this.personaManager as any).restorePersistedState?.();
+          logger.debug("Restored persisted persona state after boot sequence");
+        } catch (error) {
+          logger.warn("Failed to restore persisted persona state:", error);
+        }
+      } else {
+        logger.debug("Skipping persona state restoration (no persona requested)");
       }
     }
 
