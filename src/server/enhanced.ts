@@ -1052,9 +1052,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
     if (!this.configToolsMenuEnabled) {
       logger.info(
-        "Configuration tools menu disabled - running in legacy mode (all tools exposed together)"
+        "Configuration tools menu disabled - all tools exposed together"
       );
-      // In legacy mode, we still create ConfigToolsManager to have access to config tools
+      // When dynamic config menu is disabled, we still create ConfigToolsManager to have access to config tools
       this.configToolsManager = new ConfigToolsManager(dependencies);
       // Don't set configuration mode or create mode switching tools
       return;
@@ -1142,7 +1142,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
   protected async getAvailableTools(): Promise<Tool[]> {
     const tools: Tool[] = [];
 
-    // Legacy mode: return all tools (backward compatibility)
+    // When dynamic config menu is disabled: return all tools together
     if (!this.configToolsMenuEnabled) {
       // Add all configuration tools
       if (this.configToolsManager) {
@@ -1150,7 +1150,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           const configTools = this.configToolsManager.getMcpTools();
           tools.push(...configTools);
           logger.debug(
-            `Legacy mode: added ${configTools.length} configuration tools`
+            `All tools mode: added ${configTools.length} configuration tools`
           );
         } catch (error) {
           logger.error("Failed to get configuration tools:", error);
@@ -1161,12 +1161,12 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       try {
         const mcpTools = this.toolsetManager.getMcpTools();
         tools.push(...mcpTools);
-        logger.debug(`Legacy mode: added ${mcpTools.length} toolset tools`);
+        logger.debug(`All tools mode: added ${mcpTools.length} toolset tools`);
       } catch (error) {
         logger.error("Failed to get toolset tools:", error);
       }
 
-      logger.debug(`Legacy mode: returning ${tools.length} total tools`);
+      logger.debug(`All tools mode: returning ${tools.length} total tools`);
       return tools;
     }
 
@@ -1256,7 +1256,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       }
 
       // SECOND: Handle external tools based on mode
-      // Legacy mode: route external tools through router
+      // When dynamic config menu is disabled: route external tools through router
       if (!this.configToolsMenuEnabled) {
         const originalToolName = this.toolsetManager.getOriginalToolName(name);
         const toolNameForRouter = originalToolName || name;

@@ -23,6 +23,7 @@ export class ConfigToolsManager implements ToolsProvider {
   private toolModules: Map<string, ToolModule> = new Map();
   private dependencies: ToolDependencies;
   private onModeChangeRequest?: () => void;
+  private dynamicConfigMenuEnabled: boolean;
 
   constructor(
     dependencies: ToolDependencies,
@@ -30,6 +31,8 @@ export class ConfigToolsManager implements ToolsProvider {
   ) {
     this.dependencies = dependencies;
     this.onModeChangeRequest = onModeChangeRequest;
+    // Dynamic config menu is enabled when onModeChangeRequest is provided
+    this.dynamicConfigMenuEnabled = !!onModeChangeRequest;
 
     this.registerTools();
   }
@@ -57,7 +60,12 @@ export class ConfigToolsManager implements ToolsProvider {
     // Return all configuration tools - server decides when to call this
     const tools: Tool[] = [];
 
-    for (const [_toolName, module] of this.toolModules) {
+    for (const [toolName, module] of this.toolModules) {
+      // When dynamic config menu is disabled, skip mode-switching tools
+      if (!this.dynamicConfigMenuEnabled && toolName === 'exit-configuration-mode') {
+        logger.debug('Skipping exit-configuration-mode tool when dynamic menu disabled');
+        continue;
+      }
       tools.push(module.definition);
     }
 
