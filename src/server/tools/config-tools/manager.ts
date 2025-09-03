@@ -66,6 +66,17 @@ export class ConfigToolsManager implements ToolsProvider {
         logger.debug('Skipping exit-configuration-mode tool when dynamic menu disabled');
         continue;
       }
+      
+      // Only show list-personas tool when NO persona is active
+      // (personas are listed for activation, not when already active)
+      if (toolName === 'list-personas') {
+        const activePersona = this.dependencies.personaManager?.getActivePersona();
+        if (activePersona) {
+          logger.debug('Skipping list-personas tool - persona already active');
+          continue;
+        }
+      }
+      
       tools.push(module.definition);
     }
 
@@ -104,12 +115,36 @@ export class ConfigToolsManager implements ToolsProvider {
       logger.debug(`Routing ${name} to ${delegateType} delegate`);
       
       switch (name) {
-        case 'list-saved-toolsets':
-          return delegate.listSavedToolsets();
-        case 'equip-toolset':
-          return delegate.equipToolset(args?.name);
-        case 'get-active-toolset':
-          return delegate.getActiveToolset();
+        case 'list-saved-toolsets': {
+          const result = await delegate.listSavedToolsets();
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify(result),
+            }],
+            structuredContent: result,
+          };
+        }
+        case 'equip-toolset': {
+          const result = await delegate.equipToolset(args?.name);
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify(result),
+            }],
+            structuredContent: result,
+          };
+        }
+        case 'get-active-toolset': {
+          const result = await delegate.getActiveToolset();
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify(result),
+            }],
+            structuredContent: result,
+          };
+        }
         default:
           throw new Error(`Unhandled toolset operation: ${name}`);
       }
@@ -118,6 +153,11 @@ export class ConfigToolsManager implements ToolsProvider {
     if (restrictedOperations.includes(name)) {
       // Check if we're in persona mode
       const activePersona = this.dependencies.personaManager?.getActivePersona();
+      
+      logger.debug(`Checking persona for restricted operation ${name}:`, { 
+        hasPersonaManager: !!this.dependencies.personaManager,
+        activePersona: activePersona ? activePersona.persona.config.name : null 
+      });
       
       if (activePersona) {
         return {
