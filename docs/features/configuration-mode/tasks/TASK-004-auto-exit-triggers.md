@@ -34,16 +34,16 @@ Implement automatic exit from configuration mode when certain actions are taken 
 ```typescript
 export class ToolsetManager extends EventEmitter implements ToolsProvider {
   private onModeChangeRequest?: () => void;
-  
+
   setModeChangeCallback(callback: () => void): void {
     this.onModeChangeRequest = callback;
   }
-  
+
   // In equipToolset method, after successful equip:
   if (result.success && this.onModeChangeRequest) {
     this.onModeChangeRequest();
   }
-  
+
   // In buildToolset method, after successful build with autoEquip:
   if (result.success && args.autoEquip && this.onModeChangeRequest) {
     this.onModeChangeRequest();

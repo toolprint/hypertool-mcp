@@ -135,6 +135,17 @@ export class TestEnvironment {
       }, null, 2)
     );
 
+    // Create mock package.json for appConfig.ts to read
+    const mockPackageJson = {
+      name: "@toolprint/hypertool-mcp",
+      version: "0.0.39-test",
+      description: "HyperTool MCP proxy server for routing requests between clients and multiple underlying MCP servers"
+    };
+    const packageJsonPath = '/Users/brian/workspace/toolprint/hypertool-mcp/package.json';
+    const packageJsonDir = packageJsonPath.substring(0, packageJsonPath.lastIndexOf('/'));
+    vol.mkdirSync(packageJsonDir, { recursive: true });
+    vol.writeFileSync(packageJsonPath, JSON.stringify(mockPackageJson, null, 2));
+
     // Apply scenario if provided
     if (scenario) {
       await scenario.apply(this);

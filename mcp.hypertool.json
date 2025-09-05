@@ -3,9 +3,7 @@
     "docker": {
       "type": "stdio",
       "command": "uvx",
-      "args": [
-        "mcp-server-docker"
-      ],
+      "args": ["mcp-server-docker"],
       "env": {}
     },
     "context7": {
@@ -15,52 +13,35 @@
     "task-master": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "--package=task-master-ai",
-        "task-master-ai"
-      ],
+      "args": ["-y", "--package=task-master-ai", "task-master-ai"],
       "env": {}
     },
     "mcping": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "@toolprint/mcping-mcp@latest"
-      ],
+      "args": ["-y", "@toolprint/mcping-mcp@latest"],
       "env": {}
     },
     "everything": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-everything"
-      ],
+      "args": ["-y", "@modelcontextprotocol/server-everything"],
       "env": {}
     },
     "git": {
       "type": "stdio",
       "command": "uvx",
-      "args": [
-        "mcp-server-git"
-      ]
+      "args": ["mcp-server-git"]
     },
     "sequential-thinking": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
-      ]
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     },
     "playwright": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "@playwright/mcp@latest"
-      ]
+      "args": ["@playwright/mcp@latest"]
     }
   }
 }

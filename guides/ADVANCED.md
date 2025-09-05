@@ -55,7 +55,7 @@ Need to run HyperTool as a centralized service? Use HTTP mode!
 ### Basic HTTP Server
 
 ```bash
-npx -y @toolprint/hypertool-mcp@latest --transport http --port 3000 --mcp-config your-config.json
+npx -y @toolprint/hypertool-mcp@latest mcp run --transport http --port 3000 --mcp-config your-config.json
 ```
 
 ### HTTP Mode Use Cases

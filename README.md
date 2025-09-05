@@ -6,48 +6,54 @@
 
 <h1 align="center">Give your AI the best tools from all your MCPs 🎯</h1>
 
-
 [![Version](https://img.shields.io/npm/v/@toolprint/hypertool-mcp)](https://npmjs.com/package/@toolprint/hypertool-mcp)
 [![Downloads](https://img.shields.io/npm/dm/@toolprint/hypertool-mcp)](https://npmjs.com/package/@toolprint/hypertool-mcp)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-
 ## ⚡ Features
 
 ### 🔓 **Break Free from Tool Limits**
+
 Connect unlimited MCP servers. Use 10, 50, or 500+ tools total - your AI only sees what it needs.
 
 ### 🎯 **Task-Specific Toolsets**
+
 Build "git-essentials" with 5 tools instead of drowning in 47 Git commands. Switch contexts instantly.
 
 ### 🧠 **Smart Tool Descriptions**
+
 Enhance tools with examples and context. Watch your AI pick the right tool 89% more often.
 
 ## 🚀 Quick Start
 
 ### Step 1: Copy Your Existing Config
+
 ```bash
 # In your project directory
 cp .mcp.json .mcp.hypertool.json
 ```
 
 ### Step 2: Point Your AI to HyperTool
+
 Replace your `.mcp.json` with:
+
 ```json
 {
   "mcpServers": {
     "hypertool": {
       "command": "npx",
-      "args": ["-y", "@toolprint/hypertool-mcp", "--mcp-config", ".mcp.hypertool.json"]
+      "args": ["-y", "@toolprint/hypertool-mcp", "mcp", "run", "--mcp-config", ".mcp.hypertool.json"]
     }
   }
 }
 ```
 
 ### Step 3: Create Your First Toolset
+
 Restart your AI and try:
+
 ```
 You: "Create a toolset called 'coding' with git and docker tools"
 AI: "Created 'coding' toolset with 15 focused tools"
@@ -62,9 +68,63 @@ AI: "Equipped! I now have just the tools needed for development"
 
 📚 **Configuration Mode:** HyperTool uses a smart Configuration Mode to keep toolset management separate from your operational tools. Learn more in the [Configuration Mode Guide](guides/CONFIGURATION_MODE.md).
 
+## 🎭 Personas: Pre-configured Tool Bundles (NEW!)
+
+Don't want to configure from scratch? Use personas - ready-to-use MCP server bundles with pre-built toolsets.
+
+### What are Personas?
+
+Think of personas as "app bundles" for your AI - they come with:
+- ✅ Pre-configured MCP servers
+- ✅ Curated toolsets for specific workflows  
+- ✅ Everything you need to get started instantly
+
+### Quick Start with Personas
+
+```bash
+# 1. Clone the persona collection
+git clone https://github.com/toolprint/awesome-mcp-personas
+
+# 2. Add a persona (e.g., web-dev persona)
+hypertool-mcp persona add awesome-mcp-personas/personas/web-dev
+
+# 3. Run with the persona
+npx -y @toolprint/hypertool-mcp mcp run --persona web-dev
+```
+
+That's it! No server configuration needed. The persona brings its own servers and toolsets.
+
+### Available Personas
+
+| Persona | Included Servers | Best For |
+|---------|-----------------|----------|
+| **web-dev** | Git, Docker, Filesystem, Browser, Testing | Full-stack web development |
+| **data-scientist** | Python, Jupyter, Database, Filesystem, Plotting | Data analysis & ML workflows |
+| **devops** | Docker, Kubernetes, AWS, Terraform, Monitoring | Infrastructure & deployment |
+| **content-creator** | Notion, Slack, Grammar, SEO, Social | Writing & content management |
+| **researcher** | Perplexity, Arxiv, Wikipedia, Filesystem | Research & knowledge work |
+
+### Persona vs Standard Mode
+
+```bash
+# Standard Mode (use your existing MCP servers):
+npx -y @toolprint/hypertool-mcp mcp run --mcp-config .mcp.hypertool.json
+
+# Persona Mode (bundled servers + pre-built toolsets):  
+npx -y @toolprint/hypertool-mcp mcp run --persona web-dev
+
+# Persona Mode with specific toolset:
+npx -y @toolprint/hypertool-mcp mcp run --persona web-dev --equip-toolset frontend
+```
+
+💡 **Pro tip**: Personas can be mixed with your existing servers! Add `--mcp-config` to include your custom servers alongside the persona's servers.
+
+📚 **Learn more**: See the complete [Personas Guide](guides/PERSONAS.md) for detailed instructions, creating custom personas, and troubleshooting.
+
 ## 🎬 Demo
 
 ### Hotswap toolsets across 100+ tools
+
 _Targeted toolsets across any number of MCPs. Swap to the best toolset for a goal with a tool call. Dynamic tool registration._
 
 <div align="center">
@@ -136,9 +196,8 @@ AI sees ALL 64 tools = confused 😵     │  • traces.view   │
 
 Create focused toolsets for different workflows:
 
-
-
 ### 🔨 Development Mode
+
 ```
 "deep-coding": git + docker + filesystem (12 tools)
 → Everything you need for feature development
@@ -151,6 +210,7 @@ Create focused toolsets for different workflows:
 ```
 
 ### 📝 Content Creation
+
 ```
 "writing": notion + grammarly + slack (6 tools)
 → Blog posts, docs, and team updates
@@ -181,12 +241,14 @@ hypertool-mcp mcp group show development
 ```
 
 Server groups make it easy to:
+
 - 🚀 Launch related servers together
 - 📊 Organize servers by project or environment
 - 🔄 Switch between different server configurations
 - 🎯 Maintain focused tool contexts
 
 ### 🎬 Real Chat Example
+
 ```
 You: "I need to debug our API"
 AI: "I'll switch to the debugging toolset for better focus"
@@ -206,11 +268,18 @@ AI: "Switching to writing toolset"
 **Q: How is this different from just using MCP servers directly?**
 A: HyperTool lets you use unlimited MCP servers without hitting the 100-tool limit, and dynamically switches between focused toolsets for better AI performance.
 
+**Q: What's the difference between Personas and Standard Mode?**
+A: Standard Mode uses your existing MCP server configurations. Personas are pre-packaged bundles that include both MCP servers AND curated toolsets - perfect for getting started quickly or trying new workflows.
+
 **Q: Can I use multiple toolsets at once?**
 A: In stdio mode (default), use `--equip-toolset <name>` when launching. HTTP mode supports one active toolset but you can switch anytime.
 
-**Q: Where are my toolsets stored?**
-A: Locally in `~/.toolprint/hypertool-mcp/`. Explore the directory to see your configurations.
+**Q: Where are my toolsets and configurations stored?**
+A: Everything is stored locally in `~/.toolprint/hypertool-mcp/`:
+- Personas: `~/.toolprint/hypertool-mcp/personas/`
+- Toolsets: `~/.toolprint/hypertool-mcp/toolsets/`
+- Preferences: `~/.toolprint/hypertool-mcp/config/`
+You can directly edit these files when HyperTool is not running.
 
 ### Setup & Compatibility
 
@@ -231,7 +300,6 @@ A: Just add the server to your `.mcp.hypertool.json` config. It's automatically 
 **Q: Can I use this in production?**
 A: Yes! For enterprise support, [contact us](mailto:support@onegrep.dev?subject=HyperTool%20Production%20Use&body=Hi%20team%2C%0A%0AI'm%20interested%20in%20using%20HyperTool%20in%20production.%0A%0ACompany%3A%20%0AUse%20case%3A%20%0AScale%3A%20%0A%0AThanks!).
 
-
 ## 🎮 App Compatibility
 
 **Works with ANY MCP-compatible app!** HyperTool is a standard MCP server, so if your app supports MCP, it supports HyperTool.
@@ -247,6 +315,8 @@ A: Yes! For enterprise support, [contact us](mailto:support@onegrep.dev?subject=
 ---
 
 📚 **Learn More**
+
+- 🎭 [Personas Guide](guides/PERSONAS.md) - Complete guide to using and creating personas
 - 🔬 [Research & Performance](guides/RESEARCH.md) - Why focused toolsets work
 - 🚀 [Advanced Features](guides/ADVANCED.md) - Tool annotations, HTTP mode, CLI
 - 🔧 [Troubleshooting](guides/TROUBLESHOOTING.md) - Common issues and solutions
@@ -255,10 +325,12 @@ A: Yes! For enterprise support, [contact us](mailto:support@onegrep.dev?subject=
 ## 🛠️ Development Setup
 
 ### Prerequisites
+
 - Node.js 18+
 - Python 3.8+ (for pre-commit hooks)
 
 ### Quick Setup
+
 ```bash
 # Clone and install
 git clone https://github.com/toolprint/hypertool-mcp.git
@@ -267,6 +339,7 @@ just setup-dev  # Installs dependencies and pre-commit hooks
 ```
 
 ### Pre-commit Hooks
+
 This project uses pre-commit hooks to ensure code quality:
 
 ```bash
@@ -282,6 +355,7 @@ SKIP=eslint,typescript git commit -m "emergency fix"
 ```
 
 ### Available Commands
+
 ```bash
 just build          # Build the project
 just test           # Run tests

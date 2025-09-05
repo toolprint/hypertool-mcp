@@ -40,6 +40,9 @@ export interface UserPreferences {
  * Complete configuration structure
  */
 export interface CompleteConfig extends UserPreferences {
+  /** Custom persona directory path (overrides default ~/.toolprint/hypertool-mcp/personas) */
+  personaDir?: string;
+
   /** Application sync configurations */
   applications?: Record<string, any>;
 
@@ -76,6 +79,27 @@ async function ensureConfigDir(): Promise<void> {
     await fs.mkdir(APP_CONFIG_DIR, { recursive: true });
   } catch {
     // Directory might already exist, that's fine
+  }
+}
+
+/**
+ * Load complete configuration from config file
+ */
+export async function loadCompleteConfig(): Promise<CompleteConfig> {
+  try {
+    await ensureConfigDir();
+    const content = await fs.readFile(CONFIG_FILE, "utf-8");
+    const config = JSON.parse(content) as CompleteConfig;
+    return config;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      // File doesn't exist, return defaults
+      return {
+        ...DEFAULT_PREFERENCES,
+        lastUpdated: new Date().toISOString(),
+      };
+    }
+    throw error;
   }
 }
 

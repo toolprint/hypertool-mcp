@@ -39,8 +39,9 @@ export const FLAG_REGISTRY = {
   },
   enableConfigToolsMenu: {
     name: "enableConfigToolsMenu",
-    description: "Enable configuration tools menu mode (separates config tools from operational tools)",
-    defaultValue: true,
+    description:
+      "Enables a dynamic configuration tools menu instead of showing all tools together",
+    defaultValue: false,
     envVar: "HYPERTOOL_ENABLE_CONFIG_TOOLS_MENU",
   },
 } as const satisfies Record<string, FlagDefinition>;

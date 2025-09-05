@@ -48,14 +48,16 @@ import {
   BuildToolsetResponse,
   ListSavedToolsetsResponse,
   EquipToolsetResponse,
+  GetActiveToolsetResponse,
   ToolsetInfo,
 } from "../schemas.js";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolsProvider } from "../../types.js";
+import { IToolsetDelegate } from "../interfaces/toolset-delegate.js";
 
 const logger = createChildLogger({ module: "toolset" });
 
-export class ToolsetManager extends EventEmitter implements ToolsProvider {
+export class ToolsetManager extends EventEmitter implements ToolsProvider, IToolsetDelegate {
   private currentToolset?: ToolsetConfig;
   private configPath?: string;
   private discoveryEngine?: IToolDiscoveryEngine;
@@ -587,13 +589,14 @@ export class ToolsetManager extends EventEmitter implements ToolsProvider {
       const loadToolsetsFromPreferences = preferences.loadStoredToolsets;
       const stored = await loadToolsetsFromPreferences();
 
-      const toolsets = await Promise.all(
+      // Get saved toolsets from preferences
+      const savedToolsets = await Promise.all(
         Object.values(stored).map((config) => this.generateToolsetInfo(config))
       );
 
       return {
         success: true,
-        toolsets,
+        toolsets: savedToolsets,
       };
     } catch (error) {
       return {
@@ -800,8 +803,62 @@ export class ToolsetManager extends EventEmitter implements ToolsProvider {
   /**
    * Get the current active toolset config (if any)
    */
-  getActiveToolset(): ToolsetConfig | null {
+  getActiveToolsetConfig(): ToolsetConfig | null {
     return this.currentToolset || null;
+  }
+
+  /**
+   * Get information about the currently active toolset
+   * Implementation of IToolsetDelegate interface
+   */
+  async getActiveToolset(): Promise<GetActiveToolsetResponse> {
+    if (!this.currentToolset) {
+      return {
+        equipped: false,
+        toolset: undefined,
+        serverStatus: undefined,
+        toolSummary: undefined,
+        exposedTools: {},
+        unavailableServers: [],
+        warnings: [],
+      };
+    }
+
+    // Convert current toolset to response format
+    const toolsetInfo = await this.generateToolsetInfo(this.currentToolset);
+    
+    // Get discovery engine for tool stats
+    const allDiscoveredTools = this.discoveryEngine?.getAvailableTools(true) || [];
+    const activeDiscoveredTools = this.getActiveDiscoveredTools();
+    
+    // Group tools by server for exposedTools
+    const exposedTools: Record<string, string[]> = {};
+    for (const tool of activeDiscoveredTools) {
+      if (!exposedTools[tool.serverName]) {
+        exposedTools[tool.serverName] = [];
+      }
+      exposedTools[tool.serverName].push(tool.name);
+    }
+
+    return {
+      equipped: true,
+      toolset: toolsetInfo,
+      serverStatus: {
+        totalConfigured: toolsetInfo.totalServers,
+        enabled: toolsetInfo.enabledServers,
+        available: toolsetInfo.enabledServers, // Simplified
+        unavailable: 0,
+        disabled: 0,
+      },
+      toolSummary: {
+        currentlyExposed: activeDiscoveredTools.length,
+        totalDiscovered: allDiscoveredTools.length,
+        filteredOut: allDiscoveredTools.length - activeDiscoveredTools.length,
+      },
+      exposedTools,
+      unavailableServers: [],
+      warnings: [],
+    };
   }
 
   /**
@@ -1011,5 +1068,13 @@ export class ToolsetManager extends EventEmitter implements ToolsProvider {
 
       this.emit("toolsetChanged", changeEvent);
     }
+  }
+
+  /**
+   * Get the delegate type for routing context
+   * Implementation of IToolsetDelegate interface
+   */
+  getDelegateType(): 'regular' | 'persona' {
+    return 'regular';
   }
 }

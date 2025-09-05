@@ -167,7 +167,7 @@ Implement a "Configuration Mode" that:
 - Provides common interface for tool providers:
   ```typescript
   import { Tool } from "@modelcontextprotocol/sdk/types.js";
-  
+
   export interface ToolsProvider {
     /**
      * Get MCP tools provided by this component
@@ -213,9 +213,9 @@ Implement a "Configuration Mode" that:
 
 #### Tool Filtering & Exposure
 - **Server Responsibility**: The MCP server determines which manager to query based on mode
-- **Normal Mode**: Server calls `toolsetManager.getMcpTools()` 
+- **Normal Mode**: Server calls `toolsetManager.getMcpTools()`
 - **Configuration Mode**: Server calls `configToolsManager.getMcpTools()`
-- Clean separation of concerns: 
+- Clean separation of concerns:
   - ToolsetManager handles toolsets
   - ConfigToolsManager handles config tools
   - Server handles mode switching and routing
@@ -306,7 +306,7 @@ import { ToolsProvider } from "../server/types.js";
 
 export class ToolsetManager extends EventEmitter implements ToolsProvider {
   // Existing implementation...
-  
+
   getMcpTools(): Tool[] {
     // Existing implementation remains the same
   }
@@ -331,7 +331,7 @@ export class ToolsetManager extends EventEmitter implements ToolsProvider {
 **Tool: `exit-configuration-mode`**
 ```typescript
 {
-  name: "exit-configuration-mode", 
+  name: "exit-configuration-mode",
   description: "Exit configuration mode and return to normal operation with your equipped toolset or all available tools.",
   inputSchema: {
     type: "object",
@@ -375,7 +375,7 @@ enableConfigToolsMenu: {
    ```bash
    # Enable configuration mode (default)
    HYPERTOOL_ENABLE_CONFIG_TOOLS_MENU=true hypertool-mcp
-   
+
    # Disable configuration mode (legacy behavior)
    HYPERTOOL_ENABLE_CONFIG_TOOLS_MENU=false hypertool-mcp
    ```

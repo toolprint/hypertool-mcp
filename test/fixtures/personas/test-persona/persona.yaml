@@ -1,0 +1,38 @@
+name: test-persona
+description: Test persona with basic utility servers for testing and development
+version: "1.0"
+toolsets:
+  - name: utility-tools
+    toolIds:
+      - everything.echo
+      - everything.add
+      - filesystem.read_file
+      - filesystem.write_file
+      - filesystem.list_directory
+      - mcping.send-notification
+  - name: documentation
+    toolIds:
+      - context7.resolve-library-id
+      - context7.get-library-docs
+  - name: all-tools
+    toolIds:
+      - everything.echo
+      - everything.add
+      - filesystem.read_file
+      - filesystem.write_file
+      - filesystem.list_directory
+      - filesystem.create_directory
+      - filesystem.move_file
+      - filesystem.search_files
+      - mcping.send-notification
+      - context7.resolve-library-id
+      - context7.get-library-docs
+defaultToolset: utility-tools
+metadata:
+  author: Test Suite
+  tags:
+    - testing
+    - utilities
+    - development
+  created: "2024-12-01T00:00:00Z"
+  lastModified: "2024-12-01T00:00:00Z"

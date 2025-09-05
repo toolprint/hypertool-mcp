@@ -196,6 +196,21 @@ export async function loadMcpConfig(
   configPath: string,
   configSource?: IConfigSource
 ): Promise<any> {
+  // Guard against empty or invalid paths
+  if (!configPath || configPath.trim() === "") {
+    logger.debug(
+      "Empty config path provided - returning minimal configuration"
+    );
+    return {
+      mcpServers: {},
+      _metadata: {
+        source: "minimal",
+        path: "",
+        loadedAt: new Date().toISOString(),
+      },
+    };
+  }
+
   // Use file-based configuration loading
   logger.debug("Loading from file");
   return loadMcpConfigFile(configPath, configSource);

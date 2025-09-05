@@ -93,7 +93,7 @@ describe("MCP Server stdio transport", () => {
     }
   });
 
-  // Uses global testTimeout for stdio server startup and MCP protocol initialization
+  // Uses 30 second timeout for stdio server startup and MCP protocol initialization
   it("should connect via stdio and call tools successfully", async () => {
     // Create stdio transport using environment variable override (CLI parsing issue workaround)
     transport = new StdioClientTransport({
@@ -135,9 +135,9 @@ describe("MCP Server stdio transport", () => {
 
     expect(toolResult).toBeDefined();
     expect(toolResult.content).toBeDefined();
-  });
+  }, 30000);
 
-  // Uses global testTimeout for stdio server startup and concurrent operations
+  // Uses 30 second timeout for stdio server startup and concurrent operations
   it("should handle concurrent operations", async () => {
     transport = new StdioClientTransport({
       command: "node",
@@ -173,7 +173,7 @@ describe("MCP Server stdio transport", () => {
     expect(result1.tools).toBeDefined();
     expect(result2.content).toBeDefined();
     expect(result3.content).toBeDefined();
-  });
+  }, 30000);
 
   // Uses global testTimeout for stdio server startup and error handling
   it("should properly handle errors without breaking stdio protocol", async () => {

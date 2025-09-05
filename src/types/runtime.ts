@@ -45,6 +45,9 @@ export interface RuntimeOptions {
 
   /** Server group name to load servers from */
   group?: string;
+
+  /** Persona name to activate on startup */
+  persona?: string;
 }
 
 /**

@@ -3,9 +3,7 @@
     "time": {
       "type": "stdio",
       "command": "uvx",
-      "args": [
-        "mcp-server-time"
-      ],
+      "args": ["mcp-server-time"],
       "env": {}
     }
   }

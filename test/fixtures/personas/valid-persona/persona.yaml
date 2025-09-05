@@ -1,0 +1,22 @@
+name: valid-persona
+description: A complete valid persona for testing
+version: "1.0"
+toolsets:
+  - name: development
+    toolIds:
+      - git.status
+      - git.add
+      - docker.ps
+      - filesystem.read
+  - name: testing
+    toolIds:
+      - jest.run
+      - coverage.check
+defaultToolset: development
+metadata:
+  author: Test Suite
+  tags:
+    - development
+    - testing
+  created: "2024-01-01T00:00:00Z"
+  lastModified: "2024-01-01T12:00:00Z"
