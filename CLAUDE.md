@@ -144,6 +144,7 @@ else:
 - **Reference**: <https://github.com/toolprint/cco-mcp> - TypeScript MCP patterns
 - **Example Config**: `.mcp.json` - Shows target server types to support
 - **Build Tools**: `justfile` - Available commands for build/test/lint
+- **Integration Testing**: `src/server/tools/config-tools/CLAUDE.md` - Tool behavior testing for persona and non-persona modes
 - **Integration**: Work stays in local worktrees, merges into current feature branch
 
 ### ⚠️ Important Reminders

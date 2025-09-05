@@ -162,7 +162,11 @@ const mcpServerRunOptions = [
   },
   {
     flags: "--equip-toolset <name>",
-    description: theme.info("Toolset name to equip on startup"),
+    description: theme.info("Toolset name to equip on startup") +
+      "\n" +
+      theme.muted("(with --persona: equips persona toolset)") +
+      "\n" +
+      theme.muted("(without --persona: equips regular toolset)"),
   },
   {
     flags: "--mcp-config <path>",
@@ -468,9 +472,15 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   program
     .name(APP_TECHNICAL_NAME)
     .description(
-      theme.info(APP_DESCRIPTION) +
+      theme.success("🚀 HyperTool MCP: Unified MCP Proxy Server") +
+        "\n\n" +
+        theme.info("Commands:") +
         "\n" +
-        theme.label("Use MCP options directly for quick start (default mode)")
+        theme.success("  mcp run") + " - " + theme.muted("Run the MCP server (with --persona or --mcp-config)") +
+        "\n" +
+        theme.success("  persona") + " - " + theme.muted("Manage persona content packs") +
+        "\n" +
+        theme.success("  setup") + " - " + theme.muted("Interactive setup wizard")
     )
     .version(APP_VERSION);
 
@@ -489,26 +499,28 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
   if (dryRunOption) dryRunOption.hidden = true;
   if (installOption) installOption.hidden = true;
 
-  // Add helpful examples section explaining MCP options can be used directly
+  // Add helpful examples section focusing on the two main runtime options
   program.addHelpText(
     "after",
     `
-${theme.label("MCP Server Options (can be used directly):")}
-  ${theme.info("--mcp-config <path>     Path to MCP configuration file (.mcp.json)")}
-  ${theme.info("--transport <type>      Transport protocol (http, stdio) (default: stdio)")}
-  ${theme.info("--port <number>         Port for HTTP transport")}
-  ${theme.info("--debug                 Enable debug mode")}
-  ${theme.info("--linked-app <app-id>   Link to application config (claude-desktop, cursor, claude-code)")}
-  ${theme.info("-p, --persona <name>    Activate persona on startup (makes --mcp-config optional)")}
-  ${theme.muted("... and other MCP options (see 'mcp run --help' for full list)")}
+${theme.success("🎭 Persona Mode")} ${theme.muted("(Bundled MCP servers + toolsets)")}
+  ${theme.warning("Setup:")}
+    ${theme.info("hypertool-mcp persona add <path>")}     ${theme.muted("# Add a persona")}
+    ${theme.info("hypertool-mcp persona list")}           ${theme.muted("# List available personas")}
+  ${theme.warning("Run:")}
+    ${theme.info("hypertool-mcp mcp run --persona dev")} ${theme.muted("# Start with persona")}
 
-${theme.label("Examples:")}
-  ${theme.muted("hypertool-mcp --mcp-config ./config.json")}
-  ${theme.muted("hypertool-mcp --mcp-config ./config.json --transport http --port 3000")}
-  ${theme.muted("hypertool-mcp --mcp-config ~/.config/mcp.json --debug")}
-  ${theme.muted("hypertool-mcp --linked-app claude-desktop")}
-  ${theme.muted("hypertool-mcp --persona frontend-dev")}
-  ${theme.muted("hypertool-mcp -p backend-api --debug")}`
+${theme.success("⚙️  Standard Mode")} ${theme.muted("(Your .mcp.json files)")}
+  ${theme.warning("Run:")}
+    ${theme.info("hypertool-mcp mcp run --mcp-config ./config.json")} ${theme.muted("# Start server")}
+
+${theme.label("Advanced Options:")}
+  ${theme.muted("hypertool-mcp mcp run --help")}    ${theme.muted("# See all MCP server options")}
+  ${theme.muted("hypertool-mcp setup")}             ${theme.muted("# Interactive setup wizard")}
+  
+${theme.label("Tool Organization:")}
+  ${theme.muted("By default, configuration tools are in a separate mode.")}
+  ${theme.muted("To show all tools together: export HYPERTOOL_ENABLE_CONFIG_TOOLS_MENU=false")}`
   );
 
   // Add config subcommands
@@ -623,12 +635,8 @@ ${theme.label("Examples:")}
     cliArgs.includes("-V") ||
     cliArgs.some((arg) => arg.startsWith("--install"));
 
-  // If we have arguments but no command and no special global options, insert 'mcp run'
-  if (cliArgs.length > 0 && !hasCommand && !hasSpecialGlobalOption) {
-    process.argv.splice(2, 0, "mcp", "run");
-  }
   // If we have 'mcp' command but no subcommand, insert 'run'
-  else if (hasMcpCommand) {
+  if (hasMcpCommand) {
     const mcpIndex = cliArgs.indexOf("mcp");
     const nextArg = cliArgs[mcpIndex + 1];
     // If there's no next arg or it's an option (starts with --), add 'run'
@@ -637,7 +645,7 @@ ${theme.label("Examples:")}
       process.argv.splice(2 + mcpIndex + 1, 0, "run");
     }
   }
-  // If no arguments at all, default to 'setup' for first run or 'mcp run'
+  // If no arguments at all, default to 'setup' for first run or show help
   else if (cliArgs.length === 0) {
     if (isFirstRun) {
       // Check feature flag to determine whether to show setup wizard
@@ -653,17 +661,18 @@ ${theme.label("Examples:")}
         console.log(theme.muted("   Running: hypertool-mcp setup\n"));
         process.argv.push("setup");
       } else {
-        // Primary onboarding path: --mcp-config focused messaging
+        // Primary onboarding path: show main help
         console.log(theme.success("🚀 Hypertool MCP is ready!"));
-        console.log(theme.info("   To get started, use: --mcp-config <path>"));
-        console.log(
-          theme.muted("   Or run: hypertool-mcp setup (interactive)")
-        );
+        console.log(theme.info("   To get started, use one of:"));
+        console.log(theme.info("   • hypertool-mcp mcp run --mcp-config <path>"));
+        console.log(theme.info("   • hypertool-mcp mcp run --persona <name>"));
+        console.log(theme.info("   • hypertool-mcp setup (interactive)"));
         console.log("");
-        process.argv.push("mcp", "run", "--help");
+        process.argv.push("--help");
       }
     } else {
-      process.argv.push("mcp", "run");
+      // Not first run, just show help
+      process.argv.push("--help");
     }
   }
 

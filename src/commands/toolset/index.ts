@@ -510,7 +510,7 @@ export function createUnequipToolsetCommand(): Command {
         });
 
         // Check if there's an active toolset
-        const activeToolset = toolsetManager.getActiveToolset();
+        const activeToolset = toolsetManager.getActiveToolsetConfig();
         if (!activeToolset) {
           console.log(theme.warning("⚠️  No toolset is currently equipped"));
           return;
@@ -555,7 +555,7 @@ export function createGetActiveToolsetCommand(): Command {
           requireConnections: false,
         });
 
-        const activeToolset = toolsetManager.getActiveToolset();
+        const activeToolset = toolsetManager.getActiveToolsetConfig();
         if (!activeToolset) {
           console.log(theme.warning("⚠️  No toolset is currently equipped"));
           console.log();
@@ -681,7 +681,7 @@ export function createAddToolAnnotationCommand(): Command {
         });
 
         // Check if there's an active toolset
-        const activeToolset = toolsetManager.getActiveToolset();
+        const activeToolset = toolsetManager.getActiveToolsetConfig();
         if (!activeToolset) {
           console.error(
             semantic.messageError("❌ No toolset is currently equipped")

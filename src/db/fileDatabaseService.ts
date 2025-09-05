@@ -78,7 +78,7 @@ export class FileDatabaseService implements IDatabaseService {
     this._configSources = new NullConfigSourceRepository();
 
     this.isInitialized = true;
-    logger.info("File-based database initialized successfully");
+    logger.debug("File-based database initialized successfully");
   }
 
   /**
@@ -91,6 +91,6 @@ export class FileDatabaseService implements IDatabaseService {
 
     // File-based storage doesn't need explicit closing
     this.isInitialized = false;
-    logger.info("File-based database closed successfully");
+    logger.debug("File-based database closed successfully");
   }
 }

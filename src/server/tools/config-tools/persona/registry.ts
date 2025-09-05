@@ -5,7 +5,7 @@
  * This provides a single source of truth for persona tool management.
  */
 
-import { ToolModuleFactory } from "../types.js";
+import { ToolModuleFactory } from "../../types.js";
 import { createListPersonasModule } from "./list-personas.js";
 import { createValidatePersonaModule } from "./validate-persona.js";
 import { createActivatePersonaModule } from "./activate-persona.js";

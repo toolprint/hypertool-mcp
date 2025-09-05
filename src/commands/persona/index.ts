@@ -44,28 +44,116 @@ async function initializePersonaManager(): Promise<PersonaManager> {
 }
 
 /**
- * Format persona reference for display
+ * Enhanced persona information for display
  */
-function formatPersonaReference(persona: {
+interface EnhancedPersonaInfo {
   name: string;
   description?: string;
   path: string;
   isValid: boolean;
   isArchive: boolean;
-  toolsetCount?: number;
-}): string {
+  isActive: boolean;
+  toolsets: Array<{
+    name: string;
+    toolCount: number;
+    isDefault: boolean;
+  }>;
+  mcpServers: string[];
+  issues?: string[];
+}
+
+/**
+ * Format enhanced persona reference for display
+ */
+function formatEnhancedPersonaReference(persona: EnhancedPersonaInfo): string {
   const status = persona.isValid ? theme.success("✓") : theme.error("✗");
+  const activeMarker = persona.isActive ? theme.success(" [ACTIVE]") : "";
   const type = persona.isArchive
     ? theme.muted("[archive]")
     : theme.muted("[folder]");
-  const description = persona.description
-    ? ` - ${theme.muted(persona.description)}`
-    : "";
-  const toolsets = persona.toolsetCount
-    ? ` (${persona.toolsetCount} toolsets)`
-    : "";
+  
+  let line1 = `${status} ${theme.info(persona.name)}${activeMarker} ${type}`;
+  
+  if (persona.description) {
+    line1 += ` - ${theme.muted(persona.description)}`;
+  }
+  
+  const details = [];
+  
+  if (persona.toolsets.length > 0) {
+    const toolsetInfo = persona.toolsets.map(ts => {
+      const defaultMarker = ts.isDefault ? "*" : "";
+      return `${ts.name}${defaultMarker}(${ts.toolCount})`;
+    }).join(", ");
+    details.push(`Toolsets: ${toolsetInfo}`);
+  }
+  
+  if (persona.mcpServers.length > 0) {
+    details.push(`MCP Servers: ${persona.mcpServers.join(", ")}`);
+  }
+  
+  let result = `   ${line1}`;
+  if (details.length > 0) {
+    result += `\n     ${theme.muted(details.join(" | "))}`;
+  }
+  
+  return result;
+}
 
-  return `${status} ${theme.info(persona.name)} ${type}${toolsets}${description}`;
+/**
+ * Load detailed persona information
+ */
+async function loadEnhancedPersonaInfo(persona: PersonaReference, activePersonaName?: string): Promise<EnhancedPersonaInfo> {
+  const enhanced: EnhancedPersonaInfo = {
+    name: persona.name,
+    description: persona.description,
+    path: persona.path,
+    isValid: persona.isValid,
+    isArchive: persona.isArchive,
+    isActive: activePersonaName === persona.name,
+    toolsets: [],
+    mcpServers: [],
+    issues: persona.issues,
+  };
+  
+  // If persona is not valid, return basic info
+  if (!persona.isValid) {
+    return enhanced;
+  }
+  
+  try {
+    // Load full persona details
+    const loader = new PersonaLoader();
+    const loadResult = await loader.loadPersonaFromReference(persona);
+    
+    if (loadResult.success && loadResult.persona) {
+      const loadedPersona = loadResult.persona;
+      
+      // Extract toolset information
+      if (loadedPersona.config.toolsets) {
+        enhanced.toolsets = loadedPersona.config.toolsets.map(toolset => ({
+          name: toolset.name,
+          toolCount: toolset.toolIds.length,
+          isDefault: toolset.name === loadedPersona.config.defaultToolset,
+        }));
+      }
+      
+      // Extract MCP server information
+      if (loadedPersona.mcpConfig && loadedPersona.mcpConfig.mcpServers) {
+        enhanced.mcpServers = Object.keys(loadedPersona.mcpConfig.mcpServers);
+      }
+      
+      // Use the loaded description if available
+      if (loadedPersona.config.description) {
+        enhanced.description = loadedPersona.config.description;
+      }
+    }
+  } catch (error) {
+    // If loading fails, we still show basic info
+    // This ensures the list command doesn't fail completely
+  }
+  
+  return enhanced;
 }
 
 /**
@@ -74,7 +162,7 @@ function formatPersonaReference(persona: {
 export function createListCommand(): Command {
   return new Command("list")
     .description(
-      "List available personas with their validation status and metadata"
+      "List available personas with toolsets, MCP servers, and equipped status"
     )
     .option(
       "--include-invalid",
@@ -83,9 +171,6 @@ export function createListCommand(): Command {
     )
     .action(async (options) => {
       try {
-        console.log(theme.info("🔍 Discovering available personas..."));
-        console.log();
-
         // Discover personas directly using discovery engine
         const discoveryResult = await discoverPersonas();
 
@@ -95,81 +180,61 @@ export function createListCommand(): Command {
         );
 
         if (filteredPersonas.length === 0) {
-          console.log(theme.warning("📦 No personas found"));
+          console.log(theme.success("🎭 Persona Content Packs"));
           console.log();
-          if (!options.includeInvalid && discoveryResult.personas.length > 0) {
-            const invalidCount =
-              discoveryResult.personas.length - filteredPersonas.length;
-            console.log(
-              theme.info(
-                `💡 ${invalidCount} invalid persona(s) found. Use --include-invalid to see them.`
-              )
-            );
-          }
-
-          // Show the configured persona directory
-          const personaDir = await getPersonaDirectory();
-          const configSource = await getPersonaDirectorySource();
-
-          console.log(theme.info("💡 Place personas in:"));
-          console.log(`   • ${theme.muted(personaDir)}`);
-          console.log(theme.muted(`   (${configSource})`));
-
+          console.log(theme.warning("No personas found"));
+          console.log();
+          console.log(theme.info("💡 To get started:"));
+          console.log(`   ${theme.info("hypertool persona add <path>")}        ${theme.muted("# Install from folder or .htp file")}`);
+          console.log(`   ${theme.info("hypertool persona --help")}            ${theme.muted("# See complete setup guide")}`);
           return;
         }
 
-        // Display summary
-        const validPersonas = discoveryResult.personas.filter(
-          (p) => p.isValid
-        ).length;
-        const invalidPersonas = discoveryResult.personas.length - validPersonas;
-
-        console.log(theme.success("📊 Persona Discovery Summary"));
-        console.log(
-          `   ${theme.label("Total Found:")} ${discoveryResult.personas.length}`
-        );
-        console.log(`   ${theme.label("Valid:")} ${validPersonas}`);
-        if (invalidPersonas > 0) {
-          console.log(`   ${theme.label("Invalid:")} ${invalidPersonas}`);
+        // Get current active persona with timeout to avoid hanging
+        let activePersonaName: string | undefined;
+        try {
+          // Use a promise with timeout to avoid hanging
+          const activePersonaPromise = Promise.race([
+            (async () => {
+              const manager = await initializePersonaManager();
+              const activePersona = manager.getActivePersona();
+              return activePersona?.persona.config.name;
+            })(),
+            new Promise<undefined>((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout')), 2000)
+            )
+          ]);
+          activePersonaName = await activePersonaPromise;
+        } catch {
+          // If we can't get active persona quickly, skip it
         }
-        console.log(
-          `   ${theme.label("Displayed:")} ${filteredPersonas.length}`
-        );
+
+        // Display header
+        console.log(theme.success("🎭 Persona Content Packs"));
         console.log();
 
-        // Display personas
-        console.log(theme.info("📦 Available Personas"));
-        for (const persona of filteredPersonas) {
-          console.log(`   ${formatPersonaReference(persona)}`);
-
-          if (!persona.isValid && persona.issues && persona.issues.length > 0) {
-            console.log(theme.error("     Issues:"));
-            for (const issue of persona.issues) {
-              console.log(`       • ${theme.error(issue)}`);
-            }
-          }
-        }
-        console.log();
-
-        // Show configured persona directory (only if using additional paths)
-        if (discoveryResult.searchPaths.length > 1) {
-          console.log(theme.info("🔍 Search Paths"));
-          for (const path of discoveryResult.searchPaths) {
-            console.log(`   • ${theme.muted(path)}`);
-          }
-        } else {
-          const configSource = await getPersonaDirectorySource();
-          console.log(theme.info("📍 Persona Directory"));
-          console.log(`   • ${theme.muted(discoveryResult.searchPaths[0])}`);
-          console.log(theme.muted(`   (${configSource})`));
-        }
-        console.log();
-
-        console.log(
-          theme.info(
-            "💡 Use 'hypertool persona activate <name>' to activate a persona"
-          )
+        // Load enhanced persona information for detailed display
+        const enhancedPersonas = await Promise.all(
+          filteredPersonas.map(persona => loadEnhancedPersonaInfo(persona, activePersonaName))
         );
+
+        // Display personas in multi-line format
+        for (const persona of enhancedPersonas) {
+          const mcpConfigPath = `${persona.path}/mcp.json`;
+          
+          console.log(theme.info(persona.name));
+          console.log(`  - ${theme.label("activation state:")} ${persona.isActive ? theme.success("true") : theme.muted("false")}`);
+          console.log(`  - ${theme.label("mcp config:")} ${theme.muted(mcpConfigPath)}`);
+          console.log();
+        }
+
+        // Display footer with instructions
+        console.log(theme.label("💡 Commands:"));
+        console.log(`  ${theme.info("hypertool persona add <path>")}           ${theme.muted("# Install new persona")}`);
+        console.log(`  ${theme.info("hypertool persona activate <name>")}      ${theme.muted("# Activate a persona")}`);
+        console.log(`  ${theme.info("hypertool-mcp --persona <name>")}         ${theme.muted("# Run with persona")}`);
+        console.log(`  ${theme.info("hypertool persona --help")}              ${theme.muted("# Complete setup guide")}`);
+        console.log();
       } catch (error) {
         console.error(semantic.messageError("❌ Failed to list personas:"));
         console.error(
@@ -422,6 +487,141 @@ export function createStatusCommand(): Command {
 }
 
 /**
+ * Create inspect subcommand
+ */
+export function createInspectCommand(): Command {
+  return new Command("inspect")
+    .description("Show detailed information about a specific persona including its MCP configuration")
+    .argument("<name>", "Name of the persona to inspect")
+    .action(async (name: string) => {
+      try {
+        console.log(theme.info(`🔍 Inspecting persona "${name}"...`));
+        console.log();
+
+        // Discover personas to find the requested one
+        const discoveryResult = await discoverPersonas();
+        const persona = discoveryResult.personas.find(p => p.name === name);
+
+        if (!persona) {
+          console.error(semantic.messageError(`❌ Persona "${name}" not found`));
+          console.log();
+          console.log(theme.info("💡 Available personas:"));
+          for (const p of discoveryResult.personas.filter(p => p.isValid)) {
+            console.log(`   • ${p.name}`);
+          }
+          process.exit(1);
+        }
+
+        // Load the persona to get detailed information
+        const loader = new PersonaLoader();
+        const loadResult = await loader.loadPersonaFromReference(persona);
+
+        if (!loadResult.success) {
+          console.error(semantic.messageError(`❌ Failed to load persona "${name}":`));
+          if (loadResult.errors && loadResult.errors.length > 0) {
+            for (const error of loadResult.errors) {
+              console.error(`   • ${theme.error(error)}`);
+            }
+          }
+          process.exit(1);
+        }
+
+        const loadedPersona = loadResult.persona;
+        if (!loadedPersona) {
+          console.error(semantic.messageError(`❌ No persona data loaded for "${name}"`));
+          process.exit(1);
+        }
+
+        // Display basic persona information
+        console.log(theme.success(`📋 Persona Details: ${name}`));
+        console.log();
+        console.log(`   ${theme.label("Name:")} ${loadedPersona.config.name}`);
+        console.log(`   ${theme.label("Description:")} ${loadedPersona.config.description || theme.muted("No description")}`);
+        console.log(`   ${theme.label("Version:")} ${loadedPersona.config.version || theme.muted("Not specified")}`);
+        console.log(`   ${theme.label("Path:")} ${loadedPersona.sourcePath}`);
+        console.log(`   ${theme.label("Valid:")} ${persona.isValid ? theme.success("✓ Yes") : theme.error("✗ No")}`);
+
+        if (loadedPersona.config.metadata) {
+          const metadata = loadedPersona.config.metadata;
+          console.log();
+          console.log(theme.info("📊 Metadata:"));
+          if (metadata.author) console.log(`   ${theme.label("Author:")} ${metadata.author}`);
+          if (metadata.created) console.log(`   ${theme.label("Created:")} ${metadata.created}`);
+          if (metadata.lastModified) console.log(`   ${theme.label("Last Modified:")} ${metadata.lastModified}`);
+          if (metadata.tags && metadata.tags.length > 0) {
+            console.log(`   ${theme.label("Tags:")} ${metadata.tags.join(", ")}`);
+          }
+        }
+
+        // Display toolsets
+        if (loadedPersona.config.toolsets && loadedPersona.config.toolsets.length > 0) {
+          console.log();
+          console.log(theme.info("🔧 Toolsets:"));
+          for (const toolset of loadedPersona.config.toolsets) {
+            const isDefault = toolset.name === loadedPersona.config.defaultToolset;
+            const marker = isDefault ? theme.success(" (default)") : "";
+            console.log(`   • ${theme.info(toolset.name)}${marker} - ${toolset.toolIds.length} tools`);
+            for (const toolId of toolset.toolIds) {
+              console.log(`     - ${theme.muted(toolId)}`);
+            }
+          }
+        } else {
+          console.log();
+          console.log(theme.warning("⚠️  No toolsets defined"));
+        }
+
+        // Display MCP configuration if present
+        if (loadedPersona.mcpConfig) {
+          console.log();
+          console.log(theme.info("🔌 MCP Configuration:"));
+          
+          // Show location of mcp.json
+          const mcpConfigPath = `${loadedPersona.sourcePath}/mcp.json`;
+          console.log(`   ${theme.label("Config File:")} ${mcpConfigPath}`);
+          
+          if (loadedPersona.mcpConfig.mcpServers) {
+            console.log(`   ${theme.label("Servers:")} ${Object.keys(loadedPersona.mcpConfig.mcpServers).length} configured`);
+            console.log();
+            console.log("   MCP Server Configurations:");
+            for (const [serverName, serverConfig] of Object.entries(loadedPersona.mcpConfig.mcpServers)) {
+              console.log(`     • ${theme.info(serverName)}`);
+              console.log(`       Command: ${theme.muted(JSON.stringify(serverConfig))}`);
+            }
+          }
+          
+          console.log();
+          console.log(theme.info("📄 Complete MCP Configuration:"));
+          console.log(JSON.stringify(loadedPersona.mcpConfig, null, 2));
+        } else {
+          console.log();
+          console.log(theme.warning("⚠️  No MCP configuration found"));
+          console.log(`   ${theme.muted("Expected at:")} ${loadedPersona.sourcePath}/mcp.json`);
+        }
+
+        // Show validation issues if any
+        if (!persona.isValid && persona.issues && persona.issues.length > 0) {
+          console.log();
+          console.log(theme.error("❌ Validation Issues:"));
+          for (const issue of persona.issues) {
+            console.log(`   • ${theme.error(issue)}`);
+          }
+        }
+
+        console.log();
+        console.log(theme.info("💡 Use 'hypertool persona activate " + name + "' to activate this persona"));
+      } catch (error) {
+        console.error(semantic.messageError("❌ Failed to inspect persona:"));
+        console.error(
+          theme.error(
+            `   ${error instanceof Error ? error.message : String(error)}`
+          )
+        );
+        process.exit(1);
+      }
+    });
+}
+
+/**
  * Create deactivate subcommand
  */
 export function createDeactivateCommand(): Command {
@@ -487,20 +687,42 @@ export function createPersonaCommand(): Command {
     .addHelpText(
       "after",
       `
-${theme.label("Examples:")}
-  ${theme.muted("hypertool persona list                    # List all available personas")}
-  ${theme.muted("hypertool persona list --include-invalid  # Include invalid personas")}
-  ${theme.muted("hypertool persona add ./my-persona        # Install persona from folder")}
-  ${theme.muted("hypertool persona add ./persona.htp       # Install persona from archive")}
-  ${theme.muted("hypertool persona activate frontend       # Activate 'frontend' persona")}
-  ${theme.muted("hypertool persona activate backend --toolset api  # Activate with specific toolset")}
-  ${theme.muted("hypertool persona validate ./my-persona   # Validate persona at path")}
-  ${theme.muted("hypertool persona status                  # Show current active persona")}
-  ${theme.muted("hypertool persona deactivate              # Deactivate current persona")}`
+${theme.success("🎭 PERSONAS - Pre-configured MCP Server Bundles")}
+
+${theme.info("What are personas?")}
+  ${theme.muted("Personas are ready-to-use collections of MCP servers and tools that you can")}
+  ${theme.muted("install and activate instantly. Think of them as app bundles for AI development.")}
+
+${theme.success("⚡ First Time Setup (3 steps):")}
+  ${theme.info("1.")} ${theme.muted("Clone the persona collection:")}
+     ${theme.warning("git clone https://github.com/toolprint/awesome-mcp-personas")}
+  
+  ${theme.info("2.")} ${theme.muted("Add a persona (replace <persona-name> with actual name):")}
+     ${theme.warning("hypertool persona add awesome-mcp-personas/personas/<persona-name>")}
+  
+  ${theme.info("3.")} ${theme.muted("Activate it and start using:")}
+     ${theme.warning("hypertool persona activate <persona-name>")}
+
+${theme.success("📋 Common Commands:")}
+  ${theme.info("list")}       ${theme.muted("See all available personas")}
+  ${theme.info("add")}        ${theme.muted("Install a persona from a folder")}
+  ${theme.info("activate")}   ${theme.muted("Switch to a persona")}
+  ${theme.info("inspect")}    ${theme.muted("View detailed persona info and MCP config")}
+  ${theme.info("status")}     ${theme.muted("See which persona is currently active")}
+  ${theme.info("deactivate")} ${theme.muted("Turn off current persona")}
+
+${theme.success("💡 Quick Examples:")}
+  ${theme.warning("hypertool persona list")}                     ${theme.muted("# Browse available personas")}
+  ${theme.warning("hypertool persona add ./my-persona-folder")}  ${theme.muted("# Install from local folder")}
+  ${theme.warning("hypertool persona activate web-dev")}         ${theme.muted("# Switch to web-dev persona")}
+  ${theme.warning("hypertool persona inspect web-dev")}          ${theme.muted("# View persona details & config")}
+
+${theme.info("📍 Personas are stored at:")} ${theme.muted("~/.toolprint/hypertool-mcp/personas")}`
     );
 
   // Add all subcommands
   personaCommand.addCommand(createListCommand());
+  personaCommand.addCommand(createInspectCommand());
   personaCommand.addCommand(createAddCommand());
   personaCommand.addCommand(createActivateCommand());
   personaCommand.addCommand(createValidateCommand());

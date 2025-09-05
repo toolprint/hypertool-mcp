@@ -185,7 +185,7 @@ export class PersonaToolsetBridge {
         tools: toolReferences,
       };
 
-      logger.info("Persona toolset conversion completed", {
+      logger.debug("Persona toolset conversion completed", {
         personaName,
         originalToolsetName: personaToolset.name,
         convertedToolsetName: toolsetName,

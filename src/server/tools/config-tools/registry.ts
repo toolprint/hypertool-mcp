@@ -15,7 +15,7 @@ import { createUnequipToolsetModule } from "./tools/unequip-toolset.js";
 import { createGetActiveToolsetModule } from "./tools/get-active-toolset.js";
 import { createAddToolAnnotationModule } from "./tools/add-tool-annotation.js";
 import { createExitConfigurationModeModule } from "../common/exit-configuration-mode.js";
-import { createListPersonasModule } from "../persona/list-personas.js";
+import { createListPersonasModule } from "./persona/list-personas.js";
 
 /**
  * Registry of all configuration tool factories

@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "everything": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-context7"],
+      "env": {
+        "CONTEXT7_URL": "https://mcp.context7.com/sse"
+      }
+    },
+    "mcping": {
+      "command": "npx",
+      "args": ["-y", "@toolprint/mcping-mcp@latest"]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
+    }
+  }
+}

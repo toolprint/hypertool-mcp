@@ -3,10 +3,10 @@
  */
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { ToolModuleFactory, ToolModule } from "../types.js";
-import { discoverPersonas } from "../../../persona/discovery.js";
+import { ToolModuleFactory, ToolModule } from "../../types.js";
+import { discoverPersonas } from "../../../../persona/discovery.js";
 import { promises as fs } from "fs";
-import { getSupportedPersonaFiles } from "../../../persona/parser.js";
+import { getSupportedPersonaFiles } from "../../../../persona/parser.js";
 
 export const listPersonasDefinition: Tool = {
   name: "list-personas",
