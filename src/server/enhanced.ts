@@ -30,10 +30,10 @@ function createSpinner(text: string, isStdio: boolean) {
   if (isStdio) {
     // Return a mock spinner that does nothing in stdio mode
     return {
-      start: () => ({ succeed: () => { }, fail: () => { }, warn: () => { } }),
-      succeed: () => { },
-      fail: () => { },
-      warn: () => { },
+      start: () => ({ succeed: () => {}, fail: () => {}, warn: () => {} }),
+      succeed: () => {},
+      fail: () => {},
+      warn: () => {},
     };
   }
   return ora(text).start();
@@ -131,8 +131,8 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       // Placeholder MCP configuration handlers - will be updated later
       mcpConfigHandlers: {
         getCurrentConfig: async () => null,
-        setCurrentConfig: async () => { },
-        restartConnections: async () => { },
+        setCurrentConfig: async () => {},
+        restartConnections: async () => {},
       },
     });
 
@@ -257,10 +257,12 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
     if ((this.personaManager as any).config) {
       // Check if persona was requested in the command line options
       const personaRequested = this.runtimeOptions?.persona;
-      
+
       if (personaRequested) {
         (this.personaManager as any).config.persistState = true;
-        logger.debug("Enabled persona state persistence after boot sequence (persona requested)");
+        logger.debug(
+          "Enabled persona state persistence after boot sequence (persona requested)"
+        );
 
         // Restore any persisted persona state now that all dependencies are available
         try {
@@ -270,11 +272,15 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           logger.warn("Failed to restore persisted persona state:", error);
         }
       } else {
-        logger.debug("Skipping persona state restoration (no persona requested)");
+        logger.debug(
+          "Skipping persona state restoration (no persona requested)"
+        );
         // Clear any persisted state from previous runs since we're not using a persona
         try {
           await (this.personaManager as any).clearPersistedState?.();
-          logger.debug("Cleared persisted persona state (no persona requested)");
+          logger.debug(
+            "Cleared persisted persona state (no persona requested)"
+          );
         } catch (error) {
           // Ignore errors when clearing state
           logger.debug("Could not clear persisted persona state:", error);
@@ -777,17 +783,14 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
 
       // Also listen for persona toolset changes and notify clients
       if (this.personaManager) {
-        this.personaManager.on(
-          "toolset-changed",
-          async (event: any) => {
-            if (options.debug) {
-              logger.info(
-                `Persona toolset changed: ${event.toolsetName} for persona ${event.personaName}`
-              );
-            }
-            await this.notifyToolsChanged();
+        this.personaManager.on("toolset-changed", async (event: any) => {
+          if (options.debug) {
+            logger.info(
+              `Persona toolset changed: ${event.toolsetName} for persona ${event.personaName}`
+            );
           }
-        );
+          await this.notifyToolsChanged();
+        });
       }
 
       mainSpinner.succeed("Tool discovery engine initialized");
@@ -837,7 +840,7 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
             if (options.debug) {
               logger.info(
                 `Tools changed while toolset "${activeToolsetInfo.name}" is equipped. ` +
-                `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
+                  `Server: ${event.serverName}, Changes: +${event.summary.added} ~${event.summary.updated} -${event.summary.removed}`
               );
             }
           }
@@ -889,26 +892,38 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const activePersona = this.personaManager?.getActivePersona();
       if (activePersona && this.personaManager) {
         // Persona is active - route through PersonaManager delegate
-        logger.info(`✅ Routing toolset equip through PersonaManager for persona: ${activePersona.persona.config.name}`);
-        logger.debug(`Attempting to equip toolset: ${this.runtimeOptions!.equipToolset!}`);
+        logger.info(
+          `✅ Routing toolset equip through PersonaManager for persona: ${activePersona.persona.config.name}`
+        );
+        logger.debug(
+          `Attempting to equip toolset: ${this.runtimeOptions!.equipToolset!}`
+        );
         const result = await this.personaManager.equipToolset(
           this.runtimeOptions!.equipToolset!
         );
         if (!result.success) {
-          logger.error(`Failed to equip toolset via PersonaManager: ${result.error}`);
+          logger.error(
+            `Failed to equip toolset via PersonaManager: ${result.error}`
+          );
         } else {
-          logger.info(`✅ Successfully equipped toolset "${this.runtimeOptions!.equipToolset!}" via PersonaManager`);
+          logger.info(
+            `✅ Successfully equipped toolset "${this.runtimeOptions!.equipToolset!}" via PersonaManager`
+          );
         }
       } else {
         // No persona active - use ToolsetManager directly
-        logger.info(`No persona active - routing toolset equip through ToolsetManager directly`);
+        logger.info(
+          `No persona active - routing toolset equip through ToolsetManager directly`
+        );
         const result = await this.toolsetManager.equipToolset(
           this.runtimeOptions!.equipToolset!
         );
         if (!result.success) {
           logger.error(`Failed to equip toolset: ${result.error}`);
         } else {
-          logger.info(`✅ Successfully equipped toolset "${this.runtimeOptions!.equipToolset!}" via ToolsetManager`);
+          logger.info(
+            `✅ Successfully equipped toolset "${this.runtimeOptions!.equipToolset!}" via ToolsetManager`
+          );
         }
       }
     } else {
@@ -921,14 +936,15 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
           logger.debug("No previously equipped toolset to restore");
         }
       } else {
-        logger.debug("Persona active - skipping toolset restoration (persona handles defaults)");
+        logger.debug(
+          "Persona active - skipping toolset restoration (persona handles defaults)"
+        );
       }
     }
 
     // Initialize configuration mode components
     await this.initializeConfigurationMode(dependencies);
   }
-
 
   /**
    * Initialize and activate a persona
@@ -979,15 +995,26 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
         }
 
         // Check if persona was not found and provide helpful guidance
-        if (result.errors && result.errors.some(e => e.includes("not found"))) {
+        if (
+          result.errors &&
+          result.errors.some((e) => e.includes("not found"))
+        ) {
           logger.error("");
           logger.error("💡 To add and manage personas:");
-          logger.error("   hypertool-mcp persona --help     # See persona management guide");
-          logger.error("   hypertool-mcp persona add <path>  # Add a persona from folder or .htp file");
-          logger.error("   hypertool-mcp persona list        # List available personas");
+          logger.error(
+            "   hypertool-mcp persona --help     # See persona management guide"
+          );
+          logger.error(
+            "   hypertool-mcp persona add <path>  # Add a persona from folder or .htp file"
+          );
+          logger.error(
+            "   hypertool-mcp persona list        # List available personas"
+          );
           logger.error("");
           logger.error("   Or use regular MCP config instead:");
-          logger.error("   hypertool-mcp --mcp-config <path> # Use standard MCP configuration");
+          logger.error(
+            "   hypertool-mcp --mcp-config <path> # Use standard MCP configuration"
+          );
           logger.error("");
         }
       }
@@ -1113,9 +1140,9 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       const listResult = await this.toolsetManager.listSavedToolsets();
       const storedToolsets = listResult.success
         ? listResult.toolsets.reduce(
-          (acc: any, t: any) => ({ ...acc, [t.name]: t }),
-          {}
-        )
+            (acc: any, t: any) => ({ ...acc, [t.name]: t }),
+            {}
+          )
         : {};
       const hasToolsets = Object.keys(storedToolsets).length > 0;
       const activeToolsetInfo = this.toolsetManager.getActiveToolsetInfo();
@@ -1182,9 +1209,10 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       // Add all toolset tools
       try {
         // Use PersonaManager for tools when in persona mode
-        const mcpTools = this.isPersonaMode && this.personaManager 
-          ? this.personaManager.getMcpTools()
-          : this.toolsetManager.getMcpTools();
+        const mcpTools =
+          this.isPersonaMode && this.personaManager
+            ? this.personaManager.getMcpTools()
+            : this.toolsetManager.getMcpTools();
         tools.push(...mcpTools);
         logger.debug(`All tools mode: added ${mcpTools.length} toolset tools`);
       } catch (error) {
@@ -1215,10 +1243,13 @@ export class EnhancedMetaMCPServer extends MetaMCPServer {
       // Add tools from appropriate manager based on persona mode
       try {
         // Use PersonaManager for tools when in persona mode
-        const mcpTools = this.isPersonaMode && this.personaManager 
-          ? this.personaManager.getMcpTools()
-          : this.toolsetManager.getMcpTools();
-        const source = this.isPersonaMode ? "persona manager" : "toolset manager";
+        const mcpTools =
+          this.isPersonaMode && this.personaManager
+            ? this.personaManager.getMcpTools()
+            : this.toolsetManager.getMcpTools();
+        const source = this.isPersonaMode
+          ? "persona manager"
+          : "toolset manager";
         tools.push(...mcpTools);
         logger.debug(
           `Normal mode: got ${mcpTools.length} tools from ${source}`

@@ -10,7 +10,7 @@ The `test-config-tools.sh` script tests how configuration tools behave different
 
 ### Key Components
 
-1. **HTTP Session Management**: 
+1. **HTTP Session Management**:
    - Uses MCP's Streamable HTTP transport
    - Requires proper session initialization with `initialize` method
    - Session ID returned in `Mcp-Session-Id` header
@@ -154,12 +154,12 @@ Located in `src/server/tools/config-tools/manager.ts`:
 ```typescript
 public getMcpTools(): Tool[] {
   const activePersona = this.dependencies.personaManager?.getActivePersona();
-  
+
   // Hide tools based on persona state:
   if (toolName === 'list-personas' && activePersona) continue;
   if (toolName === 'build-toolset' && activePersona) continue;
   if (toolName === 'delete-toolset' && activePersona) continue;
-  
+
   // Return remaining tools
 }
 ```
@@ -192,7 +192,7 @@ public getMcpTools(): Tool[] {
 - ✅ Can create/delete toolsets
 - ✅ No persona toolsets shown
 
-### Persona Mode  
+### Persona Mode
 - ✅ Restricted tools hidden
 - ✅ Persona toolsets shown with "persona:" prefix
 - ✅ Cannot create/delete toolsets

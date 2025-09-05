@@ -45,45 +45,51 @@ interface AddCommandOptions {
  */
 async function checkEnvironmentVariables(installPath: string): Promise<{
   hasEnvVars: boolean;
-  envVars: Array<{server: string; vars: string[]}>;
+  envVars: Array<{ server: string; vars: string[] }>;
   configPath: string;
 }> {
   const mcpConfigPath = `${installPath}/mcp.json`;
-  
+
   try {
     const configContent = await fs.readFile(mcpConfigPath, "utf-8");
     const config = JSON.parse(configContent);
-    
-    const envVars: Array<{server: string; vars: string[]}> = [];
-    
+
+    const envVars: Array<{ server: string; vars: string[] }> = [];
+
     if (config.mcpServers) {
-      for (const [serverName, serverConfig] of Object.entries(config.mcpServers)) {
-        if (typeof serverConfig === 'object' && serverConfig !== null && 'env' in serverConfig) {
+      for (const [serverName, serverConfig] of Object.entries(
+        config.mcpServers
+      )) {
+        if (
+          typeof serverConfig === "object" &&
+          serverConfig !== null &&
+          "env" in serverConfig
+        ) {
           const env = (serverConfig as any).env;
-          if (env && typeof env === 'object') {
+          if (env && typeof env === "object") {
             const vars = Object.keys(env);
             if (vars.length > 0) {
               envVars.push({
                 server: serverName,
-                vars: vars
+                vars: vars,
               });
             }
           }
         }
       }
     }
-    
+
     return {
       hasEnvVars: envVars.length > 0,
       envVars,
-      configPath: mcpConfigPath
+      configPath: mcpConfigPath,
     };
   } catch (error) {
     // If we can't read the MCP config, that's okay
     return {
       hasEnvVars: false,
       envVars: [],
-      configPath: mcpConfigPath
+      configPath: mcpConfigPath,
     };
   }
 }
@@ -94,22 +100,26 @@ async function checkEnvironmentVariables(installPath: string): Promise<{
 async function interactiveEnvVarConfig(
   envCheck: {
     hasEnvVars: boolean;
-    envVars: Array<{server: string; vars: string[]}>;
+    envVars: Array<{ server: string; vars: string[] }>;
     configPath: string;
   },
   personaName: string
 ): Promise<void> {
   const { shouldConfigure } = await inquirer.prompt([
     {
-      type: 'confirm',
-      name: 'shouldConfigure',
-      message: 'Configure now?',
+      type: "confirm",
+      name: "shouldConfigure",
+      message: "Configure now?",
       default: true,
     },
   ]);
 
   if (!shouldConfigure) {
-    console.log(theme.warning(`⏭️  Configure later with: ${theme.info('hypertool persona inspect ' + personaName)}`));
+    console.log(
+      theme.warning(
+        `⏭️  Configure later with: ${theme.info("hypertool persona inspect " + personaName)}`
+      )
+    );
     return;
   }
 
@@ -120,10 +130,10 @@ async function interactiveEnvVarConfig(
     for (const envVar of serverEnv.vars) {
       const { value } = await inquirer.prompt([
         {
-          type: 'input',
-          name: 'value',
+          type: "input",
+          name: "value",
           message: `${serverEnv.server}.${envVar}:`,
-          validate: (input: string) => input.trim() ? true : 'Required',
+          validate: (input: string) => (input.trim() ? true : "Required"),
         },
       ]);
       envValues[envVar] = value;
@@ -136,10 +146,16 @@ async function interactiveEnvVarConfig(
     const config = JSON.parse(configContent);
 
     // Update environment variables in the config
-    for (const [serverName, serverConfig] of Object.entries(config.mcpServers)) {
-      if (typeof serverConfig === 'object' && serverConfig !== null && 'env' in serverConfig) {
+    for (const [serverName, serverConfig] of Object.entries(
+      config.mcpServers
+    )) {
+      if (
+        typeof serverConfig === "object" &&
+        serverConfig !== null &&
+        "env" in serverConfig
+      ) {
         const env = (serverConfig as any).env;
-        if (env && typeof env === 'object') {
+        if (env && typeof env === "object") {
           for (const [envVar, currentValue] of Object.entries(env)) {
             if (envValues[envVar]) {
               env[envVar] = envValues[envVar];
@@ -152,11 +168,16 @@ async function interactiveEnvVarConfig(
     // Write the updated config back to file
     await fs.writeFile(envCheck.configPath, JSON.stringify(config, null, 2));
 
-    console.log(theme.success(`✅ Configured! Run: ${theme.warning(`hypertool persona activate ${personaName}`)}`));
+    console.log(
+      theme.success(
+        `✅ Configured! Run: ${theme.warning(`hypertool persona activate ${personaName}`)}`
+      )
+    );
     console.log(`   ${theme.muted("Config:")} ${envCheck.configPath}`);
-
   } catch (error) {
-    console.error(theme.error(`❌ Config failed. Edit manually: ${envCheck.configPath}`));
+    console.error(
+      theme.error(`❌ Config failed. Edit manually: ${envCheck.configPath}`)
+    );
   }
 }
 
@@ -172,23 +193,29 @@ async function displayInstallationResult(
     console.log(theme.success(`✅ Installed "${result.personaName}"`));
     console.log(`   ${theme.muted("Location:")} ${result.installPath}`);
     console.log(`   ${theme.muted("Config:")} ${result.installPath}/mcp.json`);
-    
+
     // Check for environment variables that need configuration
     const envCheck = await checkEnvironmentVariables(result.installPath);
     if (envCheck.hasEnvVars) {
       console.log();
       console.log(theme.warning("⚙️  Configuration needed:"));
-      
+
       for (const serverEnv of envCheck.envVars) {
         const vars = serverEnv.vars.join(", ");
-        console.log(`   ${theme.info(serverEnv.server)}: ${theme.warning(vars)}`);
+        console.log(
+          `   ${theme.info(serverEnv.server)}: ${theme.warning(vars)}`
+        );
       }
 
       // Offer interactive configuration
       await interactiveEnvVarConfig(envCheck, result.personaName);
     } else {
       console.log();
-      console.log(theme.success(`🚀 Ready to use! Run: ${theme.warning(`hypertool persona activate ${result.personaName}`)}`));
+      console.log(
+        theme.success(
+          `🚀 Ready to use! Run: ${theme.warning(`hypertool persona activate ${result.personaName}`)}`
+        )
+      );
     }
   } else {
     console.error(semantic.messageError("❌ Installation failed"));
@@ -307,7 +334,7 @@ export function createAddCommand(): Command {
       try {
         const resolvedSourcePath = resolve(sourcePath);
 
-        // Analyze the source to understand what we're installing  
+        // Analyze the source to understand what we're installing
         const sourceInfo = await analyzeSource(resolvedSourcePath);
 
         if (!sourceInfo.accessible) {
@@ -367,7 +394,11 @@ export function createAddCommand(): Command {
         const result = await installPersona(resolvedSourcePath, installOptions);
 
         // Display results
-        await displayInstallationResult(resolvedSourcePath, result, sourceInfo.type);
+        await displayInstallationResult(
+          resolvedSourcePath,
+          result,
+          sourceInfo.type
+        );
 
         // Exit with appropriate code
         process.exit(result.success ? 0 : 1);

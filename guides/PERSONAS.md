@@ -182,7 +182,7 @@ Once running with a persona, you can switch between its toolsets dynamically:
 You: "Switch to the backend toolset"
 AI: "Equipped backend toolset with database and API tools"
 
-You: "Now switch to frontend tools"  
+You: "Now switch to frontend tools"
 AI: "Equipped frontend toolset with UI and browser tools"
 ```
 
@@ -195,13 +195,13 @@ Each persona typically includes multiple toolsets for different tasks:
 toolsets:
   - name: frontend
     tools: [browser.*, css.*, webpack.*]
-    
+
   - name: backend
     tools: [database.*, api.*, auth.*]
-    
+
   - name: fullstack
     tools: [git.*, docker.*, test.*]
-    
+
   - name: debugging
     tools: [logs.*, trace.*, profile.*]
 ```

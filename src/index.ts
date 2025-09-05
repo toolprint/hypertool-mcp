@@ -162,7 +162,8 @@ const mcpServerRunOptions = [
   },
   {
     flags: "--equip-toolset <name>",
-    description: theme.info("Toolset name to equip on startup") +
+    description:
+      theme.info("Toolset name to equip on startup") +
       "\n" +
       theme.muted("(with --persona: equips persona toolset)") +
       "\n" +
@@ -476,11 +477,17 @@ async function parseCliArguments(): Promise<RuntimeOptions> {
         "\n\n" +
         theme.info("Commands:") +
         "\n" +
-        theme.success("  mcp run") + " - " + theme.muted("Run the MCP server (with --persona or --mcp-config)") +
+        theme.success("  mcp run") +
+        " - " +
+        theme.muted("Run the MCP server (with --persona or --mcp-config)") +
         "\n" +
-        theme.success("  persona") + " - " + theme.muted("Manage persona content packs") +
+        theme.success("  persona") +
+        " - " +
+        theme.muted("Manage persona content packs") +
         "\n" +
-        theme.success("  setup") + " - " + theme.muted("Interactive setup wizard")
+        theme.success("  setup") +
+        " - " +
+        theme.muted("Interactive setup wizard")
     )
     .version(APP_VERSION);
 
@@ -517,7 +524,7 @@ ${theme.success("⚙️  Standard Mode")} ${theme.muted("(Your .mcp.json files)"
 ${theme.label("Advanced Options:")}
   ${theme.muted("hypertool-mcp mcp run --help")}    ${theme.muted("# See all MCP server options")}
   ${theme.muted("hypertool-mcp setup")}             ${theme.muted("# Interactive setup wizard")}
-  
+
 ${theme.label("Tool Organization:")}
   ${theme.muted("By default, configuration tools are in a separate mode.")}
   ${theme.muted("To show all tools together: export HYPERTOOL_ENABLE_CONFIG_TOOLS_MENU=false")}`
@@ -664,7 +671,9 @@ ${theme.label("Tool Organization:")}
         // Primary onboarding path: show main help
         console.log(theme.success("🚀 Hypertool MCP is ready!"));
         console.log(theme.info("   To get started, use one of:"));
-        console.log(theme.info("   • hypertool-mcp mcp run --mcp-config <path>"));
+        console.log(
+          theme.info("   • hypertool-mcp mcp run --mcp-config <path>")
+        );
         console.log(theme.info("   • hypertool-mcp mcp run --persona <name>"));
         console.log(theme.info("   • hypertool-mcp setup (interactive)"));
         console.log("");

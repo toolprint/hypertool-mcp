@@ -76,7 +76,7 @@ Don't want to configure from scratch? Use personas - ready-to-use MCP server bun
 
 Think of personas as "app bundles" for your AI - they come with:
 - ✅ Pre-configured MCP servers
-- ✅ Curated toolsets for specific workflows  
+- ✅ Curated toolsets for specific workflows
 - ✅ Everything you need to get started instantly
 
 ### Quick Start with Personas
@@ -110,7 +110,7 @@ That's it! No server configuration needed. The persona brings its own servers an
 # Standard Mode (use your existing MCP servers):
 npx -y @toolprint/hypertool-mcp mcp run --mcp-config .mcp.hypertool.json
 
-# Persona Mode (bundled servers + pre-built toolsets):  
+# Persona Mode (bundled servers + pre-built toolsets):
 npx -y @toolprint/hypertool-mcp mcp run --persona web-dev
 
 # Persona Mode with specific toolset:

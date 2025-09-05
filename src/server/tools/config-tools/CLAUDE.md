@@ -123,7 +123,7 @@ The ConfigToolsManager routes to the appropriate delegate:
 ```typescript
 private getActiveToolsetDelegate(): IToolsetDelegate {
   const activePersona = this.dependencies.personaManager?.getActivePersona();
-  
+
   if (activePersona) {
     // Persona is active - route to PersonaManager
     return this.dependencies.personaManager as IToolsetDelegate;
@@ -188,11 +188,11 @@ These are kept for potential future use but are not part of the current configur
 1. **Standard Mode Tool Visibility**
    - All configuration tools visible except `list-personas`
    - Can create and delete toolsets
-   
+
 2. **Persona Mode Tool Visibility**
    - `build-toolset` and `delete-toolset` hidden
    - `list-personas` visible
-   
+
 3. **Toolset Operations**
    - Equipping toolsets works in both modes
    - Persona toolsets cannot be deleted

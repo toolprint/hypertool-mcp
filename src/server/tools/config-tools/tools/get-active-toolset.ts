@@ -4,9 +4,7 @@
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolModuleFactory, ToolModule } from "../../types.js";
-import {
-  getActiveToolsetResponseSchema,
-} from "../../schemas.js";
+import { getActiveToolsetResponseSchema } from "../../schemas.js";
 
 export const getActiveToolsetDefinition: Tool = {
   name: "get-active-toolset",
@@ -32,7 +30,7 @@ export const createGetActiveToolsetModule: ToolModuleFactory = (
     ) => {
       // Route to appropriate delegate based on persona activation state
       const activePersona = deps.personaManager?.getActivePersona();
-      
+
       let result;
       if (activePersona && deps.personaManager) {
         // PersonaManager is active, use it as delegate
@@ -41,12 +39,14 @@ export const createGetActiveToolsetModule: ToolModuleFactory = (
         // Use ToolsetManager as delegate
         result = await deps.toolsetManager.getActiveToolset();
       }
-      
+
       return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify(result),
-        }],
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result),
+          },
+        ],
         structuredContent: result,
       };
     },

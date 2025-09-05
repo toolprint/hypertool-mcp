@@ -70,6 +70,8 @@ vi.mock("../persona/manager.js", () => ({
   PersonaManager: vi.fn().mockImplementation(() => ({
     initialize: vi.fn().mockResolvedValue(undefined),
     updateMcpHandlers: vi.fn().mockResolvedValue(undefined),
+    on: vi.fn(), // Add the missing event listener method
+    getActivePersona: vi.fn().mockReturnValue(null), // No active persona in these tests
   })),
 }));
 
@@ -129,13 +131,13 @@ vi.mock("./base.js", () => ({
   },
 }));
 
-// Mock feature flags to disable DXT and enable config tools menu
+// Mock feature flags to disable DXT and disable config tools menu (default)
 vi.mock("../config/featureFlagService.js", () => ({
   getFeatureFlagService: () => ({
     reset: vi.fn(),
   }),
   isDxtEnabledViaService: vi.fn().mockResolvedValue(false),
-  isConfigToolsMenuEnabledViaService: vi.fn().mockResolvedValue(true),
+  isConfigToolsMenuEnabledViaService: vi.fn().mockResolvedValue(false),
 }));
 
 // Mock the enter-configuration-mode tool creator
@@ -173,7 +175,7 @@ describe("Initial Configuration Mode Determination", () => {
     }
   });
 
-  it("should start in configuration mode when no toolset is restored", async () => {
+  it("should show all tools when config menu is disabled and no toolset is restored", async () => {
     // Mock no toolset restoration
     const { ToolsetManager } = await import("./tools/toolset/manager.js");
     (ToolsetManager as any).mockImplementation(() => {
@@ -200,7 +202,7 @@ describe("Initial Configuration Mode Determination", () => {
     });
 
     // Mock the heavy parts to prevent network calls and complex initialization
-    vi.spyOn(server as any, 'loadMcpConfigOrExit').mockResolvedValue({});
+    vi.spyOn(server as any, "loadMcpConfigOrExit").mockResolvedValue({});
 
     await server.start({
       transport: { type: "stdio" },
@@ -208,18 +210,18 @@ describe("Initial Configuration Mode Determination", () => {
 
     const tools = await server["getAvailableTools"]();
 
-    // In configuration mode, we should see configuration tools
+    // With config menu disabled, we should see configuration tools always
     const hasConfigTool = tools.some((t) => t.name === "list-available-tools");
     expect(hasConfigTool).toBe(true);
 
-    // Should NOT have enter-configuration-mode tool (that's for normal mode)
+    // Should NOT have enter-configuration-mode tool (no mode switching when disabled)
     const hasEnterConfigMode = tools.some(
       (t) => t.name === "enter-configuration-mode"
     );
     expect(hasEnterConfigMode).toBe(false);
   }, 15000); // Increase timeout to 15s
 
-  it("should start in normal mode when a toolset is restored", async () => {
+  it("should show all tools when config menu is disabled and a toolset is restored", async () => {
     // Mock successful toolset restoration
     const { ToolsetManager } = await import("./tools/toolset/manager.js");
     (ToolsetManager as any).mockImplementation(() => {
@@ -251,7 +253,7 @@ describe("Initial Configuration Mode Determination", () => {
     });
 
     // Mock the heavy parts to prevent network calls and complex initialization
-    vi.spyOn(server as any, 'loadMcpConfigOrExit').mockResolvedValue({});
+    vi.spyOn(server as any, "loadMcpConfigOrExit").mockResolvedValue({});
 
     await server.start({
       transport: { type: "stdio" },
@@ -259,18 +261,18 @@ describe("Initial Configuration Mode Determination", () => {
 
     const tools = await server["getAvailableTools"]();
 
-    // In normal mode, we should have enter-configuration-mode tool
+    // With config menu disabled, no enter-configuration-mode tool
     const hasEnterConfigMode = tools.some(
       (t) => t.name === "enter-configuration-mode"
     );
-    expect(hasEnterConfigMode).toBe(true);
+    expect(hasEnterConfigMode).toBe(false);
 
-    // Should NOT have configuration tools directly
+    // Should have configuration tools always visible
     const hasConfigTool = tools.some((t) => t.name === "list-available-tools");
-    expect(hasConfigTool).toBe(false);
+    expect(hasConfigTool).toBe(true);
   }, 15000); // Increase timeout to 15s
 
-  it("should start in normal mode when equipToolset runtime option is provided", async () => {
+  it("should show all tools when config menu is disabled and equipToolset runtime option is provided", async () => {
     // Mock successful toolset equip via runtime option
     const { ToolsetManager } = await import("./tools/toolset/manager.js");
     (ToolsetManager as any).mockImplementation(() => {
@@ -302,7 +304,7 @@ describe("Initial Configuration Mode Determination", () => {
     });
 
     // Mock the heavy parts to prevent network calls and complex initialization
-    vi.spyOn(server as any, 'loadMcpConfigOrExit').mockResolvedValue({});
+    vi.spyOn(server as any, "loadMcpConfigOrExit").mockResolvedValue({});
 
     await server.start(
       { transport: { type: "stdio" } },
@@ -316,10 +318,14 @@ describe("Initial Configuration Mode Determination", () => {
 
     const tools = await server["getAvailableTools"]();
 
-    // Should be in normal mode after equipping toolset
+    // With config menu disabled, no enter-configuration-mode tool
     const hasEnterConfigMode = tools.some(
       (t) => t.name === "enter-configuration-mode"
     );
-    expect(hasEnterConfigMode).toBe(true);
+    expect(hasEnterConfigMode).toBe(false);
+
+    // Should have configuration tools always visible
+    const hasConfigTool = tools.some((t) => t.name === "list-available-tools");
+    expect(hasConfigTool).toBe(true);
   }, 15000); // Increase timeout to 15s
 });

@@ -57,7 +57,10 @@ import { IToolsetDelegate } from "../interfaces/toolset-delegate.js";
 
 const logger = createChildLogger({ module: "toolset" });
 
-export class ToolsetManager extends EventEmitter implements ToolsProvider, IToolsetDelegate {
+export class ToolsetManager
+  extends EventEmitter
+  implements ToolsProvider, IToolsetDelegate
+{
   private currentToolset?: ToolsetConfig;
   private configPath?: string;
   private discoveryEngine?: IToolDiscoveryEngine;
@@ -826,11 +829,12 @@ export class ToolsetManager extends EventEmitter implements ToolsProvider, ITool
 
     // Convert current toolset to response format
     const toolsetInfo = await this.generateToolsetInfo(this.currentToolset);
-    
+
     // Get discovery engine for tool stats
-    const allDiscoveredTools = this.discoveryEngine?.getAvailableTools(true) || [];
+    const allDiscoveredTools =
+      this.discoveryEngine?.getAvailableTools(true) || [];
     const activeDiscoveredTools = this.getActiveDiscoveredTools();
-    
+
     // Group tools by server for exposedTools
     const exposedTools: Record<string, string[]> = {};
     for (const tool of activeDiscoveredTools) {
@@ -1074,7 +1078,7 @@ export class ToolsetManager extends EventEmitter implements ToolsProvider, ITool
    * Get the delegate type for routing context
    * Implementation of IToolsetDelegate interface
    */
-  getDelegateType(): 'regular' | 'persona' {
-    return 'regular';
+  getDelegateType(): "regular" | "persona" {
+    return "regular";
   }
 }

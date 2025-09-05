@@ -53,17 +53,17 @@ init_session() {
             }
         }
     }'
-    
+
     # Send initialization request and capture both headers and body
     local response_file="/tmp/mcp-response-$$"
     curl -s -i -X POST "$SERVER_URL" \
         -H "Content-Type: application/json" \
         -H "Accept: text/event-stream, application/json" \
         -d "$request" > "$response_file"
-    
+
     # Extract session ID from Mcp-Session-Id header
     SESSION_ID=$(grep -i "^Mcp-Session-Id:" "$response_file" | cut -d' ' -f2 | tr -d '\r\n')
-    
+
     if [ ! -z "$SESSION_ID" ]; then
         echo "Got session ID from header: $SESSION_ID"
     else
@@ -72,7 +72,7 @@ init_session() {
         echo "Response:"
         cat "$response_file"
     fi
-    
+
     rm -f "$response_file"
 }
 
@@ -81,7 +81,7 @@ start_server() {
     local mode=$1
     local cmd=""
     local timestamp=$(date +%Y%m%d_%H%M%S)
-    
+
     if [ "$mode" = "persona" ]; then
         echo -e "${BLUE}Starting server in PERSONA mode with --persona $TEST_PERSONA${NC}"
         LOG_FILE="$LOG_DIR/test-persona-mode-$timestamp.log"
@@ -91,16 +91,16 @@ start_server() {
         LOG_FILE="$LOG_DIR/test-standard-mode-$timestamp.log"
         cmd="dist/bin.js mcp run --mcp-config $TEST_MCP_CONFIG --transport http --port $PORT --debug --log-level debug"
     fi
-    
+
     echo "Logging to: $LOG_FILE"
-    
+
     # Start server in background with debug logging
     $cmd > "$LOG_FILE" 2>&1 &
     SERVER_PID=$!
-    
+
     echo "Server started with PID $SERVER_PID"
     echo "Waiting for server to be ready..."
-    
+
     # Wait for server to start
     local max_attempts=30
     local attempt=0
@@ -112,7 +112,7 @@ start_server() {
         sleep 1
         attempt=$((attempt + 1))
     done
-    
+
     echo -e "${RED}Server failed to start. Check /tmp/hypertool-test.log${NC}"
     return 1
 }
@@ -121,30 +121,30 @@ start_server() {
 call_tool() {
     local tool_name=$1
     local args=$2
-    
+
     local request='{
         "jsonrpc": "2.0",
         "id": 1,
         "method": "tools/call",
         "params": {
             "name": "'$tool_name'"'
-    
+
     if [ ! -z "$args" ]; then
         request="$request"',
             "arguments": '$args
     fi
-    
+
     request="$request"'
         }
     }'
-    
+
     local headers="-H \"Content-Type: application/json\" -H \"Accept: text/event-stream, application/json\""
     if [ ! -z "$SESSION_ID" ]; then
         headers="$headers -H \"Mcp-Session-Id: $SESSION_ID\""
     fi
-    
+
     local response=$(eval "curl -s -X POST \"$SERVER_URL\" $headers -d '$request'")
-    
+
     # Check if response is SSE format
     if echo "$response" | grep -q "^event:"; then
         # Parse SSE format - extract the JSON from the data: line
@@ -163,14 +163,14 @@ list_tools() {
         "id": 1,
         "method": "tools/list"
     }'
-    
+
     local headers="-H \"Content-Type: application/json\" -H \"Accept: text/event-stream, application/json\""
     if [ ! -z "$SESSION_ID" ]; then
         headers="$headers -H \"Mcp-Session-Id: $SESSION_ID\""
     fi
-    
+
     local response=$(eval "curl -s -X POST \"$SERVER_URL\" $headers -d '$request'")
-    
+
     # Check if response is SSE format (starts with "event:")
     if echo "$response" | grep -q "^event:"; then
         # Parse SSE format - extract the JSON from the data: line
@@ -197,13 +197,13 @@ run_test() {
     local tool_name=$2
     local args=$3
     local expected_pattern=$4
-    
+
     echo -e "\n${YELLOW}TEST: $test_name${NC}"
     echo "Calling tool: $tool_name"
-    
+
     local result=$(call_tool "$tool_name" "$args")
     echo "Result: $result"
-    
+
     if echo "$result" | grep -q "$expected_pattern"; then
         echo -e "${GREEN}✓ PASS${NC}"
         return 0
@@ -217,11 +217,11 @@ run_test() {
 check_tool_availability() {
     local tool_name=$1
     local should_exist=$2  # "true" or "false"
-    
+
     echo -e "\n${YELLOW}Checking if '$tool_name' is available (should exist: $should_exist)${NC}"
-    
+
     local tools=$(list_tools)
-    
+
     if echo "$tools" | grep -q "^$tool_name$"; then
         if [ "$should_exist" = "true" ]; then
             echo -e "${GREEN}✓ PASS - Tool '$tool_name' is available as expected${NC}"
@@ -245,28 +245,28 @@ check_tool_availability() {
 main() {
     echo -e "${GREEN}=== HyperTool Configuration Tools Test ===${NC}"
     echo ""
-    
+
     # Build the project first
     echo -e "${BLUE}Building project...${NC}"
     npm run build > /dev/null 2>&1
     echo -e "${GREEN}Build complete${NC}"
-    
+
     # Test 1: Standard mode (no persona)
     echo -e "\n${GREEN}=== TEST SUITE 1: Standard Mode (No Persona) ===${NC}"
     start_server "standard"
-    
+
     # Initialize MCP session
     echo -e "\n${BLUE}Initializing MCP session...${NC}"
     init_session
-    
+
     echo -e "\n${BLUE}Available tools in standard mode:${NC}"
     list_tools
-    
+
     # Check tool availability in standard mode
     check_tool_availability "list-personas" "false"  # Should NOT be available when no persona
     check_tool_availability "build-toolset" "true"  # Should be available
     check_tool_availability "delete-toolset" "true" # Should be available
-    
+
     # Test list-saved-toolsets (should not return persona toolsets)
     echo -e "\n${YELLOW}TEST: list-saved-toolsets in standard mode${NC}"
     result=$(call_tool "list-saved-toolsets" "")
@@ -274,7 +274,7 @@ main() {
     if echo "$result" | jq -e '.toolsets | length' > /dev/null 2>&1; then
         toolset_count=$(echo "$result" | jq '.toolsets | length')
         echo "Number of toolsets: $toolset_count"
-        
+
         # Check if any toolset name starts with "persona:"
         if echo "$result" | jq -e '.toolsets[] | select(.name | startswith("persona:"))' > /dev/null 2>&1; then
             echo -e "${RED}✗ FAIL - Found persona toolsets when no persona is active${NC}"
@@ -282,7 +282,7 @@ main() {
             echo -e "${GREEN}✓ PASS - No persona toolsets found${NC}"
         fi
     fi
-    
+
     # Test build-toolset (should work)
     echo -e "\n${YELLOW}TEST: build-toolset in standard mode${NC}"
     build_args='{
@@ -298,33 +298,33 @@ main() {
     else
         echo -e "${YELLOW}? UNKNOWN - Unexpected result${NC}"
     fi
-    
+
     # Clean up server
     cleanup
     sleep 2
-    
+
     # Test 2: Persona mode
     echo -e "\n${GREEN}=== TEST SUITE 2: Persona Mode ===${NC}"
-    
+
     # Check if test persona exists
     if [ ! -d "personas/$TEST_PERSONA" ]; then
         echo -e "${YELLOW}Test persona not found, skipping persona tests${NC}"
         echo "To test persona mode, ensure 'personas/$TEST_PERSONA' exists"
     else
         start_server "persona"
-        
+
         # Initialize MCP session
         echo -e "\n${BLUE}Initializing MCP session...${NC}"
         init_session
-        
+
         echo -e "\n${BLUE}Available tools in persona mode:${NC}"
         list_tools
-        
+
         # Check tool availability in persona mode
         check_tool_availability "list-personas" "true"  # Should be available when persona is active
         check_tool_availability "build-toolset" "false"  # Should NOT be available in persona mode
         check_tool_availability "delete-toolset" "false" # Should NOT be available in persona mode
-        
+
         # Test list-saved-toolsets (should return persona toolsets)
         echo -e "\n${YELLOW}TEST: list-saved-toolsets in persona mode${NC}"
         result=$(call_tool "list-saved-toolsets" "")
@@ -332,22 +332,22 @@ main() {
         if echo "$result" | jq -e '.toolsets | length' > /dev/null 2>&1; then
             toolset_count=$(echo "$result" | jq '.toolsets | length')
             echo "Number of toolsets: $toolset_count"
-            
+
             # List all toolset names
             echo "Toolset names:"
             echo "$result" | jq -r '.toolsets[].name'
         fi
-        
+
         # Test build-toolset (should not exist in tools list)
         echo -e "\n${YELLOW}TEST: build-toolset in persona mode${NC}"
         # Since the tool is hidden, we shouldn't be able to call it
         # The test already verified it's not in the tools list
         echo -e "${GREEN}✓ PASS - build-toolset is hidden in persona mode (verified above)${NC}"
-        
+
         # Clean up server
         cleanup
     fi
-    
+
     echo -e "\n${GREEN}=== Test Complete ===${NC}"
     echo "Server logs are available in: $LOG_DIR"
 }
