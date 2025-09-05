@@ -1,3 +1,33 @@
+# hypertool-mcp Agent Instructions
+
+This repository uses `AGENTS.md` files derived from corresponding `CLAUDE.md` documents.
+
+## Subdirectory Links
+- [Configuration Mode Feature](docs/features/configuration-mode/AGENTS.md)
+- [Commands Module](src/commands/AGENTS.md)
+- [Config Module](src/config/AGENTS.md)
+- [Config Manager Module](src/config-manager/AGENTS.md)
+- [Connection Module](src/connection/AGENTS.md)
+- [Database Module](src/db/AGENTS.md)
+- [Discovery Module](src/discovery/AGENTS.md)
+- [DXT Module](src/dxt/AGENTS.md)
+- [Errors Module](src/errors/AGENTS.md)
+- [Extensions Module](src/extensions/AGENTS.md)
+- [Integration Tests Module](src/integration/AGENTS.md)
+- [MCP Manager Module](src/mcp-manager/AGENTS.md)
+- [Router Module](src/router/AGENTS.md)
+- [Scripts Module](src/scripts/AGENTS.md)
+- [Server Module](src/server/AGENTS.md)
+- [Types Module](src/types/AGENTS.md)
+- [Utils Module](src/utils/AGENTS.md)
+
+## Synchronization Workflow
+1. Run `node scripts/sync-claude-agents.js` to regenerate `AGENTS.md` files from their matching `CLAUDE.md` sources.
+2. Review the generated `AGENTS.md` files for formatting or manual notes.
+3. Commit any changes.
+
+## CLAUDE Source
+
 # hypertool-mcp Development Instructions
 
 ## For Agents Working on This Project
