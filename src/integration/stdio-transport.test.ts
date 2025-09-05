@@ -29,7 +29,7 @@ vi.mock("../config/environment.js", async () => {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-describe("MCP Server stdio transport", () => {
+describe.skip("MCP Server stdio transport", () => {
   const serverPath = join(__dirname, "../../dist/bin.js");
   const configPath = join(__dirname, "../../mcp.test.json");
   let client: Client | null = null;

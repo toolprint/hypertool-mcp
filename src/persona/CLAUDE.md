@@ -11,7 +11,7 @@ The Persona system is a comprehensive content pack management framework that all
 ```
 PersonaManager (Central Orchestrator)
 ├── PersonaDiscovery (Finding personas)
-├── PersonaInstaller (Installing personas)  
+├── PersonaInstaller (Installing personas)
 ├── PersonaLoader (Loading persona configs)
 ├── PersonaValidator (Validating personas)
 ├── PersonaCache (Caching loaded personas)
@@ -39,7 +39,7 @@ PersonaManager (Central Orchestrator)
 async activatePersona(name: string, options?: ActivationOptions): Promise<ActivationResult>
 async deactivatePersona(options?: DeactivationOptions): Promise<ActivationResult>
 
-// Discovery and loading  
+// Discovery and loading
 async discoverPersonas(config?: DiscoveryConfig): Promise<PersonaDiscoveryResult>
 async findAndLoadPersona(name: string): Promise<LoadedPersona | null>
 
@@ -118,7 +118,7 @@ const SCANNER_DEFAULTS = {
   SUPPORTED_CONFIG_FILES: ["persona.yaml", "persona.yml"],
   SUPPORTED_ARCHIVE_EXTENSIONS: [".htp"],
   IGNORE_PATTERNS: [
-    "node_modules", ".git", ".DS_Store", 
+    "node_modules", ".git", ".DS_Store",
     "*.tmp", "*.log", "__pycache__"
   ]
 };
@@ -253,7 +253,7 @@ interface ToolsetConfig {
 ```typescript
 interface BridgeOptions {
   validateTools?: boolean;         // Check tool availability
-  allowPartialToolsets?: boolean;  // Allow missing tools  
+  allowPartialToolsets?: boolean;  // Allow missing tools
   namePrefix?: string;            // "persona" prefix
   includeMetadata?: boolean;      // Generate descriptions
 }
@@ -271,14 +271,14 @@ export class PersonaManager implements IToolsetDelegate {
     if (!activePersona) {
       return { success: true, toolsets: [] };
     }
-    
+
     // Convert persona toolsets to standard format
     const toolsets = activePersona.persona.config.toolsets?.map(ts => ({
       name: `persona:${ts.name}`,
       description: `Persona toolset: ${ts.name}`,
       tools: ts.toolIds.map(toolId => ({ refId: toolId, namespacedName: toolId }))
     })) || [];
-    
+
     return { success: true, toolsets };
   }
 
@@ -321,7 +321,7 @@ export class PersonaManager implements IToolsetDelegate {
 // ConfigToolsManager routes to PersonaManager when persona is active
 private getActiveToolsetDelegate(): IToolsetDelegate {
   const activePersona = this.dependencies.personaManager?.getActivePersona();
-  
+
   if (activePersona) {
     return this.dependencies.personaManager as IToolsetDelegate;
   } else {
@@ -362,7 +362,7 @@ toolsets:
       - "playwright.navigate"
       - "playwright.screenshot"
       - "readability.extract"
-  
+
   - name: "git-workflow"
     toolIds:
       - "git.status"
@@ -385,13 +385,13 @@ metadata:
 {
   "mcpServers": {
     "playwright": {
-      "type": "stdio", 
+      "type": "stdio",
       "command": "node",
       "args": ["/path/to/playwright-mcp/index.js"]
     },
     "readability": {
       "type": "stdio",
-      "command": "npx", 
+      "command": "npx",
       "args": ["-y", "@example/readability-mcp"]
     }
   }
@@ -405,7 +405,7 @@ metadata:
 User runs: persona add /path/to/persona →
 PersonaInstaller.installPersona() →
 ├── Validate source path/archive
-├── Extract/copy to personas directory  
+├── Extract/copy to personas directory
 ├── PersonaValidator.validatePersona()
 ├── Handle conflicts (backup/overwrite)
 └── Return InstallResult
@@ -428,7 +428,7 @@ PersonaManager.activatePersona() →
 ├── PersonaLoader.loadPersona()
 ├── PersonaValidator.validatePersona() (if enabled)
 ├── PersonaMcpIntegration.applyMcpConfig()
-├── PersonaToolsetBridge.convertToolsets()  
+├── PersonaToolsetBridge.convertToolsets()
 ├── Activate default toolset (if specified)
 ├── Persist state (if enabled)
 └── Emit PERSONA_ACTIVATED event
@@ -443,7 +443,7 @@ PersonaManager.listSavedToolsets() →
 ### 5. MCP Integration Flow
 ```
 Enhanced Server boot sequence →
-├── PersonaManager.getPersonaMcpServers() 
+├── PersonaManager.getPersonaMcpServers()
 ├── Merge with other MCP configs
 ├── Connect to all MCP servers (including persona servers)
 ├── ToolDiscoveryEngine discovers all tools
@@ -464,7 +464,7 @@ PersonaRuntimeError       // Runtime operation failed
 // Specific error codes
 enum PersonaErrorCode {
   PERSONA_NOT_FOUND = "PERSONA_NOT_FOUND",
-  INVALID_CONFIG = "INVALID_CONFIG", 
+  INVALID_CONFIG = "INVALID_CONFIG",
   MCP_INTEGRATION_FAILED = "MCP_INTEGRATION_FAILED",
   TOOLSET_ACTIVATION_FAILED = "TOOLSET_ACTIVATION_FAILED"
 }
@@ -500,7 +500,7 @@ enum PersonaErrorCode {
 - **Context-Aware Routing**: Same commands work differently based on persona activation state
 - **Enhanced Server**: Coordinates persona activation with system boot
 
-### With MCP System  
+### With MCP System
 - **MCP Configuration**: Merges persona servers with system servers
 - **Discovery Engine**: Discovers tools from persona MCP servers
 - **Connection Management**: Manages persona server connections

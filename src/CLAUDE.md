@@ -217,7 +217,7 @@ hypertool-mcp mcp run --mcp-config ./config.json --debug --log-level debug
 **Solution**: Provide either `--mcp-config` or `--persona` flag
 
 ### "Persona not found"
-**Solution**: 
+**Solution**:
 ```bash
 hypertool-mcp persona --help     # See setup guide
 hypertool-mcp persona add <path>  # Add the persona

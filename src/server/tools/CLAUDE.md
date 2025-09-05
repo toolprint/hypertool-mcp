@@ -9,7 +9,7 @@ The server tools system is built around a delegate pattern where both PersonaMan
 ```
 Enhanced Server (Orchestrator)
 ├── PersonaManager (IToolsetDelegate - Persona Toolsets)
-├── ToolsetManager (IToolsetDelegate - Regular Toolsets) 
+├── ToolsetManager (IToolsetDelegate - Regular Toolsets)
 └── ConfigToolsManager (Router - Routes to Active Delegate)
 ```
 
@@ -48,7 +48,7 @@ Enhanced Server (Orchestrator)
 ```typescript
 // Persona toolset operations
 async listSavedToolsets() → ListSavedToolsetsResponse
-async equipToolset(name: string) → EquipToolsetResponse  
+async equipToolset(name: string) → EquipToolsetResponse
 async getActiveToolset() → GetActiveToolsetResponse
 hasActiveToolset() → boolean
 getDelegateType() → 'persona'
@@ -121,7 +121,7 @@ getMcpTools(): Tool[] {
 ```typescript
 private getActiveToolsetDelegate(): IToolsetDelegate {
   const activePersona = this.dependencies.personaManager?.getActivePersona();
-  
+
   if (activePersona) {
     // Route to PersonaManager for persona toolsets
     return this.dependencies.personaManager as IToolsetDelegate;
@@ -165,7 +165,7 @@ ToolsetManager.[operation]() →
 
 ### 1. Single Responsibility
 - **PersonaManager**: Persona content pack lifecycle
-- **ToolsetManager**: Unified toolset operations 
+- **ToolsetManager**: Unified toolset operations
 - **ConfigToolsManager**: MCP tool interface
 - **Enhanced Server**: System orchestration
 
@@ -214,7 +214,7 @@ The PersonaToolsetBridge is a critical component that converts between persona a
 
 ### 🎯 Next Steps
 - Enhance `equipToolset()` to handle persona toolsets
-- Enhance `deleteToolset()` to prevent persona toolset deletion  
+- Enhance `deleteToolset()` to prevent persona toolset deletion
 - Test end-to-end persona toolset operations
 
 ## Testing

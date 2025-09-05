@@ -30,27 +30,27 @@ get_toolset_tools() {
     local in_toolset=false
     local in_toolids=false
     local tools=""
-    
+
     while IFS= read -r line; do
         # Check if we're entering a toolset definition
         if [[ "$line" =~ ^[[:space:]]*-[[:space:]]*name:[[:space:]]*${toolset_name}$ ]]; then
             in_toolset=true
             continue
         fi
-        
+
         # If we're in the right toolset and find toolIds
         if [ "$in_toolset" = true ] && [[ "$line" =~ ^[[:space:]]*toolIds: ]]; then
             in_toolids=true
             continue
         fi
-        
+
         # If we're reading tool IDs
         if [ "$in_toolids" = true ]; then
             # Check if we've hit the next toolset or section
             if [[ "$line" =~ ^[[:space:]]*-[[:space:]]*name: ]] || [[ "$line" =~ ^[a-zA-Z] ]]; then
                 break
             fi
-            
+
             # Extract tool ID
             if [[ "$line" =~ ^[[:space:]]*-[[:space:]]*(.+)$ ]]; then
                 local tool_id="${BASH_REMATCH[1]}"
@@ -60,7 +60,7 @@ get_toolset_tools() {
             fi
         fi
     done < "$PERSONA_YAML"
-    
+
     echo "$tools"
 }
 
@@ -68,7 +68,7 @@ get_toolset_tools() {
 check_tool_exists() {
     local tool_name="$1"
     local tool_list="$2"
-    
+
     if echo "$tool_list" | grep -q "^${tool_name}$"; then
         return 0
     else
@@ -138,18 +138,18 @@ fi
 test_toolset() {
     local toolset_name="$1"
     local equip_name="$2"
-    
+
     echo -e "\n${YELLOW}Testing toolset: ${toolset_name}${NC}"
-    
+
     # Get expected tools from YAML
     local expected_tools=$(get_toolset_tools "$toolset_name")
     local expected_count=$(echo $expected_tools | wc -w | tr -d ' ')
-    
+
     echo "   Expected tools from YAML ($expected_count tools):"
     for tool in $expected_tools; do
         echo "   - $tool"
     done
-    
+
     # Equip the toolset if not default
     if [ ! -z "$equip_name" ]; then
         echo -e "\n   ${BLUE}Equipping toolset: $equip_name${NC}"
@@ -166,7 +166,7 @@ test_toolset() {
                     \"arguments\":{\"name\":\"$equip_name\"}
                 }
             }")
-        
+
         success=$(echo "$response" | grep "^data:" | sed 's/^data: //' | jq -r '.result.content[0].text' 2>/dev/null | grep -i "success" || echo "")
         if [ ! -z "$success" ]; then
             echo -e "   ${GREEN}✓ Successfully equipped $equip_name${NC}"
@@ -176,7 +176,7 @@ test_toolset() {
             return 1
         fi
     fi
-    
+
     # Get actual tools from server
     echo -e "\n   ${BLUE}Fetching tools from server...${NC}"
     response=$(curl -s --max-time 5 -X POST "$SERVER_URL" \
@@ -184,20 +184,20 @@ test_toolset() {
         -H "Accept: text/event-stream, application/json" \
         -H "Mcp-Session-Id: $SESSION_ID" \
         -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}')
-    
+
     # Extract MCP tools (excluding config tools)
     local tool_names=$(echo "$response" | grep "^data:" | sed 's/^data: //' | jq -r '.result.tools[].name' 2>/dev/null || echo "Failed to parse")
-    
+
     # Filter out configuration tools
     local mcp_tools=$(echo "$tool_names" | grep -v -E "^(list-available-tools|list-saved-toolsets|equip-toolset|unequip-toolset|get-active-toolset|add-tool-annotation|list-personas|enter-configuration-mode|exit-configuration-mode)$")
-    
+
     local actual_count=$(echo "$mcp_tools" | grep -v "^$" | wc -l | tr -d ' ')
-    
+
     echo "   Actual MCP tools from server ($actual_count tools):"
     echo "$mcp_tools" | grep -v "^$" | while read tool; do
         echo "   - $tool"
     done
-    
+
     # Verify each expected tool
     echo -e "\n   ${BLUE}Verifying expected tools...${NC}"
     local all_found=true
@@ -209,7 +209,7 @@ test_toolset() {
             all_found=false
         fi
     done
-    
+
     # Check for unexpected tools (tools that shouldn't be in this toolset)
     echo -e "\n   ${BLUE}Checking for unexpected tools...${NC}"
     local has_unexpected=false
@@ -219,7 +219,7 @@ test_toolset() {
             has_unexpected=true
         fi
     done
-    
+
     if [ "$all_found" = true ] && [ "$has_unexpected" = false ]; then
         echo -e "\n   ${GREEN}✅ PASS: Toolset '$toolset_name' has exactly the expected tools${NC}"
         return 0

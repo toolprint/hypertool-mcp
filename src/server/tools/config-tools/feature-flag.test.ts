@@ -27,11 +27,11 @@ describe("Configuration Tools Menu Feature Flag", () => {
   });
 
   describe("Default Behavior", () => {
-    it("should be enabled by default", async () => {
+    it("should be disabled by default", async () => {
       const service = getFeatureFlagService();
       await service.initialize();
 
-      expect(service.isConfigToolsMenuEnabled()).toBe(true);
+      expect(service.isConfigToolsMenuEnabled()).toBe(false);
     });
   });
 
@@ -90,11 +90,11 @@ describe("Configuration Tools Menu Feature Flag", () => {
         "../../../config/featureFlagService.js"
       );
 
-      // Default should be true
+      // Default should be false
       const service = getFeatureFlagService();
       service.reset();
       const enabled = await isConfigToolsMenuEnabledViaService();
-      expect(enabled).toBe(true);
+      expect(enabled).toBe(false);
     });
 
     it("should respect environment variable with convenience function", async () => {

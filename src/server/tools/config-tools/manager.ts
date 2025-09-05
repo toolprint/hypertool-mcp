@@ -60,39 +60,52 @@ export class ConfigToolsManager implements ToolsProvider {
     // Return all configuration tools - server decides when to call this
     const tools: Tool[] = [];
     const activePersona = this.dependencies.personaManager?.getActivePersona();
-    
-    logger.debug(`Getting MCP tools - persona manager exists: ${!!this.dependencies.personaManager}, active persona: ${activePersona ? activePersona.persona.config.name : 'none'}`);
+
+    logger.debug(
+      `Getting MCP tools - persona manager exists: ${!!this.dependencies.personaManager}, active persona: ${activePersona ? activePersona.persona.config.name : "none"}`
+    );
 
     for (const [toolName, module] of this.toolModules) {
       // When dynamic config menu is disabled, skip mode-switching tools
-      if (!this.dynamicConfigMenuEnabled && toolName === 'exit-configuration-mode') {
-        logger.debug('Skipping exit-configuration-mode tool when dynamic menu disabled');
+      if (
+        !this.dynamicConfigMenuEnabled &&
+        toolName === "exit-configuration-mode"
+      ) {
+        logger.debug(
+          "Skipping exit-configuration-mode tool when dynamic menu disabled"
+        );
         continue;
       }
-      
+
       // Only show list-personas tool when persona IS active
       // (to see available personas for switching/viewing)
-      if (toolName === 'list-personas') {
+      if (toolName === "list-personas") {
         if (!activePersona) {
-          logger.debug(`Skipping list-personas tool - no persona active, persona system not in use`);
+          logger.debug(
+            `Skipping list-personas tool - no persona active, persona system not in use`
+          );
           continue;
         }
       }
-      
+
       // Hide build-toolset and delete-toolset when persona is active
       // (persona toolsets are managed by the persona system)
-      if ((toolName === 'build-toolset' || toolName === 'delete-toolset')) {
+      if (toolName === "build-toolset" || toolName === "delete-toolset") {
         if (activePersona) {
-          logger.debug(`Skipping ${toolName} tool - not available in persona mode with persona: ${activePersona.persona.config.name}`);
+          logger.debug(
+            `Skipping ${toolName} tool - not available in persona mode with persona: ${activePersona.persona.config.name}`
+          );
           continue;
         }
       }
-      
+
       logger.debug(`Including tool: ${toolName}`);
       tools.push(module.definition);
     }
 
-    logger.debug(`Returning ${tools.length} configuration tools (active persona: ${activePersona ? activePersona.persona.config.name : 'none'})`);
+    logger.debug(
+      `Returning ${tools.length} configuration tools (active persona: ${activePersona ? activePersona.persona.config.name : "none"})`
+    );
     return tools;
   }
 
@@ -101,7 +114,7 @@ export class ConfigToolsManager implements ToolsProvider {
    */
   private getActiveToolsetDelegate(): IToolsetDelegate {
     const activePersona = this.dependencies.personaManager?.getActivePersona();
-    
+
     if (activePersona) {
       // PersonaManager will need to implement IToolsetDelegate interface
       return this.dependencies.personaManager as IToolsetDelegate;
@@ -116,43 +129,53 @@ export class ConfigToolsManager implements ToolsProvider {
    */
   public async handleToolCall(name: string, args: any): Promise<any> {
     // Check if this is a toolset operation that needs routing
-    const toolsetOperations = ['list-saved-toolsets', 'equip-toolset', 'get-active-toolset'];
-    
+    const toolsetOperations = [
+      "list-saved-toolsets",
+      "equip-toolset",
+      "get-active-toolset",
+    ];
+
     if (toolsetOperations.includes(name)) {
       // Route to appropriate delegate based on persona activation state
       const delegate = this.getActiveToolsetDelegate();
       const delegateType = delegate.getDelegateType();
-      
+
       logger.debug(`Routing ${name} to ${delegateType} delegate`);
-      
+
       switch (name) {
-        case 'list-saved-toolsets': {
+        case "list-saved-toolsets": {
           const result = await delegate.listSavedToolsets();
           return {
-            content: [{
-              type: "text",
-              text: JSON.stringify(result),
-            }],
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(result),
+              },
+            ],
             structuredContent: result,
           };
         }
-        case 'equip-toolset': {
+        case "equip-toolset": {
           const result = await delegate.equipToolset(args?.name);
           return {
-            content: [{
-              type: "text",
-              text: JSON.stringify(result),
-            }],
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(result),
+              },
+            ],
             structuredContent: result,
           };
         }
-        case 'get-active-toolset': {
+        case "get-active-toolset": {
           const result = await delegate.getActiveToolset();
           return {
-            content: [{
-              type: "text",
-              text: JSON.stringify(result),
-            }],
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(result),
+              },
+            ],
             structuredContent: result,
           };
         }

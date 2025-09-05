@@ -166,9 +166,9 @@ just persona-test-complex-clean
    git: GIT_CONFIG_GLOBAL
    database: DB_HOST, DB_PORT
 
-? Configure now? (Y/n) 
+? Configure now? (Y/n)
 ? git.GIT_CONFIG_GLOBAL: /etc/gitconfig
-? database.DB_HOST: localhost  
+? database.DB_HOST: localhost
 ? database.DB_PORT: 5432
 
 ✅ Configured! Run: hypertool persona activate complex-persona
@@ -181,7 +181,7 @@ just persona-test-complex-clean
 
 ### Core Features (Phase 1)
 1. **Enhanced Help**: Shows directory info and command descriptions
-2. **Inspect Command**: Displays complete persona details including MCP config location and full JSON output  
+2. **Inspect Command**: Displays complete persona details including MCP config location and full JSON output
 3. **Enhanced List**: Shows MCP servers, toolsets, and equipped status with rich formatting
 
 ### User Experience Enhancements (Phase 2)
