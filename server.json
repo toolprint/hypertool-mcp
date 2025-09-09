@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "ai.toolprint/hypertool-mcp",
+  "description": "Dynamically expose tools from proxied servers based on an Agent Persona",
+  "status": "active",
+  "repository": {
+    "url": "https://github.com/toolprint/hypertool-mcp",
+    "source": "github"
+  },
+  "version": "0.0.40",
+  "packages": [
+    {
+      "registry_type": "npm",
+      "registry_base_url": "https://registry.npmjs.org",
+      "identifier": "@toolprint/hypertool-mcp",
+      "version": "0.0.40",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
