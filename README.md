@@ -8,6 +8,7 @@
 
 [![Version](https://img.shields.io/npm/v/@toolprint/hypertool-mcp)](https://npmjs.com/package/@toolprint/hypertool-mcp)
 [![Downloads](https://img.shields.io/npm/dm/@toolprint/hypertool-mcp)](https://npmjs.com/package/@toolprint/hypertool-mcp)
+[![Discord](https://img.shields.io/discord/1379961140259459113?logo=discord&logoColor=white&label=Discord&color=5865F2)](https://discord.gg/MbvndnJ45W)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
