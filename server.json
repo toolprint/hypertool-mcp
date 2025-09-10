@@ -7,13 +7,13 @@
     "url": "https://github.com/toolprint/hypertool-mcp",
     "source": "github"
   },
-  "version": "0.0.40",
+  "version": "0.0.42",
   "packages": [
     {
       "registry_type": "npm",
       "registry_base_url": "https://registry.npmjs.org",
       "identifier": "@toolprint/hypertool-mcp",
-      "version": "0.0.40",
+      "version": "0.0.42",
       "transport": {
         "type": "stdio"
       }
