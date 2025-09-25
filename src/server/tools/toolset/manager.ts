@@ -50,10 +50,13 @@ import {
   EquipToolsetResponse,
   GetActiveToolsetResponse,
   ToolsetInfo,
+  ContextInfo,
+  ToolInfoResponse,
 } from "../schemas.js";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolsProvider } from "../../types.js";
 import { IToolsetDelegate } from "../interfaces/toolset-delegate.js";
+import { tokenCounter } from "../utils/token-counter.js";
 
 const logger = createChildLogger({ module: "toolset" });
 
@@ -611,22 +614,27 @@ export class ToolsetManager
   }
 
   /**
-   * Format discovered tools for display
+   * Format discovered tools for display with context information
    */
   formatAvailableTools(): {
     summary: {
       totalTools: number;
       totalServers: number;
     };
+    meta?: {
+      totalPossibleContext?: ContextInfo;
+    };
     toolsByServer: Array<{
       serverName: string;
       toolCount: number;
+      context?: ContextInfo;
       tools: Array<{
         name: string;
         description?: string;
         namespacedName: string;
         serverName: string;
         refId: string;
+        context?: ContextInfo;
       }>;
     }>;
   } {
@@ -638,6 +646,10 @@ export class ToolsetManager
     }
 
     const discoveredTools = this.discoveryEngine.getAvailableTools(true);
+
+    // Calculate total possible context for ALL tools
+    const totalPossibleTokens = tokenCounter.calculateToolsetTokens(discoveredTools);
+
     const serverToolsMap: Record<
       string,
       Array<{
@@ -646,37 +658,57 @@ export class ToolsetManager
         namespacedName: string;
         serverName: string;
         refId: string;
+        context?: ContextInfo;
+        _tokens?: number;  // Store for server-level calculation
       }>
     > = {};
 
-    // Group tools by server
+    // Group tools by server and calculate context
     for (const tool of discoveredTools) {
       if (!serverToolsMap[tool.serverName]) {
         serverToolsMap[tool.serverName] = [];
       }
 
+      const toolTokens = tokenCounter.calculateToolTokens(tool);
       serverToolsMap[tool.serverName].push({
         name: tool.name,
         description: tool.tool.description,
         namespacedName: tool.namespacedName,
         serverName: tool.serverName,
         refId: tool.toolHash,
+        context: tokenCounter.calculateContextInfo(toolTokens, totalPossibleTokens),
+        _tokens: toolTokens,  // Store for server total
       });
     }
 
-    // Convert to array format
+    // Convert to array format with server-level context
     const toolsByServer = Object.entries(serverToolsMap).map(
-      ([serverName, tools]) => ({
-        serverName,
-        toolCount: tools.length,
-        tools: tools.sort((a, b) => a.name.localeCompare(b.name)),
-      })
+      ([serverName, tools]) => {
+        // Calculate server's total tokens
+        const serverTotalTokens = tools.reduce((sum, tool) => sum + (tool._tokens || 0), 0);
+
+        // Remove _tokens from tools before returning
+        const cleanedTools = tools.map(({ _tokens, ...tool }) => tool);
+
+        return {
+          serverName,
+          toolCount: tools.length,
+          context: tokenCounter.calculateContextInfo(serverTotalTokens, totalPossibleTokens),
+          tools: cleanedTools.sort((a, b) => a.name.localeCompare(b.name)),
+        };
+      }
     );
 
     return {
       summary: {
         totalTools: discoveredTools.length,
         totalServers: Object.keys(serverToolsMap).length,
+      },
+      meta: {
+        totalPossibleContext: {
+          tokens: totalPossibleTokens,
+          percentTotal: null  // 100% would be redundant
+        }
       },
       toolsByServer: toolsByServer.sort((a, b) =>
         a.serverName.localeCompare(b.serverName)
@@ -835,16 +867,25 @@ export class ToolsetManager
       this.discoveryEngine?.getAvailableTools(true) || [];
     const activeDiscoveredTools = this.getActiveDiscoveredTools();
 
-    // Group tools by server for exposedTools
-    const exposedTools: Record<string, string[]> = {};
+    // Calculate context information for active tools
+    const totalTokens = tokenCounter.calculateToolsetTokens(activeDiscoveredTools);
+
+    // Group tools by server for exposedTools with full details
+    const exposedTools: Record<string, ToolInfoResponse[]> = {};
+
     for (const tool of activeDiscoveredTools) {
       if (!exposedTools[tool.serverName]) {
         exposedTools[tool.serverName] = [];
       }
-      exposedTools[tool.serverName].push(tool.name);
+
+      // Convert discovered tool to ToolInfoResponse with context
+      exposedTools[tool.serverName].push(
+        tokenCounter.convertToToolInfoResponse(tool, totalTokens)
+      );
     }
 
-    return {
+    // Create response with context information at top level
+    const response: GetActiveToolsetResponse = {
       equipped: true,
       toolset: toolsetInfo,
       serverStatus: {
@@ -862,7 +903,14 @@ export class ToolsetManager
       exposedTools,
       unavailableServers: [],
       warnings: [],
+      // Add context at top level (for get-active-toolset only)
+      context: {
+        tokens: totalTokens,
+        percentTotal: null  // Not applicable for get-active-toolset
+      }
     };
+
+    return response;
   }
 
   /**

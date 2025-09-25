@@ -96,7 +96,11 @@ From `test/fixtures/personas/`:
 
 ### Full Test Suite
 ```bash
+# Test configuration tools behavior in both modes
 bash src/test-utils/test-config-tools.sh
+
+# Test get-active-toolset response format
+bash src/test-utils/test-active-toolset.sh
 ```
 
 ### Manual Testing
@@ -191,9 +195,17 @@ public getMcpTools(): Tool[] {
 - ✅ All configuration tools visible
 - ✅ Can create/delete toolsets
 - ✅ No persona toolsets shown
+- ✅ get-active-toolset returns proper schema with context info
 
 ### Persona Mode
 - ✅ Restricted tools hidden
 - ✅ Persona toolsets shown with "persona:" prefix
 - ✅ Cannot create/delete toolsets
 - ✅ Can equip/unequip persona toolsets
+- ✅ get-active-toolset includes context and detailed tool info
+
+### get-active-toolset Response Format
+- ✅ Context field at top level with tokens and percentTotal
+- ✅ exposedTools contains full ToolInfoResponse objects
+- ✅ Each tool includes name, namespacedName, serverName, description, context
+- ✅ Context calculation based on BPE approximation
