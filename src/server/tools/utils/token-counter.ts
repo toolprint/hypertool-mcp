@@ -77,13 +77,18 @@ export class TokenCounter {
   /**
    * Calculate tokens for an array of tools
    */
-  calculateToolsetTokens(tools: Array<{
-    name: string;
-    namespacedName?: string;
-    description?: string;
-    tool?: Tool;
-  }>): number {
-    return tools.reduce((total, tool) => total + this.calculateToolTokens(tool), 0);
+  calculateToolsetTokens(
+    tools: Array<{
+      name: string;
+      namespacedName?: string;
+      description?: string;
+      tool?: Tool;
+    }>
+  ): number {
+    return tools.reduce(
+      (total, tool) => total + this.calculateToolTokens(tool),
+      0
+    );
   }
 
   /**
@@ -99,16 +104,16 @@ export class TokenCounter {
    */
   private approximateTokens(text: string): number {
     // Split on whitespace to get words
-    const words = text.split(/\s+/).filter(w => w.length > 0);
+    const words = text.split(/\s+/).filter((w) => w.length > 0);
 
     let totalTokens = 0;
     for (const word of words) {
       if (word.length <= 3) {
-        totalTokens += 1;  // Short words = 1 token
+        totalTokens += 1; // Short words = 1 token
       } else if (word.length <= 7) {
-        totalTokens += Math.ceil(word.length / 5);  // Medium words
+        totalTokens += Math.ceil(word.length / 5); // Medium words
       } else {
-        totalTokens += Math.ceil(word.length / 4);  // Long words split more
+        totalTokens += Math.ceil(word.length / 4); // Long words split more
       }
     }
 
@@ -125,29 +130,37 @@ export class TokenCounter {
   /**
    * Calculate context info with percentage
    */
-  calculateContextInfo(tokens: number, totalTokens: number | null): ContextInfo {
+  calculateContextInfo(
+    tokens: number,
+    totalTokens: number | null
+  ): ContextInfo {
     return {
       tokens,
-      percentTotal: totalTokens !== null && totalTokens > 0
-        ? Math.round((tokens / totalTokens) * 10000) / 10000  // 4 decimal places
-        : null
+      percentTotal:
+        totalTokens !== null && totalTokens > 0
+          ? Math.round((tokens / totalTokens) * 10000) / 10000 // 4 decimal places
+          : null,
     };
   }
 
   /**
    * Add context info to tools array
    */
-  addContextToTools<T extends { name: string; namespacedName?: string; description?: string; tool?: Tool }>(
-    tools: T[],
-    totalTokens?: number
-  ): Array<T & { context: ContextInfo }> {
+  addContextToTools<
+    T extends {
+      name: string;
+      namespacedName?: string;
+      description?: string;
+      tool?: Tool;
+    },
+  >(tools: T[], totalTokens?: number): Array<T & { context: ContextInfo }> {
     const effectiveTotal = totalTokens ?? this.calculateToolsetTokens(tools);
 
-    return tools.map(tool => {
+    return tools.map((tool) => {
       const tokens = this.calculateToolTokens(tool);
       return {
         ...tool,
-        context: this.calculateContextInfo(tokens, effectiveTotal)
+        context: this.calculateContextInfo(tokens, effectiveTotal),
       };
     });
   }
@@ -155,7 +168,10 @@ export class TokenCounter {
   /**
    * Convert a DiscoveredTool to ToolInfoResponse with context
    */
-  convertToToolInfoResponse(tool: DiscoveredTool, totalTokens: number): ToolInfoResponse {
+  convertToToolInfoResponse(
+    tool: DiscoveredTool,
+    totalTokens: number
+  ): ToolInfoResponse {
     const toolTokens = this.calculateToolTokens(tool);
 
     return {
@@ -163,7 +179,7 @@ export class TokenCounter {
       namespacedName: tool.namespacedName,
       serverName: tool.serverName,
       description: tool.tool?.description,
-      context: this.calculateContextInfo(toolTokens, totalTokens)
+      context: this.calculateContextInfo(toolTokens, totalTokens),
     };
   }
 }

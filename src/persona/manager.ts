@@ -1686,22 +1686,27 @@ export class PersonaManager
 
       // Calculate context for exposed tools
       // We need to get the actual discovered tools that match our toolset
-      const exposedDiscoveredTools = allDiscoveredTools.filter(discoveredTool => {
-        return toolsetConfig.tools.some(tool => {
-          const namespacedName = tool.namespacedName || tool.refId || "";
-          return discoveredTool.namespacedName === namespacedName;
-        });
-      });
+      const exposedDiscoveredTools = allDiscoveredTools.filter(
+        (discoveredTool) => {
+          return toolsetConfig.tools.some((tool) => {
+            const namespacedName = tool.namespacedName || tool.refId || "";
+            return discoveredTool.namespacedName === namespacedName;
+          });
+        }
+      );
 
-      const totalTokens = exposedDiscoveredTools.length > 0
-        ? tokenCounter.calculateToolsetTokens(exposedDiscoveredTools)
-        : 0;
+      const totalTokens =
+        exposedDiscoveredTools.length > 0
+          ? tokenCounter.calculateToolsetTokens(exposedDiscoveredTools)
+          : 0;
 
       // Group tools by server for exposedTools with full details including context
       const exposedTools: Record<string, ToolInfoResponse[]> = {};
 
       for (const discoveredTool of exposedDiscoveredTools) {
-        const { serverName } = this.extractToolInfo(discoveredTool.namespacedName);
+        const { serverName } = this.extractToolInfo(
+          discoveredTool.namespacedName
+        );
 
         if (!exposedTools[serverName]) {
           exposedTools[serverName] = [];
@@ -1737,8 +1742,8 @@ export class PersonaManager
         // Add context at top level (for get-active-toolset only)
         context: {
           tokens: totalTokens,
-          percentTotal: null  // Not applicable for get-active-toolset
-        }
+          percentTotal: null, // Not applicable for get-active-toolset
+        },
       };
     } catch (error) {
       return {

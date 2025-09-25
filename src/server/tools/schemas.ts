@@ -10,7 +10,10 @@ import { zodToJsonSchema } from "zod-to-json-schema";
  */
 export const contextInfoZodSchema = z.object({
   tokens: z.number().describe("Estimated token count using BPE approximation"),
-  percentTotal: z.number().nullable().describe("Percentage of total tokens (null when not applicable)"),
+  percentTotal: z
+    .number()
+    .nullable()
+    .describe("Percentage of total tokens (null when not applicable)"),
 });
 
 /**
@@ -18,10 +21,14 @@ export const contextInfoZodSchema = z.object({
  */
 export const toolInfoResponseZodSchema = z.object({
   name: z.string().describe("Tool name"),
-  namespacedName: z.string().describe("Namespaced tool name (e.g., 'git.status')"),
+  namespacedName: z
+    .string()
+    .describe("Namespaced tool name (e.g., 'git.status')"),
   serverName: z.string().describe("Server that provides this tool"),
   description: z.string().optional().describe("Tool description"),
-  context: contextInfoZodSchema.describe("Context usage information for this tool"),
+  context: contextInfoZodSchema.describe(
+    "Context usage information for this tool"
+  ),
 });
 
 /**

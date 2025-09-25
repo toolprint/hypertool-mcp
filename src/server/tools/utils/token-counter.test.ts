@@ -11,7 +11,7 @@ describe("TokenCounter", () => {
       const tool1 = {
         name: "test",
         namespacedName: "git.log",
-        description: "the is a",  // 3 short words = 3 tokens
+        description: "the is a", // 3 short words = 3 tokens
       };
       const tokens1 = tokenCounter.calculateToolTokens(tool1);
 
@@ -36,13 +36,24 @@ describe("TokenCounter", () => {
 
     it("should calculate context info with percentages", () => {
       const tools = [
-        { name: "tool1", namespacedName: "git.status", description: "Show status" },
-        { name: "tool2", namespacedName: "git.commit", description: "Make commit" },
+        {
+          name: "tool1",
+          namespacedName: "git.status",
+          description: "Show status",
+        },
+        {
+          name: "tool2",
+          namespacedName: "git.commit",
+          description: "Make commit",
+        },
       ];
 
       const totalTokens = tokenCounter.calculateToolsetTokens(tools);
       const tool1Tokens = tokenCounter.calculateToolTokens(tools[0]);
-      const contextInfo = tokenCounter.calculateContextInfo(tool1Tokens, totalTokens);
+      const contextInfo = tokenCounter.calculateContextInfo(
+        tool1Tokens,
+        totalTokens
+      );
 
       expect(contextInfo.tokens).toBe(tool1Tokens);
       expect(contextInfo.percentTotal).toBeGreaterThan(0);
@@ -59,11 +70,11 @@ describe("TokenCounter", () => {
             type: "object",
             properties: {
               name: { type: "string", description: "Name field" },
-              value: { type: "number", description: "Value field" }
+              value: { type: "number", description: "Value field" },
             },
-            required: ["name"]
-          }
-        }
+            required: ["name"],
+          },
+        },
       };
 
       const tokens = tokenCounter.calculateToolTokens(toolWithSchema);
@@ -76,7 +87,7 @@ describe("TokenCounter", () => {
       const tool = {
         name: "cached",
         namespacedName: "test.cached",
-        description: "Cached tool"
+        description: "Cached tool",
       };
 
       // Clear cache first
@@ -95,9 +106,21 @@ describe("TokenCounter", () => {
   describe("addContextToTools", () => {
     it("should add context info to tools array", () => {
       const tools = [
-        { name: "tool1", namespacedName: "git.status", description: "Show status" },
-        { name: "tool2", namespacedName: "git.commit", description: "Make commit" },
-        { name: "tool3", namespacedName: "docker.run", description: "Run container" },
+        {
+          name: "tool1",
+          namespacedName: "git.status",
+          description: "Show status",
+        },
+        {
+          name: "tool2",
+          namespacedName: "git.commit",
+          description: "Make commit",
+        },
+        {
+          name: "tool3",
+          namespacedName: "docker.run",
+          description: "Run container",
+        },
       ];
 
       const toolsWithContext = tokenCounter.addContextToTools(tools);
@@ -105,7 +128,7 @@ describe("TokenCounter", () => {
       expect(toolsWithContext).toHaveLength(3);
 
       // Each tool should have context
-      toolsWithContext.forEach(tool => {
+      toolsWithContext.forEach((tool) => {
         expect(tool.context).toBeDefined();
         expect(tool.context.tokens).toBeGreaterThan(0);
         expect(tool.context.percentTotal).toBeGreaterThanOrEqual(0);

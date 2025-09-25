@@ -648,7 +648,8 @@ export class ToolsetManager
     const discoveredTools = this.discoveryEngine.getAvailableTools(true);
 
     // Calculate total possible context for ALL tools
-    const totalPossibleTokens = tokenCounter.calculateToolsetTokens(discoveredTools);
+    const totalPossibleTokens =
+      tokenCounter.calculateToolsetTokens(discoveredTools);
 
     const serverToolsMap: Record<
       string,
@@ -659,7 +660,7 @@ export class ToolsetManager
         serverName: string;
         refId: string;
         context?: ContextInfo;
-        _tokens?: number;  // Store for server-level calculation
+        _tokens?: number; // Store for server-level calculation
       }>
     > = {};
 
@@ -676,8 +677,11 @@ export class ToolsetManager
         namespacedName: tool.namespacedName,
         serverName: tool.serverName,
         refId: tool.toolHash,
-        context: tokenCounter.calculateContextInfo(toolTokens, totalPossibleTokens),
-        _tokens: toolTokens,  // Store for server total
+        context: tokenCounter.calculateContextInfo(
+          toolTokens,
+          totalPossibleTokens
+        ),
+        _tokens: toolTokens, // Store for server total
       });
     }
 
@@ -685,7 +689,10 @@ export class ToolsetManager
     const toolsByServer = Object.entries(serverToolsMap).map(
       ([serverName, tools]) => {
         // Calculate server's total tokens
-        const serverTotalTokens = tools.reduce((sum, tool) => sum + (tool._tokens || 0), 0);
+        const serverTotalTokens = tools.reduce(
+          (sum, tool) => sum + (tool._tokens || 0),
+          0
+        );
 
         // Remove _tokens from tools before returning
         const cleanedTools = tools.map(({ _tokens, ...tool }) => tool);
@@ -693,7 +700,10 @@ export class ToolsetManager
         return {
           serverName,
           toolCount: tools.length,
-          context: tokenCounter.calculateContextInfo(serverTotalTokens, totalPossibleTokens),
+          context: tokenCounter.calculateContextInfo(
+            serverTotalTokens,
+            totalPossibleTokens
+          ),
           tools: cleanedTools.sort((a, b) => a.name.localeCompare(b.name)),
         };
       }
@@ -707,8 +717,8 @@ export class ToolsetManager
       meta: {
         totalPossibleContext: {
           tokens: totalPossibleTokens,
-          percentTotal: null  // 100% would be redundant
-        }
+          percentTotal: null, // 100% would be redundant
+        },
       },
       toolsByServer: toolsByServer.sort((a, b) =>
         a.serverName.localeCompare(b.serverName)
@@ -868,7 +878,9 @@ export class ToolsetManager
     const activeDiscoveredTools = this.getActiveDiscoveredTools();
 
     // Calculate context information for active tools
-    const totalTokens = tokenCounter.calculateToolsetTokens(activeDiscoveredTools);
+    const totalTokens = tokenCounter.calculateToolsetTokens(
+      activeDiscoveredTools
+    );
 
     // Group tools by server for exposedTools with full details
     const exposedTools: Record<string, ToolInfoResponse[]> = {};
@@ -906,8 +918,8 @@ export class ToolsetManager
       // Add context at top level (for get-active-toolset only)
       context: {
         tokens: totalTokens,
-        percentTotal: null  // Not applicable for get-active-toolset
-      }
+        percentTotal: null, // Not applicable for get-active-toolset
+      },
     };
 
     return response;
