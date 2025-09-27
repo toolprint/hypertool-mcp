@@ -6,6 +6,32 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
 /**
+ * Zod schema for context information (token usage)
+ */
+export const contextInfoZodSchema = z.object({
+  tokens: z.number().describe("Estimated token count using BPE approximation"),
+  percentTotal: z
+    .number()
+    .nullable()
+    .describe("Percentage of total tokens (null when not applicable)"),
+});
+
+/**
+ * Zod schema for tool info response with context information
+ */
+export const toolInfoResponseZodSchema = z.object({
+  name: z.string().describe("Tool name"),
+  namespacedName: z
+    .string()
+    .describe("Namespaced tool name (e.g., 'git.status')"),
+  serverName: z.string().describe("Server that provides this tool"),
+  description: z.string().optional().describe("Tool description"),
+  context: contextInfoZodSchema.describe(
+    "Context usage information for this tool"
+  ),
+});
+
+/**
  * Zod schema for server configuration
  */
 export const serverConfigZodSchema = z.object({
@@ -161,17 +187,22 @@ export const getActiveToolsetResponseZodSchema = z.object({
     .optional()
     .describe("Tool summary information"),
   exposedTools: z
-    .record(z.array(z.string()))
-    .describe("Tools grouped by server"),
+    .record(z.array(toolInfoResponseZodSchema))
+    .describe("Tools grouped by server with full details"),
   unavailableServers: z
     .array(z.string())
     .describe("List of unavailable server names"),
   warnings: z.array(z.string()).describe("List of warnings"),
+  context: contextInfoZodSchema
+    .optional()
+    .describe("Context usage information for the exposed tools"),
 });
 
 /**
  * TypeScript types inferred from Zod schemas
  */
+export type ContextInfo = z.infer<typeof contextInfoZodSchema>;
+export type ToolInfoResponse = z.infer<typeof toolInfoResponseZodSchema>;
 export type ListSavedToolsetsResponse = z.infer<
   typeof listSavedToolsetsResponseZodSchema
 >;

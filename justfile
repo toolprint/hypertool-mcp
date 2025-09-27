@@ -267,7 +267,7 @@ test-summary:
 inspect *args:
     @echo "🔍 Launching MCP inspector with: {{args}}"
     npm run build
-    npx @modelcontextprotocol/inspector {{args}}
+    npx -y @modelcontextprotocol/inspector {{args}}
 
 # Build the project
 [group('build')]

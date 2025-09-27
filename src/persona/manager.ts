@@ -52,9 +52,12 @@ import type {
   EquipToolsetResponse,
   GetActiveToolsetResponse,
   ToolsetInfo,
+  ContextInfo,
+  ToolInfoResponse,
 } from "../server/tools/schemas.js";
 import { ToolsProvider } from "../server/types.js";
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
+import { tokenCounter } from "../server/tools/utils/token-counter.js";
 
 /**
  * Persona manager configuration options
@@ -1677,21 +1680,43 @@ export class PersonaManager
         }),
       };
 
-      // Group tools by server for exposedTools
-      const exposedTools: Record<string, string[]> = {};
-      for (const tool of toolsetConfig.tools) {
-        const namespacedName = tool.namespacedName || tool.refId || "unknown";
-        const { serverName, toolName } = this.extractToolInfo(namespacedName);
+      // Get available tool count from discovery engine
+      const discoveryEngine = this.config.getToolDiscoveryEngine?.();
+      const allDiscoveredTools = discoveryEngine?.getAvailableTools(true) || [];
+
+      // Calculate context for exposed tools
+      // We need to get the actual discovered tools that match our toolset
+      const exposedDiscoveredTools = allDiscoveredTools.filter(
+        (discoveredTool) => {
+          return toolsetConfig.tools.some((tool) => {
+            const namespacedName = tool.namespacedName || tool.refId || "";
+            return discoveredTool.namespacedName === namespacedName;
+          });
+        }
+      );
+
+      const totalTokens =
+        exposedDiscoveredTools.length > 0
+          ? tokenCounter.calculateToolsetTokens(exposedDiscoveredTools)
+          : 0;
+
+      // Group tools by server for exposedTools with full details including context
+      const exposedTools: Record<string, ToolInfoResponse[]> = {};
+
+      for (const discoveredTool of exposedDiscoveredTools) {
+        const { serverName } = this.extractToolInfo(
+          discoveredTool.namespacedName
+        );
 
         if (!exposedTools[serverName]) {
           exposedTools[serverName] = [];
         }
-        exposedTools[serverName].push(toolName);
-      }
 
-      // Get available tool count from discovery engine
-      const discoveryEngine = this.config.getToolDiscoveryEngine?.();
-      const allDiscoveredTools = discoveryEngine?.getAvailableTools(true) || [];
+        // Convert discovered tool to ToolInfoResponse with context
+        exposedTools[serverName].push(
+          tokenCounter.convertToToolInfoResponse(discoveredTool, totalTokens)
+        );
+      }
 
       return {
         equipped: true,
@@ -1714,6 +1739,11 @@ export class PersonaManager
         exposedTools,
         unavailableServers: [],
         warnings: this.activeState!.metadata.warnings,
+        // Add context at top level (for get-active-toolset only)
+        context: {
+          tokens: totalTokens,
+          percentTotal: null, // Not applicable for get-active-toolset
+        },
       };
     } catch (error) {
       return {
