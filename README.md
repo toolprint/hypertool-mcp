@@ -371,6 +371,12 @@ just pre-publish-checks  # Run all quality checks
 The `hypertool-mcp service` subcommand is currently disabled and will exit with a
 notification when invoked.
 
+## 🔗 Related Tools
+
+### Complementary MCP Orchestrators
+
+- **[NCP (Natural Context Protocol)](https://github.com/portel-dev/ncp)** - A complementary MCP orchestrator focused on performance optimization. While HyperTool excels at toolset management and dynamic tool switching, NCP specializes in token overhead reduction (94.8% savings) and O(1) complexity scaling. Perfect for teams that need both focused toolsets AND enterprise-grade performance optimization.
+
 ## 🤝 Contributing
 
 Found a bug? Have an idea? We'd love your help!
