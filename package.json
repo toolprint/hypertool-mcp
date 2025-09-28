@@ -91,7 +91,11 @@
     "inspector:docker:test": "npm run docker:build:local && docker-compose -f docker-compose.test.yaml up -d && echo '\\n🚀 HyperTool MCP running in Docker (test config)\\n📊 Server: http://localhost:8080/mcp\\n🔍 Run this in another terminal:\\n   npm run inspector:connect\\n' && docker-compose -f docker-compose.test.yaml logs -f",
     "inspector:connect": "npx @modelcontextprotocol/inspector http://localhost:8080/mcp",
     "inspector:docker:stop": "docker-compose down && docker-compose -f docker-compose.test.yaml down 2>/dev/null || true",
-    "inspector:docker:quick": "npm run inspector:docker:stop && npm run inspector:docker:production"
+    "inspector:docker:quick": "npm run inspector:docker:stop && npm run inspector:docker:production",
+    "management-ui:dev": "npm --prefix src/management-ui run dev",
+    "management-ui:build": "npm --prefix src/management-ui run build",
+    "management-ui:preview": "npm --prefix src/management-ui run preview",
+    "management-ui:test": "npm --prefix src/management-ui run test"
   },
   "keywords": [
     "mcp",
