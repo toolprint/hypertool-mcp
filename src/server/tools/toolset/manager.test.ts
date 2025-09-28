@@ -9,9 +9,13 @@ import os from "os";
 import { ToolsetManager } from "./manager.js";
 import { ToolsetConfig } from "./types.js";
 import { DiscoveredTool, IToolDiscoveryEngine } from "../discovery/types.js";
+import { EventEmitter } from "events";
 
 // Mock discovery engine
-class MockDiscoveryEngine implements IToolDiscoveryEngine {
+class MockDiscoveryEngine
+  extends EventEmitter
+  implements IToolDiscoveryEngine
+{
   private tools: DiscoveredTool[] = [];
 
   setTools(tools: DiscoveredTool[]) {
@@ -126,7 +130,7 @@ describe("ToolsetManager", () => {
       discoveredAt: new Date(),
       lastUpdated: new Date(),
       serverStatus: "connected",
-      toolHash: "hash1",
+      toolHash: "hash1234567890",
     },
     {
       name: "ps",
@@ -140,7 +144,7 @@ describe("ToolsetManager", () => {
       discoveredAt: new Date(),
       lastUpdated: new Date(),
       serverStatus: "connected",
-      toolHash: "hash2",
+      toolHash: "hash0987654321",
     },
   ];
 
@@ -378,6 +382,52 @@ describe("ToolsetManager", () => {
       const newPath = path.join(tempDir, "new-config.json");
       await manager.persistToolset(newPath);
       expect(manager.getConfigPath()).toBe(newPath);
+    });
+  });
+
+  describe("alias support", () => {
+    beforeEach(() => {
+      manager.setDiscoveryEngine(mockDiscovery);
+    });
+
+    it("should expose alias names while preserving canonical routing", async () => {
+      const config: ToolsetConfig = {
+        name: "aliased",
+        tools: [
+          { namespacedName: "git.status", alias: "git_status" },
+          { namespacedName: "docker.ps" },
+        ],
+      };
+
+      manager.setCurrentToolset(config);
+
+      const tools = manager.getMcpTools();
+      expect(tools).toHaveLength(2);
+      const gitTool = tools.find((tool) => tool.name === "git_status");
+      expect(gitTool).toBeDefined();
+      expect(gitTool?.description).toContain(
+        "Alias: git_status (maps to git.status)"
+      );
+
+      expect(manager.getOriginalToolName("git_status")).toBe("git.status");
+      expect(manager.getOriginalToolName("docker_ps")).toBe("docker.ps");
+
+      const info = await manager.generateToolsetInfo(config);
+      const aliasedEntry = info.tools.find(
+        (tool) => tool.namespacedName === "git.status"
+      );
+      expect(aliasedEntry?.alias).toBe("git_status");
+    });
+
+    it("should resolve aliases defined with refId only", () => {
+      const config: ToolsetConfig = {
+        name: "aliased-by-ref",
+        tools: [{ refId: "hash1234567890", alias: "status_ref" }],
+      };
+
+      manager.setCurrentToolset(config);
+
+      expect(manager.getOriginalToolName("status_ref")).toBe("git.status");
     });
   });
 });

@@ -24,7 +24,7 @@ export const buildToolsetDefinition: Tool = {
       tools: {
         type: "array",
         description:
-          "Array of tools to include in the toolset. Each tool must specify either namespacedName or refId for identification. Use list-available-tools to see available options.",
+          "Array of tools to include in the toolset. Each tool must specify either namespacedName or refId for identification. Optionally provide an alias to expose the tool under a custom snake_case name. Use list-available-tools to see available options.",
         minItems: 1,
         maxItems: 100,
         items: {
@@ -39,6 +39,14 @@ export const buildToolsetDefinition: Tool = {
               type: "string",
               description:
                 "Tool reference by unique hash identifier (e.g., 'abc123def456...')",
+            },
+            alias: {
+              type: "string",
+              description:
+                "Optional alias to expose the tool under a custom snake_case name (e.g., 'git_status' or 'docs_search')",
+              pattern: "^[a-z0-9_]+$",
+              minLength: 2,
+              maxLength: 50,
             },
           },
           oneOf: [{ required: ["namespacedName"] }, { required: ["refId"] }],

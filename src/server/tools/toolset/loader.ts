@@ -8,6 +8,7 @@ import {
   ToolsetConfig,
   ToolsetParserOptions,
   ValidationResult,
+  DynamicToolReference,
 } from "./types.js";
 import { validateToolsetConfig } from "./validator.js";
 
@@ -141,12 +142,29 @@ function normalizeToolsetConfig(rawConfig: any): ToolsetConfig {
 
   // Normalize tools array
   if (Array.isArray(rawConfig.tools)) {
-    config.tools = rawConfig.tools.filter((tool: any) => {
-      return (
-        (tool.namespacedName && typeof tool.namespacedName === "string") ||
-        (tool.refId && typeof tool.refId === "string")
-      );
-    });
+    config.tools = rawConfig.tools
+      .filter((tool: any) => {
+        return (
+          (tool.namespacedName && typeof tool.namespacedName === "string") ||
+          (tool.refId && typeof tool.refId === "string")
+        );
+      })
+      .map((tool: any) => {
+        const normalized: DynamicToolReference = {
+          namespacedName:
+            typeof tool.namespacedName === "string"
+              ? tool.namespacedName
+              : undefined,
+          refId:
+            typeof tool.refId === "string" ? tool.refId : undefined,
+        };
+
+        if (typeof tool.alias === "string" && tool.alias.trim().length > 0) {
+          normalized.alias = tool.alias.trim();
+        }
+
+        return normalized;
+      });
   }
 
   return config;

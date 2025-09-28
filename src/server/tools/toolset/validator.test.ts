@@ -201,5 +201,66 @@ describe("ToolsetValidator", () => {
         "Consider adding refId values to tool references for better validation and security"
       );
     });
+
+    it("should accept valid aliases", () => {
+      const config: ToolsetConfig = {
+        name: "aliased-toolset",
+        tools: [
+          { namespacedName: "git.status", alias: "git_status" },
+          { namespacedName: "docker.ps", alias: "docker_ps" },
+        ],
+      };
+
+      const result = validateToolsetConfig(config);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should reject duplicate aliases", () => {
+      const config: ToolsetConfig = {
+        name: "duplicate-alias",
+        tools: [
+          { namespacedName: "git.status", alias: "status_tool" },
+          { namespacedName: "docker.ps", alias: "status_tool" },
+        ],
+      };
+
+      const result = validateToolsetConfig(config);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain(
+        'Tool reference at index 1: alias "status_tool" is already used by another tool'
+      );
+    });
+
+    it("should reject aliases that conflict with canonical names", () => {
+      const config: ToolsetConfig = {
+        name: "conflicting-alias",
+        tools: [
+          { namespacedName: "git.status" },
+          { namespacedName: "docker.ps", alias: "git_status" },
+        ],
+      };
+
+      const result = validateToolsetConfig(config);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain(
+        'Tool reference at index 1: alias "git_status" conflicts with the canonical name of another tool'
+      );
+    });
+
+    it("should reject aliases with invalid format", () => {
+      const config: ToolsetConfig = {
+        name: "invalid-alias",
+        tools: [
+          { namespacedName: "git.status", alias: "GitStatus" },
+        ],
+      };
+
+      const result = validateToolsetConfig(config);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain(
+        "Tool reference at index 0: alias must contain only lowercase letters, numbers, and underscores"
+      );
+    });
   });
 });

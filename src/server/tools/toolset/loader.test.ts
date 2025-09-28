@@ -98,6 +98,24 @@ describe("ToolsetLoader", () => {
       expect(result.config!.createdAt).toBeInstanceOf(Date); // Default date added
     });
 
+    it("should preserve and trim tool aliases", async () => {
+      const rawConfig = {
+        name: "aliased-config",
+        tools: [
+          { namespacedName: "git.status", alias: " git_status " },
+          { refId: "hash123456789", alias: "docker_ps" },
+        ],
+      };
+
+      const filePath = path.join(tempDir, "aliased.json");
+      await fs.writeFile(filePath, JSON.stringify(rawConfig));
+
+      const result = await loadToolsetConfig(filePath);
+      expect(result.config).toBeDefined();
+      expect(result.config!.tools[0].alias).toBe("git_status");
+      expect(result.config!.tools[1].alias).toBe("docker_ps");
+    });
+
     it("should filter out invalid tool references", async () => {
       const configWithInvalidTools = {
         name: "mixed-tools",
