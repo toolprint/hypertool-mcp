@@ -10,8 +10,9 @@ Generate a comprehensive PR description based on the commits in your current bra
 ## Instructions
 
 1. **Check for Existing PR**:
-   - Run `gh pr view --json number,title,url` to check if a PR exists for this branch
+   - Run `gh pr view --json number,title,url` (without arguments - automatically detects PR for current branch)
    - If no PR exists, inform the user and suggest creating one first with `gh pr create`
+   - Note: `gh` CLI automatically detects the PR for the current branch
 
 2. **Analyze Current Branch**:
    - Run `git log --oneline main..HEAD` to see all commits on this branch
@@ -47,7 +48,7 @@ Generate a comprehensive PR description based on the commits in your current bra
 
 6. **Update PR on GitHub**:
    - Save the generated description to a temporary file (use `.tmp/pr-description.md`)
-   - Use `gh pr edit --body-file .tmp/pr-description.md` to update the PR description
+   - Use `gh pr edit --body-file .tmp/pr-description.md` (without PR number - automatically uses current branch's PR)
    - Confirm successful update and provide the PR URL
    - Clean up temporary file
 
@@ -73,9 +74,23 @@ Assistant should:
 
 ## Implementation Notes
 
-- Use `gh pr view` to check if PR exists
+- **No PR number needed**: Both `gh pr view` and `gh pr edit` automatically detect the PR for the current branch when called without arguments
 - Use `gh pr edit --body-file` instead of `--body` to handle multi-line descriptions properly
-- Create temp file in `.tmp/` directory (create if doesn't exist)
+- Create temp file in `.tmp/` directory (create if doesn't exist with `mkdir -p .tmp`)
 - Verify successful update by checking command exit code
 - Provide user with before/after confirmation
 - Show user the generated description before updating if they want to review it
+
+## Example Commands
+
+```bash
+# Check if PR exists for current branch
+gh pr view --json number,title,url
+
+# Update PR description for current branch
+mkdir -p .tmp
+gh pr edit --body-file .tmp/pr-description.md
+
+# Get PR URL for current branch
+gh pr view --json url --jq .url
+```
