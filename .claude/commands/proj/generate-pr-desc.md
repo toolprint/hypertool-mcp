@@ -1,6 +1,7 @@
 ---
 description: Generate and update PR description from branch commits using GitHub CLI
 tags: [git, pr, documentation, github]
+allowed-tools: Read, Bash(gh pr view*), Bash(gh pr edit*), Bash(git log*), Bash(git diff*), Bash(mkdir -p .tmp), Bash(cat > .tmp/pr-description.md*)
 ---
 
 # Generate PR Description
