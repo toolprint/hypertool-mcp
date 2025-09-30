@@ -95,6 +95,8 @@ npx -y @toolprint/hypertool-mcp mcp run --persona web-dev
 
 That's it! No server configuration needed. The persona brings its own servers and toolsets.
 
+📦 **Browse all available personas**: [awesome-mcp-personas](https://github.com/toolprint/awesome-mcp-personas)
+
 ### Available Personas
 
 | Persona | Included Servers | Best For |
@@ -121,6 +123,29 @@ npx -y @toolprint/hypertool-mcp mcp run --persona web-dev --equip-toolset fronte
 💡 **Pro tip**: Personas can be mixed with your existing servers! Add `--mcp-config` to include your custom servers alongside the persona's servers.
 
 📚 **Learn more**: See the complete [Personas Guide](guides/PERSONAS.md) for detailed instructions, creating custom personas, and troubleshooting.
+
+## 📊 Context Measurement (NEW!)
+
+See exactly how much context each tool consumes. Optimize your toolsets with token estimates for every tool.
+
+<div align="center">
+  <img src="./assets/toolset_context.png" alt="Toolset Context View" width="700">
+  <p><em>Active toolset showing token usage per tool</em></p>
+</div>
+
+**Why it matters:**
+- 🎯 **Optimize context usage** - Identify heavyweight tools consuming your context window
+- 📉 **Make informed decisions** - See token costs before adding tools to toolsets
+- 🔍 **Compare alternatives** - Find lighter tools that do the same job
+- 💡 **Budget your context** - Understand exactly what you're exposing to your AI
+
+**How to use:**
+
+Ask your AI to use these MCP tools to see context information:
+- `list-available-tools` - Shows token estimates for all available tools
+- `get-active-toolset` - Shows token usage for your currently equipped toolset
+
+Each tool displays estimated tokens and percentage of total context consumed. Perfect for building lean, efficient toolsets!
 
 ## 🎬 Demo
 
@@ -220,34 +245,6 @@ Create focused toolsets for different workflows:
 → Deep dives with organized notes
 ```
 
-### 📁 Server Groups (NEW!)
-
-Organize your MCP servers into logical groups for easy management:
-
-```bash
-# Create a development group
-hypertool-mcp mcp group create development -d "All development servers"
-
-# Add servers to the group
-hypertool-mcp mcp group add development git-server docker-server filesystem-server
-
-# Run with a specific group
-hypertool-mcp --group development
-
-# List all groups
-hypertool-mcp mcp group list
-
-# Show servers in a group
-hypertool-mcp mcp group show development
-```
-
-Server groups make it easy to:
-
-- 🚀 Launch related servers together
-- 📊 Organize servers by project or environment
-- 🔄 Switch between different server configurations
-- 🎯 Maintain focused tool contexts
-
 ### 🎬 Real Chat Example
 
 ```
@@ -261,6 +258,21 @@ AI: "Switching to writing toolset"
 ```
 
 💡 **Pro tip**: Start with 3-5 tools per toolset. Your AI will thank you!
+
+## 📋 All Features
+
+Explore everything HyperTool can do:
+
+| Feature | Description | Guide |
+|---------|-------------|-------|
+| **🎭 Personas** | Pre-configured MCP server bundles with curated toolsets. Get started instantly with ready-to-use workflows for web-dev, data science, DevOps, and more. | [Personas Guide](guides/PERSONAS.md) |
+| **📁 Server Groups** | Organize MCP servers into logical groups. Launch related servers together, switch between projects, and maintain focused contexts. | [Advanced Guide](guides/ADVANCED.md) |
+| **📊 Context Measurement** | See token estimates for every tool. Optimize your toolsets by understanding exactly how much context each tool consumes. | [Context Measurement](docs/features/context-measurement.md) |
+| **🔧 Configuration Mode** | Smart separation of toolset management from operational tools. Keep your AI focused on work, not configuration. | [Configuration Mode Guide](guides/CONFIGURATION_MODE.md) |
+| **🎯 Dynamic Toolsets** | Build, modify, and switch between toolsets on the fly. Adapt your AI's capabilities to match your current task. | [Examples & Recipes](guides/EXAMPLES.md) |
+| **🧠 Tool Annotations** | Enhance tools with custom descriptions, examples, and context. Improve your AI's tool selection accuracy by 89%. | [Advanced Guide](guides/ADVANCED.md) |
+| **🚀 HTTP Mode** | Run HyperTool as a long-lived HTTP server for persistent connections and faster response times. | [Advanced Guide](guides/ADVANCED.md) |
+| **🔌 Unlimited Servers** | Connect as many MCP servers as you need. Break free from the 100-tool limit without sacrificing performance. | [Quick Start](#-quick-start) |
 
 ## ❓ FAQ
 
@@ -292,6 +304,12 @@ A: HyperTool monitors health and automatically reconnects when servers come back
 
 **Q: Can I share toolsets with my team?**
 A: Import/export is coming soon! For now, you can copy and share toolset files - they'll work if your team has the same MCP servers configured.
+
+**Q: How accurate are the token estimates in context measurement?**
+A: The estimates use BPE-based approximation for consistent relative comparisons between tools. They're perfect for understanding which tools consume more context, but not exact counts since different LLMs use different tokenizers.
+
+**Q: Does context measurement slow down my toolsets?**
+A: No! Token counts are cached and add less than 10ms overhead. You won't notice any performance impact.
 
 ### Technical Questions
 
