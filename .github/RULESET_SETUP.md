@@ -17,7 +17,15 @@ The `publish-beta.yml` workflow needs to:
 2. Commit these changes back to the `main` branch
 3. Push the commit and tag to origin
 
-Using rulesets with bypass permissions allows `github-actions[bot]` to do this without requiring a GitHub App or PAT.
+**Solution**: Use SSH Deploy Keys with ruleset bypass permissions. GitHub does not allow `github-actions[bot]` to be added directly to bypass lists, so we use a deploy key instead.
+
+### Why Deploy Keys?
+
+- **Simpler than GitHub Apps**: No app creation or installation needed
+- **Repository-scoped**: Key only works for this specific repository
+- **No organization required**: Works for personal and organization repos
+- **Native GitHub feature**: Built-in support in rulesets and workflows
+- **Secure**: Private key stored as encrypted secret, only accessible to workflows
 
 ## Setup Instructions
 
@@ -65,47 +73,52 @@ Enable the following rules:
 
 This is the key configuration that allows automated releases:
 
-**Important**: GitHub does not allow adding `github-actions[bot]` directly to bypass lists. You must use one of these methods:
+**Important**: GitHub does not allow adding `github-actions[bot]` directly to bypass lists. You must use the **Deploy Key Method**.
 
-#### Option A: Deploy Key Method (Recommended - Simpler)
+#### Deploy Key Setup (Step-by-Step)
 
 1. **Generate SSH Deploy Key**:
    ```bash
-   ssh-keygen -t ed25519 -C "github-actions-deploy-key" -f deploy_key -N ""
+   cd /tmp
+   ssh-keygen -t ed25519 -C "github-actions-deploy-key" -f github_actions_deploy_key -N ""
    ```
-   This creates `deploy_key` (private) and `deploy_key.pub` (public)
+   This creates:
+   - `github_actions_deploy_key` (private key - keep secret!)
+   - `github_actions_deploy_key.pub` (public key - safe to share)
 
 2. **Add Public Key as Deploy Key**:
-   - Go to repository **Settings** → **Deploy keys**
+   - Go to: `https://github.com/YOUR_ORG/YOUR_REPO/settings/keys`
    - Click **"Add deploy key"**
-   - Title: `GitHub Actions Deploy Key`
-   - Key: Paste contents of `deploy_key.pub`
-   - ✅ **Check "Allow write access"**
+   - **Title**: `GitHub Actions Deploy Key`
+   - **Key**: Run `cat /tmp/github_actions_deploy_key.pub` and paste the entire output
+   - ✅ **CRITICAL**: Check **"Allow write access"**
    - Click **"Add key"**
 
-3. **Add Private Key as Secret**:
-   - Go to repository **Settings** → **Secrets and variables** → **Actions**
+3. **Add Private Key as Repository Secret**:
+   - Go to: `https://github.com/YOUR_ORG/YOUR_REPO/settings/secrets/actions`
    - Click **"New repository secret"**
-   - Name: `DEPLOY_KEY`
-   - Value: Paste contents of `deploy_key` (the private key)
+   - **Name**: `DEPLOY_KEY` (must be exactly this)
+   - **Secret**: Run `cat /tmp/github_actions_deploy_key` and paste the **entire output** including:
+     - `-----BEGIN OPENSSH PRIVATE KEY-----`
+     - All the encoded key data
+     - `-----END OPENSSH PRIVATE KEY-----`
    - Click **"Add secret"**
 
 4. **Configure Ruleset Bypass**:
-   - In your ruleset, scroll to **"Bypass list"** section
+   - Go to: `https://github.com/YOUR_ORG/YOUR_REPO/settings/rules`
+   - Find your main branch ruleset (or create one if needed)
+   - Scroll to **"Bypass list"** section
    - Click **"Add bypass"**
-   - Select **"Deploy keys"**
+   - Select **"Deploy keys"** from the dropdown
    - **Bypass mode**: Select **"Always"**
+   - Click **"Save"** or **"Create"**
 
-5. **Update Workflow** (see Step 7 below for workflow changes)
+5. **Clean Up Key Files**:
+   ```bash
+   rm /tmp/github_actions_deploy_key /tmp/github_actions_deploy_key.pub
+   ```
 
-#### Option B: GitHub App Method (More Complex, Organization Required)
-
-1. Create a GitHub App with `contents: write` permission
-2. Install the app in your repository
-3. Add the GitHub App to the ruleset's bypass list
-4. Use `actions/create-github-app-token` action in your workflow
-
-**We recommend Option A (Deploy Key) for simplicity.**
+6. **Update Workflow** (see Step 7 below for workflow changes)
 
 ### Step 6: Save Ruleset
 
