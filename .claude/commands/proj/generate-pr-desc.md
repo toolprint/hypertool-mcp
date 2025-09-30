@@ -46,13 +46,18 @@ Generate a comprehensive PR description based on the commits in your current bra
    - Include "why this matters" context in Additional Notes
    - Mention any workflow safeguards or important implementation details
 
-6. **Update PR on GitHub**:
+6. **Backup Current PR Description**:
+   - Before updating, fetch and save the current PR description using `gh pr view --json body --jq .body > .tmp/pr-description.backup.md`
+   - This allows reverting if needed
+   - Keep the backup file for user reference
+
+7. **Update PR on GitHub**:
    - Save the generated description to a temporary file (use `.tmp/pr-description.md`)
    - Use `gh pr edit --body-file .tmp/pr-description.md` (without PR number - automatically uses current branch's PR)
    - Confirm successful update and provide the PR URL
-   - Clean up temporary file
+   - Inform user that backup is available at `.tmp/pr-description.backup.md` if they need to revert
 
-7. **Error Handling**:
+8. **Error Handling**:
    - If `gh` command is not available, inform user to install GitHub CLI
    - If not authenticated, instruct user to run `gh auth login`
    - If PR doesn't exist, provide instructions to create one
@@ -64,13 +69,14 @@ User: "/proj:generate-pr-desc"
 
 Assistant should:
 1. Check if PR exists for current branch using `gh pr view`
-2. Run git commands to analyze the branch
-3. Parse commits and changes
-4. Generate a filled-out PR template
-5. Save to `.tmp/pr-description.md`
-6. Update PR description using `gh pr edit --body-file .tmp/pr-description.md`
-7. Confirm success and show PR URL
-8. Clean up temporary file
+2. Backup current PR description to `.tmp/pr-description.backup.md`
+3. Run git commands to analyze the branch
+4. Parse commits and changes
+5. Generate a filled-out PR template
+6. Save to `.tmp/pr-description.md`
+7. Update PR description using `gh pr edit --body-file .tmp/pr-description.md`
+8. Confirm success and show PR URL
+9. Inform user about backup location for potential revert
 
 ## Implementation Notes
 
@@ -87,10 +93,29 @@ Assistant should:
 # Check if PR exists for current branch
 gh pr view --json number,title,url
 
-# Update PR description for current branch
+# Backup current PR description before updating
 mkdir -p .tmp
+gh pr view --json body --jq .body > .tmp/pr-description.backup.md
+
+# Update PR description for current branch
 gh pr edit --body-file .tmp/pr-description.md
 
 # Get PR URL for current branch
 gh pr view --json url --jq .url
+
+# Revert to previous description if needed
+gh pr edit --body-file .tmp/pr-description.backup.md
 ```
+
+## Backup and Revert
+
+The command automatically backs up the previous PR description to `.tmp/pr-description.backup.md` before updating. To revert:
+
+```bash
+gh pr edit --body-file .tmp/pr-description.backup.md
+```
+
+Or manually:
+1. Open `.tmp/pr-description.backup.md` to see the previous description
+2. Copy the content
+3. Run `gh pr edit` and paste when prompted
