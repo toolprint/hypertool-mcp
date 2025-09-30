@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.44
+
+### Patch Changes
+
+- Automated patch release from CI
+
 ## 0.0.39
 
 ### Patch Changes
