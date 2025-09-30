@@ -335,6 +335,26 @@ pre-commit:
 pre-publish-checks: build test lint typecheck
     @echo "✅ All pre-publish checks passed!"
 
+# PR preparation - runs all checks from GitHub PR validation workflow
+[group('publish')]
+pr-prep:
+    @echo "🔍 Running all PR validation checks..."
+    @echo "📁 Creating test results directory..."
+    @mkdir -p test-results
+    @echo "🪝 Running pre-commit hooks on all files..."
+    pre-commit run --all-files
+    @echo "🔨 Building project..."
+    npm run build
+    @echo "🧪 Running tests with CI reporter..."
+    npm run test:ci
+    @echo "📝 Type checking..."
+    npx tsc --noEmit
+    @echo "🔍 Linting code..."
+    npm run lint
+    @echo "💅 Checking code formatting..."
+    npm run format:check
+    @echo "✅ All PR checks passed! Ready to commit and push."
+
 
 # Dry run commands - kept for debugging
 [group('publish')]

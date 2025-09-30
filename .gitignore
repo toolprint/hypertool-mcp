@@ -43,6 +43,7 @@ coverage/
 .pytest_cache/
 .phpunit.result.cache
 .vitest-cache/
+test-results/
 
 # Production builds
 dist/

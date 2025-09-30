@@ -96,13 +96,12 @@ Create your code in logical directories under `src/`:
 
 #### When You're Done
 
-1. **Test Your Implementation**:
-   - Run ALL tests (`npm test` or `just test`) and verify they pass
-   - Ensure tests specifically related to your changes are passing
-   - If you added new functionality, write tests for it and verify they pass
-   - If you modified existing functionality, ensure existing tests still pass
-2. **Run Code Quality**: Use `just lint` and `just format` to ensure code standards
-3. **Merge Latest Changes**: Before finalizing, merge the latest changes from your base branch to avoid conflicts:
+1. **Run PR Preparation Checks**:
+   - **ALWAYS run `just pr-prep` before committing** - This runs ALL the checks from the GitHub PR validation workflow
+   - This includes: pre-commit hooks, build, tests (CI reporter), type checking, linting, and format checking
+   - If `just pr-prep` fails, fix the issues before committing
+   - This ensures your branch will pass CI checks when merged
+2. **Merge Latest Changes**: Before finalizing, merge the latest changes from your base branch to avoid conflicts:
 
    ```bash
    # Find your base branch (usually integration, cs-setup, or main)
@@ -113,10 +112,10 @@ Create your code in logical directories under `src/`:
    # Your base branch is always a local branch, not a remote one
    ```
 
-4. **Commit Your Work**: Create clear commit messages describing your implementation
-5. **Mark Task Complete**: Use `mcp__task-master__set_task_status --id <your-task-id> --status completed`
-6. **Document Integration**: Update task with merge notes using `mcp__task-master__update_task --id <your-task-id> --append --prompt "Work completed in local branch [branch-name]. Merged latest changes from [base-branch]. Ready for local merge. Integration notes: [any important details]"`
-7. **Keep Work Local**: Do NOT push branches to remote - all work stays in local worktrees for manual integration
+3. **Commit Your Work**: Create clear commit messages describing your implementation
+4. **Mark Task Complete**: Use `mcp__task-master__set_task_status --id <your-task-id> --status completed`
+5. **Document Integration**: Update task with merge notes using `mcp__task-master__update_task --id <your-task-id> --append --prompt "Work completed in local branch [branch-name]. Merged latest changes from [base-branch]. Ready for local merge. Integration notes: [any important details]"`
+6. **Keep Work Local**: Do NOT push branches to remote - all work stays in local worktrees for manual integration
 
 #### Example Task Assignment Workflow
 
