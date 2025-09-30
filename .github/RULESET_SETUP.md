@@ -65,13 +65,47 @@ Enable the following rules:
 
 This is the key configuration that allows automated releases:
 
-1. Scroll to **"Bypass list"** section
-2. Click **"Add bypass"**
-3. Select **"Repository roles"** or **"GitHub Apps"**
-4. Add: **`github-actions[bot]`** or **"GitHub Actions"** role
-5. **Bypass mode**: Select **"Always"** (for trusted automation) or **"With approval"**
+**Important**: GitHub does not allow adding `github-actions[bot]` directly to bypass lists. You must use one of these methods:
 
-For automated releases, use **"Always"** bypass mode.
+#### Option A: Deploy Key Method (Recommended - Simpler)
+
+1. **Generate SSH Deploy Key**:
+   ```bash
+   ssh-keygen -t ed25519 -C "github-actions-deploy-key" -f deploy_key -N ""
+   ```
+   This creates `deploy_key` (private) and `deploy_key.pub` (public)
+
+2. **Add Public Key as Deploy Key**:
+   - Go to repository **Settings** → **Deploy keys**
+   - Click **"Add deploy key"**
+   - Title: `GitHub Actions Deploy Key`
+   - Key: Paste contents of `deploy_key.pub`
+   - ✅ **Check "Allow write access"**
+   - Click **"Add key"**
+
+3. **Add Private Key as Secret**:
+   - Go to repository **Settings** → **Secrets and variables** → **Actions**
+   - Click **"New repository secret"**
+   - Name: `DEPLOY_KEY`
+   - Value: Paste contents of `deploy_key` (the private key)
+   - Click **"Add secret"**
+
+4. **Configure Ruleset Bypass**:
+   - In your ruleset, scroll to **"Bypass list"** section
+   - Click **"Add bypass"**
+   - Select **"Deploy keys"**
+   - **Bypass mode**: Select **"Always"**
+
+5. **Update Workflow** (see Step 7 below for workflow changes)
+
+#### Option B: GitHub App Method (More Complex, Organization Required)
+
+1. Create a GitHub App with `contents: write` permission
+2. Install the app in your repository
+3. Add the GitHub App to the ruleset's bypass list
+4. Use `actions/create-github-app-token` action in your workflow
+
+**We recommend Option A (Deploy Key) for simplicity.**
 
 ### Step 6: Save Ruleset
 
@@ -79,64 +113,79 @@ For automated releases, use **"Always"** bypass mode.
 2. Click **"Create"** (or **"Save changes"**)
 3. The ruleset is now active
 
-### Step 7: Verify Workflow Permissions
+### Step 7: Update Workflow to Use Deploy Key
 
-Ensure your workflow has the correct permissions (already configured in `publish-beta.yml`):
+If using **Option A (Deploy Key)**, update the checkout step in `publish-beta.yml`:
 
 ```yaml
-permissions:
-  contents: write      # Required to push commits and tags
-  actions: read        # Required to read workflow information
-  id-token: write      # Required for OIDC authentication
+- name: Checkout code
+  uses: actions/checkout@v4
+  with:
+    ssh-key: ${{ secrets.DEPLOY_KEY }}
+    fetch-depth: 0
+    persist-credentials: true
 ```
+
+If using **Option B (GitHub App)**, the workflow would need additional steps with the `create-github-app-token` action (not covered in detail here).
+
+**Current workflow** uses `token: ${{ secrets.GITHUB_TOKEN }}` which won't work with rulesets. You must switch to the deploy key method.
 
 ## How It Works
 
 1. When the workflow runs on `main` branch:
-   - It has `contents: write` permission
-   - The `github-actions[bot]` actor is in the bypass list
-   - It can push commits and tags directly to `main`
+   - The workflow uses the SSH deploy key for authentication
+   - Deploy keys are in the ruleset bypass list
+   - The workflow can push commits and tags directly to `main`
+   - The `[skip-ci]` commit message prevents infinite loops
 
 2. Regular developers cannot push to `main`:
    - Must create pull requests
    - Must pass status checks
    - Must get approvals
-   - Cannot bypass the rules
+   - Cannot bypass the rules (they don't have the deploy key)
 
 ## Troubleshooting
 
-### Error: "Resource not accessible by integration"
-**Solution**: Ensure `contents: write` permission is set in the workflow
-
 ### Error: "Push declined due to repository rule violations"
 **Solution**:
-- Verify `github-actions[bot]` is in the bypass list
+- Verify "Deploy keys" are in the bypass list of your ruleset
 - Check that bypass mode is set to "Always"
 - Ensure the ruleset is "Active" (not "Evaluate")
+- Confirm the deploy key was added with "Allow write access" enabled
+
+### Error: "Permission denied (publickey)"
+**Solution**:
+- Verify the `DEPLOY_KEY` secret contains the **private key** (not public key)
+- Ensure the deploy key is properly formatted (starts with `-----BEGIN OPENSSH PRIVATE KEY-----`)
+- Check that the deploy key was added to the repository's Deploy keys settings
 
 ### Error: "Commits must have verified signatures"
 **Solution**:
-- Either remove the "Require signed commits" rule
-- Or add `github-actions[bot]` to the bypass list for this rule specifically
-- GitHub Actions commits are automatically signed by GitHub
+- Either remove the "Require signed commits" rule from your ruleset
+- Or add "Deploy keys" to the bypass list for this specific rule
+- SSH deploy keys automatically handle commit signing
 
 ### Workflow doesn't push anything
 **Solution**:
 - Check that `persist-credentials: true` is set in the checkout action
-- Verify `GITHUB_TOKEN` is being used (not a PAT)
+- Verify `ssh-key: ${{ secrets.DEPLOY_KEY }}` is configured (not `token`)
+- Ensure the deploy key has write access enabled
 
 ## Security Considerations
 
 ✅ **Safe**:
-- Only `github-actions[bot]` can bypass rules
-- Only for workflows running from the main repository (not forks)
+- Only workflows with access to the `DEPLOY_KEY` secret can bypass rules
+- Only workflows running from the main repository can access secrets (not forks)
 - Requires `[skip-ci]` tag to prevent infinite loops
 - All actions are audited in GitHub audit log
+- Deploy key is scoped to a single repository
 
 ⚠️ **Be Aware**:
-- Anyone who can modify workflow files can potentially use the bypass
+- Anyone who can modify workflow files can potentially use the deploy key
 - Review workflow changes carefully in PRs
 - Consider using CODEOWNERS for `.github/workflows/` directory
+- Protect the `DEPLOY_KEY` secret - never expose it in logs or output
+- Rotate the deploy key periodically for enhanced security
 
 ## Alternative: Separate Release Branch
 
