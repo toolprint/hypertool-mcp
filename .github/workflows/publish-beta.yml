@@ -13,6 +13,7 @@ on:
 permissions:
   contents: write
   actions: read
+  id-token: write
 
 jobs:
   publish-beta:
@@ -23,8 +24,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -87,7 +89,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Create and push git tag
+      - name: Create and push git tag and commit
         run: |
           git tag v${{ steps.version.outputs.version }}
           git push origin v${{ steps.version.outputs.version }}
