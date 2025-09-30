@@ -1,7 +1,7 @@
 ---
 description: Run PR checks, push to remote, create PR, and generate description automatically
 tags: [git, pr, ci, github, automation]
-allowed-tools: Read, Bash(just pr-prep), Bash(gh pr*), Bash(git push*), Bash(git branch*), Bash(git log*), Bash(git diff*), Bash(git remote*), Bash(mkdir -p .tmp), Bash(cat > .tmp/pr-description.md*)
+allowed-tools: Read, Bash(just pr-prep), Bash(gh pr*), Bash(git push*), Bash(git branch*), Bash(git log*), Bash(git diff*), Bash(git pull --rebase origin main), Bash(git remote -v), Bash(git rev-parse --abbrev-ref @{upstream}), Bash(git status --porcelain), Bash(mkdir -p .tmp), Bash(cat > .tmp/pr-description.md*)
 ---
 
 # Create PR with Auto-Generated Description
@@ -17,7 +17,17 @@ Complete PR workflow: run all CI checks locally, push branch to remote, create P
    - Ensures the branch will pass GitHub PR validation
    - If this fails, STOP and inform the user to fix issues before proceeding
 
-### Step 2: Check Git Status and Branch
+### Step 2: Rebase from Main
+
+1. **Rebase from main**:
+   ```bash
+   git pull --rebase origin main
+   ```
+   - Ensures the branch is up-to-date with latest main
+   - If rebase conflicts occur, STOP and inform user to resolve conflicts first
+   - User should run `git rebase --continue` after resolving, then retry the command
+
+### Step 3: Check Git Status and Branch
 
 1. **Verify we're on a feature branch**:
    - Run `git branch --show-current` to get current branch name
@@ -33,7 +43,7 @@ Complete PR workflow: run all CI checks locally, push branch to remote, create P
    - Run `git rev-parse --abbrev-ref @{upstream}` to check if branch has upstream
    - If no upstream, inform user that branch will be pushed with `-u` flag
 
-### Step 3: Push to Remote
+### Step 4: Push to Remote
 
 1. **Push the branch**:
    ```bash
@@ -48,12 +58,12 @@ Complete PR workflow: run all CI checks locally, push branch to remote, create P
    - Check exit code
    - If push fails (e.g., force-push required, conflicts), inform user and STOP
 
-### Step 4: Create PR on GitHub
+### Step 5: Create PR on GitHub
 
 1. **Check if PR already exists**:
    - Run `gh pr view --json number,url` to check for existing PR
    - If PR exists, inform user and ask if they want to update it instead
-   - If user says yes, skip to Step 5
+   - If user says yes, skip to Step 6
 
 2. **Create the PR**:
    ```bash
@@ -67,7 +77,7 @@ Complete PR workflow: run all CI checks locally, push branch to remote, create P
    - Capture PR URL from output
    - If creation fails, inform user and STOP
 
-### Step 5: Generate and Update PR Description
+### Step 6: Generate and Update PR Description
 
 Follow the same process as `/proj:generate-pr-desc`:
 
@@ -111,7 +121,7 @@ Follow the same process as `/proj:generate-pr-desc`:
    gh pr edit --body-file .tmp/pr-description.md
    ```
 
-### Step 6: Confirm Success
+### Step 7: Confirm Success
 
 1. **Display PR URL**:
    - Show the PR URL to the user
@@ -127,6 +137,15 @@ Follow the same process as `/proj:generate-pr-desc`:
 - Display the failing check output
 - STOP workflow
 - Instruct user to fix issues and try again
+
+### Rebase Conflicts
+- Display rebase conflict message
+- STOP workflow
+- Instruct user to:
+  1. Resolve conflicts in the affected files
+  2. Run `git add <resolved-files>`
+  3. Run `git rebase --continue`
+  4. Retry `/proj:create-pr`
 
 ### Uncommitted Changes
 - List the uncommitted files
@@ -174,23 +193,27 @@ Claude:
    - Lint: PASSED
    - Format check: PASSED
 
-2. ✅ Current branch: feature/add-context-measurement
+2. ✅ Rebasing from main...
+   - Rebased successfully on origin/main
+   - No conflicts
+
+3. ✅ Current branch: feature/add-context-measurement
    - No uncommitted changes
    - Remote: origin
 
-3. ✅ Pushing to remote...
+4. ✅ Pushing to remote...
    - Pushed to origin/feature/add-context-measurement
 
-4. ✅ Creating PR on GitHub...
+5. ✅ Creating PR on GitHub...
    - PR created: https://github.com/org/repo/pull/43
 
-5. ✅ Generating PR description...
+6. ✅ Generating PR description...
    - Analyzed 3 commits
    - Found: 1 feature, 2 documentation updates
    - Generated description from template
    - Updated PR #43
 
-6. ✅ Done! Your PR is ready for review:
+7. ✅ Done! Your PR is ready for review:
    https://github.com/org/repo/pull/43
 
    Backup saved to .tmp/pr-description.backup.md
@@ -212,9 +235,10 @@ Rules:
 
 ### When to Skip Steps
 
-- **Skip Step 3 (Push)**: If branch is already up-to-date on remote
-- **Skip Step 4 (Create)**: If PR already exists, go straight to Step 5
-- **Skip Step 5 (Backup)**: If this is a new PR (no existing description to backup)
+- **Skip Step 2 (Rebase)**: Never skip - always rebase to ensure up-to-date with main
+- **Skip Step 4 (Push)**: If branch is already up-to-date on remote
+- **Skip Step 5 (Create)**: If PR already exists, go straight to Step 6
+- **Skip Step 6 (Backup)**: If this is a new PR (no existing description to backup)
 
 ### Safety Checks
 
