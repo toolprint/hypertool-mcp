@@ -10,22 +10,34 @@ Generate comprehensive release notes for the latest release by analyzing all mer
 
 ## Instructions
 
-### Step 1: Find Release Tags
+### Step 1: Find Release Tags and Previous Release
+
+**Important**: We update the LATEST existing release, not create a new one. There may be multiple tags between releases.
 
 1. **Get Latest Release**:
-   - Run `gh release view --json tagName,name,publishedAt` to get the latest release
-   - If no release exists, inform user and suggest creating one first
+   - Run `gh release view --json tagName,name,publishedAt,url` to get the latest release
+   - This is the release we will UPDATE
+   - If no release exists, inform user and suggest creating one first with `gh release create`
 
-2. **Get Previous Release**:
-   - Run `gh release list --limit 2 --json tagName,name,publishedAt` to get the two most recent releases
-   - Extract the second release as the "previous" release
-   - If only one release exists, use the first commit as the starting point
+2. **Get Previous Release** (handle multiple tags between releases):
+   - Run `gh release list --json tagName,name,publishedAt` to get ALL releases
+   - Find the latest release (first in list)
+   - Find the second-to-last release (may be several tags back)
+   - **Key insight**: Not every tag has a release! We need to find the previous actual release, which may skip several tags
+
+3. **Get All Tags Between Releases**:
+   - Run `git tag --sort=-version:refname` to get all tags chronologically
+   - Find all tags between the previous release tag and the latest release tag
+   - Example: If latest release is `v0.0.44` and previous is `v0.0.40`, we need to capture commits from tags `v0.0.41`, `v0.0.42`, `v0.0.43`, and `v0.0.44`
 
 ### Step 2: Analyze Commits Between Releases
 
+**Critical**: Use the previous RELEASE tag, not the previous version tag. Releases may skip tags!
+
 1. **Get Commit Range**:
-   - Run `git log <previous-tag>..<latest-tag> --oneline --merges` to see all merge commits
-   - Parse the commit messages to identify squashed PR merges (format: "Merge pull request #XX" or "... (#XX)")
+   - Run `git log <previous-release-tag>..<latest-release-tag> --oneline` to see ALL commits (not just merges)
+   - This captures all commits across potentially multiple version tags
+   - Example: `git log v0.0.40..v0.0.44 --oneline` captures commits from tags v0.0.41, v0.0.42, v0.0.43, and v0.0.44
 
 2. **Extract PR Numbers**:
    - Parse commit messages to find PR numbers
@@ -107,14 +119,17 @@ Group changes by type:
    - Write to `.tmp/release-notes.md`
    - Show preview to user
 
-3. **Update Release**:
+3. **Update the Latest Release** (not create a new one):
    ```bash
-   gh release edit <TAG> --notes-file .tmp/release-notes.md
+   gh release edit <LATEST_RELEASE_TAG> --notes-file .tmp/release-notes.md
    ```
+   - This UPDATES the existing latest release with new notes
+   - Does NOT create a new release
 
 4. **Confirm Success**:
    - Display release URL
    - Inform user about backup location
+   - Confirm which release was updated (tag name and version)
 
 ### Step 7: Error Handling
 
@@ -130,16 +145,19 @@ Group changes by type:
 User: /proj:generate-release-notes
 
 Claude:
-1. Checks latest two releases (e.g., v0.0.44 and v0.0.43)
-2. Finds all commits between them
-3. Identifies merged PRs (#41, #42, #43, #44)
-4. Fetches details for each PR
-5. Categorizes changes (2 bug fixes, 1 feature, 1 docs update)
-6. Generates formatted release notes
-7. Backs up current notes to .tmp/release-notes.backup.md
-8. Updates release with new notes
-9. Shows release URL: https://github.com/org/repo/releases/tag/v0.0.44
+1. Finds latest release: v0.0.44
+2. Finds previous release: v0.0.40 (note: v0.0.41, v0.0.42, v0.0.43 don't have releases)
+3. Gets ALL commits between v0.0.40..v0.0.44 (captures all 4 version bumps)
+4. Identifies merged PRs from commits (#38, #39, #40, #41, #42, #43, #44)
+5. Fetches details for each PR
+6. Categorizes changes (3 bug fixes, 2 features, 2 docs updates)
+7. Generates formatted release notes covering all changes since v0.0.40
+8. Backs up current notes to .tmp/release-notes.backup.md
+9. UPDATES existing v0.0.44 release with comprehensive notes
+10. Shows release URL: https://github.com/org/repo/releases/tag/v0.0.44
 ```
+
+**Key Point**: This updates the LATEST existing release (v0.0.44) with ALL changes since the PREVIOUS release (v0.0.40), even though there were tags v0.0.41-v0.0.43 in between without releases.
 
 ## Implementation Notes
 
@@ -159,9 +177,17 @@ Parse both patterns to find all PR numbers.
 
 ### Handling Edge Cases
 
-- **First Release**: No previous tag exists
-  - Use entire git history
-  - Or use first commit as starting point
+- **First Release**: No previous release exists
+  - Use entire git history from first commit
+  - Or use project initialization as starting point
+
+- **Multiple Tags Between Releases**: Common scenario!
+  - Not every version tag has a release
+  - Must find previous actual RELEASE, not just previous tag
+  - Use `gh release list` to find actual releases, not `git tag`
+  - Example: Latest release v0.0.44, previous release v0.0.40
+    - Captures commits from v0.0.41, v0.0.42, v0.0.43, v0.0.44
+    - All changes since v0.0.40 are included in v0.0.44 release notes
 
 - **Multiple Authors per PR**: Credit all co-authors from commit trailers
 
@@ -228,25 +254,33 @@ gh release edit <TAG> --notes-file .tmp/release-notes.backup.md
 
 ```bash
 # Get latest release
-gh release view --json tagName,name,publishedAt
+gh release view --json tagName,name,publishedAt,url
 
-# Get two most recent releases
-gh release list --limit 2 --json tagName,name,publishedAt
+# Get ALL releases (to find previous release, may skip several tags)
+gh release list --json tagName,name,publishedAt
 
-# Get commits between releases
-git log v0.0.43..v0.0.44 --oneline --merges
+# Get all tags sorted by version
+git tag --sort=-version:refname
+
+# Get ALL commits between releases (captures multiple version tags)
+git log v0.0.40..v0.0.44 --oneline
+# This captures commits from v0.0.41, v0.0.42, v0.0.43, and v0.0.44
 
 # Get PR details
 gh pr view 123 --json number,title,body,labels,author,closedAt,url
 
-# Backup current release notes
+# Backup current release notes before updating
+mkdir -p .tmp
 gh release view v0.0.44 --json body --jq .body > .tmp/release-notes.backup.md
 
-# Update release notes
+# UPDATE existing release notes (not create new release)
 gh release edit v0.0.44 --notes-file .tmp/release-notes.md
 
 # Get release URL
 gh release view v0.0.44 --json url --jq .url
+
+# Verify update
+gh release view v0.0.44 --json body --jq .body
 ```
 
 ## Tips for Best Release Notes
