@@ -67,10 +67,11 @@ Complete PR workflow: run all CI checks locally, push branch to remote, create P
 
 2. **Create the PR**:
    ```bash
-   gh pr create --title "<branch-name-as-title>" --body "Initial PR - description being generated..."
+   gh pr create --title "<branch-name-as-title>" --body "Initial PR - description being generated..." --reviewer toolprint/admins
    ```
    - Use branch name as initial title (will be updated with proper description)
    - Add placeholder body initially
+   - Automatically assign `toolprint/admins` as reviewers
 
 3. **Verify PR creation**:
    - Check exit code
