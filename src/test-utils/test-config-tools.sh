@@ -15,28 +15,125 @@ NC='\033[0m' # No Color
 # Configuration
 PORT=3456
 SERVER_URL="http://localhost:$PORT/mcp"
-TEST_MCP_CONFIG="mcp.test.json"
+TEST_MCP_CONFIG=""
 TEST_PERSONA="test-persona"
 SERVER_PID=""
 LOG_DIR="src/test-utils/logs"
 LOG_FILE=""
 SESSION_ID=""
+TEMP_STANDARD_CONFIG=""
+TEMP_PERSONA_DIR=""
 
 # Create log directory if it doesn't exist
 mkdir -p "$LOG_DIR"
 
 # Cleanup function
-cleanup() {
-    echo -e "${YELLOW}Cleaning up...${NC}"
+stop_server() {
     if [ ! -z "$SERVER_PID" ]; then
         echo "Killing server with PID $SERVER_PID"
         kill $SERVER_PID 2>/dev/null || true
         wait $SERVER_PID 2>/dev/null || true
+        SERVER_PID=""
+    fi
+}
+
+cleanup() {
+    echo -e "${YELLOW}Cleaning up...${NC}"
+    stop_server
+    if [ -n "$TEMP_STANDARD_CONFIG" ] && [ -f "$TEMP_STANDARD_CONFIG" ]; then
+        rm -f "$TEMP_STANDARD_CONFIG"
+    fi
+    if [ -n "$TEMP_PERSONA_DIR" ] && [ -d "$TEMP_PERSONA_DIR" ]; then
+        rm -rf "$TEMP_PERSONA_DIR"
     fi
 }
 
 # Set trap for cleanup
 trap cleanup EXIT
+
+# Create stub MCP configuration for standard mode tests
+create_stub_standard_config() {
+    TEMP_STANDARD_CONFIG=$(mktemp)
+    cat >"$TEMP_STANDARD_CONFIG" <<'JSON'
+{
+  "mcpServers": {
+    "sequential-thinking": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "sequential-thinking"
+      }
+    },
+    "everything": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "everything"
+      }
+    }
+  }
+}
+JSON
+    TEST_MCP_CONFIG="$TEMP_STANDARD_CONFIG"
+}
+
+# Create temporary persona directory with stub MCP servers
+create_stub_persona_dir() {
+    TEMP_PERSONA_DIR=$(mktemp -d)
+    mkdir -p "$TEMP_PERSONA_DIR/$TEST_PERSONA"
+
+    cp personas/test-persona/persona.yaml "$TEMP_PERSONA_DIR/$TEST_PERSONA/persona.yaml"
+
+    cat >"$TEMP_PERSONA_DIR/$TEST_PERSONA/mcp.json" <<'JSON'
+{
+  "mcpServers": {
+    "everything": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "everything"
+      }
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "context7"
+      }
+    },
+    "mcping": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "mcping"
+      }
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "filesystem"
+      }
+    }
+  }
+}
+JSON
+
+}
+
+initialize_stub_environment() {
+    if [ -z "$TEST_MCP_CONFIG" ]; then
+        create_stub_standard_config
+    fi
+
+    create_stub_persona_dir
+}
 
 # Function to initialize MCP session
 init_session() {
@@ -85,7 +182,7 @@ start_server() {
     if [ "$mode" = "persona" ]; then
         echo -e "${BLUE}Starting server in PERSONA mode with --persona $TEST_PERSONA${NC}"
         LOG_FILE="$LOG_DIR/test-persona-mode-$timestamp.log"
-        cmd="dist/bin.js mcp run --persona $TEST_PERSONA --transport http --port $PORT --debug --log-level debug"
+        cmd="env HYPERTOOL_PERSONA_DIR=$TEMP_PERSONA_DIR dist/bin.js mcp run --persona $TEST_PERSONA --transport http --port $PORT --debug --log-level debug"
     else
         echo -e "${BLUE}Starting server in STANDARD mode with --mcp-config $TEST_MCP_CONFIG${NC}"
         LOG_FILE="$LOG_DIR/test-standard-mode-$timestamp.log"
@@ -102,7 +199,7 @@ start_server() {
     echo "Waiting for server to be ready..."
 
     # Wait for server to start
-    local max_attempts=30
+    local max_attempts=120
     local attempt=0
     while [ $attempt -lt $max_attempts ]; do
         if curl -s "$SERVER_URL" > /dev/null 2>&1; then
@@ -251,6 +348,11 @@ main() {
     npm run build > /dev/null 2>&1
     echo -e "${GREEN}Build complete${NC}"
 
+    # Prepare stub configurations so tests don't require external MCP servers
+    initialize_stub_environment
+    echo -e "${BLUE}Using stub MCP config: ${TEST_MCP_CONFIG}${NC}"
+    echo -e "${BLUE}Using stub persona: ${TEST_PERSONA}${NC}"
+
     # Test 1: Standard mode (no persona)
     echo -e "\n${GREEN}=== TEST SUITE 1: Standard Mode (No Persona) ===${NC}"
     start_server "standard"
@@ -285,6 +387,7 @@ main() {
 
     # Test build-toolset (should work)
     echo -e "\n${YELLOW}TEST: build-toolset in standard mode${NC}"
+    call_tool "delete-toolset" '{"name": "test-toolset", "confirm": true}' >/dev/null 2>&1 || true
     build_args='{
         "name": "test-toolset",
         "tools": [{"namespacedName": "sequential-thinking.sequentialthinking"}]
@@ -300,7 +403,7 @@ main() {
     fi
 
     # Clean up server
-    cleanup
+    stop_server
     sleep 2
 
     # Test 2: Persona mode
@@ -345,7 +448,7 @@ main() {
         echo -e "${GREEN}✓ PASS - build-toolset is hidden in persona mode (verified above)${NC}"
 
         # Clean up server
-        cleanup
+        stop_server
     fi
 
     echo -e "\n${GREEN}=== Test Complete ===${NC}"

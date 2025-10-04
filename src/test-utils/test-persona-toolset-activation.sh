@@ -8,6 +8,8 @@ SERVER_URL="http://localhost:$PORT/mcp"
 SERVER_PID=""
 SESSION_ID=""
 PERSONA_YAML="test/fixtures/personas/test-persona/persona.yaml"
+TEMP_PERSONA_DIR=""
+TEMP_MCP_CONFIG=""
 
 # Colors
 GREEN='\033[0;32m'
@@ -20,9 +22,89 @@ cleanup() {
     if [ ! -z "$SERVER_PID" ]; then
         kill $SERVER_PID 2>/dev/null || true
     fi
+    if [ -n "$TEMP_PERSONA_DIR" ] && [ -d "$TEMP_PERSONA_DIR" ]; then
+        rm -rf "$TEMP_PERSONA_DIR"
+    fi
+    if [ -n "$TEMP_MCP_CONFIG" ] && [ -f "$TEMP_MCP_CONFIG" ]; then
+        rm -f "$TEMP_MCP_CONFIG"
+    fi
 }
 
 trap cleanup EXIT
+
+# Create a temporary persona directory using stub MCP servers
+setup_stub_persona() {
+    TEMP_PERSONA_DIR=$(mktemp -d)
+    mkdir -p "$TEMP_PERSONA_DIR/test-persona"
+
+    cp personas/test-persona/persona.yaml "$TEMP_PERSONA_DIR/test-persona/persona.yaml"
+    PERSONA_YAML="$TEMP_PERSONA_DIR/test-persona/persona.yaml"
+
+    cat >"$TEMP_PERSONA_DIR/test-persona/mcp.json" <<'JSON'
+{
+  "mcpServers": {
+    "everything": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "everything"
+      }
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "context7"
+      }
+    },
+    "mcping": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "mcping"
+      }
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "filesystem"
+      }
+    }
+  }
+}
+JSON
+}
+
+create_stub_mcp_config() {
+    TEMP_MCP_CONFIG=$(mktemp)
+    cat >"$TEMP_MCP_CONFIG" <<'JSON'
+{
+  "mcpServers": {
+    "sequential-thinking": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "sequential-thinking"
+      }
+    },
+    "everything": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "everything"
+      }
+    }
+  }
+}
+JSON
+}
 
 # Function to parse tool IDs from persona.yaml for a given toolset
 get_toolset_tools() {
@@ -88,7 +170,9 @@ fi
 
 # Start server in persona mode with debug and default toolset
 echo -e "${YELLOW}1. Starting server in persona mode (test-persona) with default toolset (utility-tools)...${NC}"
-dist/bin.js mcp run --persona test-persona --equip-toolset utility-tools --transport http --port $PORT --debug --log-level debug > persona-toolset-test.log 2>&1 &
+setup_stub_persona
+create_stub_mcp_config
+env HYPERTOOL_PERSONA_DIR=$TEMP_PERSONA_DIR dist/bin.js mcp run --persona test-persona --equip-toolset utility-tools --mcp-config "$TEMP_MCP_CONFIG" --transport http --port $PORT --debug --log-level debug > persona-toolset-test.log 2>&1 &
 SERVER_PID=$!
 
 # Wait for server

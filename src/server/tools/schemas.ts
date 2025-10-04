@@ -26,6 +26,10 @@ export const toolInfoResponseZodSchema = z.object({
     .describe("Namespaced tool name (e.g., 'git.status')"),
   serverName: z.string().describe("Server that provides this tool"),
   description: z.string().optional().describe("Tool description"),
+  alias: z
+    .string()
+    .optional()
+    .describe("Alias assigned to this tool within the equipped toolset"),
   context: contextInfoZodSchema.describe(
     "Context usage information for this tool"
   ),
@@ -52,6 +56,10 @@ export const toolsetToolRefZodSchema = z.object({
   active: z
     .boolean()
     .describe("Whether this tool is currently available/active"),
+  alias: z
+    .string()
+    .optional()
+    .describe("Alias assigned to this tool within the toolset, if any"),
 });
 
 /**

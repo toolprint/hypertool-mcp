@@ -73,6 +73,11 @@ export const listAvailableToolsDefinition: Tool = {
                     type: "string",
                     description: "Unique hash identifier for this tool",
                   },
+                  alias: {
+                    type: "string",
+                    description:
+                      "Optional alias assigned within the currently equipped toolset",
+                  },
                 },
                 required: ["name", "namespacedName", "serverName", "refId"],
               },
