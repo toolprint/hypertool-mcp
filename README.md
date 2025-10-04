@@ -51,6 +51,19 @@ Replace your `.mcp.json` with:
 }
 ```
 
+> **Using Bun?** If you have [Bun](https://bun.com/docs/cli/install) installed, you can use `bunx` instead of `npx`:
+>
+> ```json
+> {
+>   "mcpServers": {
+>     "hypertool": {
+>       "command": "bunx",
+>       "args": ["@toolprint/hypertool-mcp", "--mcp-config", ".mcp.hypertool.json"]
+>     }
+>   }
+> }
+> ```
+
 ### Step 3: Create Your First Toolset
 
 Restart your AI and try:
