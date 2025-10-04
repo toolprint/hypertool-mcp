@@ -8,6 +8,12 @@ import {
   DynamicToolReference,
 } from "./types.js";
 
+const ALIAS_PATTERN = /^[a-z0-9_]+$/;
+
+function flattenToolName(namespacedName: string): string {
+  return namespacedName.replace(/\./g, "_");
+}
+
 /**
  * Validate a toolset configuration
  */
@@ -36,9 +42,18 @@ export function validateToolsetConfig(config: ToolsetConfig): ValidationResult {
     errors.push("Configuration must specify at least one tool");
   } else {
     // Validate each tool reference
+    const canonicalNameByIndex = new Map<number, string>();
+
     config.tools.forEach((toolRef, index) => {
       const toolErrors = validateToolReference(toolRef, index);
       errors.push(...toolErrors);
+
+      if (toolRef.namespacedName) {
+        canonicalNameByIndex.set(
+          index,
+          flattenToolName(toolRef.namespacedName)
+        );
+      }
     });
 
     // Check for duplicate tool references
@@ -63,6 +78,75 @@ export function validateToolsetConfig(config: ToolsetConfig): ValidationResult {
         `Duplicate tool references found: ${Array.from(duplicates).join(", ")}`
       );
     }
+
+    // Build lookup for canonical flattened names
+    const canonicalNameToIndex = new Map<string, number>();
+    canonicalNameByIndex.forEach((canonical, index) => {
+      if (!canonicalNameToIndex.has(canonical)) {
+        canonicalNameToIndex.set(canonical, index);
+      }
+    });
+
+    // Validate aliases (format, uniqueness, collisions)
+    const aliasToIndex = new Map<string, number>();
+
+    config.tools.forEach((ref, index) => {
+      if (ref.alias === undefined) {
+        return;
+      }
+
+      if (typeof ref.alias !== "string") {
+        errors.push(`Tool reference at index ${index}: alias must be a string`);
+        return;
+      }
+
+      const trimmedAlias = ref.alias.trim();
+
+      if (trimmedAlias.length === 0) {
+        errors.push(`Tool reference at index ${index}: alias cannot be empty`);
+        return;
+      }
+
+      if (trimmedAlias.length < 2 || trimmedAlias.length > 50) {
+        errors.push(
+          `Tool reference at index ${index}: alias must be between 2 and 50 characters`
+        );
+      }
+
+      if (!ALIAS_PATTERN.test(trimmedAlias)) {
+        errors.push(
+          `Tool reference at index ${index}: alias must contain only lowercase letters, numbers, and underscores`
+        );
+      }
+
+      const existingAliasIndex = aliasToIndex.get(trimmedAlias);
+      if (existingAliasIndex !== undefined && existingAliasIndex !== index) {
+        errors.push(
+          `Tool reference at index ${index}: alias "${trimmedAlias}" is already used by another tool`
+        );
+      } else {
+        aliasToIndex.set(trimmedAlias, index);
+      }
+
+      const canonicalOwnerIndex = canonicalNameToIndex.get(trimmedAlias);
+
+      if (canonicalOwnerIndex !== undefined && canonicalOwnerIndex !== index) {
+        errors.push(
+          `Tool reference at index ${index}: alias "${trimmedAlias}" conflicts with the canonical name of another tool`
+        );
+      }
+
+      if (ref.namespacedName && trimmedAlias === ref.namespacedName) {
+        warnings.push(
+          `Tool reference at index ${index}: alias matches the namespaced name; consider omitting the alias`
+        );
+      }
+
+      // Update alias to trimmed value for downstream consumers
+      if (ref.alias !== trimmedAlias) {
+        ref.alias = trimmedAlias;
+      }
+    });
   }
 
   // Optional fields validation

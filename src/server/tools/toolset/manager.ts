@@ -67,9 +67,57 @@ export class ToolsetManager
   private currentToolset?: ToolsetConfig;
   private configPath?: string;
   private discoveryEngine?: IToolDiscoveryEngine;
+  private aliasRegistry: Map<
+    string,
+    {
+      namespacedName?: string;
+      refId?: string;
+    }
+  > = new Map();
+  private aliasByNamespacedName: Map<string, string> = new Map();
+  private aliasByRefId: Map<string, string> = new Map();
 
   constructor() {
     super();
+  }
+
+  private rebuildAliasRegistry(): void {
+    this.aliasRegistry.clear();
+    this.aliasByNamespacedName.clear();
+    this.aliasByRefId.clear();
+
+    if (!this.currentToolset) {
+      return;
+    }
+
+    for (const toolRef of this.currentToolset.tools) {
+      const alias = toolRef.alias?.trim();
+      if (!alias) {
+        continue;
+      }
+
+      this.aliasRegistry.set(alias, {
+        namespacedName: toolRef.namespacedName,
+        refId: toolRef.refId,
+      });
+
+      if (toolRef.namespacedName) {
+        this.aliasByNamespacedName.set(toolRef.namespacedName, alias);
+      }
+
+      if (toolRef.refId) {
+        this.aliasByRefId.set(toolRef.refId, alias);
+      }
+    }
+  }
+
+  private getAliasForDiscoveredTool(
+    tool: DiscoveredTool
+  ): string | undefined {
+    return (
+      this.aliasByNamespacedName.get(tool.namespacedName) ||
+      this.aliasByRefId.get(tool.toolHash)
+    );
   }
 
   /**
@@ -85,6 +133,7 @@ export class ToolsetManager
     if (result.config && result.validation.valid) {
       this.currentToolset = result.config;
       this.configPath = filePath;
+      this.rebuildAliasRegistry();
     }
 
     return {
@@ -137,6 +186,7 @@ export class ToolsetManager
       createdAt: new Date(),
       tools: [], // Intentionally empty - no default tools
     };
+    this.rebuildAliasRegistry();
     return this.currentToolset;
   }
 
@@ -148,6 +198,7 @@ export class ToolsetManager
     if (validation.valid) {
       const previousConfig = this.currentToolset;
       this.currentToolset = toolsetConfig;
+      this.rebuildAliasRegistry();
 
       // Emit toolset change event
       const event: ToolsetChangeEvent = {
@@ -207,6 +258,7 @@ export class ToolsetManager
   clearCurrentToolset(): void {
     this.currentToolset = undefined;
     this.configPath = undefined;
+    this.rebuildAliasRegistry();
   }
 
   /**
@@ -216,12 +268,15 @@ export class ToolsetManager
     this.discoveryEngine = discoveryEngine;
 
     // Listen for discovered tools changes and validate active toolset
-    (discoveryEngine as any).on(
-      "toolsChanged",
-      (event: DiscoveredToolsChangedEvent) => {
-        this.handleDiscoveredToolsChanged(event);
-      }
-    );
+    const maybeEmitter = discoveryEngine as unknown as EventEmitter;
+    if (typeof maybeEmitter.on === "function") {
+      maybeEmitter.on(
+        "toolsChanged",
+        (event: DiscoveredToolsChangedEvent) => {
+          this.handleDiscoveredToolsChanged(event);
+        }
+      );
+    }
   }
 
   /** Hydrates the tool with any notes loaded from the toolset configuration. */
@@ -270,12 +325,20 @@ export class ToolsetManager
 
   /** Formats a discovered tool into an MCP tool. */
   _getToolFromDiscoveredTool(dt: DiscoveredTool): Tool {
-    let t = dt.tool;
+    const alias = this.getAliasForDiscoveredTool(dt);
+    const flattenedName = this.flattenToolName(dt.namespacedName);
+    const baseDescription =
+      dt.tool.description || `Tool from ${dt.serverName} server`;
 
-    t.name = this.flattenToolName(dt.namespacedName);
-    t.description = dt.tool.description || `Tool from ${dt.serverName} server`;
+    const tool: Tool = {
+      ...dt.tool,
+      name: alias || flattenedName,
+      description: alias
+        ? `${baseDescription}\n\nAlias: ${alias} (maps to ${dt.namespacedName})`
+        : baseDescription,
+    };
 
-    return t;
+    return tool;
   }
 
   /**
@@ -363,6 +426,23 @@ export class ToolsetManager
 
     const activeTools = this.getActiveDiscoveredTools();
 
+    const aliasRecord = this.aliasRegistry.get(flattenedName);
+    if (aliasRecord) {
+      if (aliasRecord.namespacedName) {
+        return aliasRecord.namespacedName;
+      }
+
+      if (aliasRecord.refId) {
+        const matchedTool = activeTools.find(
+          (tool) => tool.toolHash === aliasRecord.refId
+        );
+
+        if (matchedTool) {
+          return matchedTool.namespacedName;
+        }
+      }
+    }
+
     for (const tool of activeTools) {
       if (this.flattenToolName(tool.namespacedName) === flattenedName) {
         return tool.namespacedName;
@@ -440,18 +520,32 @@ export class ToolsetManager
         };
       }
 
-      if (!tools || tools.length === 0) {
-        return {
-          meta: {
-            success: false,
-            error: "Toolset must include at least one tool",
-          },
+    if (!tools || tools.length === 0) {
+      return {
+        meta: {
+          success: false,
+          error: "Toolset must include at least one tool",
+        },
+      };
+    }
+
+      const sanitizedTools = tools.map((toolRef) => {
+        const sanitized: DynamicToolReference = {
+          namespacedName: toolRef.namespacedName,
+          refId: toolRef.refId,
         };
-      }
+
+        if (typeof toolRef.alias === "string") {
+          const trimmed = toolRef.alias.trim();
+          sanitized.alias = trimmed.length > 0 ? trimmed : undefined;
+        }
+
+        return sanitized;
+      });
 
       // Validate tool references if discovery engine is available
       if (this.discoveryEngine) {
-        const validationResult = this.validateToolReferences(tools);
+        const validationResult = this.validateToolReferences(sanitizedTools);
         if (!validationResult.valid) {
           return {
             meta: {
@@ -483,7 +577,7 @@ export class ToolsetManager
         description: options.description,
         version: "1.0.0",
         createdAt: new Date(),
-        tools,
+        tools: sanitizedTools,
       };
 
       // Validate configuration
@@ -660,6 +754,7 @@ export class ToolsetManager
         serverName: string;
         refId: string;
         context?: ContextInfo;
+        alias?: string;
         _tokens?: number; // Store for server-level calculation
       }>
     > = {};
@@ -671,9 +766,15 @@ export class ToolsetManager
       }
 
       const toolTokens = tokenCounter.calculateToolTokens(tool);
+      const alias = this.getAliasForDiscoveredTool(tool);
+      const baseDescription = tool.tool.description;
+      const descriptionWithAlias = alias
+        ? `${baseDescription || `Tool from ${tool.serverName} server`}\n\nAlias: ${alias} (maps to ${tool.namespacedName})`
+        : baseDescription;
+
       serverToolsMap[tool.serverName].push({
         name: tool.name,
-        description: tool.tool.description,
+        description: descriptionWithAlias,
         namespacedName: tool.namespacedName,
         serverName: tool.serverName,
         refId: tool.toolHash,
@@ -681,6 +782,7 @@ export class ToolsetManager
           toolTokens,
           totalPossibleTokens
         ),
+        alias,
         _tokens: toolTokens, // Store for server total
       });
     }
@@ -820,6 +922,7 @@ export class ToolsetManager
     const previousConfig = this.currentToolset;
     this.currentToolset = undefined;
     this.configPath = undefined;
+    this.rebuildAliasRegistry();
 
     // Clear the last equipped toolset from preferences
     try {
@@ -891,9 +994,16 @@ export class ToolsetManager
       }
 
       // Convert discovered tool to ToolInfoResponse with context
-      exposedTools[tool.serverName].push(
-        tokenCounter.convertToToolInfoResponse(tool, totalTokens)
+      const toolInfo = tokenCounter.convertToToolInfoResponse(
+        tool,
+        totalTokens
       );
+      const alias = this.getAliasForDiscoveredTool(tool);
+      if (alias) {
+        toolInfo.alias = alias;
+      }
+
+      exposedTools[tool.serverName].push(toolInfo);
     }
 
     // Create response with context information at top level
@@ -965,6 +1075,7 @@ export class ToolsetManager
       refId: string;
       server: string;
       active: boolean;
+      alias?: string;
     }> = [];
 
     if (this.discoveryEngine) {
@@ -996,6 +1107,7 @@ export class ToolsetManager
             refId: resolution.tool.toolHash,
             server: serverName,
             active: true, // Tool is available
+            alias: toolRef.alias,
           });
         } else {
           // Tool is not available, but we can still include it with the info we have
@@ -1004,6 +1116,7 @@ export class ToolsetManager
             refId: toolRef.refId || "unknown",
             server: "unknown",
             active: false, // Tool is not available
+            alias: toolRef.alias,
           });
         }
       }
@@ -1015,6 +1128,7 @@ export class ToolsetManager
           refId: toolRef.refId || "unknown",
           server: "unknown",
           active: false, // Cannot determine availability without discovery engine
+          alias: toolRef.alias,
         }))
       );
     }

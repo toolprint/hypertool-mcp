@@ -2,7 +2,7 @@
  * Unit tests for Enhanced Hypertool MCP server
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { EnhancedMetaMCPServer } from "./enhanced.js";
 import { MetaMCPServerConfig, ServerState } from "./types.js";
 import { ServerConfig } from "../config/index.js";
@@ -164,6 +164,32 @@ describe("EnhancedMetaMCPServer", () => {
       );
 
       expect(Object.keys(filtered)).toHaveLength(0);
+    });
+  });
+
+  describe("Alias-aware tool routing", () => {
+    it("should translate aliases to canonical names before routing", async () => {
+      const routeToolCall = vi
+        .fn()
+        .mockResolvedValue({ result: "ok", isError: false });
+      (server as any).requestRouter = { routeToolCall };
+
+      const toolsetManager = (server as any).toolsetManager;
+      const getOriginalToolNameSpy = vi
+        .spyOn(toolsetManager, "getOriginalToolName")
+        .mockReturnValue("git.status");
+
+      const response = await (server as any).handleToolCall(
+        "git_status",
+        {}
+      );
+
+      expect(getOriginalToolNameSpy).toHaveBeenCalledWith("git_status");
+      expect(routeToolCall).toHaveBeenCalledWith({
+        name: "git.status",
+        arguments: {},
+      });
+      expect(response).toEqual({ result: "ok", isError: false });
     });
   });
 });

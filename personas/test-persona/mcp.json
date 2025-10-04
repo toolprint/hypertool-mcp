@@ -1,23 +1,36 @@
 {
   "mcpServers": {
     "everything": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-everything"]
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "everything"
+      }
     },
     "context7": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-context7"],
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
       "env": {
-        "CONTEXT7_URL": "https://mcp.context7.com/sse"
+        "STUB_SERVER_NAME": "context7"
       }
     },
     "mcping": {
-      "command": "npx",
-      "args": ["-y", "@toolprint/mcping-mcp@latest"]
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "mcping"
+      }
     },
     "filesystem": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
+      "type": "stdio",
+      "command": "node",
+      "args": ["./test/stub-servers/mcp-stub.mjs"],
+      "env": {
+        "STUB_SERVER_NAME": "filesystem"
+      }
     }
   }
 }

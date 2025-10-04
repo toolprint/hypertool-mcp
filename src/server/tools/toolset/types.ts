@@ -13,6 +13,8 @@ export type DynamicToolReference = {
   namespacedName?: string;
   /** Tool reference by unique hash identifier (e.g., 'abc123def456...') */
   refId?: string;
+  /** Optional alias that can be used when exposing the tool to clients */
+  alias?: string;
 };
 
 /**
