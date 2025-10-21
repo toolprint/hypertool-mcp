@@ -11,6 +11,8 @@ const logger = createChildLogger({ module: "server/base" });
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
   Tool,
   Notification,
 } from "@modelcontextprotocol/sdk/types.js";
@@ -22,6 +24,7 @@ import {
 } from "./types.js";
 import { EventEmitter } from "events";
 import { McpHttpServer } from "./http-server.js";
+import { PromptRegistry } from "./prompts/index.js";
 
 /**
  * Base Hypertool MCP server class
@@ -35,10 +38,14 @@ export class MetaMCPServer extends EventEmitter {
   private state: ServerState = ServerState.STOPPED;
   private startTime?: Date;
   private connectedClients: number = 0;
+  protected promptRegistry: PromptRegistry;
 
   constructor(config: MetaMCPServerConfig) {
     super();
     this.config = config;
+
+    // Initialize prompt registry
+    this.promptRegistry = new PromptRegistry();
 
     // Initialize MCP server
     this.server = new Server(
@@ -50,6 +57,7 @@ export class MetaMCPServer extends EventEmitter {
       {
         capabilities: {
           tools: {},
+          prompts: {},
         },
       }
     );
@@ -71,6 +79,21 @@ export class MetaMCPServer extends EventEmitter {
     // Handle call_tool requests
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return await this.handleToolCall(
+        request.params.name,
+        request.params.arguments
+      );
+    });
+
+    // Handle list_prompts requests
+    this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
+      return {
+        prompts: this.promptRegistry.getPrompts(),
+      };
+    });
+
+    // Handle get_prompt requests
+    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+      return await this.promptRegistry.getPrompt(
         request.params.name,
         request.params.arguments
       );
